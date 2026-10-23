@@ -146,3 +146,9 @@ cambio de herramientas. Checkpoint 20261022_passive_hang_observer.json.
 
 
 Actualizacion 2026-10-23: las mediciones de la escena pesada muestran un hilo GX saturado y coste dominante en resolucion de texturas estaticas. El cache de snapshots ahora indexa claves por hash sin quitar la validacion exacta de bytes. Build Windows y pruebas CTest 21/21 pasan; falta medir FPS en la misma escena con recomp/tools/run_parallel_candidate.ps1 -PerformanceTrace.
+
+
+La prueba en el hangar del indice hash (23 de octubre) mantuvo el coste GX de texturas estaticas en torno a 190-196 ms/s; no se observa mejora suficiente de FPS. Siguiente candidata: validacion por generacion de escritura rastreada con fallback de bytes exactos.
+
+
+Actualizacion 2026-10-23: la candidata de generacion de escritura compila, supera CTest 19/19 y fue abierta por tools/run_parallel_candidate.ps1. En la misma vista del hangar marco 28.4 FPS (35.17 ms/frame, P95 46.79 ms); el trace registro ~1.72 M consultas al cache, ~1.716 M aciertos por generacion y 100 comparaciones exactas. El hilo principal sigue al 100% y no se alcanzan 60 FPS. La lectura de paletas aun registra cero aciertos por generacion, por lo que su coste queda pendiente.

@@ -92,6 +92,23 @@ int main(){
     eviction.Store({1},&source,1,111,nullptr,0,1,true);
     Check(eviction.Find({1},&source,1,nullptr,0,1,true)==111);
   }
+  {
+    aurora::gx::RawTextureSnapshotCache<int,int> generations(4096,8);
+    std::array<uint8_t,8> source{1,2,3,4,5,6,7,8};
+    generations.Store(1,source.data(),source.size(),11,nullptr,0,101,true,7,0,true);
+    Check(generations.Find(1,source.data(),source.size(),nullptr,0,101,true,7,0,true)==11);
+    Check(generations.Stats().generationHits==1 && generations.Stats().byteValidations==0);
+    source[3]=99;
+    Check(generations.Find(1,source.data(),source.size(),nullptr,0,101,true,8,0,true)==0);
+    Check(generations.Stats().byteValidations==1); // A changed write generation falls back to exact bytes.
+    Check(generations.Find(1,source.data(),source.size(),nullptr,0,101,true,7,0,false)==0);
+    Check(generations.Stats().byteValidations==2); // Untracked sources never skip byte validation.
+    std::array<uint8_t,2> palette{0xF8,0x00};
+    generations.Store(2,source.data(),source.size(),22,palette.data(),palette.size(),202,true,8,3,true);
+    Check(generations.Find(2,source.data(),source.size(),palette.data(),palette.size(),202,true,8,3,true)==22);
+    Check(generations.Find(2,source.data(),source.size(),palette.data(),palette.size(),202,true,8,4,true)==22);
+    Check(generations.Stats().byteValidations==3); // Palette writes also force exact byte validation.
+  }
   using Cache=aurora::gx::RawTextureSnapshotCache<int,std::shared_ptr<int>>;
   Cache cache(12,2);
   std::array<uint8_t,6> bytes{1,2,3,4,5,6};

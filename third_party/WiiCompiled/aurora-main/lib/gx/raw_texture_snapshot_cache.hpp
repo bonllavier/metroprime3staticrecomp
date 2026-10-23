@@ -13,7 +13,14 @@ namespace aurora::gx {
 // Raw sources have no object-generation contract. Compare every byte before
 // reuse; replacing/evicting a cache entry never invalidates submitted handles.
 template<class Key, class Handle> class RawTextureSnapshotCache {
-  struct Entry {Key key; std::vector<uint8_t> bytes,palette; Handle handle; size_t keyHash=0; bool indexed=false;};
+  struct Entry {
+    Key key;
+    std::vector<uint8_t> bytes,palette;
+    Handle handle;
+    size_t keyHash=0;
+    uint64_t sourceGeneration=0,paletteGeneration=0;
+    bool indexed=false,generationsTracked=false;
+  };
   std::list<Entry> entries;
   using EntryIterator=typename std::list<Entry>::iterator;
   std::unordered_multimap<size_t,EntryIterator> keyIndex;
@@ -22,7 +29,7 @@ template<class Key, class Handle> class RawTextureSnapshotCache {
   size_t limit;
   bool retainVersions;
 public:
-  struct Statistics {uint64_t lookups=0,hits=0,misses=0,evictions=0,replacements=0,keyProbes=0;};
+  struct Statistics {uint64_t lookups=0,hits=0,misses=0,evictions=0,replacements=0,keyProbes=0,byteValidations=0,generationHits=0;};
 private:
   Statistics statistics;
   void erase_indexed(EntryIterator entry) {
@@ -41,7 +48,8 @@ public:
   RawTextureSnapshotCache(size_t byteBudget, size_t entryLimit, bool multipleVersions=false)
       : budget(byteBudget), limit(entryLimit), retainVersions(multipleVersions) {}
   Handle Find(const Key& key, const void* data, size_t size, const void* palette=nullptr, size_t paletteSize=0,
-              size_t keyHash=0, bool useKeyHash=false) {
+              size_t keyHash=0, bool useKeyHash=false,uint64_t sourceGeneration=0,
+              uint64_t paletteGeneration=0,bool useGenerations=false) {
     ++statistics.lookups;
     if(!data || !size || (paletteSize && !palette)) {++statistics.misses;return {};}
     if(useKeyHash) {
@@ -49,12 +57,24 @@ public:
       for(auto index=first;index!=last;++index) {
         ++statistics.keyProbes;
         auto it=index->second;
-        if(it->key==key && it->bytes.size()==size && it->palette.size()==paletteSize &&
-           source_bytes_equal(it->bytes.data(),data,size) &&
-           (!paletteSize || source_bytes_equal(it->palette.data(),palette,paletteSize))) {
+        if(it->key==key && it->bytes.size()==size && it->palette.size()==paletteSize) {
+          const bool generationsMatch=useGenerations && it->generationsTracked &&
+              it->sourceGeneration==sourceGeneration && it->paletteGeneration==paletteGeneration;
+          const bool bytesMatch=generationsMatch || [&] {
+            ++statistics.byteValidations;
+            return source_bytes_equal(it->bytes.data(),data,size) &&
+                (!paletteSize || source_bytes_equal(it->palette.data(),palette,paletteSize));
+          }();
+          if(!bytesMatch)continue;
+          if(useGenerations) {
+            it->sourceGeneration=sourceGeneration;
+            it->paletteGeneration=paletteGeneration;
+            it->generationsTracked=true;
+          }
           auto result=it->handle;
           entries.splice(entries.end(),entries,it);
           ++statistics.hits;
+          if(generationsMatch)++statistics.generationHits;
           return result;
         }
       }
@@ -76,7 +96,8 @@ public:
     ++statistics.misses;return {};
   }
   void Store(const Key& key, const void* data, size_t size, const Handle& handle,
-             const void* palette=nullptr, size_t paletteSize=0,size_t keyHash=0,bool useKeyHash=false) {
+             const void* palette=nullptr, size_t paletteSize=0,size_t keyHash=0,bool useKeyHash=false,
+             uint64_t sourceGeneration=0,uint64_t paletteGeneration=0,bool useGenerations=false) {
     if(!data || !size || size>budget || paletteSize>budget-size || !limit || (paletteSize && !palette)) return;
     const size_t total=size+paletteSize;
     for(auto it=entries.begin();it!=entries.end();) {
@@ -96,7 +117,8 @@ public:
       const auto* paletteBegin=static_cast<const uint8_t*>(palette);
       paletteBytes.assign(paletteBegin,paletteBegin+paletteSize);
     }
-    entries.push_back({key,std::vector<uint8_t>(begin,begin+size),std::move(paletteBytes),handle,keyHash,useKeyHash});
+    entries.push_back({key,std::vector<uint8_t>(begin,begin+size),std::move(paletteBytes),handle,
+                       keyHash,sourceGeneration,paletteGeneration,useKeyHash,useGenerations});
     if(useKeyHash)keyIndex.emplace(keyHash,std::prev(entries.end()));
     bytes+=total;
   }

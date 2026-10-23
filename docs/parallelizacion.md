@@ -6,6 +6,14 @@ Solo se intenta en dibujos de atributos indexados que ya tienen probado el domin
 
 La prueba `mkw_prime_dl_vertex_expansion_tests` compara byte por byte el resultado paralelo con la ruta escalar en un dibujo grande y verifica que una llamada posterior observe cambios en la memoria fuente. El test focalizado y la suite de plataforma pasaron en la m?quina de desarrollo. El renderer tambi?n compil?; como el ejecutable habitual estaba abierto y bloqueado por Windows, el enlace se verific? con el nombre alternativo `WiiCompiled_parallel_candidate.exe`. Todav?a no hay medici?n de FPS en juego ni evidencia de que esta fase sea el cuello dominante.
 
+Para abrir el candidato con teclado/raton, cierra primero la otra instancia del juego y ejecuta desde la raiz del proyecto `G:\gamecube_roms\metroid3_wii`:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\recomp\tools\run_parallel_candidate.ps1
+```
+
+Este lanzador fija `WII_COMPILED_PRIME_KEYBOARD_MOUSE=1` solo para el proceso hijo y lo inicia desde su carpeta de build. Abrir el EXE directamente deja desactivado el puente de teclado/raton.
+
 Para repetir las pruebas en PowerShell desde `recomp/`:
 
 ```powershell

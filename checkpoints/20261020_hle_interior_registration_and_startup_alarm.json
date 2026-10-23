@@ -1,0 +1,208 @@
+{
+  "created_utc": "2026-10-20T19:27:00Z",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "ghidra_program_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "fixed_hle_registration_range_audit": {
+    "checkpoint": "20261020_hle_registration_function_range_audit.json",
+    "checkpoint_sha256": "578449d9153c36a19cbb7820975924ae80ea89255bf2b5397a432c975da01d87",
+    "profile_registration_checkpoint_sha256": "2a04fb30959f489a9d0a48b3870698f34b782f87d8511f128e3dd4fd46d42360",
+    "sites": 569,
+    "unique_addresses": 569,
+    "exact_function_map_entries": 0,
+    "inside_sized_prime_function_bodies": 569,
+    "not_classified_inside": 0,
+    "addresses_in_main_direct_closure": 0,
+    "interpretation": "The fixed-address HLE registrations use WiiCompiled/Mario Kart addresses that are interior to sized Prime function bodies. They are not established Prime entry points. No address was directly reached as an exact node by the current static direct-call closure from main; indirect dispatch and runtime-internal calls remain unproved.",
+    "audit_tool_sha256": "415e5a15a6df300e497e2cdf0b110ebdaadafe94b900b1422f48d11c6a43e62a"
+  },
+  "ghidra_examples": [
+    {
+      "hle_address": "0x801A9C08",
+      "runtime_source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_scheduler.cpp",
+      "runtime_source_line": 377,
+      "runtime_binding": "SelectThread_801a9c08",
+      "prime_function": "AcceptScriptMsg__12CRenderActorFR13CStateManagerRC10CScriptMsg",
+      "prime_function_start": "0x801A9B54",
+      "prime_function_end_inclusive": "0x801A9E2B",
+      "offset": "0xB4",
+      "ghidra_function_at_target": "0x801A9B54",
+      "summary": "The registered SelectThread target is an interior address in a CRendeActor method; do not treat it as a Prime scheduler entry or bind aliases."
+    },
+    {
+      "hle_address": "0x80006348",
+      "runtime_source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_init.cpp",
+      "runtime_source_line": 245,
+      "runtime_binding": "__init_hardware_80006348",
+      "prime_function": "__start",
+      "prime_function_start": "0x80006320",
+      "prime_function_end_exclusive": "0x8000648C",
+      "offset": "0x28",
+      "summary": "The upstream registration is not Prime __init_hardware; RM3E01_00 __init_hardware starts at 0x800065C4."
+    },
+    {
+      "hle_address": "0x801A08E0",
+      "runtime_source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_alarm.cpp",
+      "runtime_source_line": 439,
+      "runtime_binding": "OS__SetPeriodicAlarm_801a08e0",
+      "prime_function": "LoadTypedefRagDollData__FR15SLdrRagDollDataR12CInputStream",
+      "prime_function_start": "0x801A0688",
+      "prime_function_end_exclusive": "0x801A0AC8",
+      "offset": "0x258"
+    }
+  ],
+  "startup_periodic_alarm_path": {
+    "root_to_constructor_path": [
+      "0x802D5150",
+      "0x802EAB50",
+      "0x802EDC9C",
+      "0x802EB5A4"
+    ],
+    "constructor_source_sha256": "86213e72d1a0e18b6c6b745ad0304df05fef8354af87a8dc4dc32bdec3d91927",
+    "constructor_metadata_sha256": "86213e72d1a0e18b6c6b745ad0304df05fef8354af87a8dc4dc32bdec3d91927",
+    "alarm_address": "0x804DEC60",
+    "constructor_has_direct_alarm_dependency": true,
+    "emitted_source_has_direct_alarm_call": true,
+    "alarm_callback_address": "0x802EB4E4",
+    "alarm_callback_entry_in_function_map": true,
+    "alarm_callback_source_hash_verified": true,
+    "emitted_r9_matches_callback": true,
+    "callback_in_main_direct_closure": false,
+    "prime_queue_offset_from_r13": "-0x1D50",
+    "runtime_hle_queue_offset_from_r13": "-0x6360",
+    "queue_head_if_runtime_uses_prime_sda1": "0x80679E60",
+    "prime_queue_head": "0x8067E470",
+    "runtime_and_prime_queue_bases_match": false,
+    "closure_contains_constructor": true,
+    "closure_contains_alarm_entry": true,
+    "closure_checkpoint_sha256": "ed5a565c915c6806cc0a80539c7b880736681c80cd6d04f91237305d291a3f61",
+    "metadata_sha256": "447788350e23ff18e4319f88ebd9345e70ace44d9b34b0e2c374e848cbf2b704",
+    "entrypoint_direct_closure": {
+      "root": "0x80006320",
+      "unique_functions": 1906,
+      "direct_call_edges": 4358,
+      "indirect_sites": 447,
+      "missing_sources": 0,
+      "source_hash_mismatches": 0,
+      "fixed_hle_registrations_as_exact_nodes": 0,
+      "closure_checkpoint_sha256": "bd74cf4890188b24c784b98f691daa53264c5c65a115ea2e41a736b9581a83be"
+    }
+  },
+  "ghidra_call_graph_evidence": {
+    "entry_to_title_constructor": [
+      "0x802D5150",
+      "0x802EAB50",
+      "0x802EDC9C",
+      "0x802EB5A4"
+    ],
+    "main_constructor_call_sites": {
+      "0x802EAB50": "0x802EABA4",
+      "0x802EDC9C": [
+        "0x802EDDFC",
+        "0x802EE310"
+      ]
+    },
+    "periodic_alarm_call_site": "0x802EBA0C",
+    "periodic_alarm_target": "0x804DEC60",
+    "periodic_alarm_exact_prime_symbol": "OSSetPeriodicAlarm",
+    "translated_entry_source_sha256": "86213e72d1a0e18b6c6b745ad0304df05fef8354af87a8dc4dc32bdec3d91927",
+    "emitted_call": "InvokeDirectCpu<0x804DEC60u>(ctx)",
+    "compiled_runtime_path_executed": false,
+    "periodic_alarm_callback": "0x802EB4E4",
+    "callback_role": "watchdog/infinite-loop alarm callback; its behavior comes from Ghidra decompilation, and invocation timing is unexecuted",
+    "callback_source_hash_verified": true
+  },
+  "decision": "Do not disable all alarm processing to get a link. The Prime main closure reaches a constructor that sets a periodic OS alarm. Preserve the translated Prime call and implement/validate the Prime queue, interrupt, callback, and thread-context bridge before allowing the first screen claim.",
+  "next_actions": [
+    "Trace Prime decrementer interrupt registration and invocation of 0x804DEDFC without assuming an ordinary callback ABI.",
+    "Replace or gate WiiCompiled scheduler/alarm code whose guest-address bindings are interior to RM3E01_00.",
+    "Re-run strict link and first-screen runtime after the behavior-preserving bridge is implemented."
+  ],
+  "limitations": [
+    "The current static direct-call closure is an overapproximation, not a dynamic execution trace.",
+    "The 569 HLE registration range scan does not resolve indirect call targets or runtime-internal direct C++ calls.",
+    "No executable linked and no game screen was presented."
+  ],
+  "runtime_timer_queue_mismatch": {
+    "prime_queue_head": "0x8067E470",
+    "prime_offset_from_r13": "-0x1D50",
+    "wiicompiled_hle_offset_from_r13": "-0x6360",
+    "effective_hle_head_if_prime_sda1": "0x80679E60",
+    "matches_prime": false,
+    "source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_alarm.cpp:171"
+  },
+  "entrypoint_direct_closure": {
+    "root": "0x80006320",
+    "unique_functions": 1906,
+    "direct_call_edges": 4358,
+    "indirect_sites": 447,
+    "missing_sources": 0,
+    "source_hash_mismatches": 0,
+    "fixed_hle_registrations_as_exact_nodes": 0,
+    "closure_checkpoint_sha256": "bd74cf4890188b24c784b98f691daa53264c5c65a115ea2e41a736b9581a83be"
+  },
+  "prime_alarm_interrupt_route_checkpoint": "20261020_prime_alarm_interrupt_route.json",
+  "prime_alarm_interrupt_route_sha256": "47937442875cd3d90914eab56ae1f355d8f5321b046c65eff6d183e68797b90f",
+  "prime_alarm_interrupt_route_verifier": {
+    "path": "recomp/tools/verify_prime_alarm_interrupt_route.py",
+    "sha256": "059f33bba12fd40621884777aaa6825e1270ba358310f82b11e84ab89d0d553b"
+  },
+  "callback_r4_argument_matches_lowmem_d4": true,
+  "prime_alarm_interrupt_route_result": "OSInit installs the alarm handler in slot 8. The wrapper saves PPC OSContext and ends with an unlinked branch (b, LK=0) to 0x804DEDFC; this is not an ordinary C call.",
+  "decrementer_binding_collision": {
+    "hle_registration_source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_init.cpp:273",
+    "hle_target": "0x8012E594",
+    "prime_function": "PursuePlayer__10CPatternedFR13CStateManager9EStateMsgff",
+    "prime_function_start": "0x8012E3EC",
+    "offset": "+0x1A8",
+    "dol_instruction": "bge 0x8012E604",
+    "instruction_bytes": "40800070",
+    "ghidra_program_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "interpretation": "The unconditional HLE registration address is inside a Prime conditional-branch instruction and is not a Prime function entry. Ghidra reports no incoming references. This is a binding/address collision; it does not prove the registration is invoked or that sequential translated execution is intercepted.",
+    "dynamic_execution_verified": false,
+    "ghidra_xrefs_to_target": 0,
+    "verification_checkpoint": "20261020_decrementer_binding_collision.json",
+    "verification_checkpoint_sha256": "ac12dcb216ba5d72b8b272f213b857095b3bc5ba86d57a7c2b55b3643b2dbf2d",
+    "verifier": {
+      "path": "recomp/tools/verify_decrementer_binding_collision.py",
+      "sha256": "ed16ae484e51d4f76709c5fbd29eca65a9915db36c54dcbe4eabafb3b7b9f97e"
+    }
+  },
+  "prime_alarm_layout": {
+    "queue_head": "0x8067E470",
+    "queue_tail": "0x8067E474",
+    "queue_sda1_offset": "-0x1D50",
+    "alarm_handler": {
+      "offset": "0x00",
+      "size": 4
+    },
+    "fire_time_hi": {
+      "offset": "0x08",
+      "size": 4
+    },
+    "fire_time_lo": {
+      "offset": "0x0C",
+      "size": 4
+    },
+    "prev_link": {
+      "offset": "0x10",
+      "size": 4
+    },
+    "next_link": {
+      "offset": "0x14",
+      "size": 4
+    },
+    "period_hi": {
+      "offset": "0x18",
+      "size": 4
+    },
+    "period_lo": {
+      "offset": "0x1C",
+      "size": 4
+    },
+    "evidence": "Ghidra decompilation of exact Prime OS alarm insertion 0x804DE9A0 and interrupt handler 0x804DEDFC on DOL SHA-256 6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104: insertion stores callback at word 0, deadline at words 2/3, prev/next at words 4/5; handler reads period at words 6/7 and updates queue head/tail.",
+    "runtime_current_hle_field_offsets_match": true,
+    "runtime_current_hle_queue_base_matches": false,
+    "dynamic_alarm_execution_verified": false
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "reason": "Clock rollback left old future-dated logs; a reused Windows PID caused the probe to select the wrong old directory.",
+  "new_probe": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792552746_pid15912/runtime_probe.json",
+  "historical_probe_restored": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792553193_pid15912\\runtime_probe.json",
+  "restored_from": "recomp\\checkpoints\\20261020_prime_threads_resources_pi_boundary.json",
+  "restore_scope": "Restored report fields from immutable checkpoint; JSON serialization may differ from original PowerShell output. Console logs and checkpoint unchanged.",
+  "overwritten_report_sha256": "8558bf83e04d7ef4d0e4242eb1e44578dab37f1780b62d9cef60f93bb41dcb1e",
+  "restored_report_sha256": "d72cd165438351da5f7a081bb09bbdaf32a1320aa13a3b190f84cd39111ef42f",
+  "fix": "Choose the single PID-matched directory absent from the prelaunch directory snapshot, regardless of timestamps."
+}

@@ -1,0 +1,14 @@
+{
+  "source_symbol_map": "decomp\\config\\RM3E01_00\\symbols.txt",
+  "source_translation_metadata": "recomp\\generated\\RM3E01_00_startup\\base_translation_output.json",
+  "output_map_sha256": "5b962161c691a2a546dc41f2fbfc0cb714d40a7b5f4613dfa87de76633a6c5a2",
+  "boundary_count": 3632,
+  "symbol_backed_boundary_count": 3627,
+  "translator_discovered_unverified_boundary_addresses": [
+    "0x804C502C",
+    "0x804DE764",
+    "0x804DE784",
+    "0x804E0000",
+    "0x80570000"
+  ]
+}

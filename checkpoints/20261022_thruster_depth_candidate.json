@@ -1,0 +1,18 @@
+{
+  "revision": "RM3E01_00",
+  "baseline": "4f95e13c",
+  "status": "Manual QA passed",
+  "user_report": "E moves pointer upwards; thruster prompt requires push toward screen",
+  "observed_source": "KPAD distance +0x48 fixed 1; E/Q changed acceleration Z",
+  "change": "Keep acceleration at rest; E/Q integrate pointer distance and publish distance delta/speed. Release stops at reached depth. Elapsed host time with 100ms cap.",
+  "rate": "1.5 distance units per second, range 0.25..2.5; tuning provisional",
+  "evidence": "Original input path 0x803C2E04 reads copied KPAD distance at +0x50 relative to input wrapper (KPAD begins +8). Thruster exact consumer not identified.",
+  "tests": "21/21 PASS including depth sign, release, cancellation, screen coordinates and sampling rates",
+  "limits": [
+    "Raw IR objects remain invalid",
+    "No claim of complete motion emulation",
+    "Thruster acceptance pending"
+  ],
+  "candidate_sha256": "a0368854026d99bcf074c3f0c2fbecb18a0cfa16eff7c3926c7fde53913cc960",
+  "user_validation": "User confirms push-toward-screen stopper passed and looks correct"
+}

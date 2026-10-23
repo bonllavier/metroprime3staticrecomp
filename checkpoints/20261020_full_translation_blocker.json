@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-20",
+  "game_revision": "RM3E01_00",
+  "input_sha1": "3e81f9b09dfb1e7c02e22b9c6c48a4a1390224b2",
+  "input_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "translator": "patchzyy/Wiicompiled",
+  "translator_commit": "4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+  "command": "translate-recursive 0x80006320 --project recomp/config/RM3E01_00/project.yml --threads 8",
+  "function_map_entries": 21667,
+  "unsupported_instruction_policy": "fail; allow_unsupported_instructions=false",
+  "last_completed_phases": [
+    "discovery",
+    "boundary repair",
+    "GQR interprocedural analysis",
+    "canonical decode + local contracts",
+    "interprocedural guest ABI",
+    "guest state liveness",
+    "state-free selection + leaf residency",
+    "ABI prewarm"
+  ],
+  "reported_discovery": {
+    "call_graph_reached_function_starts": 3637,
+    "speculative_starts_added_from_function_map": 18075,
+    "abi_prewarm_addresses": 21712
+  },
+  "failure": {
+    "kind": "translator state-free ABI emission invariant",
+    "address": "0x802E201C",
+    "message": "State-free ABI at 0x802E201C retained CpuContext access: InvokeDirectCpu<0x802E2000u>(ctx)",
+    "source": "Translator.Core/CodeGen/CxxLinearCodeGenerator.StateFreeAbi.cs:762",
+    "upstream_change_made": false
+  },
+  "instruction_evidence": {
+    "0x802E2000": "2c 04 00 02 4d 82 00 20 40 81 00 0c 38 60 00 00 4e 80 00 20 4b ff ff d0 4e 80 00 20",
+    "0x802E201C": "2c 04 00 03 4d 82 00 20 40 81 00 0c 38 60 00 00 4e 80 00 20 4b ff ff d0 4e 80 00 20"
+  },
+  "assessment": "Translation did not complete and no output from this run is accepted. This is distinct from the successful startup-only walk and is not evidence of unsupported PPC instructions. The affected helper appears outside the direct startup walk; the general-map issue must be understood before claiming broad title coverage.",
+  "next_diagnostic": "Trace the state-free eligibility/call-symbol mapping for the direct call 0x802E201C -> 0x802E2000. Compare a narrowly scoped translator fix or a conservative CpuContext emission path, then run translator tests and regenerate the broad translation before counting any output."
+}

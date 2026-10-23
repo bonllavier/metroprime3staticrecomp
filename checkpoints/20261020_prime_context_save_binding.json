@@ -1,0 +1,39 @@
+{
+  "accepted": true,
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "prime_context_save": {
+    "entry": "0x804E0144",
+    "symbol_size": "0x80",
+    "function_map_entry": true,
+    "translated_source_sha256": "3b22047d6f4942036b8109b4eb6115b99f19fe3bb57f74743e7ed04c31802435",
+    "saved_register_groups": [
+      "r13-r31",
+      "GQR1-GQR7",
+      "CR",
+      "LR",
+      "MSR",
+      "CTR",
+      "XER",
+      "r1",
+      "r2"
+    ],
+    "first_return_value": 0,
+    "resume_return_value_stored_at_context_plus_0x0C": true
+  },
+  "prime_scheduler_caller": {
+    "function": "0x804E6BD4",
+    "call_site": "0x804E6CD0",
+    "instruction": "4bff9475",
+    "branch_target": "0x804E0144"
+  },
+  "runtime_binding": {
+    "path": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_scheduler.cpp",
+    "sha256": "8f07b6fbba8af90ebe05e36988b33e4e13208630e40e801bfd13562b6ff1a898",
+    "RM3E01_profile_uses_prime_entry": true,
+    "other_profiles_keep_original_binding": true
+  },
+  "limitations": [
+    "This proves the replacement target's code and static caller, plus successful compilation of mkw_runtime_common; it does not prove runtime scheduler/fiber equivalence.",
+    "A strict executable link now succeeds; runtime entry and scheduler/fiber equivalence remain unverified."
+  ]
+}

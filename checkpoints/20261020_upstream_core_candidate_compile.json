@@ -1,0 +1,78 @@
+{
+  "created_utc": "2026-10-20T05:56:49.739924+00:00",
+  "game_revision": "RM3E01_00",
+  "upstream_commit": "4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+  "purpose": "Compile-only candidates for generic CPU/memory/dispatch services; no title HLE, product, Aurora, or link.",
+  "compiler": "clang version 22.1.8 (https://github.com/llvm/llvm-project.git ca7933e47d3a3451d81e72ac174dcb5aa28b59d1)",
+  "target": "x86_64-w64-windows-gnu COFF; x86-64-v3",
+  "flags": [
+    "-std=c++20",
+    "-O2",
+    "-march=x86-64-v3",
+    "-fno-fast-math",
+    "-ffp-contract=off",
+    "-fno-slp-vectorize",
+    "-w",
+    "-DTARGET_PC"
+  ],
+  "object_count": 8,
+  "objects": [
+    {
+      "source": "third_party/WiiCompiled/runtime/src/abi_bridge.cpp",
+      "source_sha256": "9b7c269c76a67acbc579fcdccb5276f505dfde8c3ab71f50a823fc93c1052a49",
+      "object": "build/runtime-core/abi_bridge.o",
+      "object_size": 84013,
+      "object_sha256": "936b3c5d4d7dd7ec543f1864a8b8f9e7450126f0f6f57eef66e0a22860684316"
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/fpu_helpers.cpp",
+      "source_sha256": "9c8a684a8b2b0d8fb977f45386b706d77e4263b8d0ec4cc7d84e6dd8f699a801",
+      "object": "build/runtime-core/fpu_helpers.o",
+      "object_size": 12370,
+      "object_sha256": "4c6cfa07c0b0abc441d1c18075b27efbfd14f8faaf466f5c38e972eba3a2bdac"
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/guest_flat_memory.cpp",
+      "source_sha256": "529a5856a9e9a1f1c37d97f27a4754d29f0034f7256bcc2b9ab38ed0cda48753",
+      "object": "build/runtime-core/guest_flat_memory.o",
+      "object_size": 64145,
+      "object_sha256": "d233a115df4c11f0fb33c1ba8414893184179c3ba204c0ecb55b0259c5bf6320"
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/memory.cpp",
+      "source_sha256": "3b89a1b2e5ddbac9fb0b803a66d393f04ce139dd55e8df3f93c98aecc4b4118b",
+      "object": "build/runtime-core/memory.o",
+      "object_size": 74791,
+      "object_sha256": "a3b9707de282dc9dff16126cb0fc143f5ce1598fcb3b094213873a3e0b4b23a5"
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/ppc_helpers.cpp",
+      "source_sha256": "c9a67aa0797ac050a1620688756a4b78c569cdffef6db09628768793fed0aec2",
+      "object": "build/runtime-core/ppc_helpers.o",
+      "object_size": 30536,
+      "object_sha256": "ff9870c07d60f3ce14db1b29f37b4cf1c4b9e9c5fd228d1675663c7ce4a57a78"
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/ppc_quantized.cpp",
+      "source_sha256": "b06bca7da4e32359c726452440fb175e988b85fb57a8e738d506aaaf3a58cf59",
+      "object": "build/runtime-core/ppc_quantized.o",
+      "object_size": 48191,
+      "object_sha256": "26c21769544267e4b7affe71cc06235101cf740b6c2667dc483846b5aa0799bf"
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/recomp_mod_loader.cpp",
+      "source_sha256": "7cf94be6fc64043805f54ffe7ed85d507793d81463c85c0417d32a79ea5d0e34",
+      "object": "build/runtime-core/recomp_mod_loader.o",
+      "object_size": 79086,
+      "object_sha256": "bf7f4dc17276d534a8f3a9000b1f242f48c4d5b996a13c68561d8b688049e658"
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/system_bridge.cpp",
+      "source_sha256": "7b2ee1666e208b91fb4a02bbfec3a89286dee2e961c2c7f729727dbcf382c33e",
+      "object": "build/runtime-core/system_bridge.o",
+      "object_size": 117177,
+      "object_sha256": "8c4a1ca8dc431fd8a5094a47b320e11457f26bc39cb20a4b97f4812681dbaca6"
+    }
+  ],
+  "limitations": "Compile success is not semantic validation for Prime 3 and does not resolve all translated-image link dependencies."
+}

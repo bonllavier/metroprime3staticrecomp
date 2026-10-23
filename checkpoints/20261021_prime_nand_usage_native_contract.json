@@ -1,0 +1,31 @@
+{
+  "result": "PASS native filesystem-backed usage measurement contract",
+  "cases": [
+    "empty directory includes its own inode",
+    "real nested tree: 5 clusters, 7 inodes",
+    "rounding of zero, 1, 16384 and 16385 byte files",
+    "host-only long names excluded consistently with existing directory adapter",
+    "subdirectory, missing path, regular-file query and invalid path",
+    "SDK 1-in/2-out vectors with exact 64/4/4 byte sizes; bad layouts rejected"
+  ],
+  "ctest": "mkw_nand_usage_tests: 1/1 passed",
+  "runtime_integration_verified": false,
+  "artifacts": [
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/include/hle/nand_directory_usage.h",
+      "sha256": "ebd08a2a533f26c95796b8a36d892e15c2055fee59d40dac5cc9c7b7065faf5c"
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/tests/nand_directory_usage_tests.cpp",
+      "sha256": "1c41ec3f79c9b86faa151593b5ce586ad369a49975c72bacba8427448d964eae"
+    },
+    {
+      "path": "recomp/build/runtime-platform-tests/mkw_nand_usage_tests.exe",
+      "sha256": "26ee66b1c0dde4d2c656fe1473d4414deb90a2de35673e0acbe516b580423ab9"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_dolphin_fs_reference.json",
+      "sha256": "559828ff52c87a822a1839c3dbfe542256d42dc01f5507006209cfc60b438926"
+    }
+  ]
+}

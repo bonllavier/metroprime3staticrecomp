@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-22",
+  "game": "RM3E01 disc 0 revision 0",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "executable_sha256": "ba8672b0ad452c320f91ddd3035cb81811450cb33a6632458445e7246396c462",
+  "pid": 5484,
+  "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792713591_pid5484/console.log",
+  "changes": [
+    "Implement DSP audio DMA ring: 32 bytes/250us, native 32kHz stereo S16",
+    "AID status 0x08, mask 0x10, original OS handler 0x804BEAB0 slot 5; DSP mailbox remains separate slot 7",
+    "Advance audio from Prime VI/scheduler guest spin every 1ms, not only host waits",
+    "Bound repetitive DSP trace logs"
+  ],
+  "tests": {
+    "platform_passed": 20,
+    "platform_total": 20
+  },
+  "source_sha256": {
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_dsp_audio_dma.h": "01b18c314ff5634fd947a673659b22a57e615379d4536ea81f2d6dc2bcdf959a",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_dsp_boot_registers.h": "4f38a33815786d7d7b10373f1944b8052c615302c923377279d6afd5811ca2c3",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/audio.cpp": "ecf089e236f0de1ed3c7c2df3753573d6a158426f841539836abbf5d0087e362",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_mix.cpp": "5bfd831f7f2710bc0fd19e58fc591a3f9b2bbda185714c3bf168a77b29aa6bde",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp": "a574b596ef6f572086d87b59aec609b381f4319db49fc979f02b7126898990dc",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp": "17d69e43f3b35d9b041e9379e3752ae6d86f803a3502b39de33f96188f73e517",
+    "recomp/third_party/WiiCompiled/runtime/src/memory.cpp": "64ebd710dff15ce62a585eca8c88edf23855c41bdb1a0588ac9eb903690a72be",
+    "recomp/third_party/WiiCompiled/runtime/src/audio_backend.cpp": "278a57e0d3db51d06c49cd45bef39581b0f07707e451ccdb64483a184a14571c",
+    "recomp/third_party/WiiCompiled/runtime/tests/prime_dsp_audio_dma_tests.cpp": "6bc2f864fedba904545efef4e3449c7d48ec8200b312f8e4d8f4f5f56a668e88",
+    "recomp/tools/inspect_windows_audio_sessions.py": "74c06866dc2008f99682e8d67024734d742b9cf30695238bd4094a3dbaecbdaf"
+  },
+  "source_pcm": "S16 stereo 32000Hz, BE R/L converted to host LE L/R",
+  "device": {
+    "driver": "wasapi",
+    "name": "Main Output (Komplete Audio 6 WDM Audio)",
+    "rate": 44100,
+    "channels": 2,
+    "format": "F32LE",
+    "gain": 1
+  },
+  "coreaudio": {
+    "default_multimedia_endpoint": "{0.0.0.00000000}.{116484da-f0b2-4e30-bb33-3b043c11c374}",
+    "endpoints": [
+      {
+        "endpoint": "{0.0.0.00000000}.{116484da-f0b2-4e30-bb33-3b043c11c374}",
+        "default_multimedia_endpoint": true,
+        "volume": 0.8199999928474426,
+        "muted": false,
+        "peak_max": 0.40484270453453064
+      },
+      {
+        "endpoint": "{0.0.0.00000000}.{3075ba85-0857-4ef5-8e99-84e044a112b0}",
+        "default_multimedia_endpoint": false,
+        "volume": 0.6300000548362732,
+        "muted": false,
+        "peak_max": 0.0
+      },
+      {
+        "endpoint": "{0.0.0.00000000}.{9838f307-ad3b-4069-9396-2451e008c87b}",
+        "default_multimedia_endpoint": false,
+        "volume": 1.0,
+        "muted": false,
+        "peak_max": 0.0
+      },
+      {
+        "endpoint": "{0.0.0.00000000}.{df855755-c4a9-4983-aaa6-6109e627df78}",
+        "default_multimedia_endpoint": false,
+        "volume": 1.0,
+        "muted": false,
+        "peak_max": 0.0
+      }
+    ],
+    "sessions": [
+      {
+        "pid": 5484,
+        "state": 1,
+        "endpoint": "{0.0.0.00000000}.{116484da-f0b2-4e30-bb33-3b043c11c374}",
+        "default_multimedia_endpoint": true,
+        "peak_max": 0.40484270453453064,
+        "volume": 1.0,
+        "muted": false
+      }
+    ]
+  },
+  "manual_input_automation": false,
+  "remaining": [
+    "Human listening confirmation and audio/video sync across menus and gameplay",
+    "No claim of bit-exact DSP HLE equivalence or long-duration stability"
+  ]
+}

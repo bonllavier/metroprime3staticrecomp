@@ -1,0 +1,764 @@
+{
+  "created_utc": "2026-10-20T05:53:06.128569+00:00",
+  "game_revision": "RM3E01_00",
+  "input_sha1": "3e81f9b09dfb1e7c02e22b9c6c48a4a1390224b2",
+  "input_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "compiler": "clang version 22.1.8 (https://github.com/llvm/llvm-project.git ca7933e47d3a3451d81e72ac174dcb5aa28b59d1)",
+  "target": "x86_64-w64-windows-gnu COFF; x86-64-v3",
+  "flags": [
+    "-std=c++20",
+    "-O2",
+    "-march=x86-64-v3",
+    "-fno-fast-math",
+    "-ffp-contract=off",
+    "-fno-slp-vectorize",
+    "-w"
+  ],
+  "translated_shard_count": 72,
+  "generated_registration_source_count": 17,
+  "data_initializer_included": true,
+  "compiled_object_count": 92,
+  "newly_compiled_object_count": 92,
+  "reused_object_count": 0,
+  "compiled_object_bytes": 76925308,
+  "linked_runtime": false,
+  "failures": [],
+  "objects": [
+    {
+      "source": "data_sections_init.cpp",
+      "kind": "data_initializer",
+      "source_sha256": "84a3c64d959c5e1b25e437b5403adbc1c97162ad9740507e025efdcb052383a5",
+      "object": "build/RM3E01_00_conservative/shards/data_sections_init.o",
+      "object_size": 11594,
+      "object_sha256": "5c603972cf22ab908ef57ca0c052061daca7835ad05004ee5cbd4c767e01edec"
+    },
+    {
+      "source": "data_sections_init_blobs.S",
+      "kind": "data_blob_assembly",
+      "source_sha256": "17896a9a52c5919375f763aaa10ac9ddbd9febc980da5e8073ea843aa6733911",
+      "object": "build/RM3E01_00_conservative/shards/data_sections_init_blobs.o",
+      "object_size": 6046336,
+      "object_sha256": "3129f4150b0ba10e7923062a1ec263fd8668e08a0ab665e197c6da46c3411952"
+    },
+    {
+      "source": "guest_symbol_table.cpp",
+      "kind": "guest_symbol_table",
+      "source_sha256": "3354d9f7fb69413ff5b94272f72e2226244319ea85297a35327cd04fab9760af",
+      "object": "build/RM3E01_00_conservative/shards/guest_symbol_table.o",
+      "object_size": 840193,
+      "object_sha256": "fd43345d74ace015ab2dd4604d702c1cd006df459315cf051488abcebf6997d4"
+    },
+    {
+      "source": "indirect_dispatch_ada60daa549784d1.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "27081fb05beef9370cf8d3df151cf897ba8748cc5c59ed509c9a54e1a0e6c2db",
+      "object": "build/RM3E01_00_conservative/shards/indirect_dispatch_ada60daa549784d1.o",
+      "object_size": 1498482,
+      "object_sha256": "920ee69c8553ebaade5632f71a2faece4d678812119a910fa554bcd93c7b8aa6"
+    },
+    {
+      "source": "registration_00_20286d4c33fc2351.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "17e6e951cd01dbcafbda87e9d7305ac1d0290f2091efdcff0d11898157075bd4",
+      "object": "build/RM3E01_00_conservative/shards/registration_00_20286d4c33fc2351.o",
+      "object_size": 162911,
+      "object_sha256": "b9496c028404e41ade437976211aac18cf2cdb80f1be9dc82ad2252ab9f24809"
+    },
+    {
+      "source": "registration_01_31f1d62bb8fce349.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "6d9a5a0e908fa4b926056fc538bbf3c5a51a3e30d11d61ac10a784572bdbfc82",
+      "object": "build/RM3E01_00_conservative/shards/registration_01_31f1d62bb8fce349.o",
+      "object_size": 172459,
+      "object_sha256": "47c2745e0c1990dc2a3e0bd345d788bc74605774aa050d0d0289b148748f5668"
+    },
+    {
+      "source": "registration_02_16e5382dabb48a56.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "ca128224fd4d9cba30d8cf4a492e67660cebed8601008c1116ae87a8078abd44",
+      "object": "build/RM3E01_00_conservative/shards/registration_02_16e5382dabb48a56.o",
+      "object_size": 167499,
+      "object_sha256": "8ce98b3b0acd2dd81f7cf658bdfff7fe2d520176b43049ae20ec3e7f46b5a57a"
+    },
+    {
+      "source": "registration_03_45ccad2f74ca689a.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "1f58d79b6bca283707d55d9f30db82056ec67d1ea9353dbeb90bc06de531adf9",
+      "object": "build/RM3E01_00_conservative/shards/registration_03_45ccad2f74ca689a.o",
+      "object_size": 166507,
+      "object_sha256": "a16f9e8726415bb272197afd6d1014aa24dd6698425c3d8d1d2c9b7b2fc0d2d3"
+    },
+    {
+      "source": "registration_04_12664157374d2552.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "07774e773dd1626ca268c2252b080cbcaf9491301d9e2cc19cb8ede6addb3245",
+      "object": "build/RM3E01_00_conservative/shards/registration_04_12664157374d2552.o",
+      "object_size": 172831,
+      "object_sha256": "833d18e1ed18a0332f76d02765790a04db13d8261dd617e11268c44944c63438"
+    },
+    {
+      "source": "registration_05_2a13faea684d5c79.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "73924c11deb1f7582a797cb864b6388efb8d6866d8d99532e98fc1609f1de311",
+      "object": "build/RM3E01_00_conservative/shards/registration_05_2a13faea684d5c79.o",
+      "object_size": 168863,
+      "object_sha256": "2e35dc36c6b1c98b5725dd8f9a52b742d97bbbdf9a952eb4693b09bb2f095ec5"
+    },
+    {
+      "source": "registration_06_25386ed2b961b0ca.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "153821a893e9a33d853b047689d8d22940b3c4dda8ca3dd641f398d773056d61",
+      "object": "build/RM3E01_00_conservative/shards/registration_06_25386ed2b961b0ca.o",
+      "object_size": 183371,
+      "object_sha256": "054d146df375c9c4cb337b5fa238f2c6b9e30195fc01c0e1132540240f91a970"
+    },
+    {
+      "source": "registration_07_4674712050c61f77.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "29fb405c686c01296dc43d90767245302ea708083256f37fdedac9c02a7eadcf",
+      "object": "build/RM3E01_00_conservative/shards/registration_07_4674712050c61f77.o",
+      "object_size": 160927,
+      "object_sha256": "bc6df264263578ef3a720c271875c1b330dfc6dce9eec6ddf22b87171fa995b4"
+    },
+    {
+      "source": "registration_08_292dfef5e578a4ef.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "c077cbc288644d78df942a6d98bfa018216178fb99ad95595d2fc3b878b2b400",
+      "object": "build/RM3E01_00_conservative/shards/registration_08_292dfef5e578a4ef.o",
+      "object_size": 168739,
+      "object_sha256": "3e5bad7920164b07461abc022dfa6fc317d6c9400e2ec8d0d7ec5165ebdbde47"
+    },
+    {
+      "source": "registration_09_290a2f2ccc517fe0.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "cf530e08be3778e5b9a1189860e7a49d7d8cf9dd002fcbf4286b0a1a24284a9c",
+      "object": "build/RM3E01_00_conservative/shards/registration_09_290a2f2ccc517fe0.o",
+      "object_size": 168987,
+      "object_sha256": "0ba0be82e6b8a2aaf8fab2492523a4ee97f93164a9ed499faebbf58b2d10d383"
+    },
+    {
+      "source": "registration_10_bce4885385d1948f.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "3ff337c2dfa435b13a7d92f16fd33d3b1d796a547e982b5a6c4c17a8eb0856ab",
+      "object": "build/RM3E01_00_conservative/shards/registration_10_bce4885385d1948f.o",
+      "object_size": 169111,
+      "object_sha256": "019c16a1affc28eddc963ba3fb55b8263548c3e9a79286ac5eab7afc2ea213d7"
+    },
+    {
+      "source": "registration_11_9d389bb8090c316c.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "5593db6cfe432008e19302c8c2bbf3f3f866a16911bfa96c42036653a509393b",
+      "object": "build/RM3E01_00_conservative/shards/registration_11_9d389bb8090c316c.o",
+      "object_size": 165019,
+      "object_sha256": "2e26920f0a080c9a695b381eb8b6b4d844dbe80e994293b6cfb56ec9e562c19e"
+    },
+    {
+      "source": "registration_12_66d333bd8ca76313.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "bc2f7845f3c3881f67898de2c009033099911025e13f1ada5e60ad796d3d261c",
+      "object": "build/RM3E01_00_conservative/shards/registration_12_66d333bd8ca76313.o",
+      "object_size": 171343,
+      "object_sha256": "c23a38b9146cf3922d86b1d9f11ca336090b561f662c9b05585d703ec5663dbb"
+    },
+    {
+      "source": "registration_13_108474cb4f96a37f.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "9785c5e7c88d2122d2c2d67706acae019f62125f6f6e55dfb7f3250d6a3e9cd3",
+      "object": "build/RM3E01_00_conservative/shards/registration_13_108474cb4f96a37f.o",
+      "object_size": 173947,
+      "object_sha256": "b5c944d31cfa0aa2736adda55c62de4b09690633ca2790a2fc25d236f3cf3302"
+    },
+    {
+      "source": "registration_14_1a1ea023edb00072.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "ab988bc225a019c99f92c712996b956aa9257306166b8ac6d62ac0c6391e5e66",
+      "object": "build/RM3E01_00_conservative/shards/registration_14_1a1ea023edb00072.o",
+      "object_size": 171343,
+      "object_sha256": "113b3aee172c878fcb7fbf23c06df03bfb4c24a1950e0d9d372f9066d64f1478"
+    },
+    {
+      "source": "registration_15_3cff30d80ef8b7b2.cpp",
+      "kind": "generated_registration",
+      "source_sha256": "4473ee06aa89b9ea3b441fcfdb7e4279cb8d9431338d64acbc67d8fdcd3f8434",
+      "object": "build/RM3E01_00_conservative/shards/registration_15_3cff30d80ef8b7b2.o",
+      "object_size": 167871,
+      "object_sha256": "16c01d0e746f12fb27f2bb29672234ba0aaae127103da2e7582e716f47f360b3"
+    },
+    {
+      "source": "shard_0240318e9cb006a7d7a06573.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "6a5f28ecbee5d20cf989353ca362dce4ce8b79c32e12e209c05a35b2b6f8f234",
+      "object": "build/RM3E01_00_conservative/shards/shard_0240318e9cb006a7d7a06573.o",
+      "object_size": 1053060,
+      "object_sha256": "fe076ac06176a4e82a5c859f880f67aa4286a38ba23f412f71b7cf0b038405d5"
+    },
+    {
+      "source": "shard_04a8663d0b47e71248ef41af.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "c3d35d5e71cdee915e9f36ff734ec3836b090eba4ebb4518b1fd83158637e936",
+      "object": "build/RM3E01_00_conservative/shards/shard_04a8663d0b47e71248ef41af.o",
+      "object_size": 615696,
+      "object_sha256": "0b26b750396497cd9e63fc72953fa5c029bc4de8cebbedcf0215ad2a53652bc7"
+    },
+    {
+      "source": "shard_0785d6d94f2a82545732bc17.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "344e3a95056e96754be1fbde1aade2147be665569b5b840ff00f6d106f71714c",
+      "object": "build/RM3E01_00_conservative/shards/shard_0785d6d94f2a82545732bc17.o",
+      "object_size": 917512,
+      "object_sha256": "20989124957a3b80daa62d375384bfb2f84e37b308b434f6ad4d402c83391620"
+    },
+    {
+      "source": "shard_09a887d17e4e8d7551478cab.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "7b4ee65bc0652bd578f4780b1a5dacb1d9636575fd02e1c4ebe3fe93cb85c324",
+      "object": "build/RM3E01_00_conservative/shards/shard_09a887d17e4e8d7551478cab.o",
+      "object_size": 581930,
+      "object_sha256": "cb60a6411713c90f428bcda752452d09c81a895c25e4a63f4227dbb60bd12f6e"
+    },
+    {
+      "source": "shard_1097b7726a728c00879df659.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "2c312440501f89f89dd245cac5b945d142fe9726d55820bb8ca5098e91143b1b",
+      "object": "build/RM3E01_00_conservative/shards/shard_1097b7726a728c00879df659.o",
+      "object_size": 1053233,
+      "object_sha256": "bbdb1fc02d9d76e85970b4fe21ce88346a6282060a126d9187453c739a3f94a0"
+    },
+    {
+      "source": "shard_10e4f6fb14e33cb6060af9f6.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "81a8567d09a3c5b0b77cd911a31cb35a12cb081e3b01370bacacd3f0f907831c",
+      "object": "build/RM3E01_00_conservative/shards/shard_10e4f6fb14e33cb6060af9f6.o",
+      "object_size": 1011687,
+      "object_sha256": "c39d3315fc3028676bb6e71dfcc6c9243d0eeca4ec1ea82e54b3ec3d0a71173a"
+    },
+    {
+      "source": "shard_13dd73cfb0661aaa92cd4d6c.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "c467492ebb112b5e7ef0b19e674243ea43947bcf8680ae9ac87346905e41a065",
+      "object": "build/RM3E01_00_conservative/shards/shard_13dd73cfb0661aaa92cd4d6c.o",
+      "object_size": 949810,
+      "object_sha256": "45a4fdcff91094bf98bade05d7f8371a2f40e40dc86538dd6106d3ea7a4de0b2"
+    },
+    {
+      "source": "shard_15a8efa128793380964b398d.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "da3a38a3f7b9b11e8ed5df2bdc16fc4cb83d79ecf6df9336019cfd17ccb0dbf0",
+      "object": "build/RM3E01_00_conservative/shards/shard_15a8efa128793380964b398d.o",
+      "object_size": 1057514,
+      "object_sha256": "002d2aa0b8e8a03dcf5bd18578bd050a981c7171555c989182502fbeabe9bf1f"
+    },
+    {
+      "source": "shard_1611d81bbbc2fc80dfabe0f4.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "f6c490214e87ce34a54722bc6caf4e72b4951c5786a81f43fde03b8ef33b594e",
+      "object": "build/RM3E01_00_conservative/shards/shard_1611d81bbbc2fc80dfabe0f4.o",
+      "object_size": 915165,
+      "object_sha256": "145ee07c6e5cdb34ebceee361b7d91844b42a67ac6a6eef86495e1265a02bf10"
+    },
+    {
+      "source": "shard_1a7f3886c2eb95c6358c96d3.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "fce2d2925d9d02c83a671d8ba0a3a73f7d44173713c9aadf1edeb15d59e33248",
+      "object": "build/RM3E01_00_conservative/shards/shard_1a7f3886c2eb95c6358c96d3.o",
+      "object_size": 560407,
+      "object_sha256": "2f1a803d3746cccfa5bcb2c8149ca72877478ee0dd5ee944a4cf7e0c11ac8a35"
+    },
+    {
+      "source": "shard_1c776471419d74f919e96ff9.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "f6e7c7037ddb5d9452022f21a7fecf2340dab6fb8035fc97171125b9c29f42a9",
+      "object": "build/RM3E01_00_conservative/shards/shard_1c776471419d74f919e96ff9.o",
+      "object_size": 639417,
+      "object_sha256": "294a140a2c863c34fb21eb065e019ab0276d4559e572cba20f07b3bb464c8680"
+    },
+    {
+      "source": "shard_1d419db39c485f8dad67aef4.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "d42f0ef592fd22ec7d97338b6efa39530e6910391ee139ab3a9d920233cf2c9b",
+      "object": "build/RM3E01_00_conservative/shards/shard_1d419db39c485f8dad67aef4.o",
+      "object_size": 723963,
+      "object_sha256": "72f756e2f1097229f98fd5627c0eaab12bc9b34dbec68c014b85d20058d08fb0"
+    },
+    {
+      "source": "shard_292cd6487945cc3b502f6f08.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "1323f3e19139b0eb65649e374ebcc1f724923ddd13236fb5817cb0343992d856",
+      "object": "build/RM3E01_00_conservative/shards/shard_292cd6487945cc3b502f6f08.o",
+      "object_size": 1115574,
+      "object_sha256": "c797725d081e4b721fa2331e63ad98c6965864ba4fc78d2c8843b511388fd0fd"
+    },
+    {
+      "source": "shard_2b79e274e36f6dbb8cdc1749.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "7c2591fc7354b0468147f56f700658714ef072008666c1faa6931058a857145e",
+      "object": "build/RM3E01_00_conservative/shards/shard_2b79e274e36f6dbb8cdc1749.o",
+      "object_size": 1136860,
+      "object_sha256": "d7bba8438cae993defb45de4ea3dff7164476fad3d71ac126cff238008d8e034"
+    },
+    {
+      "source": "shard_2e4abdca98e79d843bfabbc0.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "33edce6eb8ef2cd8b779701fe3e9685c747dca16dbf012335211608f1401d02e",
+      "object": "build/RM3E01_00_conservative/shards/shard_2e4abdca98e79d843bfabbc0.o",
+      "object_size": 1025172,
+      "object_sha256": "02d44ac12af73c681ea2dde0d8c55f8116efaf7aed8bab96346b09c687d1a91e"
+    },
+    {
+      "source": "shard_34fc2f1835ef6b4588e2b336.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "986cc26e353bb312142d6defb69934e02496403e46c9c25e20236febd2cdd601",
+      "object": "build/RM3E01_00_conservative/shards/shard_34fc2f1835ef6b4588e2b336.o",
+      "object_size": 808495,
+      "object_sha256": "1ee83e7c2a0dc39852b9783878c4f88817936d992b1c72fd053d0a1a53fe1d40"
+    },
+    {
+      "source": "shard_42c71b27651f924c992bd162.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "30ec2df2eb3226f92bf2037a0d1c618f9d8ce56b45c61a8fa97413efbaa0cdb5",
+      "object": "build/RM3E01_00_conservative/shards/shard_42c71b27651f924c992bd162.o",
+      "object_size": 903244,
+      "object_sha256": "e9ccf5c784bee64e2d426ea400b95876f93c01fa5c7dd90de3cd50c544e79d64"
+    },
+    {
+      "source": "shard_4972ca2de1c47e033c9bb2b0.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "d59dc44f24207b6f691aba411da5b06fe99437e925f0715a7a6aacbf3d1550d3",
+      "object": "build/RM3E01_00_conservative/shards/shard_4972ca2de1c47e033c9bb2b0.o",
+      "object_size": 768169,
+      "object_sha256": "c42946ce03109937c9353fa889baa056446e6a521aef65382adf6750de32d849"
+    },
+    {
+      "source": "shard_4a2669a07ba6f0e7aaaaa2d9.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "191eb694886819db44bbf97faaad7c5bd7d97af4e8148f874143df60a5585ec0",
+      "object": "build/RM3E01_00_conservative/shards/shard_4a2669a07ba6f0e7aaaaa2d9.o",
+      "object_size": 899444,
+      "object_sha256": "9a415630eff7c560ddf20103f193ed8deeeea26670e1069d6f98141d6e026542"
+    },
+    {
+      "source": "shard_4ecc5bfd74607ea91a5cd269.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "31a2c44d12f4f834b4935c6abc244e006e051246486367d24d3b2d8f6a4efe4d",
+      "object": "build/RM3E01_00_conservative/shards/shard_4ecc5bfd74607ea91a5cd269.o",
+      "object_size": 985435,
+      "object_sha256": "6662a3f1050ba41e92e960409ec15dbbac55496b280b2012ef7227bf06d83988"
+    },
+    {
+      "source": "shard_4f240ef160b134cf8c70388a.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "d70a7b70eb9eab5348da3410eb25399d5df3abc11f45e256f7c6cd37e13c777f",
+      "object": "build/RM3E01_00_conservative/shards/shard_4f240ef160b134cf8c70388a.o",
+      "object_size": 901682,
+      "object_sha256": "5d1556f0f3a2b72858cebdc1fa0534e9b44d338f471aa182012dcc8f906ef0a3"
+    },
+    {
+      "source": "shard_5003bac6138a472777d69080.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "1c0fc0def0fcbec3882bfecc9695d49f6495f75acf284f1720dfefdb4cd6df85",
+      "object": "build/RM3E01_00_conservative/shards/shard_5003bac6138a472777d69080.o",
+      "object_size": 930625,
+      "object_sha256": "879f929970e677a3b527feab1a0c8bc3ab4ecf5eb0bc9640e84fccb8b9f3f8d6"
+    },
+    {
+      "source": "shard_56304579245fa47a133b24d9.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "239e7485883a7692e7fef10e76623f8a7a69b2eff1ec6225775e7f1de0bacbf0",
+      "object": "build/RM3E01_00_conservative/shards/shard_56304579245fa47a133b24d9.o",
+      "object_size": 938268,
+      "object_sha256": "cbb10f8b324c6de9fa66dff9d640221c3c5d56bc36a368c317085f1edadad4aa"
+    },
+    {
+      "source": "shard_59e4c1494e23054e2ad136a0.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "ec8dd323b0b86ea8d26749fa22c96d08609a323810976a4cc7d41669f33a5fbd",
+      "object": "build/RM3E01_00_conservative/shards/shard_59e4c1494e23054e2ad136a0.o",
+      "object_size": 897967,
+      "object_sha256": "621435a8bf3a55b527c3b80134b421d0a38ccc2ff4fcfdc3cecdbb70829d2ec3"
+    },
+    {
+      "source": "shard_5f468201945b08c6c6b7df71.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "b7f86fb665523dd8731b726cfe9d8fbd52112a44f869642a8fe8f5688bc8cf45",
+      "object": "build/RM3E01_00_conservative/shards/shard_5f468201945b08c6c6b7df71.o",
+      "object_size": 1191848,
+      "object_sha256": "8dad52fe277212a68871a1878c8fcede83a4bb56533fe90186f307cea2cd85ce"
+    },
+    {
+      "source": "shard_5fc1bc88bc4c2979483e172d.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "40b9b6c8de349f430ff8743c9cdac341b5543218e8afb0b94a06b032cb65c5b1",
+      "object": "build/RM3E01_00_conservative/shards/shard_5fc1bc88bc4c2979483e172d.o",
+      "object_size": 905418,
+      "object_sha256": "7ce1e3b2a5f976d66b195603d41a5872972f0ab7d481d87902e98918fd3473c3"
+    },
+    {
+      "source": "shard_6111a39d437a780345f5ed24.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "586272e0085f12e2c75b60d70f88064cccc7cc06c0960a9bd0edd0bd33563761",
+      "object": "build/RM3E01_00_conservative/shards/shard_6111a39d437a780345f5ed24.o",
+      "object_size": 898026,
+      "object_sha256": "32a0807c4b04fc680fe8180841cff66ed3fc62e0236421404da3b56af0e47208"
+    },
+    {
+      "source": "shard_64adbfd3f75a7f414457600a.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "21a8ea69bde33a9cc5de0015650e7f06bfb320001ca73a916fceaac9c2467068",
+      "object": "build/RM3E01_00_conservative/shards/shard_64adbfd3f75a7f414457600a.o",
+      "object_size": 1008791,
+      "object_sha256": "9213861dbb5ac04fd4a711ce9757169522e12afcc1106dfa892758fd52c446f0"
+    },
+    {
+      "source": "shard_702bb4e74c4335ea52e2fd3c.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "57627d8a196272c0bfdd25aef4699f9441ceea0b15cfa8170266fac6af2355d0",
+      "object": "build/RM3E01_00_conservative/shards/shard_702bb4e74c4335ea52e2fd3c.o",
+      "object_size": 755594,
+      "object_sha256": "373355c94933bc3861eaaec2c3510007ff91df4c515e99349afa7848af04cc97"
+    },
+    {
+      "source": "shard_703a67ce9296c340a20372ab.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "1175fe15302d776659cab0c9366ba0c6e0c8e0306037053484eb753b61ae41bc",
+      "object": "build/RM3E01_00_conservative/shards/shard_703a67ce9296c340a20372ab.o",
+      "object_size": 1023398,
+      "object_sha256": "2c8c636c0f9faa9fadbd3b576f8b67071b530470e776482c1d66ca8271e382dc"
+    },
+    {
+      "source": "shard_70795d80da5f526108c7e76e.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "d5bb87c76c871b5bf8679ac7f895d9fc1f60db27f3166252e25f7b1f185ad467",
+      "object": "build/RM3E01_00_conservative/shards/shard_70795d80da5f526108c7e76e.o",
+      "object_size": 571614,
+      "object_sha256": "5c43dd8bcc1d7976230b595f5a80b93ff466cacc3205a2e1ab9be27adc478694"
+    },
+    {
+      "source": "shard_7389e6f46e9eda7c746ed7cc.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "5d34454c0462a5256bdece5fe98c0dee0c3a03ba579d53d3a0ab146cc7a9985b",
+      "object": "build/RM3E01_00_conservative/shards/shard_7389e6f46e9eda7c746ed7cc.o",
+      "object_size": 974218,
+      "object_sha256": "dfa463e0e6ed1cd6224cdff599f14ac6f36237484a56f5940dded2eca54d8f9c"
+    },
+    {
+      "source": "shard_76b11970bf62fc55cda566cd.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "d6ebb983f02b978ffdaad0e11d09362dd3e5b9e193145f05f9312d76c3b484f4",
+      "object": "build/RM3E01_00_conservative/shards/shard_76b11970bf62fc55cda566cd.o",
+      "object_size": 816575,
+      "object_sha256": "f103de273c53467837cffef51f191aef86e3eaa6eeb69652c2a7badada09dd89"
+    },
+    {
+      "source": "shard_8084662ddfc4162826050226.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "18c79c048bee9fbd1d9f684b2fdd9698ee9d12dffb75b729592aab0e48d0f740",
+      "object": "build/RM3E01_00_conservative/shards/shard_8084662ddfc4162826050226.o",
+      "object_size": 985143,
+      "object_sha256": "511208b36ad56afc3fdbb5e307535bcab2a7f9b5423da8129c066c4a252689bc"
+    },
+    {
+      "source": "shard_85606b63b7fa0d6fb1dd8c8f.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "15b67d45e90030db10f0a96de0d495932ab6c8eb7b2bbea5bdb0094a70c891aa",
+      "object": "build/RM3E01_00_conservative/shards/shard_85606b63b7fa0d6fb1dd8c8f.o",
+      "object_size": 931578,
+      "object_sha256": "88d053384e2cb1c30f871df30e45f56072bcf4aa8000c608cb0a801f32a649e4"
+    },
+    {
+      "source": "shard_864ad1ffa4c0160ec31a9057.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "3b41e28aea8ea635bd458f35d425dd338f91661189895a5cd4e6bdae01dc1f3e",
+      "object": "build/RM3E01_00_conservative/shards/shard_864ad1ffa4c0160ec31a9057.o",
+      "object_size": 1052374,
+      "object_sha256": "48fecdab19025ec098f9edb09cc97457ea9eff57df10aadb0b7590c3e8d25749"
+    },
+    {
+      "source": "shard_8c35b66305893198615f9a57.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "fce4e14a69f7779a0de9f778bdb1f93ffda4b04a3f86d4240331c6ab78fcf5cc",
+      "object": "build/RM3E01_00_conservative/shards/shard_8c35b66305893198615f9a57.o",
+      "object_size": 1071545,
+      "object_sha256": "f05ccd994b6048423026942b4b87f7e2005e0d877ecbf6c07d89a838b74c87f4"
+    },
+    {
+      "source": "shard_90a5f2eaaffe5cd3b0bdd84a.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "44f1fa0eb1c15b84d9bd87082dfc0e5f90c18e08d56ce2f12d58d67a422b7631",
+      "object": "build/RM3E01_00_conservative/shards/shard_90a5f2eaaffe5cd3b0bdd84a.o",
+      "object_size": 886580,
+      "object_sha256": "9d36c419d3fe46610812fa2f6e66aaf822791acff1f2e8036e64caa2d1bbb829"
+    },
+    {
+      "source": "shard_97f3ec6ae5261830bd354995.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "8a9eaaf6d81ddcddd044e1dae5c9205886cb3079f901cd40da5f6131625b03d8",
+      "object": "build/RM3E01_00_conservative/shards/shard_97f3ec6ae5261830bd354995.o",
+      "object_size": 1006419,
+      "object_sha256": "aa5118febf26cc8949eee55a7e6e5ceea7c3e35514d7dad8ff1f73a7b0ecb758"
+    },
+    {
+      "source": "shard_9c0e42a7079107140dd62c15.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "9be78ac8bcc2906f5df5bec6a0e6baf12e965209bf4d5db5d0d5335adacd33ba",
+      "object": "build/RM3E01_00_conservative/shards/shard_9c0e42a7079107140dd62c15.o",
+      "object_size": 894789,
+      "object_sha256": "a55964ab1c2ed235cc19533ce101587f4f180e8dd8f2c21db7d754a2d17a16fe"
+    },
+    {
+      "source": "shard_9f5bb1f25ac04025201c0627.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "e390921b5f199f31ce10b1bbc0d68417cbee211b7b2cd5c255eee3116a3bda19",
+      "object": "build/RM3E01_00_conservative/shards/shard_9f5bb1f25ac04025201c0627.o",
+      "object_size": 708764,
+      "object_sha256": "61b45b54e555b26a810a76c387570a8fd6a6273b293a51297ecd0e29a1d3905f"
+    },
+    {
+      "source": "shard_a2c66654f444f46734541440.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "e00c9713fafc1cc3315f841d2982db57d5148095dec87991f76c2ab4bf80bd92",
+      "object": "build/RM3E01_00_conservative/shards/shard_a2c66654f444f46734541440.o",
+      "object_size": 1164579,
+      "object_sha256": "a38dc09b3ceb0729966939fcd891eec800c04b1078a1a56275348d89e114cff8"
+    },
+    {
+      "source": "shard_a2d715df9e1746e53b49d31c.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "2293dd6adefaf3a5ad24359a9c6502861b2809cc804719c9351259437c45c72d",
+      "object": "build/RM3E01_00_conservative/shards/shard_a2d715df9e1746e53b49d31c.o",
+      "object_size": 651453,
+      "object_sha256": "3dad3854b392735ea605050b2120122c457508626d02025bf7f904005a273d6b"
+    },
+    {
+      "source": "shard_a4c1b201ea8379899b9b2850.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "4af78d5702dff3c15a33ad36aea94654b4c6d4d0f8de05b16ff23d85cea09641",
+      "object": "build/RM3E01_00_conservative/shards/shard_a4c1b201ea8379899b9b2850.o",
+      "object_size": 771484,
+      "object_sha256": "6902b98b2b75fce60f8f38fe16a7d87e20864ff3a9ffdff0bf2909c53b2e0c52"
+    },
+    {
+      "source": "shard_a6f75c7dfb3740db15f54f53.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "526c66060b017c796e6ec66bb9dc71db778c18dfdda5311aaf196c69bbf5cfce",
+      "object": "build/RM3E01_00_conservative/shards/shard_a6f75c7dfb3740db15f54f53.o",
+      "object_size": 734828,
+      "object_sha256": "1f8a14c224481e41fe600025053e1b83dc099643ff9b7b01100faf111bb1aa27"
+    },
+    {
+      "source": "shard_b1664da8eb5a80699be1131b.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "34113c923353654ea3514649a6b5aa6176601b4302a54c228a5ccb1a2f655da8",
+      "object": "build/RM3E01_00_conservative/shards/shard_b1664da8eb5a80699be1131b.o",
+      "object_size": 671286,
+      "object_sha256": "a987a65119cb3cbe5ddadff98a7d979207682eeabc2c323be8a8f56040001b60"
+    },
+    {
+      "source": "shard_b55832f7f7ff5ab0d0af6402.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "6ed9bba955c0d9facca92c6e4fd9ad71e471cabd38ba4d10c82a7cc2119b8fc3",
+      "object": "build/RM3E01_00_conservative/shards/shard_b55832f7f7ff5ab0d0af6402.o",
+      "object_size": 568721,
+      "object_sha256": "c5f356f80c971795d7102370a53c190d645e8543bb4d47f2ed048253fcaf7cf0"
+    },
+    {
+      "source": "shard_b6e9bb0e75e1f7dfa4d15291.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "7eadd46ec52068dcfcf0ffde7b1c2ad78516e60949d57cfb75e76ecb57b408e6",
+      "object": "build/RM3E01_00_conservative/shards/shard_b6e9bb0e75e1f7dfa4d15291.o",
+      "object_size": 1084579,
+      "object_sha256": "0d7fc16cab72ccfecac5307443f0db5073b1889c15680a2e26b799a197fe7626"
+    },
+    {
+      "source": "shard_b78031d68ec4a4ce170b6302.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "045425eb7c41fc9bfcc1482abe2e2882f761a32f164d885f431454d8a41b5691",
+      "object": "build/RM3E01_00_conservative/shards/shard_b78031d68ec4a4ce170b6302.o",
+      "object_size": 984415,
+      "object_sha256": "3bece1e592f0ee6d3f19202f013013c564d6c8fb3689e154b3f5e11a45c2ec83"
+    },
+    {
+      "source": "shard_b9a478b135b5bab87dd70087.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "fbb681cb947579a9f046ff1a0b335943417961f95b82f22e952736bca3559e61",
+      "object": "build/RM3E01_00_conservative/shards/shard_b9a478b135b5bab87dd70087.o",
+      "object_size": 920239,
+      "object_sha256": "396f097fb037cd918c5c803b223371dc04cec60d310a4938f38d896a62a950d1"
+    },
+    {
+      "source": "shard_bb4355c3b42002996302dca4.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "8f4561c9b6d880506fb214ac36968f8ae63be723fbca1f6d1866652acb722130",
+      "object": "build/RM3E01_00_conservative/shards/shard_bb4355c3b42002996302dca4.o",
+      "object_size": 937782,
+      "object_sha256": "e7936ef54fb78875c1043c55c64d82059f2da254874cfb5c596920140e1104d5"
+    },
+    {
+      "source": "shard_bb47fc3a8d5fc6ac54992a3f.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "060c4401302b41cd6156326c1544d80138c49cfebfe9bd9137c1c357a35ad9d3",
+      "object": "build/RM3E01_00_conservative/shards/shard_bb47fc3a8d5fc6ac54992a3f.o",
+      "object_size": 1009624,
+      "object_sha256": "f9d88b3742f606b89ee3bb7a718dd1b6ae7c0fa38cbc75fe6688dab3513b34be"
+    },
+    {
+      "source": "shard_bbb3291af9f95060f6176188.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "0e23335e8b43eb347d97796790fb63f8fa9bcf74f8fe52bbf2db5f8e2ff7c0d2",
+      "object": "build/RM3E01_00_conservative/shards/shard_bbb3291af9f95060f6176188.o",
+      "object_size": 954589,
+      "object_sha256": "e02bde8515858e4083b40fe0df70054fe90bce7933358e6cf0fb11e07812ccc4"
+    },
+    {
+      "source": "shard_c1fa34446484375184c5b415.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "13fa670c01c888087cb8f27d45b3f607e1cbead13f9f796d24f3e6fb05943727",
+      "object": "build/RM3E01_00_conservative/shards/shard_c1fa34446484375184c5b415.o",
+      "object_size": 1065659,
+      "object_sha256": "3a8f8d3a7bf6132803a3cbd3066179f6c0499e3ac41f42fa3bf0fdef9e1e6e50"
+    },
+    {
+      "source": "shard_c453602168973f716cbef659.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "cb152d62fc07eba97b2ea958b96804510beafb26acb98b67f561bed86f9eb531",
+      "object": "build/RM3E01_00_conservative/shards/shard_c453602168973f716cbef659.o",
+      "object_size": 1266081,
+      "object_sha256": "5471fd08666e9bffcab08acec207ea869ca9f9432b188756d62026c5f5e278c3"
+    },
+    {
+      "source": "shard_cb5d2a01038e72b2724e3eae.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "97ebbbf72ee28a7890f252d2620e6abd2da0dd34f042d170d36215c925c16524",
+      "object": "build/RM3E01_00_conservative/shards/shard_cb5d2a01038e72b2724e3eae.o",
+      "object_size": 1074408,
+      "object_sha256": "65a6137a49f032b7edb10f4d6b9e504d0aebd0a05f327abccd5d64942710e038"
+    },
+    {
+      "source": "shard_cba979a34a17661da5155766.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "02f91fc118f028b62261cf5737c496a93ecd5932b1da6d1bb6cd6200dcacde4e",
+      "object": "build/RM3E01_00_conservative/shards/shard_cba979a34a17661da5155766.o",
+      "object_size": 1154847,
+      "object_sha256": "1e1f57435d8e64dac940c5b74703fb32e675a56de4875ff31d8a0982c2968823"
+    },
+    {
+      "source": "shard_d0268295754a83ba419ba085.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "57601140451eaceaca6cdc3f4d88ac4e06d4f10bfb38c2d675e0a62e03f76761",
+      "object": "build/RM3E01_00_conservative/shards/shard_d0268295754a83ba419ba085.o",
+      "object_size": 954379,
+      "object_sha256": "dd75ac9bf6c07cfd949bcf97c4494f971e99c0d13f7015e1efc4eb477fa99e17"
+    },
+    {
+      "source": "shard_d2db5ed8ace72683ad07c62f.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "9f9ad92326d85e9e40c514d570dba9cb522c199c172a5dcb11734042cd1408d7",
+      "object": "build/RM3E01_00_conservative/shards/shard_d2db5ed8ace72683ad07c62f.o",
+      "object_size": 748717,
+      "object_sha256": "cdcff11c74927730ab831362d0a7846a20d51d6545da4888ea5e6e13603dae92"
+    },
+    {
+      "source": "shard_d2dd5d83a0318c5c98c176d1.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "3c0715280b63637f6205de90e2b2a026b7e39d35116830676a28d470a4a96abd",
+      "object": "build/RM3E01_00_conservative/shards/shard_d2dd5d83a0318c5c98c176d1.o",
+      "object_size": 1008473,
+      "object_sha256": "e6e6a44b65ba54ecf5d624cc18880ec26a6a742c86e114ab254aa698b70cea18"
+    },
+    {
+      "source": "shard_d76fc2c8e54eef69365b9486.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "c654b744dc5eee6762e079ac322871ffbce8b41b3a1e8b2934238daf80f0e81d",
+      "object": "build/RM3E01_00_conservative/shards/shard_d76fc2c8e54eef69365b9486.o",
+      "object_size": 1171243,
+      "object_sha256": "6cc0fac7ea36eef3fe5532bb5d9e47fda0eeb7ffd22d87826738746b7583b438"
+    },
+    {
+      "source": "shard_d875e1cfdbf8dc7473129be2.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "cbff1d95c9350f255887b4783b1a4412abe9366959394057432d349a14cf8705",
+      "object": "build/RM3E01_00_conservative/shards/shard_d875e1cfdbf8dc7473129be2.o",
+      "object_size": 838346,
+      "object_sha256": "688c0c51e953079325f4ee9ef39d145807975b9f06ed7137e333f100b4a39b75"
+    },
+    {
+      "source": "shard_daca255eeaa970c5bc92ebd7.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "3b4f25c7bd7f2f2d85d82fed4f20114829352b6d66d4690b41594c9d125c5dbb",
+      "object": "build/RM3E01_00_conservative/shards/shard_daca255eeaa970c5bc92ebd7.o",
+      "object_size": 875786,
+      "object_sha256": "60ec08a2ce74556c88358ed348d2130b0fb039561d89c860d6130038a40a6670"
+    },
+    {
+      "source": "shard_e2a9daea23e9094005a0059f.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "ed5c7907f1028cb73dcf00f8df7ab477fddbd7b6e6de9007a480711e6d7eb5d1",
+      "object": "build/RM3E01_00_conservative/shards/shard_e2a9daea23e9094005a0059f.o",
+      "object_size": 1158278,
+      "object_sha256": "df8f6ff52be9ebec169f1669df7259a4ad74d8689505a46b5c4ebd77a4f05c6f"
+    },
+    {
+      "source": "shard_e43fd15bcd79f173bd5f2041.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "bd8e1ee4c506d0301b63a27ad726dd6511c28a62944e6231747d2aa020227625",
+      "object": "build/RM3E01_00_conservative/shards/shard_e43fd15bcd79f173bd5f2041.o",
+      "object_size": 828162,
+      "object_sha256": "f87074852ddae080b2fdca30a192297310a2b828cc0601d93b5d107f414c4ebd"
+    },
+    {
+      "source": "shard_e93feb034fafdd47827f65cc.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "f8c32a7d07417222500ad083ff0731f055b2b7cfa19c6a715ab3aaedffeb5e4c",
+      "object": "build/RM3E01_00_conservative/shards/shard_e93feb034fafdd47827f65cc.o",
+      "object_size": 1116206,
+      "object_sha256": "aa8f4418d5199ce2479d31f31a69891f8a02180c2bc562c4e7bc44d535c3fd03"
+    },
+    {
+      "source": "shard_eb5049b64d25224eadb885df.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "12899477d5e4c908d1a947394c3adf1f096d3e914585b1e64e86c12928c5b169",
+      "object": "build/RM3E01_00_conservative/shards/shard_eb5049b64d25224eadb885df.o",
+      "object_size": 709796,
+      "object_sha256": "7378a9e967a96ebc5abb642be80470f1ea084dcc9e890b52b82e1f132e6a555c"
+    },
+    {
+      "source": "shard_ece17b66c9b959959c207b5c.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "d9959d99ff9623bd751fb1f2d92cc29bf2ca2ff79980199fcae638d0bd4a19ac",
+      "object": "build/RM3E01_00_conservative/shards/shard_ece17b66c9b959959c207b5c.o",
+      "object_size": 1052388,
+      "object_sha256": "97085470e0e44a8fa22be772cbd0d83b78bd4e44121aa2d53a2561ef13863cdc"
+    },
+    {
+      "source": "shard_f38c7c5e2b9c23f3bf76727a.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "fc64cdcde2b5e5bfacdd321c2f6128e6f88a997b82ffdd110c9661b5aece21ff",
+      "object": "build/RM3E01_00_conservative/shards/shard_f38c7c5e2b9c23f3bf76727a.o",
+      "object_size": 1041946,
+      "object_sha256": "c3d9338900265d7f4e21e12d9b512bb648171c27c49e2172a27476412667ad47"
+    },
+    {
+      "source": "shard_f4d4457f8d3e81f519532894.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "69b22a5372da58b2d198aaff970386d28327f1c74a5e3dc464375d7220807a20",
+      "object": "build/RM3E01_00_conservative/shards/shard_f4d4457f8d3e81f519532894.o",
+      "object_size": 925026,
+      "object_sha256": "89df21ba91aeaa6cc820d06b549ddc5449bba15f3c6bb2d16f0b5153e62b3510"
+    },
+    {
+      "source": "shard_f702f91e0a0607a476fcb28d.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "561b8bb1ef7592a6d4a8bdc9a34fb73533d19d75781fdca1aff7815b2b650176",
+      "object": "build/RM3E01_00_conservative/shards/shard_f702f91e0a0607a476fcb28d.o",
+      "object_size": 721639,
+      "object_sha256": "31897cb4b0913e812d7b26a7aa3a7e45fb5bf8294b706141cc622286820fd5d5"
+    },
+    {
+      "source": "shard_fe29d341de561307e1b6d11e.cpp",
+      "kind": "translated_shard",
+      "source_sha256": "b949e81b71edb1909c30d1d4d1d28e57424299f10e0908f690a390d8b487d508",
+      "object": "build/RM3E01_00_conservative/shards/shard_fe29d341de561307e1b6d11e.o",
+      "object_size": 579013,
+      "object_sha256": "be2a641f9199928d971a7d45da33f901d4ee7735ce33e78c442dda1e9a6abe33"
+    }
+  ]
+}

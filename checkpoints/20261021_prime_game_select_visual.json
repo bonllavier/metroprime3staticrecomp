@@ -1,0 +1,48 @@
+{
+  "result": "PASS visually reviewed original Game Select with three New Game slots",
+  "revision": "RM3E01_00",
+  "executable_sha256": "dd93513b90d00e397040273a09d5b7bcc5705778c4d801470735993ad09c461d",
+  "observation_seconds": 100,
+  "screenshots_seconds": [
+    80,
+    95
+  ],
+  "visible_text": [
+    "Game Select",
+    "Select slot to start game...",
+    "New Game",
+    "Copy Slot",
+    "Erase Slot",
+    "B Back"
+  ],
+  "existing_private_save_files_unchanged_since_original_creation": true,
+  "slot_activation_verified": false,
+  "gameplay_verified": false,
+  "full_boot_verification": "pending 20261021_prime_game_select_boot.json",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792619409_pid3240\\runtime_probe.json",
+      "sha256": "b1e859d11822b353150322b9a3013b6168bb7e3789d75d667cc589e8670cbe85"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\window_pid3240_80s.png",
+      "sha256": "2c37ec6960a46d12c3aafef176b6b3c4b2d84621ab4613d564c8b884856d3dbc"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\window_pid3240_95s.png",
+      "sha256": "d12f407cd4abe14e4602a9b5b365c0511a340e91e5d9438fcfed41a8bc900f86"
+    },
+    {
+      "path": "recomp\\checkpoints\\20261021_prime_game_select_keyboard_input.json",
+      "sha256": "ae46866c252b59ded94e2f19f3e4ac64665d9ac872d453498901804b797c205f"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\NAND\\title\\00010000\\524d3345\\data\\banner.bin",
+      "sha256": "d3e24f0ea66d1c69dbf1fc3a1e6cc88d3a468c8a71f4ebf9e6cf694686a2498f"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\NAND\\title\\00010000\\524d3345\\data\\save.bin",
+      "sha256": "6daf7feeaf017076e817a84c3fdf6cfee26ab20eb48aec4fd541835af05b1bb2"
+    }
+  ]
+}

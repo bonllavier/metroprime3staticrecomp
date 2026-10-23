@@ -1,0 +1,157 @@
+{
+  "revision": "RM3E01_00",
+  "game_screen_verified": false,
+  "build": {
+    "exe_sha256": "85b3543c79d3dbf87a1257c56140c0cec364276484fd6be5527cfe05d134e893",
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "runtime": {
+    "revision": "RM3E01_00",
+    "started_utc": "2026-10-21T02:39:42.6418518Z",
+    "pid": 6248,
+    "observation_seconds": 8,
+    "alive_at_deadline": true,
+    "stopped_by_harness": true,
+    "executable_sha256": "85b3543c79d3dbf87a1257c56140c0cec364276484fd6be5527cfe05d134e893",
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792550382_pid6248/console.log",
+    "log_sha256": "fe175354d2f62b9d45c201c38c981200e472866174f791245d78910abfff2fde",
+    "failure_logged": false,
+    "first_game_screen_verified": false,
+    "note": "Being alive and creating a graphics window do not prove game execution or a rendered screen.",
+    "probe": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792550382_pid6248/runtime_probe.json"
+  },
+  "verified_resource_reads": [
+    {
+      "path": "/rhbm/homeBtnIcon.tpl",
+      "offset": 0,
+      "size": 6336,
+      "destination": "0x1025f2e0",
+      "read_sha256": "099f23b6866bd2334bd012520bbd4e63946257abd543340883e660f4eca2b2e6",
+      "file_sha256": "099f23b6866bd2334bd012520bbd4e63946257abd543340883e660f4eca2b2e6",
+      "fnv1a64": "4a9109fe0c8a5ba7"
+    }
+  ],
+  "runtime_overlay_manifest": {
+    "path": "recomp/generated/RM3E01_00_conservative/runtime_hooks/manifest.json",
+    "sha256": "2cec1cd2e8d518d7ef3357de25a98c8cd0c87885b9857967af0c66e411ebd728"
+  },
+  "hci_commands_observed": [
+    [
+      "0C03",
+      "0"
+    ],
+    [
+      "1005",
+      "0"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C13",
+      "248"
+    ],
+    [
+      "0C0A",
+      "1"
+    ],
+    [
+      "0C33",
+      "7"
+    ],
+    [
+      "1001",
+      "0"
+    ],
+    [
+      "1009",
+      "0"
+    ],
+    [
+      "1003",
+      "0"
+    ],
+    [
+      "0C45",
+      "1"
+    ]
+  ],
+  "verified_hci_wire_events": [
+    {
+      "opcode": "0x0C03",
+      "packet": "0e0401030c00"
+    },
+    {
+      "opcode": "0x1005",
+      "packet": "0e0b010510005301000a000000"
+    },
+    {
+      "opcode": "0x0C24",
+      "packet": "0e0401240c00"
+    },
+    {
+      "opcode": "0x0C13",
+      "packet": "0e0401130c00"
+    },
+    {
+      "opcode": "0x0C0A",
+      "packet": "0e04010a0c00"
+    },
+    {
+      "opcode": "0x0C33",
+      "packet": "0e0401330c00"
+    },
+    {
+      "opcode": "0x1001",
+      "packet": "0e0c0101100003a740030f000e43"
+    },
+    {
+      "opcode": "0x1009",
+      "packet": "0e0a01091000010000000002"
+    },
+    {
+      "opcode": "0x1003",
+      "packet": "0e0c01031000ffff8dfe9bf90080"
+    },
+    {
+      "opcode": "0x0C45",
+      "packet": "0e0401450c00"
+    }
+  ],
+  "decrementer_delivered": true,
+  "unsupported_oh1_transfer_observed": false,
+  "source_hashes": {
+    "recomp/tools/prepare_prime_runtime_hooks.py": "786867ceda86d9a1d71fb4bfe62c0b60a8d41c2b8f725d640db257f4c5625bba",
+    "recomp/tools/build_prime_runtime.ps1": "c467fd1455b11c6553a1ffcd972c8e8c828593f4a73ebd11c2683c89e917624f",
+    "recomp/tools/probe_prime_runtime.ps1": "76a1037dfc22656522687f3236e75539b7332564cd6eef421ff6915e287b4ec3",
+    "recomp/tools/verify_prime_runtime_boot_probe.py": "f2d29a414992ea7b0f1c05ff10e81754d08b4aa2b0997f2f5c71c9dc91ad423c",
+    "recomp/third_party/WiiCompiled/runtime/src/memory.cpp": "c64447c80d409b0a7f18f1535088339914789dac1e465450b00b44371decac89",
+    "recomp/third_party/WiiCompiled/runtime/src/guest_flat_memory.cpp": "ae67d4079f173a87b3d8ff646990dfcdc3e2b7655330863c10f9a2fc98d7ea2d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/storage/nand_isfs.cpp": "ba756af5676d1ffc5875f90acdbfa683d1c24bfc3c5000de9739be9c2408e7db",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/storage/dvd.cpp": "22d9b3260af7e183b862fa61844dc9119b88b893784129824a01beedd087a769",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp": "e40371a2ce57b5084b022b4ccbd43875d55526260b656718cc5870b290cfc259",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_internal.h": "5fcb835a82b78c2e6801fb3848ac4e94b061f788c41568e2304f8aecdbbd0a9d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp": "8320bd32de531820338d4c338e1eeaafad12d29c9fd2b35eb4981def1a6aa5cc",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/Build/TranslatedBuildShardEmitter.cs": "a72790fba2ff8cb8df6d4243dff2a94215aa13b045e4e4e5a6a4d3f5fd175d0b",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/RuntimeNativeIndex.cs": "5d799cd172c1917bd250af1bc97e216575c2ecdd7e743ad9b8342b17c8ebc98a",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Cli/Program.cs": "d4bf0654140bc9eeca8dd27955e63d433c7967d511a45c3e62a1d1c7e47ff615"
+  },
+  "invariants": {
+    "matching_dol_exact": true,
+    "iso_size": 4699979776,
+    "iso_read_only": true
+  },
+  "reference_provenance": {
+    "path": "recomp/checkpoints/20261020_prime_runtime_reference_provenance.json",
+    "sha256": "56a4fc9f2d40be21aa3fce36826204c9a55aed9ac61c2d9724597dce6a45faa4",
+    "commit": "cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b"
+  },
+  "limitations": [
+    "No game screen is verified.",
+    "Research DVD backend uses extracted files, not a direct ISO reader.",
+    "Controller has no paired remotes or ACL connections; HCI support is incomplete.",
+    "Cross-thread rfi host-stack transfer and full graphics equivalence remain unverified.",
+    "Runtime test-suite results are separate evidence; this verifier covers the recorded boot path only."
+  ]
+}

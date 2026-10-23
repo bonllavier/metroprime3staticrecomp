@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-20",
+  "revision": "RM3E01_00",
+  "purpose": "Map the observed context-register writes during the Prime VI wait loop without changing guest behavior.",
+  "program": {
+    "name": "main.dol",
+    "sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "architecture": "PowerPC:BE:32:Gekko_Broadway"
+  },
+  "runtime": {
+    "build_sha256": "1476CBA6D0A20045844F5DDB3D994281B6AC869D783F787778ECFC0B66E2157A",
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792542773_pid10328/console.log",
+    "log_sha256": "0CBF5C0E082CEEC414013665450F40F93F21418FE9AC61DDDE581E82261D0D03",
+    "duration_seconds": 25,
+    "process_alive_at_harness_stop": true,
+    "fatal_error": false,
+    "screen_observed": false
+  },
+  "callers": {
+    "0x804EFC8C": {
+      "containing_function": "FUN_804EFC64",
+      "observed_role": "Waits for the VI interrupt counter and invokes the scheduler.",
+      "observed_write": "0x80699AE0"
+    },
+    "0x804EF0BC": {
+      "containing_function": "FUN_804EEB6C",
+      "observed_role": "VI interrupt handler path; calls FUN_804E00DC.",
+      "observed_write": "0x00001000"
+    }
+  },
+  "scheduler_observation": "After current context becomes 0x1000, scheduler logs running=0x8060B418, current=0x1000, state=4 and returns without switching. This narrows the issue to context/SDA values reaching the handler but does not establish their origin.",
+  "interpretation_limits": [
+    "Do not treat 0x1000 as a valid context pointer.",
+    "Do not synthesize or suppress the guest context write.",
+    "The evidence does not distinguish register restore corruption, guest thread state, or host scheduler emulation."
+  ],
+  "invariants": {
+    "iso_modified": false,
+    "matching_dol_modified": false,
+    "baseline_decomp_modified": false,
+    "guest_behavior_modified": false,
+    "diagnostic_instrumentation_only": true
+  },
+  "next": "Trace r13 and the full guest register/context values at the VI handler entry and at each call to FUN_804E00DC; compare with the original PPC save/restore path before changing runtime behavior."
+}

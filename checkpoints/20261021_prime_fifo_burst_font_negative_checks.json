@@ -1,0 +1,18 @@
+{
+  "result": "PASS",
+  "checks": [
+    {
+      "fixture": "fourth_vertex_y",
+      "result": "rejected",
+      "reason": "Corrupt vertex position or UV"
+    },
+    {
+      "fixture": "lost_index",
+      "result": "rejected",
+      "reason": "Unexpected font triangle index stream"
+    }
+  ],
+  "original_sha256": "b0c0f6b52ad6e73ee9b646d44715d60fd17ccee896287922088a7a569f882d51",
+  "tool_sha256": "849d89411083a31ad08f7595bee37bf389d6bd38e9820a69534c053d4667c4e3",
+  "original_artifacts_unchanged": true
+}

@@ -1,0 +1,15 @@
+{
+  "result": "PASS module translation and independent 417 relocation check; runtime executable linked; incremental CMake exit 0 and no work to do",
+  "module": "ScriptGrapplePoint",
+  "functions": 50,
+  "total_functions": 709,
+  "partial_modules": 7,
+  "exe_sha256": "e58cbb7752f4d7b5122b838d6d9d4b573c815441219581a8280e99ef5ee2e336",
+  "live_audit": "20261022_prime_grapple_live_relocations.json",
+  "native_tests": "3/3 PASS with llvm-mingw bin in process PATH; first invocation without PATH hung at missing runtime DLL and was stopped",
+  "optimized_import_contract": "20261022_prime_grapple_import_contract.json",
+  "build_log": "recomp/.tools/prime_grapple_build_20261022.log",
+  "build_wrapper_caveat": "Outer powershell returned 1 on redirected translator stderr despite completed link and post-build verification; independent CMake command returned 0. No assertion of wrapper exit 0.",
+  "runtime_response_pending": true,
+  "thirty_minute_real_scenario_verified": false
+}

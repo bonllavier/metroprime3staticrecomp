@@ -1,0 +1,38 @@
+{
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "raw_reader": {
+    "function": {
+      "name": "FUN_804d9e20",
+      "address": "804d9e20"
+    },
+    "code": "\r\nvoid FUN_804d9e20(undefined4 param_1,undefined4 param_2,uint param_3)\r\n\r\n{\r\n  bool bVar1;\r\n  int iVar2;\r\n  undefined4 uVar3;\r\n  uint uVar4;\r\n  int iVar5;\r\n  uint uVar6;\r\n  undefined8 uVar7;\r\n  \r\n  uVar7 = FUN_80305ab0();\r\n  iVar5 = (int)uVar7;\r\n  iVar2 = (int)((ulonglong)uVar7 >> 0x20) * 0x524;\r\n  if (0x10 < param_3) {\r\n    param_3 = 0x10;\r\n  }\r\n  uVar3 = OSDisableInterrupts();\r\n  uVar6 = (uint)(byte)(&DAT_805f5196)[iVar2];\r\n  while (bVar1 = param_3 != 0, param_3 = param_3 - 1, bVar1) {\r\n    uVar4 = 0xf;\r\n    if (uVar6 != 0) {\r\n      uVar4 = uVar6 - 1;\r\n    }\r\n    memcpy(iVar5,iVar2 + uVar4 * 0x38 + -0x7fa0ae68,0x38);\r\n    iVar5 = iVar5 + 0x38;\r\n    uVar6 = uVar4;\r\n  }\r\n  OSRestoreInterrupts(uVar3);\r\n  FUN_80305afc();\r\n  return;\r\n}\r\n\r\n",
+    "truncated": false
+  },
+  "kpad_caller": {
+    "function": {
+      "name": "FUN_803c2670",
+      "address": "803c2670"
+    },
+    "code": "\r\n/* WARNING: Removing unreachable block (ram,0x803c28a8) */\r\n/* WARNING: Removing unreachable block (ram,0x803c28a0) */\r\n/* WARNING: Removing unreachable block (ram,0x803c2898) */\r\n/* WARNING: Removing unreachable block (ram,0x803c2690) */\r\n/* WARNING: Removing unreachable block (ram,0x803c2688) */\r\n/* WARNING: Removing unreachable block (ram,0x803c2680) */\r\n\r\nvoid FUN_803c2670(void)\r\n\r\n{\r\n  float fVar1;\r\n  byte bVar2;\r\n  bool bVar3;\r\n  int iVar4;\r\n  int iVar5;\r\n  undefined1 *puVar6;\r\n  undefined1 *puVar7;\r\n  int iVar8;\r\n  double extraout_f1;\r\n  double dVar9;\r\n  double dVar10;\r\n  double dVar11;\r\n  undefined1 auStack_c10 [40];\r\n  char local_be8;\r\n  char local_be7;\r\n  byte local_bda;\r\n  undefined1 auStack_890 [93];\r\n  char local_833;\r\n  \r\n  iVar4 = FUN_80305aa4();\r\n  dVar9 = extraout_f1;\r\n  FUN_803c24b0();\r\n  dVar11 = (double)FLOAT_80683464;\r\n  iVar8 = iVar4 + 8;\r\n  dVar10 = (double)FLOAT_80683460;\r\n  if (*(char *)(iVar4 + 0x230) == '\\0') {\r\n    memset(iVar8,0,0x84);\r\n    *(undefined1 *)(iVar4 + 100) = 0xff;\r\n    *(undefined1 *)(iVar4 + 0x65) = 0;\r\n  }\r\n  else {\r\n    if (*(int *)(iVar4 + 0x21c) != 3) {\r\n      iVar5 = OSDisableInterrupts();\r\n      bVar3 = false;\r\n      bVar2 = (byte)((byte)((uint)-iVar5 >> 0x18) | (byte)((uint)iVar5 >> 0x18)) >> 7;\r\n      iVar5 = FUN_804d9138(0,auStack_890,0x10);\r\n      if ((iVar5 != 0) && (local_833 == '\\0')) {\r\n        memcpy(iVar8,auStack_890,0x84);\r\n        fVar1 = (float)((double)*(float *)(iVar4 + 0xbf0) - dVar9);\r\n        *(float *)(iVar4 + 0xbf0) = fVar1;\r\n        if ((double)fVar1 < dVar10) {\r\n          *(float *)(iVar4 + 0xbf0) = (float)dVar11;\r\n          WPADGetInfoAsync(0,iVar4 + 0xb8c,&LAB_803c4884);\r\n        }\r\n        FUN_803c3f74(dVar9,iVar4,0);\r\n        if (*(int *)(iVar4 + 0xa8c) != 0) {\r\n          FUN_804d9e20(0,auStack_c10,0x10);\r\n          OSRestoreInterrupts(bVar2);\r\n          bVar3 = true;\r\n          if (((local_be7 == '\\0') && (local_be8 == '\\x01')) && (bVar3 = true, local_bda - 3 < 3)) {\r\n            iVar5 = iVar5 + -1;\r\n            if (-1 < iVar5) {\r\n              puVar6 = auStack_890 + iVar5 * 0x84;\r\n              puVar7 = auStack_c10 + iVar5 * 0x38;\r\n              for (; -1 < iVar5; iVar5 = iVar5 + -1) {\r\n                FUN_803c0a24((double)FLOAT_80683468,*(undefined4 *)(iVar4 + 0xa8c),puVar7,puVar6);\r\n                puVar6 = puVar6 + -0x84;\r\n                puVar7 = puVar7 + -0x38;\r\n              }\r\n            }\r\n            *(undefined4 *)(iVar4 + 0x250) = *(undefined4 *)(*(int *)(iVar4 + 0xa8c) + 0xeefc);\r\n            *(undefined4 *)(iVar4 + 0x254) = *(undefined4 *)(*(int *)(iVar4 + 0xa8c) + 0xef00);\r\n          }\r\n        }\r\n        FUN_803c2e04(iVar4,0);\r\n      }\r\n      if (!bVar3) {\r\n        OSRestoreInterrupts(bVar2);\r\n      }\r\n    }\r\n    if (*(int *)(iVar4 + 0x21c) - 3U < 2) {\r\n      memset(iVar8,0,0x84);\r\n      *(undefined1 *)(iVar4 + 100) = 0xff;\r\n      *(undefined1 *)(iVar4 + 0x65) = 0;\r\n    }\r\n  }\r\n  FUN_80305af0();\r\n  return;\r\n}\r\n\r\n",
+    "truncated": false
+  },
+  "live_raw_ring": "recomp/.tools/prime_pid2252_raw_wpad_ring.json",
+  "finding": "Each of the 16 raw records has err=-1 while the independent processed KPAD keyboard sample is connected. Raw caller dispatches this buffer to 0x803C0A24 after checking connected freestyle device and format3..5. This proves inconsistent input streams, not the radio lock root cause.",
+  "live_controller": {
+    "gpController": "0x80995EA0",
+    "source_pointer": "0x8067DC18",
+    "controller_kind": 1,
+    "active": 1,
+    "motion_processor": "0x809f36e0",
+    "snapshot": "recomp/.tools/prime_pid2252_controller_object.json",
+    "note": "Use the real gpController pointer; KPAD destination80699130 is a temporary buffer, not this object."
+  },
+  "live_time_scale": {
+    "address": "0x805CD808",
+    "float": 1.646090552753776e-08,
+    "expected": "1/60750000 ticks per second, float-rounded",
+    "snapshot": "recomp/.tools/prime_pid2252_time_scale.json",
+    "conclusion": "No evidence of a literal timebase frequency mismatch; irregular speed remains unresolved."
+  }
+}

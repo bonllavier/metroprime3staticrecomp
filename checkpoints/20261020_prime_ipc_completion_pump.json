@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-20",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "purpose": "Trace the IPC completion lost while Prime's own interrupt handler submits the next queued request, then continue the native runtime probe.",
+  "runtime_build": {
+    "command": "cmake --build recomp/build/RM3E01_00_runtime_link_probe --target WiiCompiled -j 8",
+    "result": "PASS",
+    "executable_sha256": "f2b076b06bf61e31c2a8801dee46f210ecdf94bd1218ca84b5ee9e9ab80199f8"
+  },
+  "tests": {
+    "command": "ctest --test-dir recomp/build/RM3E01_00_runtime_link_probe -R \"mkw_(platform_paths|runtime_config)_tests\" --output-on-failure",
+    "result": "PASS 2/2",
+    "note": "The CTest entries were initially registered without executables; both targets were built, then executed successfully."
+  },
+  "diagnosis": {
+    "ghidra_program_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "guest_handler": "FUN_805041B0",
+    "queue_submitter": "FUN_8050441C",
+    "evidence": "The IPC HLE sets Y1/Y2 status (PPCCTRL 0x36) when a request completes. Prime's handler may submit the next queued request before returning; the HLE then sees the nested-dispatch guard and defers that newly generated completion. Before this change, no outer dispatcher rechecked PPCCTRL after the guest handler returned. The new post-handler sample showed control=0x36, worker_count=0, queue_head=17, queue_tail=21. That status represented another completion waiting to be consumed, not a missing external event.",
+    "change": "DispatchPendingPrimeIpcInterrupt now iteratively drains the Prime IPC status after each handler return, up to 64 completions per pump. Nested dispatch remains suppressed, so the guest ISR does not recurse into itself.",
+    "validation": "In the new run, one pump consumed 13 sequential IPC completions; queue_head advanced from 16 to 27, and status finally cleared to control=0x30 with worker_count=1. This is runtime progress evidence, not proof that the HLE matches physical IOS timing."
+  },
+  "device_hle": {
+    "di": {
+      "implementation": "Added a dedicated /dev/di guest descriptor. It accepts only observed ioctl 0x86, returns DI success value 1, and rejects other DI ioctls. The cover interrupt status itself is not modeled.",
+      "reference": "Dolphin IOS DI implementation returns DIResult::Success for DVDLowClearCoverInterrupt (0x86); WiiBrew identifies the command as the DI cover interrupt clear operation.",
+      "runtime_validation": "NOT_CONFIRMED: the latest trace still shows later ioctl 0x86 packets using guest fd 6, which was previously allocated to /dev/net/kd/time. No IOS open log for /dev/di appears. Do not count the DI handler as exercised until queue/wait ordering is fixed."
+    },
+    "stm_vidimming": {
+      "implementation": "Added stateful host-side registers for the three VIDimming values, the documented set/mask operation, three original values and return flags, 32-byte output validation, and zeroed reserved output words.",
+      "runtime_observation": "The probe executed ioctl 0x5001 without a fatal error. Guest masks were 0x00000000, 0xffffffff, 0xffff0000 and the HLE returned flags 0x5.",
+      "limits": "No physical Hollywood VIDIM registers exist in this runtime. Reserved output words are zero-filled; this behavior remains an approximation pending stronger IOS evidence."
+    }
+  },
+  "runtime_probe": {
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792540729_pid5752/console.log",
+    "log_sha256": "7230762bdFA9EAFD98618FD803E50995232F08CB62F39186E267709FBC76DBDC",
+    "log_size_bytes": 46222,
+    "duration_seconds": 45,
+    "process_alive_at_harness_stop": true,
+    "fatal_error": false,
+    "observed_progress": [
+      "The Prime FST path and all eight startup resource descriptors complete.",
+      "The IPC loop drains queued IOS messages and the game proceeds through VI setup and resource initialization.",
+      "STM VIDimming ioctl 0x5001 executes.",
+      "Prime requests /dev/usb/oh1/57e/305 and queues its open plus three IOCTLV requests."
+    ],
+    "remaining_failure": "The /dev/di open is not observed reaching SubmitPrimeIpcRequest, while later DI ioctl packets still carry fd 6 from /dev/net/kd/time. This points to guest request lifetime/synchronous wait ordering: a queued request's storage or result is reused before the open completion is observed. The USB queue later stalls again. No game screen is rendered.",
+    "other_blocker": "The RSO request log continues to show callback 0x0101C690 with zero-filled guest code at that address; the FrontEnd RSO load/relocation/callback path remains unresolved."
+  },
+  "synchronous_request_followup": {
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792541038_pid1388/console.log",
+    "log_sha256": "a25590f6ad1b9f6ab7a5a6fde2fab2b102072a857c466feb7a5ddd51a7cd2cf3",
+    "log_size_bytes": 47173,
+    "executable_sha256": "5f46882987e53b1bbadbbc5ffe39817e3e2abf6c054e0ff4b510c8c511a00451",
+    "duration_seconds": 24,
+    "process_alive_at_harness_stop": true,
+    "observation": "A bounded [ipc-queue-return] trace shows normal sync return values 0..6 through the /dev/net/kd/time open. The next queued command 1 (the /dev/di open path observed by the wrapper) returns 6 from the request's +4 result field, although no IOS request packet for /dev/di was logged and no dedicated DI-open result was written. Subsequent DI ioctl requests therefore reuse fd 6.",
+    "ghidra_evidence": "FUN_8050441C clears only the two-word event object at request+0x2c for synchronous calls, enqueues the request pointer, invokes the guest sleep-queue path, and then reads the result at request+4. The result field is not cleared by that initialization. This makes an early wake with an old result a concrete possibility; the wake source and timing still need proof.",
+    "instrumentation": "Added a bounded diagnostic to the generated shard at the sync-return site. Diagnostic-only; translator regeneration can remove it.",
+    "fix_status": "No workaround applied. Zeroing the result field or assigning a fabricated DI fd would hide the premature/stale return without repairing request completion ordering."
+  },
+  "invariants": {
+    "matching_dol_unchanged": true,
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "iso_modified": false,
+    "first_game_screen_verified": false,
+    "decomp_baseline_modified": false
+  },
+  "next": "Investigate the lifetime and wait/wake contract of FUN_8050441C requests, including callbacks and the PPC32 request object at +0x2c. Prove that /dev/di open completes and receives its own guest descriptor before its first ioctl. Then audit the RSO callback initialization/relocation path and continue until the first real screen."
+}

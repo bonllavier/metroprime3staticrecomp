@@ -1,0 +1,86 @@
+{
+  "revision": "RM3E01_00",
+  "created_utc": "2026-10-21T07:39:34.064093+00:00",
+  "status": "font_input_verified_render_transition_unresolved",
+  "verified_font_quad_vertices": [
+    [
+      174.0,
+      0.0,
+      206.0,
+      0.5625,
+      0.4749999940395355
+    ],
+    [
+      174.0,
+      0.0,
+      217.0,
+      0.5625,
+      0.612500011920929
+    ],
+    [
+      182.0,
+      0.0,
+      206.0,
+      0.6875,
+      0.4749999940395355
+    ],
+    [
+      182.0,
+      0.0,
+      217.0,
+      0.6875,
+      0.612500011920929
+    ]
+  ],
+  "font_vertex_stride": 20,
+  "font_first_shader_hash": "5647F2E965F39515",
+  "font_pipeline_hash": "F892D70D494F0487",
+  "observations": [
+    "The CPU FIFO trace contains all 20 float words including the final zero Y.",
+    "Before backend handoff the original packet tail was intact. A prior GPU readback had omitted the zero and included bytes of the following BP command.",
+    "Single consumer ownership and stable packet copy preserve the complete glyph quad in GPU readback.",
+    "GPU atlas 64x80 contains correct white glyphs and transparent background.",
+    "The encoded font draw has full 640x448 scissor, ready pipeline, culling disabled, and valid uniform/index offsets.",
+    "A time sequence still shows corruption near 22 seconds and black afterward. Correct input data do not establish rendering equivalence.",
+    "Forcing a fresh shader module for the identified pipeline did not resolve the black output."
+  ],
+  "tests": {
+    "native_fifo_consumer_scope": "PASS nested ownership and exception release",
+    "matching_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "artifacts": [
+    {
+      "path": "recomp/.tools/prime_gpu_font_buffers_frame1285.bin",
+      "sha256": "1b6f477ccc1ecd3a5ad67d83d3a06b3aca0fafe42db2bc695eb2cf5922e33ac1"
+    },
+    {
+      "path": "recomp/.tools/prime_first_font_gpu_buffers.bin",
+      "sha256": "fc68fec51fa9bfa82a111061c0ba52a1cf2e997b2aec914003b8ed5e75d5e78f"
+    },
+    {
+      "path": "recomp/.tools/prime_gpu_font_after_guard.bmp",
+      "sha256": "6942269f343cb70a376da173c1850c7c03db4899a94a1cef1c9b20be3421b535"
+    },
+    {
+      "path": "recomp/.tools/prime_first_font_efb_and_buffers.bmp",
+      "sha256": "cb0374e874f7e968e1f7de5bb295870987323606bdda9e87d44114405848cd30"
+    },
+    {
+      "path": "recomp/.tools/prime_first_font_efb_and_buffers.bmp.buffers.bin",
+      "sha256": "fc68fec51fa9bfa82a111061c0ba52a1cf2e997b2aec914003b8ed5e75d5e78f"
+    },
+    {
+      "path": "recomp/.tools/prime_font_shader_5647F2E965F39515.wgsl",
+      "sha256": "d304a42e2d42824ab42d9ae3ca0a0116b88119266f6dc41088e32e0de18252fd"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_fifo_single_consumer_boot.json",
+      "sha256": "fb0b6c8b4f3eafa5cac2e50760d9d03a7e5ab79af09021ce69be64ca6421cf3f"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_validated_gpu_transition_sequence.json",
+      "sha256": "717bb566d04332955ee2cd86a4bd9216ff63484f19402361d47014d7aa4a0b72"
+    }
+  ],
+  "next": "Validate the worker barrier for direct BP state mutation and display copy, then audit per-XFB freshness if necessary."
+}

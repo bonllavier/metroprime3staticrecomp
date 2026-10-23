@@ -1,0 +1,57 @@
+{
+  "result": "PASS complete runtime build and reproducible nine-function candidate integration; runtime pending",
+  "executable_sha256": "8c949c87c34947b2d9b8d5a0ba6d41393993c23fe79a586224c683e581478c4b",
+  "build_log": "recomp\\.tools\\prime_audio_batch_build_20261022.log",
+  "build_log_sha256": "1b61317a544c43ce02cf3a99a1184801493e4fde7c6964fdb940f1075fff57f9",
+  "candidate_functions": [
+    {
+      "entry": "0x8040D9D8",
+      "tables": 1,
+      "candidate_sha256": "f545d4ddd1f8d52941f1880ce62759b707f5a34506ea52c35009988ee2b6f2a4"
+    },
+    {
+      "entry": "0x8040F98C",
+      "tables": 1,
+      "candidate_sha256": "dce9ae372fc63c4e8bae405172daf9073ab548dfe011c48996934a3407b9ca6b"
+    },
+    {
+      "entry": "0x80414E20",
+      "tables": 2,
+      "candidate_sha256": "d53988835891b4ad4cefc1ba928e0247d6cd7a222abb38110a1e743a56714f48"
+    },
+    {
+      "entry": "0x80415CB8",
+      "tables": 4,
+      "candidate_sha256": "cd2ebfd050fdc192adf4efbb879f7d11be72124808534134853eee7157bd6737"
+    },
+    {
+      "entry": "0x804167CC",
+      "tables": 1,
+      "candidate_sha256": "e7585a9fabc3c5bf445cecda758aa13dc864826d2ef75c84f6be04164b184c42"
+    },
+    {
+      "entry": "0x80419848",
+      "tables": 2,
+      "candidate_sha256": "ea228b2e4eaf12775709a304b51de3bc46aa96ee857ae3e64c7accdad66fcf44"
+    },
+    {
+      "entry": "0x80425B10",
+      "tables": 3,
+      "candidate_sha256": "fdae5c49710f92942463ce8390308f2ed375495d1e60a496170a29c7db4e1e68"
+    },
+    {
+      "entry": "0x80427A34",
+      "tables": 1,
+      "candidate_sha256": "834a49ba19304f9b99f5f513188c722e38223e70dd968b9747449d316bd367e6"
+    },
+    {
+      "entry": "0x804280AC",
+      "tables": 1,
+      "candidate_sha256": "210bae33a64b1961dd6fed6032fbd06372aa75af514f15c1c7c6e899a9df045a"
+    }
+  ],
+  "table_count": 16,
+  "table_destinations": 176,
+  "independent_audit": "20261021_prime_audio_scaled_switch_audit.json",
+  "baseline_DOL_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+}

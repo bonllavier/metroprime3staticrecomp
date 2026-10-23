@@ -1,0 +1,3521 @@
+{
+  "revision": "RM3E01_00",
+  "rso": "RSO_ScriptGUIScreenFrontEndUI.rso",
+  "rso_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+  "factory_probe_entry": "0x806AD3BC",
+  "translator": "WiiCompiled Translator.Core, factory probe metadata plus pinned full-DOL translation metadata",
+  "direct_call_closure": {
+    "unique_functions": 382,
+    "rso_functions": 3,
+    "dol_functions": 379,
+    "missing_metadata_nodes": 0,
+    "sources_present": 382,
+    "interior_translation_nodes": 4,
+    "direct_call_edges": 721,
+    "interior_translation_addresses": [
+      "0x80305AE4",
+      "0x80305AF0",
+      "0x80305AF8",
+      "0x80305AFC"
+    ]
+  },
+  "limits": [
+    "Only statically recorded direct calls are traversed; indirect PPC branches, virtual calls, callbacks, import activation, and runtime loader flow are not included.",
+    "Metadata/source availability does not prove link success, ABI correctness, runtime reachability, or display output.",
+    "Four reachable DOL addresses are marked interior to other conservative translations (0x80305AE4, 0x80305AF0, 0x80305AF8, 0x80305AFC); their generated files are not evidence of standalone original function boundaries. Inspect call context before any native registration or strict executable link."
+  ],
+  "functions": [
+    {
+      "address": "0x80004000",
+      "class": "DOL",
+      "source_sha256": "e9e81258184c6d50f17fb4f9c526d325ce715b293ccd282f18fa7fd29e60b82c",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80004050",
+      "class": "DOL",
+      "source_sha256": "18f1b6d4bd53a13a405acaba65329f58e7a15f264ea077af24990b92ad7f7a0a",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80004104",
+      "class": "DOL",
+      "source_sha256": "d573f11697a50d43f72ac43f7ff089225ecea9325edd4f00e4a952bb74006fae",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80008C70",
+      "class": "DOL",
+      "source_sha256": "a846cffeddaddfd4512bc6b2ab3be15c940512c145fc29ec2858ad3806ebbf60",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80009C90",
+      "class": "DOL",
+      "source_sha256": "01a5d33af2849f0a0a6cf988257cc035d538acd66145848392e6584031fb9914",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8000C6A4",
+      "class": "DOL",
+      "source_sha256": "85296b39c3d5e9de2eb61f2d0b28bdb1e7087d87fd9346566336d19e305d476d",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8000C840",
+      "class": "DOL",
+      "source_sha256": "3b4e59aa8e409b4fcf7ec1a7a8788aaed678436ae5aa35afc535fe9b7fa180e4",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80013488",
+      "class": "DOL",
+      "source_sha256": "eca52991500ffec041a6bc3fa686601a9ce7cc40268fc751ea56dc9cf634b479",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80013C94",
+      "class": "DOL",
+      "source_sha256": "942a6fab7f17433eda3bfcaea61849ab07f88f9fe1ff0fb364345c96c3193637",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80013D0C",
+      "class": "DOL",
+      "source_sha256": "2efb7d007d30fdcd770167be7a21e032d33eaea8ab0d37249fe560a2350c51ce",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80013D5C",
+      "class": "DOL",
+      "source_sha256": "fa2ed38c7fd4cf5c2c68b96b58057367a75f9609ed928abbb5f91e4f15b0beee",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x800739F0",
+      "class": "DOL",
+      "source_sha256": "95912e9f2c6e7e59d58bd1f7254762c3578032974b31b6382d108fef17502cf1",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x800CAEF0",
+      "class": "DOL",
+      "source_sha256": "6be14769769312ae3de3c44e509e664909449fe5963cf58d3b48e875c23aa5f0",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x800CB178",
+      "class": "DOL",
+      "source_sha256": "af12852685686d1a148c4296744e3ff9df05ec5369d9ed34add5d14150248c1a",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x800F4B80",
+      "class": "DOL",
+      "source_sha256": "7dcf9499aa7b27dd443e18785acc60b17d4d85cbdf09257090280accec33f2c3",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x800F5D50",
+      "class": "DOL",
+      "source_sha256": "9f338430ab2ae122c34064f64fbc34db091a2be159ee48b05aed0f45609f47ec",
+      "direct_call_count": 7,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x801A7FD8",
+      "class": "DOL",
+      "source_sha256": "83ebe80f5be39ac677490c567a2e7466a2d6f06cd20e3d208d9a24011cf84c37",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x801A8014",
+      "class": "DOL",
+      "source_sha256": "a609e4c76d476308f078e517d33bbf2c3836bb66a4e1e8250a0f2efbf3af881c",
+      "direct_call_count": 16,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x801AA300",
+      "class": "DOL",
+      "source_sha256": "69f2699733406900aadbf936baaa2a54f1f3cdc8efe95d5f3199387b8434fe12",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x801AA4A4",
+      "class": "DOL",
+      "source_sha256": "bbdeb4b0fd4da05a17026f019fcf26498d281ec1864c4c1860e405fb06cea0ee",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x801AA630",
+      "class": "DOL",
+      "source_sha256": "666fc36b09a039108ccea026e7287404b4656f2adbaa716d14ec21f8400cc86e",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x801AA7E8",
+      "class": "DOL",
+      "source_sha256": "53d20fb482c49ad71a026b510be8d7eb9aeeef7df6ea1818b572676157618bdb",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x801AA840",
+      "class": "DOL",
+      "source_sha256": "1b3ec94a515363e747372d4698d4a6302859869b7e97d8a28135ad77246f58be",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8027D99C",
+      "class": "DOL",
+      "source_sha256": "2bde6f5f2822a74357d0241010053935b510482ed33f395cb13f9cabfd6bca13",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802B4ACC",
+      "class": "DOL",
+      "source_sha256": "108f13943b96ebeccebf5cd91de8983e70e123421021df0b8b0d2938ef8204f8",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802DC448",
+      "class": "DOL",
+      "source_sha256": "0160123b2a3ae096d2546c70e59cecdd6ceffb14a8a24e11c423ec4406eac826",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802DC4A8",
+      "class": "DOL",
+      "source_sha256": "d6e104a3c0f147c243c1b594a2ee85c6281acdb49ef0e26ed0cb32e77bcc8b8b",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802DC4E8",
+      "class": "DOL",
+      "source_sha256": "aea51a61080163c567e9d717e1406f2effb90c5755d8f72d3d79b16aa5acc21b",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802DCE04",
+      "class": "DOL",
+      "source_sha256": "d40682d9b07c741d8e691aa6b39ace318bc3b90804c639c7f357ec9c9d9fcf38",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802DCE5C",
+      "class": "DOL",
+      "source_sha256": "1ff303ad26e7e3b0cb5a080fd5b81e86b0fa92cb2b7c434df092c09363f2dfa6",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802DCEC8",
+      "class": "DOL",
+      "source_sha256": "f95c2e70d7c6f5954ec2cab34a1301fa2f0a9a7d53373f5e1d74e75a71feef30",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F2E48",
+      "class": "DOL",
+      "source_sha256": "ba169a25940dc1302d9fca0a661029bf2bbfb0d22cdd671a27b297e3ccac613f",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F2F24",
+      "class": "DOL",
+      "source_sha256": "21d02df8135a8b69f5782daca4ad90f5c64dd0554fbe1bb1ffdb3394299f700c",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F31AC",
+      "class": "DOL",
+      "source_sha256": "c50a82f715c1d4480cb76b4eaa8b644b455e4b14fbb862ba5ea40686577a9034",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F3298",
+      "class": "DOL",
+      "source_sha256": "594be096a5bbb30fef30acfeb948d9c2db3235896e9c923a404d4e43183988d9",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F3D04",
+      "class": "DOL",
+      "source_sha256": "ed8d6d32fbc47c0e4fb1e77c4053804458774418fb05866f87aedb3a5fe4f30e",
+      "direct_call_count": 8,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F3E68",
+      "class": "DOL",
+      "source_sha256": "cd318c695c3ef05af42b67e37d2e92e389296a4a727efb8f6308a632f9de0c0b",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F5988",
+      "class": "DOL",
+      "source_sha256": "671734c832d107626dac2f3279366d8ef229f7cc7bc922f743763ff358359851",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F59A0",
+      "class": "DOL",
+      "source_sha256": "36a5dc3a6d68ab39f74ab888387b40675cd549d4eeacf23b322736e795f61160",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F5B5C",
+      "class": "DOL",
+      "source_sha256": "d7656e4227f99dfd2b846ce5838cb3f46afde99ac92247d53e4dd3aac9e0ee74",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F5C14",
+      "class": "DOL",
+      "source_sha256": "95b79e228ae0e09550fdbc8c0a666ba9b2a02d450c83267b63016ccda741a399",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F5CE0",
+      "class": "DOL",
+      "source_sha256": "e93472de4b32959c3a19c0f736426a32c4f0bdcbd0ce76a8fae9bc50f94cde55",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F5D84",
+      "class": "DOL",
+      "source_sha256": "ab9688284465f4c1c2dc5b176d86885150fd50a1067835c3e5ebb9955ecafb76",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F5E40",
+      "class": "DOL",
+      "source_sha256": "562a686bd6296483aa3e8a80e5942e2d93cad105e7c0f8f8ad3495c3ae6a2baf",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F5EE8",
+      "class": "DOL",
+      "source_sha256": "f1a02a09240e17b83178d8c558b864bc839667c18e47947e8d4bc22ce332a3ff",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F5FA8",
+      "class": "DOL",
+      "source_sha256": "d3e586d31ae00c9b1dddb6c44def93756afc9c833a5d3db6153047cf97fad11a",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F6064",
+      "class": "DOL",
+      "source_sha256": "7ca04b14a6b64c2a733369346ac86402be3f8dcb274fdc26070dec3ea9ad37a9",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F6620",
+      "class": "DOL",
+      "source_sha256": "e2b47c58773352127fe5b59278e9fa25330f3952b46bc5c3d14b607e5d7f738d",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F6858",
+      "class": "DOL",
+      "source_sha256": "4499aa4f8d6318ca47293e0dfabfe6e8c8b10b72d811b6bb4880fe60a329fb7e",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F6B08",
+      "class": "DOL",
+      "source_sha256": "4b2bd9365891a1415322ba1fc245578323bb7b0f656013f9dc9446dc72b5c608",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F6ED8",
+      "class": "DOL",
+      "source_sha256": "d8b144a629f8cdfff358815120f562878683691003ad627d1ae4170426aa5937",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F7000",
+      "class": "DOL",
+      "source_sha256": "4e4f7b6a60226e9e21003ccf587824e66ebef08b9e5838a5588a66cec6729b39",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F7798",
+      "class": "DOL",
+      "source_sha256": "7a8e6d670596da24ac6973f31e5192a4b21636e94fdb8c551b565877221e4985",
+      "direct_call_count": 11,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F81D4",
+      "class": "DOL",
+      "source_sha256": "80551ef9f1faa756a1bd2b103c0dbe56ac4ea5715e81f7f7c79942e987d9f86e",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F8250",
+      "class": "DOL",
+      "source_sha256": "85bb925f2d5390ff9cc9ca92303b731f209952d68fd1135ea232479faa021435",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F8450",
+      "class": "DOL",
+      "source_sha256": "61c1b936924821e5c30c70814592c063f621f93903786502d1b9c899d160c4fc",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F8744",
+      "class": "DOL",
+      "source_sha256": "1cda164f6525d02b61ad9b53aa439e4734df7774a5d84fa1501e6dd7b37a8ae4",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F8804",
+      "class": "DOL",
+      "source_sha256": "434e52342306b8d54906b39aa16813c991300e57a11b3b24a6fef1a8e538904c",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F88C4",
+      "class": "DOL",
+      "source_sha256": "59638f9be213e2316c1eaaaefe2dbf24d7770d52bd4d83bd405e42bad28809a2",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F8980",
+      "class": "DOL",
+      "source_sha256": "0705a843363c915d662130d64a24f78f044c545f9c3910343b3a8f1d6a760fe8",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F8A9C",
+      "class": "DOL",
+      "source_sha256": "7027f9b62e127c3968af9ee6eaf8139967ae729996323c7c3842678903dc5705",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802F8ADC",
+      "class": "DOL",
+      "source_sha256": "23cfcd9273a047d3d821fa70927999c5c0d5629c51cf80a60ab687eeed988ec4",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x802FB718",
+      "class": "DOL",
+      "source_sha256": "84c7c31cdaf519b741e45897335a9204d87b9af6e13d53e2e95e46a64843a785",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80300D40",
+      "class": "DOL",
+      "source_sha256": "54f8c2a7f2c55d99083abbcffa469ea690134bb3e34da21ea932b6eb9aa1b166",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803010C4",
+      "class": "DOL",
+      "source_sha256": "97ed1378413c0146b92b3dfeea9b9e31da0b66fc8cdaf8ad92f18e06af0586fb",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8030130C",
+      "class": "DOL",
+      "source_sha256": "c472132a16abb6107d2eee02decb8651aa35252fa6be5fc2f686b0e02463301b",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8030141C",
+      "class": "DOL",
+      "source_sha256": "d6d4fab37dab3a62663a46cb27cb0b00357882b374e09102a2a9e2786cdb4ab0",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80302AD4",
+      "class": "DOL",
+      "source_sha256": "1a1d9d712935a1ad332363daedfd74efc7d0b326f58b661879dd03b3f50d8d65",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80302DE8",
+      "class": "DOL",
+      "source_sha256": "d81c42557a8418be63596e2a167ab08a7f81e602734e9c0cb199f7801c31ad8a",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80303168",
+      "class": "DOL",
+      "source_sha256": "3e139a6d3cc297da953ec9474b3af74bbea190e395db430d80a8df1652bcb9b4",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80303194",
+      "class": "DOL",
+      "source_sha256": "abec8c36ee545e6c70588d014b20f0bd32900c2438f25ba26569245d72e202f5",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8030325C",
+      "class": "DOL",
+      "source_sha256": "fca0dab8f929d5cc8beab0ba7d2b62b737ed80c1cdd3379776d3afa22e47ecd5",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803033AC",
+      "class": "DOL",
+      "source_sha256": "acea132f9a5c905286ca42d8f28aeef8575a9ad527d266fe484c476dbf00da48",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80303434",
+      "class": "DOL",
+      "source_sha256": "79c12f39bfe08f4076b15e784307d04ee193280bb42cd54fde4ada11a7e73a96",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8030369C",
+      "class": "DOL",
+      "source_sha256": "6e742a5811659d6f51a5d4085a466b6170d65d74db75042beec993b891a77a59",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80303800",
+      "class": "DOL",
+      "source_sha256": "e88678a3675e5f2e375c5b494a4e4fa927060c79392dfc0f0430c614b17ffede",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803057C4",
+      "class": "DOL",
+      "source_sha256": "1da307baef331288bd404ada285e75e9540dc93d899dfaa93f23c4e47532a536",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803057E0",
+      "class": "DOL",
+      "source_sha256": "a3e2e9dd4ef5a4816434fc81e0e06bc402953a644985669f8dda150e439438d9",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80305988",
+      "class": "DOL",
+      "source_sha256": "f249177ff87c5dd813b3cca858a1ddacace376cff475f9dd779815a5e3be940e",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80305AE4",
+      "class": "DOL",
+      "source_sha256": "2365d9bbf00ee42a8cfe216297fbeb35b7785b1a19052c3aa05478b69058b5ed",
+      "direct_call_count": 0,
+      "interior_to_other_translation": true
+    },
+    {
+      "address": "0x80305AF0",
+      "class": "DOL",
+      "source_sha256": "49da43a543d913e802b941710284557421db862d0080c6ef21607870fcb1f948",
+      "direct_call_count": 0,
+      "interior_to_other_translation": true
+    },
+    {
+      "address": "0x80305AF8",
+      "class": "DOL",
+      "source_sha256": "8af01b2267e4edcea1a7eec71b019482047af5a9e78725f8d249b24a7f93ca48",
+      "direct_call_count": 0,
+      "interior_to_other_translation": true
+    },
+    {
+      "address": "0x80305AFC",
+      "class": "DOL",
+      "source_sha256": "41886830d40bdbfe6aeedaae07b04daa87983cbe84091f8c2df635cdb728545e",
+      "direct_call_count": 0,
+      "interior_to_other_translation": true
+    },
+    {
+      "address": "0x80305B14",
+      "class": "DOL",
+      "source_sha256": "19435cc3f95471f6ca49d43d31ebac6d139558818a7ddbdccce67d510e94d00e",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80305C00",
+      "class": "DOL",
+      "source_sha256": "e44d5486aac4db17676487875b098d0c66ad20d71ada6ef533e858d6ed7baee6",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80305D38",
+      "class": "DOL",
+      "source_sha256": "e84c0f28efadea0bb41a892466de6ebd01b389124fc2fb568897244632779d35",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803060CC",
+      "class": "DOL",
+      "source_sha256": "7f714b09d024f0d82cf2bde7b075483e0bf759d1f4102771732036b9d0540bd3",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80318928",
+      "class": "DOL",
+      "source_sha256": "6824c65de06d61786cb34cfa9ed74a216123e21afb87b1c332bf6ca8fd25c743",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8031F928",
+      "class": "DOL",
+      "source_sha256": "621ade592ace940571ece03923a2662602bd6655ad9f57688cc2466620964c9c",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8031F974",
+      "class": "DOL",
+      "source_sha256": "39d9ffb9723c416d697a1e47f3faa4a85839141dc01bb0caf53dfb71cd77024b",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8031F9D8",
+      "class": "DOL",
+      "source_sha256": "d0096ad8ae7f17325d0b1ac7eba9e75eaa6f381c48bdfb5178e57bc89ac50854",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80327B90",
+      "class": "DOL",
+      "source_sha256": "c8ded980ac4aac81b6c7ae2e2d8b44b69df10109a0d7c6876c346a37f7dfd0d1",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8032EABC",
+      "class": "DOL",
+      "source_sha256": "5b416952fd70386712472eedd56b135fed4654fd9091c3d484c1cfbe9362a31c",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8032ECE4",
+      "class": "DOL",
+      "source_sha256": "6a4a5668ddfd32d9877879a254ea99601dcb36fb80ed58133eaad930d56f97de",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8032EDC0",
+      "class": "DOL",
+      "source_sha256": "393c9546b40063c3373f57a82297e100cb843b065f5facf5200a1cb874235b9a",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8032EE98",
+      "class": "DOL",
+      "source_sha256": "c4593600ee310b1d3fbc9641c415da2bc1dfbf142d5c355d3cf857790de05fa6",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8032F1C0",
+      "class": "DOL",
+      "source_sha256": "5db0e661b6fff04245a91732b78391a82dfca6a904ad801f0d356f6dba41e6b1",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80330044",
+      "class": "DOL",
+      "source_sha256": "e12eb0f980a495b8d9038e180571047a2a52eb51b229e173c4fcb62ac0a1cc3e",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80330048",
+      "class": "DOL",
+      "source_sha256": "84e2d3ba9ca6fb666ed4c7e1c37a7e89f67a33062db719bb3d31720bcd927fad",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80334174",
+      "class": "DOL",
+      "source_sha256": "eb788f4acecf684c14aa3517bf55d9b2d317130991072363a0d41229f71c7dc4",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803353F8",
+      "class": "DOL",
+      "source_sha256": "c9f489e545b6ddd13c3241266d2e06d704529fed8f4fc5a4d1a8aba4a1f8de0a",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803354B8",
+      "class": "DOL",
+      "source_sha256": "70eec715db7d1f2c958d3618d0d9e236e1528b71ef82b8c13e74b89b77074b12",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80335700",
+      "class": "DOL",
+      "source_sha256": "d25c05f875c0b9176bf3ce04cec56dce00ba0aa8b031f7efddba4f5758f34fac",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803379D4",
+      "class": "DOL",
+      "source_sha256": "e6db82b7a766d9974a76f5cbe86f38e57b24a34e4c9e31b21a1fd25ae0693a71",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80337D30",
+      "class": "DOL",
+      "source_sha256": "a86f0d575f49d671ecf93a681b166a600214ed2755f372e9ab8671f775e27051",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8033855C",
+      "class": "DOL",
+      "source_sha256": "33f741e126938133c785b071f6356263d5099d6c39a9d945894506d5453a0866",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8037975C",
+      "class": "DOL",
+      "source_sha256": "2a3115dd5af13a28c9938dea56aad635aed87f9b3feba95f915e70713952e5ef",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8037DDE4",
+      "class": "DOL",
+      "source_sha256": "887dc4044b0df074c83832a0f2b91fb56597816eaab4bb700cf35efcea2b737a",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8037E778",
+      "class": "DOL",
+      "source_sha256": "7cc036aad96e67f536914d4fcf9c3456e1b58765c3620c6f2c77719c42a1c1de",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8037EAEC",
+      "class": "DOL",
+      "source_sha256": "f187d5a8872499bbbfd08d2e169fd1083754292ddf5baa9f77d0a539f007a33f",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8037EC3C",
+      "class": "DOL",
+      "source_sha256": "7263ee3ce7dec3d1d953d4deb6acfc6c87048c744abd3ff923001a5d32dd4b3e",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8037EE8C",
+      "class": "DOL",
+      "source_sha256": "c179d3a2afccbbeb05b39ef2a01a0161fa69a20bcdda7a58937ecb2c59c31657",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8037F068",
+      "class": "DOL",
+      "source_sha256": "95a074e295896a5ceee7e4b94b39fa77ea10e6d6d0595164dc16d05239dd9b10",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8037FA18",
+      "class": "DOL",
+      "source_sha256": "2be0b7199f7a724cc4aa9f85ceeea87d04a15c7951fa381079cc7ba808f5a40a",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803815AC",
+      "class": "DOL",
+      "source_sha256": "2987858df14222d4781a8f11dd0db1948ced192f50e64766f69ff7ea2f0f00bf",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80381728",
+      "class": "DOL",
+      "source_sha256": "bac4454079942eaf15f76f278346acae9a3967bd9a014eb877b9515f4a9ec387",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803824DC",
+      "class": "DOL",
+      "source_sha256": "25518c3bba4b1f41cc75a6de11e310b8375340be66805bed9f885c3f85b8f101",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803825E0",
+      "class": "DOL",
+      "source_sha256": "f3835db6c7642faaddf35093344686941d136472f123f7bcfbfe6e071bd7740e",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803826BC",
+      "class": "DOL",
+      "source_sha256": "35c2e83b1d590f7fbd424d5b8ee50cc566488687a5567ea2949205f22d615f53",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80382710",
+      "class": "DOL",
+      "source_sha256": "0ffd8d5ee306a88655b74b6195b333823327fab42dc0348fc3cb4d6dd5399068",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803850E0",
+      "class": "DOL",
+      "source_sha256": "cd35077fce476ff216742eacd2e3679026667063630f32552f5e9b4931d7d79a",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80385324",
+      "class": "DOL",
+      "source_sha256": "e7ca95c539cb3e79f00281081260cc8d75cd23070909fc5edc2def6c1bec0c6b",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8038F12C",
+      "class": "DOL",
+      "source_sha256": "f4f28694f6a40af023b0a4f577f28b4a3e858c15485ac7846ac368c56b8a0a1a",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8038F1E4",
+      "class": "DOL",
+      "source_sha256": "eae8972285e4af1fd2aab713b733a72d2c0da55fd3b79a77920003e78fdd95e2",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8038F290",
+      "class": "DOL",
+      "source_sha256": "42dd8f03605e8b82d579cb25791a41c427d38b4a979a685743f9ca987dd468d5",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8038F368",
+      "class": "DOL",
+      "source_sha256": "7da2cce9e05659f47044e0996d4511ec626cee16fee44832337f87beaecfa336",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8038F3C8",
+      "class": "DOL",
+      "source_sha256": "7ffc07738165fd93a10bacb4da4e61404a244cf53f99a5b21b1ffd6a00b10eb8",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8038F43C",
+      "class": "DOL",
+      "source_sha256": "4f5d827440f109e1e60fa28062ca02a99244e02c6a25b73b48212458a7a0eae7",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8038F4E4",
+      "class": "DOL",
+      "source_sha256": "547691db3b8922edebf5e46690e100b83ec2384d68dfe9399b7773dcbed1bbe2",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8038F608",
+      "class": "DOL",
+      "source_sha256": "28f0a3712fb5873bff5ef40b53ededb20d3967c17f657f27c6a2efb5534eb342",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80393CBC",
+      "class": "DOL",
+      "source_sha256": "f112529b14850b0733413d14a1841dbf717b9fb6675d5d3a930ea81adde43287",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80393DE0",
+      "class": "DOL",
+      "source_sha256": "56a08aa74ea992b457f478558a0910668fa5a75aec674ff31278e633d4b56514",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80396CE8",
+      "class": "DOL",
+      "source_sha256": "b1bfb8452e15b30e26a708899c995459bf89321d81940185cfe18ed66a03bba7",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80396E2C",
+      "class": "DOL",
+      "source_sha256": "9af681c28066a7bf2b99b4093a13849434bb966c238f150f8bc47e2d055d5b01",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80396ED8",
+      "class": "DOL",
+      "source_sha256": "084ce423663912b88fd45a28deb1a4e02b534a7c4f27856458283a0c66bd8256",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803970A4",
+      "class": "DOL",
+      "source_sha256": "61667b918273320c6e075ba6e90769d7fefb7d861f269bf4d356d3448582108d",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803BCD74",
+      "class": "DOL",
+      "source_sha256": "801499c3e3c9028dfae695b48667f94b2ed717eaec664f654089715359f654a0",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803BCDEC",
+      "class": "DOL",
+      "source_sha256": "da968ddd37be68e111a707f37ce3842fbbface34c50a3192fb44ae85ae4335dd",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803BCED4",
+      "class": "DOL",
+      "source_sha256": "7a8955dd0b6266fb56a1c7961132214d4c9ef46eee4bfaef7ee96ee44f56dfbb",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803BD1B8",
+      "class": "DOL",
+      "source_sha256": "f859fa7310f57267123b62f36ff670e73e887a700e7c18788be54156a4889bd5",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803DDE18",
+      "class": "DOL",
+      "source_sha256": "99fe4a8f8e47440ae937493804525dbe0f174cae2945cbe1d650ff78a4b08a72",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803DDE7C",
+      "class": "DOL",
+      "source_sha256": "ef2d875e3127d7cf9f7a2932c1e2ac7ade84fd4049e165774b45695045e593b6",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803DDEE8",
+      "class": "DOL",
+      "source_sha256": "163e2e6a3d31d5881c73d0fcb8204cf02375c3bada2a6df467ef2372044df3b0",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803DDF1C",
+      "class": "DOL",
+      "source_sha256": "df2f69a1a720b9be75d6ca7bb3243ba54aab58d3954918a55d30b15820e8bf4a",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803DDF60",
+      "class": "DOL",
+      "source_sha256": "aa7abcd73dca1dca907906ba32ba002821034a1a4787af7944f63a2f9c36dc77",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803DDFA4",
+      "class": "DOL",
+      "source_sha256": "99c8ad44bdef153cff7ffd87431a6998ab1873fb2f3b4fdb4337f55515f8a11c",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803DDFE8",
+      "class": "DOL",
+      "source_sha256": "7598a82fc67c1d52222b28d084fe0fb5eb78eb675985271d5f6806b3ef70acaa",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803E23B0",
+      "class": "DOL",
+      "source_sha256": "6a7033c4da0ef512c36e416ef0742aa7b9b680182321faa6e56652272d43b7bc",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803E6C3C",
+      "class": "DOL",
+      "source_sha256": "1b9f9105f62f08cc7cb9c557c37b541d9bfedc36a3bf3449710f8aa5ce7eeea5",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803E7274",
+      "class": "DOL",
+      "source_sha256": "f8c2493e0b08eeb9f533d56ae45a08f3113f6a553f2fb0ff8de1d2c318b31838",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803EDA98",
+      "class": "DOL",
+      "source_sha256": "a631a1344ea9576f907be336016e8e71f8e8944a1adc15f4d1e52c9413e21167",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803EDAF8",
+      "class": "DOL",
+      "source_sha256": "7c26d38676a42df3e9313c01d00db0b82a8e338da216e941b04ae427459cf566",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803F0808",
+      "class": "DOL",
+      "source_sha256": "9239337c57b5d8e28951b723e42212c7bb527176e52ac81cbeb13d3bf23fd3e8",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803F08AC",
+      "class": "DOL",
+      "source_sha256": "3f85286051b75e3353d7f4e5f5f26dfde4f4b8123beb3d6d041c5ed2443ac3ab",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803F6148",
+      "class": "DOL",
+      "source_sha256": "cd7bc40553b6abf975552e5ffbf47d10063e3047cb9e6cedd132a36a3388bd66",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803F6160",
+      "class": "DOL",
+      "source_sha256": "5bc4eef33f527db2f41859b78045b039a3ad2a3307d0f89e2fe03af17283e308",
+      "direct_call_count": 21,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803F6758",
+      "class": "DOL",
+      "source_sha256": "d9ad13def74860f1ac5702589b5dc383aa07ff156a38149623a977b414913801",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803F695C",
+      "class": "DOL",
+      "source_sha256": "15713daf81aa5cee003fe929ef9d9b0f19fd8d3c052b0997731fc8d0844f8037",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803FC148",
+      "class": "DOL",
+      "source_sha256": "84859eb28f06293f499fce14e278098164b970a86e718b603a8567a95fa3d676",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803FC200",
+      "class": "DOL",
+      "source_sha256": "cda89d37f419a1fdabe60f3926e679803f48c66dcb66a9b939a3ee09e221fefd",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803FC770",
+      "class": "DOL",
+      "source_sha256": "9044b46bce7ba778bc32d0e4095f5d4f57d2b2f2a764acce5698d4a62bbc37bf",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803FD4E8",
+      "class": "DOL",
+      "source_sha256": "9b9343dbd4fe51382159900e67dc86642732d332aabf6315513b74040622c306",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803FEFF0",
+      "class": "DOL",
+      "source_sha256": "1a9df3445ef92e616f8d375f314d891e4e73582b52a5657bba6cbd9077111cd2",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x803FF018",
+      "class": "DOL",
+      "source_sha256": "b5ed2d020879c8efed5e1a1cea12486c12b1f5cb11aad22553576923d5f92848",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8040A000",
+      "class": "DOL",
+      "source_sha256": "d3fb7dc7cc63f8c8b2b49d820b5f92ac062bc5d480c9b0b2c574cca345bb7a07",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8040A038",
+      "class": "DOL",
+      "source_sha256": "3cfd07710421b6f3a7b6009003fe965b98296746e772a89cbc3a8788b2950d78",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8040A1F4",
+      "class": "DOL",
+      "source_sha256": "863f394bf77a122a7462bc7eff6563969f904b246c9c15ca56e070dafe2bd9e1",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8041089C",
+      "class": "DOL",
+      "source_sha256": "34ba4871d88990086e69db61ae89b80a6cf60c1346d3b5204dfa270eb404ecbe",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80410D04",
+      "class": "DOL",
+      "source_sha256": "6e0823d8333407f24d07c6c28dc4061c043375b6029b1a2e7a33a1b6fc8c590d",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80410D5C",
+      "class": "DOL",
+      "source_sha256": "394c4fdb02bff72b6342fca003f42b411c0404af4aa0e685d5e78dfe6f80a296",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80411274",
+      "class": "DOL",
+      "source_sha256": "f37220126080711ed1f02f27e0dfb7f0a91c45f75d625cfb92d4440e5e5c22e3",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8041221C",
+      "class": "DOL",
+      "source_sha256": "4a1acaf4d21648b9fa188cd59e65d40ee9891753c1fa2cbee19c4fc3480e4141",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80412500",
+      "class": "DOL",
+      "source_sha256": "7cf7f0b24c8f4178b163989ea60534ca10f8ef3b0c28d0827225b77dedffd064",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804126AC",
+      "class": "DOL",
+      "source_sha256": "396037008c7acde501b330b4bb6eee5216c9769a9e771d7e608d39c5687178c3",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804126C8",
+      "class": "DOL",
+      "source_sha256": "0ec5f8aa194260abe95b1942d8f2c44d1abd979dcfdaae315524195ab7268bd5",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80412A78",
+      "class": "DOL",
+      "source_sha256": "1d670a239216e61b165a753bac6cedd445628476a653abe246bf9e5ec3153f03",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80412B84",
+      "class": "DOL",
+      "source_sha256": "28c54ae384277439c4bc7dce2b82c86fb385df724fc30be16f151dc9da4bb225",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80412D28",
+      "class": "DOL",
+      "source_sha256": "d08bcd5de632a5dde44986b1480f19204436562be8816b1cbc043b68cebb0e48",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80412E20",
+      "class": "DOL",
+      "source_sha256": "bf396ade973dae5a0516247f66ddd6aeb69763f1c2d877463236c35c32261297",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80413010",
+      "class": "DOL",
+      "source_sha256": "6a3339e42f41bbbc93f909aaf77bc2916a8e6c296c207db4ed8afb8de906f5d1",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80413234",
+      "class": "DOL",
+      "source_sha256": "dd425862e851363d6398ef936e295d4e7eed2444068bc8b96f888c8d398e5358",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8041348C",
+      "class": "DOL",
+      "source_sha256": "d16c3e5bbd4a37761966edb37a551e226f404dcc0cc7637530930774b39146ae",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80413734",
+      "class": "DOL",
+      "source_sha256": "41f3b14d8a77635c6165c4fbed690d9b4520913df35684bcdc5fb3e1d24e4f11",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80413D9C",
+      "class": "DOL",
+      "source_sha256": "723f196c6ef464ff92d6782342697a32218b27d0eaa4aabfda2d933d3b874fd9",
+      "direct_call_count": 9,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804141FC",
+      "class": "DOL",
+      "source_sha256": "f66390a3ec2f3ecda99e61b7adb8fce44cb96917f444e5272f1c21e6e5f5168b",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80414520",
+      "class": "DOL",
+      "source_sha256": "164dcd3ea44306b18c07194a67d5d6fe917905cd4852a4ae638e4e9e98179460",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8041CE50",
+      "class": "DOL",
+      "source_sha256": "4b2017191472296618745959c5b45fb13fdda926326dbfe0224cd61069e0777b",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8041CFD4",
+      "class": "DOL",
+      "source_sha256": "c993e1be5d89d69ea331adb92f47c289dcc94f5c74a70ba88994b2af0dec04fe",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8041D500",
+      "class": "DOL",
+      "source_sha256": "03ec88f8efc6b18ff608fc924825df49e4b01614678c36cb1cbb3658c4f2cf7c",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8041E954",
+      "class": "DOL",
+      "source_sha256": "ce67cba5a92572c8dab157317f1b663c17baa8df63ed48c27501dd51da49162f",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8041EC20",
+      "class": "DOL",
+      "source_sha256": "8dff5f988fa8f98312e5ee2d745f7a1308e9a55fa5ec0f326c26e6258ae4270e",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8041EC54",
+      "class": "DOL",
+      "source_sha256": "452460b67df814dc9ebc715d704f9e0432c27103172c1e2b0aed666427a00a1e",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804299DC",
+      "class": "DOL",
+      "source_sha256": "20176430ed62d2f9fb9749119498cf4eabf32391673e3d625dffd44ae5d85b59",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8042F064",
+      "class": "DOL",
+      "source_sha256": "6b8d70f7aef5cc33ff75770ccecd475eb29d3bd89d2b3d3ea00b7228fee0e6aa",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8046D1C0",
+      "class": "DOL",
+      "source_sha256": "a08d400453e184d1627a7308bb30edc74609a876b2c24cb1f7f2062b1be809ed",
+      "direct_call_count": 11,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8046EB40",
+      "class": "DOL",
+      "source_sha256": "36ee05bbd26354108a62483dd847d718ea45abc15452349c1d229e603489fac1",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8047478C",
+      "class": "DOL",
+      "source_sha256": "c54332e1c0992b1fa2b8195f0cae0efe353b0fb2c31343e2a2a2a2ec5969134d",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80474814",
+      "class": "DOL",
+      "source_sha256": "6350914407415fb517eb64f935c778b665b55d7e8c997138478fdd6f3b547084",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804748A8",
+      "class": "DOL",
+      "source_sha256": "c23958491df7fc25ecb0425e52176d48c20b413fa1ff5a6ad65ecd324b1cdce8",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804748F8",
+      "class": "DOL",
+      "source_sha256": "240b8d4ec6c582f5945e3ad5ed19b6835f3d0203eb617c93164a67dd74c092ef",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804749AC",
+      "class": "DOL",
+      "source_sha256": "ac763a1e508d1025e932b569ab0b0ffa38709d37a9a0898be3cd718b9809f137",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80476F14",
+      "class": "DOL",
+      "source_sha256": "2871fdfa547a640cbea54a65da215ae5b749605663ec663d004d529b6618d1d6",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804770A0",
+      "class": "DOL",
+      "source_sha256": "93b636dac7837517f845f419ab547311a1760a5a700b6e494a1944a48557c0cc",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804781B4",
+      "class": "DOL",
+      "source_sha256": "5a279bf9830701bf926d6243a10ab265fb0bb04aff19f1d7d1f76c284840765e",
+      "direct_call_count": 6,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80478F8C",
+      "class": "DOL",
+      "source_sha256": "df2055cc4738cea0acd2ac19fc4d0965e2ea231c4e053c6cc2d15e9b17656a81",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80479218",
+      "class": "DOL",
+      "source_sha256": "7b41b9b5beff680135696e81383c03a4473126ee6086ce1411f6a6643ccbe6fd",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8047A1DC",
+      "class": "DOL",
+      "source_sha256": "2197375344c1c77a13372663e714e3d0c6d28092bed8195d972a659b77feae3a",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8048AFB8",
+      "class": "DOL",
+      "source_sha256": "54cf081d63f3f0ab109d95494401fd98037e1ed214acdc4077b5b3323e8da386",
+      "direct_call_count": 7,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8048FE48",
+      "class": "DOL",
+      "source_sha256": "2f39c13591c4463b021332d350a732abe25c1b18cf0f6f7988614c39e58c861b",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80490188",
+      "class": "DOL",
+      "source_sha256": "d3228c9364fba7235543802f5b3f85b7125dc86b2aba3ff543819dd7e15d452a",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804904A0",
+      "class": "DOL",
+      "source_sha256": "5d9cadcf5cf60d62fb244ae1a05bc78cd87f233837cfe7f4d5f7e68ddd1dbbe5",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804907B8",
+      "class": "DOL",
+      "source_sha256": "fc7517182e7cdb9679d61f4a0e3ceb1d56a29dc790980798113ffbe28fe450a7",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80490AD0",
+      "class": "DOL",
+      "source_sha256": "41fa26754a41759d511ec365c9d30c4a7637c7018dd5f87b597fc2ae5bdee1e4",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80490DE8",
+      "class": "DOL",
+      "source_sha256": "b07d80ae03acf9bc28e2a08341bff3ab445ccdf43ac05b5c9920185425c9128e",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80490ECC",
+      "class": "DOL",
+      "source_sha256": "053016514ecba5b234bd715eb5010c7646c7c342a49882dac1c91b3aa680ae64",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80490F3C",
+      "class": "DOL",
+      "source_sha256": "1c081424a8a3a1a5d03218ef5938aa975caee6203558220350fd439bd34bb385",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80490FAC",
+      "class": "DOL",
+      "source_sha256": "5771fff5b6783b408f0aa3cce7bbd1402a9fd562f648440e4ae8396a98037147",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8049101C",
+      "class": "DOL",
+      "source_sha256": "206df3eeb88ead5a9bb5bd63e6e2b0871d5d77035430dbcf083bb87c1e5bcd6a",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8049108C",
+      "class": "DOL",
+      "source_sha256": "51a6b9ab813a165a40cf3ba8e92cf1ac98f1b866ac75abdb95416c0917c063ac",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804BE818",
+      "class": "DOL",
+      "source_sha256": "235d3f1599651e8037f25df94b4bac567a34fcddff00405d8b10ff2f3958f0aa",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804BE85C",
+      "class": "DOL",
+      "source_sha256": "2b661c46818b2a9f2ca50d78447aa185ab38f7dfcae6f6bdd86956d7002bdf7f",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804C5020",
+      "class": "DOL",
+      "source_sha256": "8a42be2be336f7dc3662d0b91b6dce5d22fa4a83308901be43ec8e8f992e9822",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804C5028",
+      "class": "DOL",
+      "source_sha256": "7b6a4771faa29a6f4be85a1aa5225279aa2045e870d9dd613d7288c647ec3545",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804C8870",
+      "class": "DOL",
+      "source_sha256": "839d827599ec87e0f3d87d4cec9d6f79be44f9fa385fae3f1dbf194c7fdec3b0",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804C9174",
+      "class": "DOL",
+      "source_sha256": "3e8ac6b73818e8380fdb90dd8b623591fd9bf1a2618d3af4872f9b75affb637a",
+      "direct_call_count": 7,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804C949C",
+      "class": "DOL",
+      "source_sha256": "e709b5ac15143bb9778c432e02c96a0bca0bd1a536afa901fd0f59448dad9041",
+      "direct_call_count": 14,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CA558",
+      "class": "DOL",
+      "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CA980",
+      "class": "DOL",
+      "source_sha256": "3cd460ec8bf2abfc8115de8b4ea8ac16eb1f0d43ac0191e8ae4bfcaff2fe91ac",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CAA7C",
+      "class": "DOL",
+      "source_sha256": "9ba2a8926166d3e6ac8e8cd33159ef892dbf7cfa4f86bc519582c2ef7197bcac",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CAEA8",
+      "class": "DOL",
+      "source_sha256": "0b32726b3a8fbad10ce598a6b13197d0f44cd801ae8131d732b883289bf84c12",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CB0A8",
+      "class": "DOL",
+      "source_sha256": "2f1ab3061de5efb971538168b5618f4a3b0d7bebae80fcab8017dae3cbaae7a9",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CB148",
+      "class": "DOL",
+      "source_sha256": "fc05b39925c1774c7cc6f6336cb2a31e17c428afbb961064bf9cc632306167fb",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CB200",
+      "class": "DOL",
+      "source_sha256": "26865f908f03db7d0c0729088b87c3279cdd216ff3e002f159e046ebfb7f0093",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CB4C4",
+      "class": "DOL",
+      "source_sha256": "0c9027d7ea1f855e5132cd15715bd9aa456efb81c70d1368124b0b388c411cfd",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CBB6C",
+      "class": "DOL",
+      "source_sha256": "eaf729de199d9af759460e34f4b7a3c99701df60c4d3ae95c34a72f0f7fa8167",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CBCF4",
+      "class": "DOL",
+      "source_sha256": "5dedece4a34280d8e928bd2e57c94d198a3e86b88131ab2bbb529f7c11cb8e26",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CBF5C",
+      "class": "DOL",
+      "source_sha256": "b01bf08d1798a647a32b429892a954fbd3d0bf344d52b6cd0d85a3e2f32a145e",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CC0C0",
+      "class": "DOL",
+      "source_sha256": "d5e0d3ef373116563e35cf6fa6e6a5155cb264090ffb084f07469bef4c0cb5ad",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CC254",
+      "class": "DOL",
+      "source_sha256": "710306034c0eea57728d00b1b5bd3d5a79c0c4abe350ed37bc0e5260591eed79",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CC3E8",
+      "class": "DOL",
+      "source_sha256": "8dc1ef4b85a6e03d20e273b6fd5339b1ede16cc809315f037760c4ff62d1e1dd",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CC6C4",
+      "class": "DOL",
+      "source_sha256": "ff1ddeb9ac1569a69e4c934ae7a9d9f64bb73f3e41680a936ad88cae2113d9e3",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CC840",
+      "class": "DOL",
+      "source_sha256": "d18326f5f68aac22d45e9596acdfe19b77dff134f85cbe9578629c316c306684",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CC9D4",
+      "class": "DOL",
+      "source_sha256": "99263a976deea59871cf8e7c6d562bcc144ef8d680e3db9aa58080a41cb83b9a",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CCB54",
+      "class": "DOL",
+      "source_sha256": "96033e0466a34ca20dbe40f9b1c9a19182d3ad0131b53fa56d837c2d801c379a",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CCD04",
+      "class": "DOL",
+      "source_sha256": "a854862edba29825905ba47a0a466f3b8b694e8139894117d7c3360b702cbb4f",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CCE90",
+      "class": "DOL",
+      "source_sha256": "151e6cbc9043dc78d00380f457fd027cde12d574f2738046ea643f0803a2490e",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CD014",
+      "class": "DOL",
+      "source_sha256": "d7e89a322575a22d228732660455c9f1df702262e82d85313902c8f79e1e8740",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CD180",
+      "class": "DOL",
+      "source_sha256": "902c989ffe03bcff2b9d60a58212839596cfb8aabc0113cabe61d0cbabc7bc68",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CD270",
+      "class": "DOL",
+      "source_sha256": "4001f8d96ac5bbae3e6eb5796f2e22785d2433bef8a4ed1d3ae584dd3e83c6ca",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CD4EC",
+      "class": "DOL",
+      "source_sha256": "8829177e69e5f0e72351f6a4913bb5d1e62daa49fdcb8d3ad0ca3f76abafddad",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CD688",
+      "class": "DOL",
+      "source_sha256": "e41814f7f1b77524c4d770c0d8ef7042e49fee00576a2309afb8b5a6b0947ac1",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CD904",
+      "class": "DOL",
+      "source_sha256": "8b34e8be5b35499356102af198daf581a2e8f5d0a87410314cf5b04d74430659",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CD988",
+      "class": "DOL",
+      "source_sha256": "6c222beb9984a1f89f4c8ee9c4438dcd524fec94cba44ba72efbc8532982ecd9",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CDCD8",
+      "class": "DOL",
+      "source_sha256": "674a2c2cf316c19f82eea24b5265fdbfb791ce2c7456adf1822410c37c353fdc",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CDE08",
+      "class": "DOL",
+      "source_sha256": "5b92aff3566b9f25e4b6e7c7c543f9f979ca7be4c9c694bc6f683c7a6277e5cf",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CE46C",
+      "class": "DOL",
+      "source_sha256": "41381adaf128286c665710d8d0c0ce8f1a13e2ddff8364c14fc66225a0603549",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CE568",
+      "class": "DOL",
+      "source_sha256": "0232e73ba99aefe876c08e975983009f8926101fc73ffbf23999a7e93c6ec43d",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804CF158",
+      "class": "DOL",
+      "source_sha256": "6404fab66b63489e4d3d1be71de37104adc54aa1c3f797cfd5b9a38a259626a1",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804D0C34",
+      "class": "DOL",
+      "source_sha256": "975683956a03c25551373e3036287daca8fb3b78ee003d5ab9b8cc37b37edad2",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804D23D0",
+      "class": "DOL",
+      "source_sha256": "53a311c62d340046dce5453d81703d15b8c5d475152b8a4dc79ac57096f0e406",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804DD760",
+      "class": "DOL",
+      "source_sha256": "1c968c10fb5b8e458fbc65d49c434f531b24386036c5c6b3327fe211e0fda7de",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804DE884",
+      "class": "DOL",
+      "source_sha256": "1706560503378ae7bdf9aff8ffc336c57eab277b52972080ab11a205430b16ba",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804DE9A0",
+      "class": "DOL",
+      "source_sha256": "c51516d8a34466ff1d2e66818d50a3d556ff4b6f2f961397a07bd9ba360ddc31",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804DEBF0",
+      "class": "DOL",
+      "source_sha256": "9e2faa9ae7d90ab82fadd7c0c0febd22ed956116413dc6a6867756fd24b1f5b1",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804DEC60",
+      "class": "DOL",
+      "source_sha256": "c710fbf19a05d0cc512a2466a25cd985cbcd63f51ede45b6fb29ebcd8f49f9d6",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804DECE4",
+      "class": "DOL",
+      "source_sha256": "553bf58e32ee6db1da37c286f503549f3746c1247dbeca61b2203f85333b9475",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804DF7E8",
+      "class": "DOL",
+      "source_sha256": "c8f1f3c3993f2dbaa999974df42f45c13acbd39a827b1272661f037cee343a31",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804DF8C8",
+      "class": "DOL",
+      "source_sha256": "e2437ee9a713500141b686d7ed0a089add4d5885812c92c4186ab41e80f80d43",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804DF8F4",
+      "class": "DOL",
+      "source_sha256": "2d3aee7f1703dd28e3b3b824acacb5031bb2b9d4822ab7228cf9fe0eada0faba",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804DFB08",
+      "class": "DOL",
+      "source_sha256": "f883b466701e8b5e097d65b90321c6dd9e49a137fd630290cd04ea77f42afc37",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E0144",
+      "class": "DOL",
+      "source_sha256": "3b22047d6f4942036b8109b4eb6115b99f19fe3bb57f74743e7ed04c31802435",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E01C4",
+      "class": "DOL",
+      "source_sha256": "2b4761062f83377267f21759f5607c5d13f1e121d1abc545c46e839883b7cd7d",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E02A4",
+      "class": "DOL",
+      "source_sha256": "5288b4f9f4411a6ba08724c44a4f22ca021f3633f390e4dd7500045620ad6d0a",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E0710",
+      "class": "DOL",
+      "source_sha256": "a124448494ab55ec7330e808deab655c135c762d2d8143d77ead2a51734805e2",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E079C",
+      "class": "DOL",
+      "source_sha256": "809cfe38eab4b5475670a61ede41759ebe3d935ae7e9ca95e97b8a56ee878464",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E27F0",
+      "class": "DOL",
+      "source_sha256": "02ecd10f26cb9a0c3f2e53f64118384fd0689f1d7fbc6c21a631c13a7435d079",
+      "direct_call_count": 18,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E3CD0",
+      "class": "DOL",
+      "source_sha256": "457ec62e891a14fdc3472c24dafba999b7642a0a0bc8b1d9fa83d8cc68d8a735",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E3CE4",
+      "class": "DOL",
+      "source_sha256": "3b39c6a4f44174873cb01789586c68f7837771f562bcb1e51c71e5ae60c88fb7",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E3DF0",
+      "class": "DOL",
+      "source_sha256": "d9334e8f532924019454206faf832d0a9899dabe82534a01dabcd437e469c01e",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E404C",
+      "class": "DOL",
+      "source_sha256": "acced1a75347422d5daef08c4c2523fdf552b4c81a252360fca872579cd775a7",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E40CC",
+      "class": "DOL",
+      "source_sha256": "f1db53ca32711d5c4d940bbf59c26f861170c76a255b7e3124c346f332be7f4d",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E450C",
+      "class": "DOL",
+      "source_sha256": "dc5a425fce7bc0d17d25e8e5648402a6eca3c211a0927ce85079c0789caf73a1",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E4D6C",
+      "class": "DOL",
+      "source_sha256": "d6325f4e699d546bf315027bc76f7b5c6df202a8b45cdff446f51be313726585",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E4E48",
+      "class": "DOL",
+      "source_sha256": "5f974d3ed97cdba2541a606cf5d12d2bc01f65d77a57c287fb723b1174a2315c",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E4F10",
+      "class": "DOL",
+      "source_sha256": "2b4fec25cddd9bf95971efc0390629d7ea76d588a760ae1cb3529fb70d177552",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E5288",
+      "class": "DOL",
+      "source_sha256": "8875af3f3ba8b2752bfca47ce2aed5c5c3c174d53edf7f5b0201e57f156dfab9",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E5310",
+      "class": "DOL",
+      "source_sha256": "87fc7a764904ad36c05f9dc039023537c1e07686ad0f8e238be6ec021a7dee4f",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E53C0",
+      "class": "DOL",
+      "source_sha256": "deef7e36137a51193c4ff61a8eb08485091b6a6cf6a7ec82ace7cd4e27326628",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E5550",
+      "class": "DOL",
+      "source_sha256": "6aaefa131bcf8e220b0bbd69b09c1f5eca6b3734c18f18bad50cbcc7b44bd0aa",
+      "direct_call_count": 11,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E5D14",
+      "class": "DOL",
+      "source_sha256": "491a27f51f44f07314c80fe74d2dd1e160504694169c0bb26a48054fd755c736",
+      "direct_call_count": 7,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E61A0",
+      "class": "DOL",
+      "source_sha256": "09fd1dc2199c4282523283f4d05629c8b4418fbc35d8196b0b67cf1cd80e8964",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E623C",
+      "class": "DOL",
+      "source_sha256": "b1a88b0963a869956fbe06d3a9cda013e28a44d8152a4276b1eb0d30e6b64270",
+      "direct_call_count": 6,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E6358",
+      "class": "DOL",
+      "source_sha256": "5d4eb723574a5b9b91ac2934b8ced6c7fba1ae3f274b466c6298594b9e6a61bf",
+      "direct_call_count": 6,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E68B4",
+      "class": "DOL",
+      "source_sha256": "44cc44268ffb10fe14dcdf687c2f972f6ec635669e03359ecc5b6ba7fde1e216",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E692C",
+      "class": "DOL",
+      "source_sha256": "0e3dbbd7a3e937aa0c9db18e4f7edf16ccb15045c51a26fee23ddaf14ff70d3f",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E6994",
+      "class": "DOL",
+      "source_sha256": "b94769c757ab48bfcc2498205c73f07f7d536cd34fc44e85f734325f7f3d4856",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E69D0",
+      "class": "DOL",
+      "source_sha256": "744e9b93ac36c3993393bc04b7ec362cd63b073205803c119bc87b8c53cd49fd",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E6B84",
+      "class": "DOL",
+      "source_sha256": "1007cf97d1313a185427d3cb695b18de9031e1622645ecdcd0f6e693e145d561",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E6BD4",
+      "class": "DOL",
+      "source_sha256": "a0dcf1f60424243ec2486bf50ec22f9c8ff0aa65dd8d2e90d8c2530fdea53e11",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E71A0",
+      "class": "DOL",
+      "source_sha256": "70133adb34f673e26c62e8181ecf652f538f39e3141e16dc529bd0d6fc7b882c",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E77A4",
+      "class": "DOL",
+      "source_sha256": "fd1669f2c94338d5dc180e9b82a89a1cda33dece0cf5b4f234b0c5234833518f",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E7890",
+      "class": "DOL",
+      "source_sha256": "73112de0ebb7282c7991cdca83885a88a8d15ec5939e4c03876dfcc52a05afe8",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E824C",
+      "class": "DOL",
+      "source_sha256": "e3a97126928d4bac65260cf86a32fb800b58b6fa1cdbdd584d8c734ee0654ba6",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E826C",
+      "class": "DOL",
+      "source_sha256": "4cf35989a16ab56de26cb64841c2d0085e6db14622c1255e6428bd0063740cb4",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E82D0",
+      "class": "DOL",
+      "source_sha256": "43a012c11f092702d2e1ff8d8e56fa61e263779c632c4cc48eb0d5c5bb2f117f",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E8BBC",
+      "class": "DOL",
+      "source_sha256": "d82a04f6fa30c179ac7b19d737ac69e41b9302174acc1f36d66dca5bee560396",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E8D64",
+      "class": "DOL",
+      "source_sha256": "f974f86ea6eecb6f861d7eec6df04080099ad7524310d262d39e35a9dd004c00",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E9454",
+      "class": "DOL",
+      "source_sha256": "39e50b51b71c4bf2cd8a6a22cb78215bcbaea89c47c35adf63180437dec8de11",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E963C",
+      "class": "DOL",
+      "source_sha256": "8b48baf02eab2ebbb6debfcb9212f268edf9dc7e47c36aad8dca2d45a0235583",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804E9720",
+      "class": "DOL",
+      "source_sha256": "22c5226326407107a36e41a7f55d6af29505b97a2e76aad72eac83b6d1c4dad4",
+      "direct_call_count": 6,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EA468",
+      "class": "DOL",
+      "source_sha256": "02644eafebb859e5da9f072119a7674687ca2ed21f21e040acb6f4a25d13ca41",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EA618",
+      "class": "DOL",
+      "source_sha256": "6abd95c2e5f3e0adbe23a1a1c3a144ec65cbad7cca46177c4b1aade863bb5dd5",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EA798",
+      "class": "DOL",
+      "source_sha256": "c10ef03235dfa3e6901869d7efe6b4c2af67c5d13312288ce70bc62adf6050d3",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EA804",
+      "class": "DOL",
+      "source_sha256": "e13aab33fce68954585f55c2e40507ca8437cb00cf874b1a8649fa67274092ff",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EA9B4",
+      "class": "DOL",
+      "source_sha256": "7a49a22aef134303312b64f18a270c06272e7a61472ca03d8598b9095c4a54dd",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EADD0",
+      "class": "DOL",
+      "source_sha256": "64cd62554a4f582e6073581ece2710407f8ff246d365e9370fdded95dcaa7f9c",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EAF84",
+      "class": "DOL",
+      "source_sha256": "df3495f57b9a32e0daa15e30230eec2e8bfdd673b152d480091e251c8a719f4a",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EF37C",
+      "class": "DOL",
+      "source_sha256": "973d9cf0fa5e0609b7fefe99d6f75cd96c14d30fb8fd7cc219c7f058cbb709bc",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EF3C0",
+      "class": "DOL",
+      "source_sha256": "9e6ccfb26bdac777c4a50c7e3be4c741f36bc5b2be669e937337168b5109753b",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EF404",
+      "class": "DOL",
+      "source_sha256": "01dedfd5f3dbc601c363f268369fc1e0bccf85c350aee44e74d1f374d80aeabf",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EF50C",
+      "class": "DOL",
+      "source_sha256": "8bdc4286af4859334e468a6944c4b9fc9e3dc962e29373786b57c094df756c8e",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EF71C",
+      "class": "DOL",
+      "source_sha256": "d9f4721159fcfced31c4253cd7e3e46c9ad029248b18eeb362265115154d2b28",
+      "direct_call_count": 8,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804EFF70",
+      "class": "DOL",
+      "source_sha256": "5a2ddd7bb8ca2c4a05c9b89a10b7f44ba3515c2d7c35731d6468b9c650027f93",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804F0BE8",
+      "class": "DOL",
+      "source_sha256": "6c24eafb8a63a084bcf25ab97cba733482d39141f3fe8de72810b84ee017ecf4",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804F0D68",
+      "class": "DOL",
+      "source_sha256": "5706ce7ca105a5a8b40cc47fa77aa240b5cbc1553154c1bcc59dc584bfcf1808",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804F0F74",
+      "class": "DOL",
+      "source_sha256": "1a2f6e10676bf54ef0ba3e04e8877b025a2f44bf3cc9e0f1a326de1c29dca40b",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804F135C",
+      "class": "DOL",
+      "source_sha256": "ca56187477a0f8132d29834ab39c92874ce665119de00bdccdec088f7e8ce9fb",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804F13F4",
+      "class": "DOL",
+      "source_sha256": "3fb816e43376d6b846af357998d6c92ef8b27e520bc4f9db1331fbb2a2631a89",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804F17A8",
+      "class": "DOL",
+      "source_sha256": "a02d114a65f6cdf9d9783c34f3c3c4c32c4836c1e9f9d76a59aab1e34de11cec",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804F1D78",
+      "class": "DOL",
+      "source_sha256": "e6095ed70fe8fec755b04397f7e07a6b4a86eaaa922b3275aeeb1d905d0187c0",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804F2D0C",
+      "class": "DOL",
+      "source_sha256": "b4b334f83bd3c6a7a6ae217e5484fac9015ac9933800b2f8793fcad0f612413d",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x804F2FF0",
+      "class": "DOL",
+      "source_sha256": "e4c81d04a8f4d3f3c73acfe0ea32571bc82073ea774d91c32e6bddb62410330d",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80500914",
+      "class": "DOL",
+      "source_sha256": "ceb694cd43c52b7fd541fef0cd63add6e59a7ec16dc9d717b6f94a0b95fc3502",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80500A08",
+      "class": "DOL",
+      "source_sha256": "da1c3fb6b8bc98b90c6a8f66c83186b7cd4fd8219b9f89d4f2ee395ac10ee3aa",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80501024",
+      "class": "DOL",
+      "source_sha256": "0dc0d10aa45942e5142ffa3dc43122e48039c1ab6c2225e0af5c228045bb57b1",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x805016F4",
+      "class": "DOL",
+      "source_sha256": "a2777e2003009ad93d1e6611391a43e79ea0fd254c4678519cfc9ca5397cf52d",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x805017BC",
+      "class": "DOL",
+      "source_sha256": "53c01b2c91a6864cb769292f35a07aa01faa59d1c801ad3a890b4774ed5eed0a",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x805019F4",
+      "class": "DOL",
+      "source_sha256": "4ca4050bc05aab0d560ae9eb9725d3ca7c403a30647f4b32386ff79f5585c6f5",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80501AB8",
+      "class": "DOL",
+      "source_sha256": "eed11836e93390e2cc8a703c5a40f05eb71bb2f0477458768647f84b421be7d0",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80501B7C",
+      "class": "DOL",
+      "source_sha256": "a9c82a4c94947a58bd47fdd674c1c7169d9367df3835839387c369a6459846b9",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x805024F0",
+      "class": "DOL",
+      "source_sha256": "470f8875008602a09307681f6b2b0179fe678424d5d0b371a4332016e434745e",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80502704",
+      "class": "DOL",
+      "source_sha256": "bd42494a1124cdb6ab8f498f729809d96848d6493990bc5856253f4ccc2bc4a4",
+      "direct_call_count": 9,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x805029E4",
+      "class": "DOL",
+      "source_sha256": "54beb497c9e4b14c088f1885cd6fb1aea095e5992fbd7dc7c28c98efcde82367",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8050301C",
+      "class": "DOL",
+      "source_sha256": "80977c57f2befb0de893e4ea8a41e5a101d9e48eecd96171022fd85e8b751cd4",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80503F2C",
+      "class": "DOL",
+      "source_sha256": "0158424b0049567c28944156b2060fd81f4af0500b201b914c9f33143d5b0b9c",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8050441C",
+      "class": "DOL",
+      "source_sha256": "f5a00f073935251f1a72dc07f41cab27b774b631d538e8cf8b81d6d2b3e77609",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80504668",
+      "class": "DOL",
+      "source_sha256": "74b2b8ae7d1bab384880968c67dfaceac4638c50903eeb9aa2166502e4167089",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80504780",
+      "class": "DOL",
+      "source_sha256": "bf96a1596ca699e27c2c46da21ee1977dffbc5e0a22d304047202117a0ae27e6",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80504960",
+      "class": "DOL",
+      "source_sha256": "b4ffc6f8ec798f5c6aecaa1112190ecc618dc97958d4e2dc61fb22093abdc8c9",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80504B08",
+      "class": "DOL",
+      "source_sha256": "78c71586f892b8cf87299f3498a9c5b3092d3e0ef663368801835b13c230f948",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80504D10",
+      "class": "DOL",
+      "source_sha256": "556989e53082a8ce9bbd53e4b8d989af5eb49f90448462dd3d4b7d1fb7d1f4f9",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80504FE0",
+      "class": "DOL",
+      "source_sha256": "0853ed39427187bd44585719add07c12e3d0ea17ea7ca0f41b21ffd69c863ff2",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80505118",
+      "class": "DOL",
+      "source_sha256": "f6af12f7724aa1c28449d3ee4fa3181cee5eab9de10ad2f0a26c46d93c1b6341",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80505248",
+      "class": "DOL",
+      "source_sha256": "cfc7e9ef90f780bde8930d1e27098368d22dc3ffe7b143e189463cbc8a52c34e",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80505384",
+      "class": "DOL",
+      "source_sha256": "b9bfd6a073708451b6715857c8daf1ca8491e2077844caebb3dca95ffc0090ae",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8050575C",
+      "class": "DOL",
+      "source_sha256": "76e59cef21c480b85b61b8a592ea8ca050988ac5981faa3edf849f41f60c6e00",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80505960",
+      "class": "DOL",
+      "source_sha256": "68b7cc54f5117b8a0fd482d13d9bcd4cae35e23b022104b25bbc697acfdb5eba",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80505964",
+      "class": "DOL",
+      "source_sha256": "5636f3174a34e83217a70e54800f625263742fee9a572ec8dd66f30693290399",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80505C08",
+      "class": "DOL",
+      "source_sha256": "e4cf283c769c25361e64b2a429541d58ed01aa73c8fddd86a1f5da076096ffad",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80506A64",
+      "class": "DOL",
+      "source_sha256": "ce881cdcacdb2dcf4a02a3d04b2a5f8789c53a8b2a13e459c1941857866b37c5",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80506D44",
+      "class": "DOL",
+      "source_sha256": "10886dc93855363ff7dcf9a4f873e429d9797ebda7e96668fc84a61afe8916fb",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80506E24",
+      "class": "DOL",
+      "source_sha256": "288d38167580387530f495f166dd6695f5beb61301e1b1a75252ee69a66275c0",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80507124",
+      "class": "DOL",
+      "source_sha256": "9017cddc98bf7c423da2e06a16e24ade379859793ee00c2b01d196f0c12e96c2",
+      "direct_call_count": 5,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x805072C4",
+      "class": "DOL",
+      "source_sha256": "d0e1696efb0bbe22b4f90a02aeb6f30c4fe4f0263a03bd1f645e88deda419240",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x805075AC",
+      "class": "DOL",
+      "source_sha256": "a9bd21dbf72d214ba5fcda4361e52aa37517c4f5c5cf93f71feac446b31c15bb",
+      "direct_call_count": 0,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x805078F8",
+      "class": "DOL",
+      "source_sha256": "4a3e0544c570af3a01b2b8c30382c5b5453b00e6b2abd766616779d6d123f04e",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80507A0C",
+      "class": "DOL",
+      "source_sha256": "2c727b2a60dc63961ee85b7f916e0a49b3c996ce318230399592f88b7db30177",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80507C8C",
+      "class": "DOL",
+      "source_sha256": "7efe7cdd8bf0df4f72dc791a30ae352411664d63dec553f12479f3e531143218",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80508778",
+      "class": "DOL",
+      "source_sha256": "e9b9026e8806c9201d42e1860ca6103179674618870a959210f8bcc089841aa0",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8050884C",
+      "class": "DOL",
+      "source_sha256": "1a7fd6030cdb4c4e001ce3439d9b149e1c87eeb16a86d5a78b0b32853158e0c2",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x805089B8",
+      "class": "DOL",
+      "source_sha256": "255480382ac886b399fd7586ff42462de5838b359f5e074e59799f34d8384e01",
+      "direct_call_count": 7,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80508AF4",
+      "class": "DOL",
+      "source_sha256": "b6ac82ba59fb398a869265d23b9de14f19883525b5cc1714b6745295ee841f44",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80508B98",
+      "class": "DOL",
+      "source_sha256": "7fba9816ea9bf614fe5cc2ac64e5fc41ddf6d9eddbcc3678a3b04beb0b3e8647",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x80508C68",
+      "class": "DOL",
+      "source_sha256": "2db98af4888d23852979c655e04e02c7d2eba489ed4d231e7764abee105d36a3",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8053EC08",
+      "class": "DOL",
+      "source_sha256": "6f70c01e8a5d20e91a7ac7db6247dfaa307592a6adcc89af6851437cc5d0f63c",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8053F4C4",
+      "class": "DOL",
+      "source_sha256": "20684a942d49da0d48de6205435382823beeadadd75ddd2cd39904d0693e7182",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8053F598",
+      "class": "DOL",
+      "source_sha256": "c9104a37c6ef8d839602cbb03270aa1d3b5c54fd217b87ac4ff46ed6a81502be",
+      "direct_call_count": 2,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8053FE20",
+      "class": "DOL",
+      "source_sha256": "d1a582012ffc9f0f22d9cc8e2e9d13f254cfdd66553c70ea94d65438f0a676f5",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x8053FFC0",
+      "class": "DOL",
+      "source_sha256": "eaa4aa8b2219f2c6a3a6e5c32bdf04e119eab200028c8d9ca4a652761a19636f",
+      "direct_call_count": 1,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x806AA044",
+      "class": "RSO",
+      "source_sha256": "fcfdc9686cd4fa35733c5f9b2856fd84470642e980e547dc792c0bdb6a024bdf",
+      "direct_call_count": 4,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x806AD2FC",
+      "class": "RSO",
+      "source_sha256": "a5cb87277bd3b72d0e2a2138eb7c9811027a7aa884c8a9ca6e8e8b9eb490a9f1",
+      "direct_call_count": 3,
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x806AD3BC",
+      "class": "RSO",
+      "source_sha256": "b108264188a234624afbd0570dfba4072d01cbe376204dfc04283fff8c5e9218",
+      "direct_call_count": 7,
+      "interior_to_other_translation": false
+    }
+  ],
+  "indirect_dispatch_audit": {
+    "generated_source_pattern_scan": true,
+    "unique_functions_with_indirect_dispatch": 54,
+    "indirect_call_sites": 89,
+    "indirect_jump_sites": 12,
+    "total_sites": 101,
+    "interpretation": "These generated host call sites represent PPC indirect branches/callbacks in the direct-call closure. Target sets, runtime values, ABI compatibility, and reachability before the first screen have not been validated.",
+    "sites": [
+      {
+        "function": "0x80008C70",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80008C70.cpp",
+        "source_sha256": "a846cffeddaddfd4512bc6b2ab3be15c940512c145fc29ec2858ad3806ebbf60",
+        "line": 77,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x800CAEF0",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_800CAEF0.cpp",
+        "source_sha256": "6be14769769312ae3de3c44e509e664909449fe5963cf58d3b48e875c23aa5f0",
+        "line": 109,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x800CAEF0",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_800CAEF0.cpp",
+        "source_sha256": "6be14769769312ae3de3c44e509e664909449fe5963cf58d3b48e875c23aa5f0",
+        "line": 298,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x800F5D50",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_800F5D50.cpp",
+        "source_sha256": "9f338430ab2ae122c34064f64fbc34db091a2be159ee48b05aed0f45609f47ec",
+        "line": 264,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x800F5D50",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_800F5D50.cpp",
+        "source_sha256": "9f338430ab2ae122c34064f64fbc34db091a2be159ee48b05aed0f45609f47ec",
+        "line": 411,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x800F5D50",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_800F5D50.cpp",
+        "source_sha256": "9f338430ab2ae122c34064f64fbc34db091a2be159ee48b05aed0f45609f47ec",
+        "line": 831,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x801A8014",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_801A8014.cpp",
+        "source_sha256": "a609e4c76d476308f078e517d33bbf2c3836bb66a4e1e8250a0f2efbf3af881c",
+        "line": 1805,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x801AA630",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_801AA630.cpp",
+        "source_sha256": "666fc36b09a039108ccea026e7287404b4656f2adbaa716d14ec21f8400cc86e",
+        "line": 144,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x801AA630",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_801AA630.cpp",
+        "source_sha256": "666fc36b09a039108ccea026e7287404b4656f2adbaa716d14ec21f8400cc86e",
+        "line": 215,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x801AA630",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_801AA630.cpp",
+        "source_sha256": "666fc36b09a039108ccea026e7287404b4656f2adbaa716d14ec21f8400cc86e",
+        "line": 394,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x801AA630",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_801AA630.cpp",
+        "source_sha256": "666fc36b09a039108ccea026e7287404b4656f2adbaa716d14ec21f8400cc86e",
+        "line": 465,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x802F3298",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F3298.cpp",
+        "source_sha256": "594be096a5bbb30fef30acfeb948d9c2db3235896e9c923a404d4e43183988d9",
+        "line": 140,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x802F5B5C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F5B5C.cpp",
+        "source_sha256": "d7656e4227f99dfd2b846ce5838cb3f46afde99ac92247d53e4dd3aac9e0ee74",
+        "line": 124,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x802F6064",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F6064.cpp",
+        "source_sha256": "7ca04b14a6b64c2a733369346ac86402be3f8dcb274fdc26070dec3ea9ad37a9",
+        "line": 796,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x802F7798",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F7798.cpp",
+        "source_sha256": "7a8e6d670596da24ac6973f31e5192a4b21636e94fdb8c551b565877221e4985",
+        "line": 201,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x802F7798",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F7798.cpp",
+        "source_sha256": "7a8e6d670596da24ac6973f31e5192a4b21636e94fdb8c551b565877221e4985",
+        "line": 298,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x802F7798",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F7798.cpp",
+        "source_sha256": "7a8e6d670596da24ac6973f31e5192a4b21636e94fdb8c551b565877221e4985",
+        "line": 464,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x802F7798",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F7798.cpp",
+        "source_sha256": "7a8e6d670596da24ac6973f31e5192a4b21636e94fdb8c551b565877221e4985",
+        "line": 2405,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x802F7798",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F7798.cpp",
+        "source_sha256": "7a8e6d670596da24ac6973f31e5192a4b21636e94fdb8c551b565877221e4985",
+        "line": 2578,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x802F7798",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F7798.cpp",
+        "source_sha256": "7a8e6d670596da24ac6973f31e5192a4b21636e94fdb8c551b565877221e4985",
+        "line": 2725,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x802F7798",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F7798.cpp",
+        "source_sha256": "7a8e6d670596da24ac6973f31e5192a4b21636e94fdb8c551b565877221e4985",
+        "line": 2820,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x802F7798",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F7798.cpp",
+        "source_sha256": "7a8e6d670596da24ac6973f31e5192a4b21636e94fdb8c551b565877221e4985",
+        "line": 2938,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x802F7798",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F7798.cpp",
+        "source_sha256": "7a8e6d670596da24ac6973f31e5192a4b21636e94fdb8c551b565877221e4985",
+        "line": 3044,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x802F8744",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_802F8744.cpp",
+        "source_sha256": "1cda164f6525d02b61ad9b53aa439e4734df7774a5d84fa1501e6dd7b37a8ae4",
+        "line": 35,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x80318928",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80318928.cpp",
+        "source_sha256": "6824c65de06d61786cb34cfa9ed74a216123e21afb87b1c332bf6ca8fd25c743",
+        "line": 77,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8031F974",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8031F974.cpp",
+        "source_sha256": "39d9ffb9723c416d697a1e47f3faa4a85839141dc01bb0caf53dfb71cd77024b",
+        "line": 77,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8031F9D8",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8031F9D8.cpp",
+        "source_sha256": "d0096ad8ae7f17325d0b1ac7eba9e75eaa6f381c48bdfb5178e57bc89ac50854",
+        "line": 77,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80327B90",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80327B90.cpp",
+        "source_sha256": "c8ded980ac4aac81b6c7ae2e2d8b44b69df10109a0d7c6876c346a37f7dfd0d1",
+        "line": 77,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x803824DC",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_803824DC.cpp",
+        "source_sha256": "25518c3bba4b1f41cc75a6de11e310b8375340be66805bed9f885c3f85b8f101",
+        "line": 100,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x803824DC",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_803824DC.cpp",
+        "source_sha256": "25518c3bba4b1f41cc75a6de11e310b8375340be66805bed9f885c3f85b8f101",
+        "line": 160,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x803824DC",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_803824DC.cpp",
+        "source_sha256": "25518c3bba4b1f41cc75a6de11e310b8375340be66805bed9f885c3f85b8f101",
+        "line": 203,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x803825E0",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_803825E0.cpp",
+        "source_sha256": "f3835db6c7642faaddf35093344686941d136472f123f7bcfbfe6e071bd7740e",
+        "line": 75,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F12C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F12C.cpp",
+        "source_sha256": "f4f28694f6a40af023b0a4f577f28b4a3e858c15485ac7846ac368c56b8a0a1a",
+        "line": 83,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F12C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F12C.cpp",
+        "source_sha256": "f4f28694f6a40af023b0a4f577f28b4a3e858c15485ac7846ac368c56b8a0a1a",
+        "line": 136,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F12C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F12C.cpp",
+        "source_sha256": "f4f28694f6a40af023b0a4f577f28b4a3e858c15485ac7846ac368c56b8a0a1a",
+        "line": 162,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F1E4",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F1E4.cpp",
+        "source_sha256": "eae8972285e4af1fd2aab713b733a72d2c0da55fd3b79a77920003e78fdd95e2",
+        "line": 135,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F1E4",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F1E4.cpp",
+        "source_sha256": "eae8972285e4af1fd2aab713b733a72d2c0da55fd3b79a77920003e78fdd95e2",
+        "line": 167,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F290",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F290.cpp",
+        "source_sha256": "42dd8f03605e8b82d579cb25791a41c427d38b4a979a685743f9ca987dd468d5",
+        "line": 87,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F290",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F290.cpp",
+        "source_sha256": "42dd8f03605e8b82d579cb25791a41c427d38b4a979a685743f9ca987dd468d5",
+        "line": 119,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F290",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F290.cpp",
+        "source_sha256": "42dd8f03605e8b82d579cb25791a41c427d38b4a979a685743f9ca987dd468d5",
+        "line": 200,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F368",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F368.cpp",
+        "source_sha256": "7da2cce9e05659f47044e0996d4511ec626cee16fee44832337f87beaecfa336",
+        "line": 55,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F3C8",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F3C8.cpp",
+        "source_sha256": "7ffc07738165fd93a10bacb4da4e61404a244cf53f99a5b21b1ffd6a00b10eb8",
+        "line": 120,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F3C8",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F3C8.cpp",
+        "source_sha256": "7ffc07738165fd93a10bacb4da4e61404a244cf53f99a5b21b1ffd6a00b10eb8",
+        "line": 144,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F43C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F43C.cpp",
+        "source_sha256": "4f5d827440f109e1e60fa28062ca02a99244e02c6a25b73b48212458a7a0eae7",
+        "line": 225,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8038F608",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8038F608.cpp",
+        "source_sha256": "28f0a3712fb5873bff5ef40b53ededb20d3967c17f657f27c6a2efb5534eb342",
+        "line": 21,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x8041221C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8041221C.cpp",
+        "source_sha256": "4a1acaf4d21648b9fa188cd59e65d40ee9891753c1fa2cbee19c4fc3480e4141",
+        "line": 539,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8041221C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8041221C.cpp",
+        "source_sha256": "4a1acaf4d21648b9fa188cd59e65d40ee9891753c1fa2cbee19c4fc3480e4141",
+        "line": 672,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80412500",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80412500.cpp",
+        "source_sha256": "7cf7f0b24c8f4178b163989ea60534ca10f8ef3b0c28d0827225b77dedffd064",
+        "line": 136,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80412500",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80412500.cpp",
+        "source_sha256": "7cf7f0b24c8f4178b163989ea60534ca10f8ef3b0c28d0827225b77dedffd064",
+        "line": 253,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80412500",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80412500.cpp",
+        "source_sha256": "7cf7f0b24c8f4178b163989ea60534ca10f8ef3b0c28d0827225b77dedffd064",
+        "line": 393,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804126C8",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804126C8.cpp",
+        "source_sha256": "0ec5f8aa194260abe95b1942d8f2c44d1abd979dcfdaae315524195ab7268bd5",
+        "line": 288,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804126C8",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804126C8.cpp",
+        "source_sha256": "0ec5f8aa194260abe95b1942d8f2c44d1abd979dcfdaae315524195ab7268bd5",
+        "line": 634,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804126C8",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804126C8.cpp",
+        "source_sha256": "0ec5f8aa194260abe95b1942d8f2c44d1abd979dcfdaae315524195ab7268bd5",
+        "line": 735,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80412A78",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80412A78.cpp",
+        "source_sha256": "1d670a239216e61b165a753bac6cedd445628476a653abe246bf9e5ec3153f03",
+        "line": 155,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80412B84",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80412B84.cpp",
+        "source_sha256": "28c54ae384277439c4bc7dce2b82c86fb385df724fc30be16f151dc9da4bb225",
+        "line": 200,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80412B84",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80412B84.cpp",
+        "source_sha256": "28c54ae384277439c4bc7dce2b82c86fb385df724fc30be16f151dc9da4bb225",
+        "line": 284,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80412D28",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80412D28.cpp",
+        "source_sha256": "d08bcd5de632a5dde44986b1480f19204436562be8816b1cbc043b68cebb0e48",
+        "line": 119,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80412E20",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80412E20.cpp",
+        "source_sha256": "bf396ade973dae5a0516247f66ddd6aeb69763f1c2d877463236c35c32261297",
+        "line": 201,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80413010",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80413010.cpp",
+        "source_sha256": "6a3339e42f41bbbc93f909aaf77bc2916a8e6c296c207db4ed8afb8de906f5d1",
+        "line": 506,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80413234",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80413234.cpp",
+        "source_sha256": "dd425862e851363d6398ef936e295d4e7eed2444068bc8b96f888c8d398e5358",
+        "line": 581,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80413734",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80413734.cpp",
+        "source_sha256": "41f3b14d8a77635c6165c4fbed690d9b4520913df35684bcdc5fb3e1d24e4f11",
+        "line": 114,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80413D9C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80413D9C.cpp",
+        "source_sha256": "723f196c6ef464ff92d6782342697a32218b27d0eaa4aabfda2d933d3b874fd9",
+        "line": 302,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80414520",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80414520.cpp",
+        "source_sha256": "164dcd3ea44306b18c07194a67d5d6fe917905cd4852a4ae638e4e9e98179460",
+        "line": 61,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x8041CFD4",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8041CFD4.cpp",
+        "source_sha256": "c993e1be5d89d69ea331adb92f47c289dcc94f5c74a70ba88994b2af0dec04fe",
+        "line": 173,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8046D1C0",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8046D1C0.cpp",
+        "source_sha256": "a08d400453e184d1627a7308bb30edc74609a876b2c24cb1f7f2062b1be809ed",
+        "line": 109,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8046D1C0",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8046D1C0.cpp",
+        "source_sha256": "a08d400453e184d1627a7308bb30edc74609a876b2c24cb1f7f2062b1be809ed",
+        "line": 172,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8046D1C0",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8046D1C0.cpp",
+        "source_sha256": "a08d400453e184d1627a7308bb30edc74609a876b2c24cb1f7f2062b1be809ed",
+        "line": 235,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x80479218",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80479218.cpp",
+        "source_sha256": "7b41b9b5beff680135696e81383c03a4473126ee6086ce1411f6a6643ccbe6fd",
+        "line": 86,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x8048FE48",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_8048FE48.cpp",
+        "source_sha256": "2f39c13591c4463b021332d350a732abe25c1b18cf0f6f7988614c39e58c861b",
+        "line": 198,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804C8870",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804C8870.cpp",
+        "source_sha256": "839d827599ec87e0f3d87d4cec9d6f79be44f9fa385fae3f1dbf194c7fdec3b0",
+        "line": 85,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x804C8870",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804C8870.cpp",
+        "source_sha256": "839d827599ec87e0f3d87d4cec9d6f79be44f9fa385fae3f1dbf194c7fdec3b0",
+        "line": 143,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804C9174",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804C9174.cpp",
+        "source_sha256": "3e8ac6b73818e8380fdb90dd8b623591fd9bf1a2618d3af4872f9b75affb637a",
+        "line": 165,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804C949C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804C949C.cpp",
+        "source_sha256": "e709b5ac15143bb9778c432e02c96a0bca0bd1a536afa901fd0f59448dad9041",
+        "line": 369,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x804C949C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804C949C.cpp",
+        "source_sha256": "e709b5ac15143bb9778c432e02c96a0bca0bd1a536afa901fd0f59448dad9041",
+        "line": 520,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804C949C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804C949C.cpp",
+        "source_sha256": "e709b5ac15143bb9778c432e02c96a0bca0bd1a536afa901fd0f59448dad9041",
+        "line": 1364,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804C949C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804C949C.cpp",
+        "source_sha256": "e709b5ac15143bb9778c432e02c96a0bca0bd1a536afa901fd0f59448dad9041",
+        "line": 2033,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 119,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 154,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 330,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 376,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 436,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 471,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 535,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 581,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 926,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 972,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 1054,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA558",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA558.cpp",
+        "source_sha256": "ebfb98019b4b000a1ffaf8aa190ffd7ba2a40b9a377ef101889719147c26a09a",
+        "line": 1100,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CA980",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CA980.cpp",
+        "source_sha256": "3cd460ec8bf2abfc8115de8b4ea8ac16eb1f0d43ac0191e8ae4bfcaff2fe91ac",
+        "line": 250,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CB4C4",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CB4C4.cpp",
+        "source_sha256": "0c9027d7ea1f855e5132cd15715bd9aa456efb81c70d1368124b0b388c411cfd",
+        "line": 152,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804CE568",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804CE568.cpp",
+        "source_sha256": "0232e73ba99aefe876c08e975983009f8926101fc73ffbf23999a7e93c6ec43d",
+        "line": 219,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804E02A4",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804E02A4.cpp",
+        "source_sha256": "5288b4f9f4411a6ba08724c44a4f22ca021f3633f390e4dd7500045620ad6d0a",
+        "line": 31,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(addr_blrl_804E02BC_loc_0, ctx);"
+      },
+      {
+        "function": "0x804E5310",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804E5310.cpp",
+        "source_sha256": "87fc7a764904ad36c05f9dc039023537c1e07686ad0f8e238be6ec021a7dee4f",
+        "line": 90,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804E53C0",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804E53C0.cpp",
+        "source_sha256": "deef7e36137a51193c4ff61a8eb08485091b6a6cf6a7ec82ace7cd4e27326628",
+        "line": 197,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804E53C0",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804E53C0.cpp",
+        "source_sha256": "deef7e36137a51193c4ff61a8eb08485091b6a6cf6a7ec82ace7cd4e27326628",
+        "line": 324,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804E6BD4",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804E6BD4.cpp",
+        "source_sha256": "a0dcf1f60424243ec2486bf50ec22f9c8ff0aa65dd8d2e90d8c2530fdea53e11",
+        "line": 278,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804E6BD4",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804E6BD4.cpp",
+        "source_sha256": "a0dcf1f60424243ec2486bf50ec22f9c8ff0aa65dd8d2e90d8c2530fdea53e11",
+        "line": 505,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804EAF84",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804EAF84.cpp",
+        "source_sha256": "df3495f57b9a32e0daa15e30230eec2e8bfdd673b152d480091e251c8a719f4a",
+        "line": 238,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      },
+      {
+        "function": "0x804EF404",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804EF404.cpp",
+        "source_sha256": "01dedfd5f3dbc601c363f268369fc1e0bccf85c350aee44e74d1f374d80aeabf",
+        "line": 100,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x804EF71C",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_804EF71C.cpp",
+        "source_sha256": "d9f4721159fcfced31c4253cd7e3e46c9ad029248b18eeb362265115154d2b28",
+        "line": 892,
+        "kind": "InvokeIndirectJump",
+        "source_line": "InvokeIndirectJump(ctr, ctx);"
+      },
+      {
+        "function": "0x80502704",
+        "source": "recomp/generated/RM3E01_00_conservative/functions/func_80502704.cpp",
+        "source_sha256": "bd42494a1124cdb6ab8f498f729809d96848d6493990bc5856253f4ccc2bc4a4",
+        "line": 976,
+        "kind": "InvokeIndirectCpu",
+        "source_line": "InvokeIndirectCpu(ctr, ctx);"
+      }
+    ]
+  }
+}

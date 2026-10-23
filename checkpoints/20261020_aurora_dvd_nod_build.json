@@ -1,0 +1,42 @@
+{
+  "created_utc": "2026-10-20T07:02:00Z",
+  "revision": "RM3E01_00",
+  "purpose": "Compile-only validation of Aurora's DVD adapter and its nod dependency. No player ISO was present in recomp/input/RM3E01_00, so no disc was opened or read.",
+  "upstream_wiicompiled_commit": "4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+  "input_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "nod": {
+    "version": "v2.0.0-alpha.8",
+    "package": "libnod-windows-x86_64.tar.gz",
+    "package_sha256": "7c49f8f0701855602f9e3f32a0003b6eaa71a8a520afa4bc34d6302e2508eddf",
+    "static_library_sha256": "8e07a5320ccd14bcbb4ac72876f965da246aef0339ee3b7137edee6a10ea80b3",
+    "static_library_size": 18203574,
+    "coff_x64_object_count": 504,
+    "non_x64_object_count": 0
+  },
+  "provider_compatibility": {
+    "issue": "The nod prebuilt package contains nod_static.lib, but its nodConfig.cmake selects a GNU-style libnod_static.a name when configuring MinGW, so AURORA_NOD_PROVIDER=package cannot find its own x64 archive in this environment.",
+    "workaround": "A local, reviewable CMake provider patch imports the official MinGW-compatible nod_static.lib and nod.dll filenames and declares the documented Windows system libraries. Patch: patches/aurora_nod_mingw_package.patch. No nod binary or upstream nod source was changed.",
+    "provider_source_sha256": "4a9779820dc8e6105f43fd587450ba0ce89c48dee2aa3155a8630ab1e90edd23",
+    "patch_sha256": "eb8c29eaf9742975f55403cb494ce211ee3d2a01d0f5ae920db1a78c094468d8",
+    "validation": "CMake configured with AURORA_NOD_PROVIDER=package and AURORA_NOD_LINKAGE=static using the patched provider, and the aurora_dvd target completed incrementally. The original compilation had already succeeded through a temporary build-only package shim. All 9 nod_* undefined symbols in libaurora_dvd.a were found among the global definitions in nod_static.lib. This is provider/build and symbol-inventory validation, not a final executable link."
+  },
+  "build": {
+    "target": "aurora_dvd",
+    "exit_code": 0,
+    "compiler": "LLVM-MinGW Clang 22.1.8",
+    "artifact": {
+      "path": "build/aurora-rm3-dawn-20261016-probe/libaurora_dvd.a",
+      "size": 40176,
+      "sha256": "3f9a304bb9812b6153863f458af6fa9e4ebb74a1c43e8069c41d30bad1d80d5a",
+      "coff_x64_objects": 1
+    },
+    "source_sha256": "b197154b25443a7674c01870a2799e79f452ee17a7c8f23bc754d9ccef0d3e13"
+  },
+  "input_directory_contents": ["main.dol"],
+  "limitations": [
+    "Aurora DVD and nod were not linked into an executable or called at runtime.",
+    "No ISO, Wii partition, file path, resource bytes, decryption, or title-specific behavior was tested.",
+    "SDL3 libusb remains disabled for this probe; controller adapter support is unvalidated."
+  ],
+  "game_output": null
+}

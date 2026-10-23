@@ -1,0 +1,41 @@
+{
+    "tested_utc":  "2026-10-21T04:07:28.4043740Z",
+    "revision":  "RM3E01_00",
+    "compiler_sha256":  "a8b7a614eeadd9105f814be3701a7f312cda4cea51751b75b408c16100c94e85",
+    "assertions_enabled":  true,
+    "tests":  [
+                  {
+                      "name":  "prime_ai_registers",
+                      "exit_code":  0,
+                      "output":  "PASS AI rate/stop/reset/W1C/hold/wrap/volume/fractional contracts",
+                      "executable_sha256":  "214514a96946d95d46352707e5cf3786db7052b7b73baecdcb23362c749ec4ca",
+                      "source_sha256":  "5da04e4026d2ecc9706ee759aff12e216a52050c0446addae69f763ffbde596d",
+                      "header_sha256":  "94e7428684d0518c148dd8a942a6ebd9f94d91ca37cb801da79731f60597009f"
+                  },
+                  {
+                      "name":  "prime_dsp_boot_registers",
+                      "exit_code":  0,
+                      "output":  "PASS DSP boot reset/halt/INIT deadline/ARAM DMA/W1C contracts",
+                      "executable_sha256":  "767841103cab363b3243e878a79b3f7b220b466e35401e7bd948cd463f320d0f",
+                      "source_sha256":  "e0cbc8acb60970311d7ccdb98899f7d79e51efcf7438ca4f377c28e8a7cd0b2d",
+                      "header_sha256":  "c34c46c48203033b7d8c0beadd32f32dc1d7a6fa49906205828ec0be71854ea2"
+                  },
+                  {
+                      "name":  "prime_host_continuations",
+                      "exit_code":  0,
+                      "output":  "PASS 200 host transfers, local stacks, CPU identity/registers, NI and exception relay",
+                      "executable_sha256":  "7c32c1b2030c2c82a6d639495527f881cc31af0d5ddd34996d75f00add1918a8",
+                      "source_sha256":  "4d0c58c1fba7c9099f1056a14709b52dd59e1fedd1bcbc3197ed9d09df13b717",
+                      "header_sha256":  "a6a350700838f8847d872694f6d728d623cdc522a5d57637d6a72e5bfb7ecce6"
+                  },
+                  {
+                      "name":  "prime_rso_relocations",
+                      "exit_code":  0,
+                      "output":  "PASS RSO LO/HA carry, signed branches, exact import thunk and three independent section placements",
+                      "executable_sha256":  "378355e9d8644ffa23facabd0327b539b0489371d3686b25ce7fbc1de3812d38",
+                      "source_sha256":  "8d624a20e5229062319f10c75077c54d40f0fca50670a4c8f3219bbaf8945de3",
+                      "header_sha256":  "f7d3668a4a69bba02f007496287042048abcb9c3ec04c1bc4c10528ecf735536"
+                  }
+              ],
+    "limitation":  "Component contracts only. Does not establish game screen, full SDK thread behavior, DSP mix fidelity or audio output."
+}

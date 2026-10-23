@@ -1,0 +1,38 @@
+{
+  "revision": "RM3E01_00",
+  "before_pid": 4740,
+  "candidate_pid": 7304,
+  "candidate_sha256": "4f95e13cf4d98f68bc792fb81b6d3c0b361fc6dcc984b2acc76aeeaa8b1ad2a6",
+  "tests": "21/21 PASS",
+  "observations": {
+    "speech_volume": 0.75,
+    "speech_channels_empty": true,
+    "actor": "0x80ff7ba0",
+    "sound": "0x8127c0c0",
+    "open_state": 1,
+    "blocked_thread": "0x80e7e308",
+    "completed_dvd_block": "0x80eae980",
+    "callback_list_empty": true
+  },
+  "hypothesis": "Zero-latency DVD completion could consume FMOD resume before suspension. Delayed read replies resolve the missing operator voice and radio blockage in the user test; exact race ordering was inferred from live state, not captured instruction by instruction.",
+  "changes": [
+    "Deferred buffered DVD read reply deadline, separate from acceptance acknowledgement",
+    "FIFO and occupied-mailbox preservation",
+    "Read-only bounded audio inspection tool",
+    "FPS enabled in existing runtime config"
+  ],
+  "qa": {
+    "intro_menu_audio": "human confirmed before IPC change",
+    "candidate_title": "progressing",
+    "operator_voice": "human confirmed audible",
+    "radio_progression": "human confirmed advances after code",
+    "candidate_streaming": "open-ginga.fsb successive 64 KiB reads through offset 0x150000; music group channel active; no fatal error found",
+    "candidate_windows_session_peak": 0.4526715874671936,
+    "user_report": "Ahora se oye y avanza"
+  },
+  "limits": [
+    "No full disc timing model",
+    "No complete DSP audio fidelity or extended gameplay validation"
+  ],
+  "status": "Manual radio QA passed; current executable retained as baseline"
+}

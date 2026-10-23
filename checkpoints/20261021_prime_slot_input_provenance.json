@@ -1,0 +1,68 @@
+{
+  "result": "Observed real A edges; run was not a synthetic-only controlled selection",
+  "probe": "base_1792632878_pid14804",
+  "synthetic_click_receipt_created": false,
+  "events": [
+    {
+      "retrace": 449,
+      "hold": 2048,
+      "trigger": 2048,
+      "release": 0
+    },
+    {
+      "retrace": 454,
+      "hold": 0,
+      "trigger": 0,
+      "release": 2048
+    },
+    {
+      "retrace": 684,
+      "hold": 2048,
+      "trigger": 2048,
+      "release": 0
+    },
+    {
+      "retrace": 690,
+      "hold": 0,
+      "trigger": 0,
+      "release": 2048
+    },
+    {
+      "retrace": 719,
+      "hold": 2048,
+      "trigger": 2048,
+      "release": 0
+    },
+    {
+      "retrace": 723,
+      "hold": 0,
+      "trigger": 0,
+      "release": 2048
+    },
+    {
+      "retrace": 796,
+      "hold": 2048,
+      "trigger": 2048,
+      "release": 0
+    },
+    {
+      "retrace": 803,
+      "hold": 0,
+      "trigger": 0,
+      "release": 2048
+    },
+    {
+      "retrace": 983,
+      "hold": 2048,
+      "trigger": 2048,
+      "release": 0
+    },
+    {
+      "retrace": 989,
+      "hold": 0,
+      "trigger": 0,
+      "release": 2048
+    }
+  ],
+  "limitation": "128 changed-frame capture limit reached; captures do not identify provenance of host keyboard/mouse events. No deterministic menu sequence claimed."
+}

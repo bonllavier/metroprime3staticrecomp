@@ -1,0 +1,204 @@
+{
+  "created_utc": "2026-10-20T08:08:00Z",
+  "revision": "RM3E01_00",
+  "ghidra_program_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "prime_os_alarm_functions": [
+    {
+      "address": "0x804DEBF0",
+      "name": "OSSetAlarm",
+      "size_bytes": 112,
+      "observed_calls": [
+        "0x80305AB0",
+        "0x804E3CBC OSDisableInterrupts",
+        "0x804E826C",
+        "0x804DE9A0",
+        "0x804E3CE4 OSRestoreInterrupts",
+        "0x80305AFC"
+      ]
+    },
+    {
+      "address": "0x804DEC60",
+      "name": "OSSetPeriodicAlarm",
+      "size_bytes": 132,
+      "observed_calls": [
+        "0x80305AAC",
+        "0x804E3CBC OSDisableInterrupts",
+        "0x804E82D0 time conversion",
+        "0x804DE9A0 alarm insertion",
+        "0x804E3CE4 OSRestoreInterrupts",
+        "0x80305AF8"
+      ]
+    },
+    {
+      "address": "0x804DECE4",
+      "name": "OSCancelAlarm",
+      "size_bytes": 280,
+      "observed_behavior": "unlinks alarm from previous/next links and updates the hardware decrementer"
+    },
+    {
+      "address": "0x804DE9A0",
+      "name": "alarm insertion helper",
+      "size_bytes": 592,
+      "observed_behavior": "writes callback and fire time, orders list, updates decrementer"
+    },
+    {
+      "address": "0x804DEDFC",
+      "name": "alarm interrupt service candidate",
+      "size_bytes": 556,
+      "observed_behavior": "reads queue head at -0x1D50(r13), checks deadline, removes/reinserts periodic alarms and invokes callbacks",
+      "function_xrefs": 0,
+      "raw_aligned_pointer_hits_in_dol": 0,
+      "invocation": "not established; may be reached through interrupt delivery"
+    }
+  ],
+  "prime_alarm_queue": {
+    "prime_sda1_base": "0x806801C0",
+    "observed_r13_offset": "-0x1D50",
+    "effective_head_address": "0x8067E470",
+    "effective_tail_address": "0x8067E474",
+    "wiicompiled_mkw_offset": "-0x6360",
+    "wiicompiled_effective_address_under_prime_sda1": "0x80679E60",
+    "same_queue": false
+  },
+  "mkw_runtime_import_address_meanings": [
+    {
+      "address": "0x801A0620",
+      "mkw_symbol": "OS_Alarm_InsertAlarm",
+      "prime_containing_function": "__ct__15SLdrRagDollDataFv",
+      "prime_range": "0x801A0528..0x801A0647",
+      "offset": "+0xF8"
+    },
+    {
+      "address": "0x801AADE0",
+      "mkw_symbol": "__OSTimeToSystemTime",
+      "prime_containing_function": "FUN_801aacd8",
+      "prime_range": "0x801AACD8..0x801AAE9F",
+      "offset": "+0x108"
+    },
+    {
+      "address": "0x801A1ED8",
+      "mkw_symbol": "OSSaveContext",
+      "prime_containing_function": "FUN_801a1de0",
+      "prime_range": "0x801A1DE0..0x801A2903",
+      "offset": "+0xF8"
+    }
+  ],
+  "decision": "Do not bind these Mario Kart helper imports to the same Prime addresses. The Prime alarm services are translated at different addresses and expose a distinct queue base; handler invocation ABI/context delivery still needs proof.",
+  "runtime_link_still_blocked_by": [
+    "func_801A0620",
+    "func_801AADE0",
+    "func_801A1ED8"
+  ],
+  "code_changed": false,
+  "next_audit": [
+    "Validate Prime queue event timing and execute the translated alarm handler against a constructed OSContext without corrupting the active host CpuContext/fiber.",
+    "Replace or gate WiiCompiled scheduler/alarm guest-address bindings that land inside RM3E01_00 function bodies."
+  ],
+  "handler_decompile_audit": {
+    "program_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "function_address": "0x804DEDFC",
+    "function_body": "0x804DEDFC..0x804DF027 (556 bytes)",
+    "signature_as_ghidra_currently_recovers": "void FUN_804dedfc(undefined4 param_1, undefined4 param_2)",
+    "ghidra_direct_callers": 0,
+    "observed_pseudocode_effects": [
+      "reads current time and Prime queue head at 0x8067E470",
+      "updates queue head and tail at 0x8067E470/0x8067E474",
+      "updates hardware decrementer based on the next deadline",
+      "reinserts a periodic alarm through 0x804DE9A0 when recurrence is nonzero",
+      "calls the alarm callback indirectly with the alarm object and param_2 context",
+      "creates/destroys stack context state, enables the scheduler, and restores interrupt/context state"
+    ],
+    "host_invocation_contract": "Unproven. Do not call this guest entry as an ordinary C callback or assume its second parameter from the decompiler is a host CpuContext.",
+    "evidence_tool": "Ghidra Prime3 MCP decompile_function_by_address and get_function_calls, after confirming the DOL SHA-256.",
+    "interpretation": "The body is an interrupt-context service candidate with callback and scheduling effects, not a safe queue-poll helper. The lack of direct callers leaves interrupt-vector dispatch unresolved."
+  },
+  "followup_route_discovery": {
+    "checkpoint": "20261020_prime_alarm_interrupt_route.json",
+    "checkpoint_sha256": "47937442875cd3d90914eab56ae1f355d8f5321b046c65eff6d183e68797b90f",
+    "verifier": {
+      "path": "recomp/tools/verify_prime_alarm_interrupt_route.py",
+      "sha256": "059f33bba12fd40621884777aaa6825e1270ba358310f82b11e84ab89d0d553b"
+    },
+    "result": "OSInit->exception initialization copies a 0x98-byte vector template, then alarm initialization installs handler slot 8 at 0x804DF028. The vector passes the index and pointer from low-memory 0xD4; wrapper saves PPC context and tail-branches (b, LK=0) to 0x804DEDFC. The handler forwards the saved context pointer as callback r4.",
+    "correction": "Ghidra reported no xrefs to the service because the vector wrapper had no Ghidra function object. Raw DOL bytes and translated output prove the indirect table route and wrapper tail branch; this is not a normal C call.",
+    "dynamic_execution_verified": false,
+    "runtime_callback_argument_match": "WiiCompiled ProcessAlarmQueue reads low-memory 0x800000D4 into callback r4, matching the DOL vector route; the Prime alarm queue base remains wrong (-0x1D50 versus HLE -0x6360)."
+  },
+  "runtime_decrementer_support_audit": {
+    "source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_init.cpp:268",
+    "observed_runtime_behavior": "The inherited runtime explicitly says decrementer exceptions are not simulated and pumps alarms from its host loop instead.",
+    "timebase_helpers_exist": "recomp/third_party/WiiCompiled/runtime/src/ppc_helpers.cpp implements mftb/mftbu only; no decrementer delivery path was found in runtime/src or runtime/include.",
+    "implication": "Replacing the alarm queue offset alone would not reproduce the Prime interrupt route. A guest-context-safe decrementer/exception bridge or rigorously compatible event pump is still required.",
+    "code_changed": false,
+    "execution_verified": false,
+    "wrong_guest_binding": {
+      "address": "0x8012E594",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_init.cpp:273",
+      "prime_container": "PursuePlayer__10CPatternedFR13CStateManager9EStateMsgff",
+      "prime_entry": "0x8012E3EC",
+      "offset_bytes": "0x1A8",
+      "prime_instruction": "bge 0x8012E604",
+      "instruction_bytes": "40800070",
+      "ghidra_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+      "interpretation": "The HLE registration is bound to an interior Prime conditional-branch address, not a verified Prime decrementer function entry. Ghidra finds no incoming references. This documents an unsafe binding if invoked; it does not prove runtime reachability or interference with sequential translated execution.",
+      "dynamic_execution_verified": false,
+      "ghidra_xrefs_to_target": 0,
+      "verification_checkpoint": "20261020_decrementer_binding_collision.json",
+      "verifier": {
+        "path": "recomp/tools/verify_decrementer_binding_collision.py",
+        "sha256": "ed16ae484e51d4f76709c5fbd29eca65a9915db36c54dcbe4eabafb3b7b9f97e"
+      }
+    }
+  },
+  "prime_alarm_layout": {
+    "queue_head": "0x8067E470",
+    "queue_tail": "0x8067E474",
+    "queue_sda1_offset": "-0x1D50",
+    "alarm_handler": {
+      "offset": "0x00",
+      "size": 4
+    },
+    "fire_time_hi": {
+      "offset": "0x08",
+      "size": 4
+    },
+    "fire_time_lo": {
+      "offset": "0x0C",
+      "size": 4
+    },
+    "prev_link": {
+      "offset": "0x10",
+      "size": 4
+    },
+    "next_link": {
+      "offset": "0x14",
+      "size": 4
+    },
+    "period_hi": {
+      "offset": "0x18",
+      "size": 4
+    },
+    "period_lo": {
+      "offset": "0x1C",
+      "size": 4
+    },
+    "evidence": "Ghidra decompilation of exact Prime OS alarm insertion 0x804DE9A0 and interrupt handler 0x804DEDFC on DOL SHA-256 6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104: insertion stores callback at word 0, deadline at words 2/3, prev/next at words 4/5; handler reads period at words 6/7 and updates queue head/tail.",
+    "runtime_current_hle_field_offsets_match": true,
+    "runtime_current_hle_queue_base_matches": false,
+    "dynamic_alarm_execution_verified": false
+  },
+  "prime_profile_link_progress": {
+    "resolved_import": "func_801A1ED8",
+    "replacement_prime_entry": "0x804E0144",
+    "prime_entry_role": "OSSaveContext equivalent; writes PPC register state to OSContext, stores continuation state and has exact call from Prime context-switch function 0x804E6BD4 at 0x804E6CD0",
+    "runtime_change": "RM3E01_00 scheduler profile calls InvokeDirectCpu<0x804E0144u>; non-Prime builds retain func_801A1ED8",
+    "verification_checkpoint": "20261020_prime_context_save_binding.json",
+    "runtime_common_target_compiled": true,
+    "strict_link_remaining_imports": [
+      "func_801A0620",
+      "func_801AADE0"
+    ],
+    "executable_created": false,
+    "screen_presented": false
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "created_utc": "2026-10-21T02:04:59.423353+00:00",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "executable_sha256": "a1a126ad11f807ed140861b3172e569675a0b599df77fb2cc218bc1c3bdb8833",
+  "build": {
+    "directory": "recomp/build/RM3E01_00_runtime_link_probe",
+    "command": "ninja -C recomp/build/RM3E01_00_runtime_link_probe WiiCompiled.exe",
+    "result": "pass"
+  },
+  "native_hle_isolation": {
+    "profile_guard": "MKW_GAME_PROFILE_RM3E01_00",
+    "rejected_kind": "FunctionKind::Native",
+    "constructor_specializations_checked": 2,
+    "fixed_registration_audit": {
+      "registration_sites": 566,
+      "unique_addresses": 566,
+      "classification_counts": {
+        "inside_sized_rm3_function": 566
+      },
+      "duplicate_address_sites": 0,
+      "registered_addresses_in_main_direct_closure": 0
+    },
+    "audit_checkpoint": "recomp/checkpoints/20261020_hle_registration_function_range_audit.json",
+    "meaning": "Inherited native HLE registrations are not installed in this profile; title-specific replacements remain to be implemented and verified."
+  },
+  "runtime_probe": {
+    "run_directory": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792530393_pid9196",
+    "runtime_started": true,
+    "window_and_d3d12_initialized": true,
+    "screen_presented": false,
+    "fatal_reason": "missing_jump_target",
+    "guest_target": "0x00000000",
+    "lr": "0x804C9480",
+    "active_path": [
+      "0x80006320",
+      "0x804DE05C",
+      "0x804CA2BC",
+      "0x804C9174"
+    ],
+    "next_guest_operation": "The PPC state-machine dispatch at 0x804C949C reads table 0x805A4480 + event_type*4. The event_type 0x0E entry should dispatch to 0x804C9770 per the DOL, but the crash MEM1 snapshot contains zero at 0x805A44B8, producing CTR=0. The exact initialization/overwrite point is unknown.",
+    "jump_table_probe": {
+      "checkpoint": "recomp/checkpoints/20261020_prime_crash_jump_table.json",
+      "dol_entry_target": "0x804C9770",
+      "crash_snapshot_entry": "0x00000000",
+      "entry_address": "0x805A44B8"
+    },
+    "evidence": {
+      "console_log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792530393_pid9196/console.log",
+      "crash_artifact": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792530393_pid9196/crash_missing_jump_target.txt"
+    },
+    "historical_log_only": true,
+    "association_with_current_build": "Not established: current build verification and the archived runtime log are separate evidence."
+  },
+  "source_hashes": {
+    "recomp/third_party/WiiCompiled/runtime/include/abi_bridge.h": "085eea3a60b970249f7e8aecbfb3bf446cdced8d126427e55c55ca27abc13956",
+    "recomp/third_party/WiiCompiled/runtime/src/memory.cpp": "09b48e6e4839f97a5aa4675e33bbb5b789a2eaa08b311a4021695479928564eb",
+    "recomp/tools/audit_hle_registration_interior_targets.py": "ec37bbafc898463c962614f8fa7396ad0bb8944dd19005450c9cc8ef0b72bf24",
+    "recomp/tools/verify_prime_crash_jump_table.py": "f7efa5d6479abd0ae775c86b60c73b073ab825444ae4fd512e76c8d49acfa0a2",
+    "recomp/checkpoints/20261020_hle_registration_function_range_audit.json": "605afe9b7d7b1582bfd04d1c7c608af6040bc482e8f2049b25751fd3e9d4afc8",
+    "recomp/checkpoints/20261020_prime_crash_jump_table.json": "be760da061640afb8bcd60b59629c3a3e965227ae15cb167c4a3b28bc4138db2",
+    "recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe": "a1a126ad11f807ed140861b3172e569675a0b599df77fb2cc218bc1c3bdb8833",
+    "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792530393_pid9196/console.log": "597a703a928c5535c78a6c0ff06a5baa5057dcbfc74d49211724f76d23448a40",
+    "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792530393_pid9196/crash_missing_jump_target.txt": "8bbd1ffcb57a0bdc6114a19cfc961bb06b90f02627f8e1cf6bcdbaf161e7b8f8"
+  },
+  "limitations": [
+    "No game screen was rendered.",
+    "The crash-time jump-table entry is zero although the pinned DOL contains a valid target; its initialization/overwrite point is not yet traced.",
+    "The current DVD runtime still depends on a private research extraction.",
+    "The inherited native HLE services have been disabled for RM3E01_00 pending title-specific implementations."
+  ]
+}

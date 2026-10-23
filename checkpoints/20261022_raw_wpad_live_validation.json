@@ -1,0 +1,73 @@
+{
+  "revision": "RM3E01_00",
+  "result": "PASS build, 19 component tests, live original motion input consumer; radio progression and heavy scene FPS still pending",
+  "executable_sha256": "8db728e5a541f3160f5fbaa4dc9ea48762c22cf3e3f18be997cceba543222eb7",
+  "pid": 7452,
+  "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792698698_pid7452/console.log",
+  "build_log": "recomp/.tools/build_prime_raw_wpad_candidate.log",
+  "tests": "19/19 PASS in recomp/build/runtime-platform-tests",
+  "runtime_evidence": {
+    "old_pid": 2252,
+    "old_raw_records": 16,
+    "old_raw_error": -1,
+    "old_motion_ring_indices": [
+      0,
+      0
+    ],
+    "new_processed_raw_device": 1,
+    "new_processed_raw_error": 0,
+    "new_processed_raw_acc_words": [
+      512,
+      512,
+      612
+    ],
+    "new_motion_ring_indices_initial": [
+      25,
+      26
+    ],
+    "new_motion_ring_indices_followup": [
+      260,
+      261
+    ],
+    "controller": "0x80995EA0",
+    "motion_processor": "0x809F36E0",
+    "snapshot_prefix": "recomp/.tools/prime_pid7452_",
+    "present_fps": "roughly60 during first minute/startup only",
+    "vi_hz": "roughly60 in startup, max_early_ms=0"
+  },
+  "changes": [
+    "Cached diagnostic environment flags on hot paths",
+    "Conservative local display-list layout publication reuse",
+    "Original raw WPAD SDK reader overlay returns the exact same sample as processed KPAD reader for keyboard/mouse only; ABI void preserved and max16 records of56 bytes",
+    "Pure PPC byte serializer shared with existing physical input path; full-packet fixture and axis/Classic/focus tests",
+    "Manual E/Q sensor axis input, original guest gesture recognition retained",
+    "Passive VI cadence measurement; no clock/timestep edits"
+  ],
+  "limitations": [
+    "Radio code acceptance and scene progression require manual retest",
+    "E/Q gesture success in initial lever has not been verified",
+    "No raw IR pointing implementation; raw objects remain invalid",
+    "Heavy cockpit/hologram performance comparison pending",
+    "No30-minute gameplay validation",
+    "No automated Wii buttons or guest scene-state changes"
+  ],
+  "invariants": {
+    "iso_read_only": true,
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "matching_dol_sha1": "3e81f9b09dfb1e7c02e22b9c6c48a4a1390224b2",
+    "friends_report": "untouched"
+  },
+  "sources": {
+    "recomp/tools/prepare_prime_runtime_hooks.py": "77dd1f0a2aa9d4145fdf4a1db683ad0397129ebc26c837e0e24765d52009b9ca",
+    "recomp/tools/build_prime_candidate.py": "ccee23b43b951456243e94c2a5bcbd75b3ce5ecde50257b5d16eedc9fbe1f017",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/input/kpad.cpp": "fa67f60001ce59aef205588fd01e954879af598c9cab2121789e2e7a8f4048d5",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_keyboard_mouse.h": "2e5d5f6d5bb5d3804ce94950fd7e9e9d9c371c2e84da26696fb2c9b5a5beb6e8",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_wpad_packet.h": "e8feaf533daec70b856eb385cad24a31a3a60da300e3b7f99d184ce70adc014b",
+    "recomp/third_party/WiiCompiled/runtime/tests/prime_wpad_packet_tests.cpp": "b7f1f87dac868f7a4a1807d387a41af62c257e5cff540134fb39759885be475d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp": "07f6f5cee5b1c41be44128391381232f3cfd4d76091fd484a6d02d06997b0e63"
+  },
+  "visual_frontend": {
+    "artifact": "recomp/.tools/prime_pid7452_raw_wpad_scene.png",
+    "verified": "Metroid Prime 3 title logo rendered; no controls injected; not cockpit/gameplay proof"
+  }
+}

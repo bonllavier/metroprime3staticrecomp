@@ -1,0 +1,43 @@
+{
+  "created_utc": "2026-10-21T05:34:29.008475+00:00",
+  "revision": "RM3E01_00",
+  "status": "progress_not_first_screen",
+  "runtime_checkpoint": "recomp/checkpoints/20261021_prime_rhbm_init_tweaks_boundary.json",
+  "translated_home_functions": 19,
+  "unsupported_module_instructions": 0,
+  "module_translation_manifest_sha256": "ec60b7761947e3c0bb2240e65641a0d23b240430abd3f6d5836b28d81314c4ed",
+  "module_registry_sha256": "75c92af2ac19d2d87fee93cac02fa1aa15bba8e9a902f24521cfe6044cf90e8d",
+  "source_hashes": {
+    "recomp/tools/RsoRuntimeTranslator/Program.cs": "14bd1ebf3ffbbbfb82978eb29febbc95f0a233ae376ccfaf023d1c96657ea05b",
+    "recomp/tools/RsoRuntimeTranslator/RelocatedInstructions.cs": "7d4fbdfe4d484aff33debd8a41654a8080dc5d8ce1f886e538adb8b8e7f26222",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/Translation/FunctionTranslator.cs": "ad86a5adb71def1f0e304b225ddf81d53eca5d8cda010ab41e378af5f30739e4",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/Analysis/GuestHelperEffectCatalog.cs": "85dcd1ab9c2bea035c3d77593f417e475429791c33398eea6a59e6086e8a6825",
+    "recomp/third_party/WiiCompiled/translator/tests/Translator.Tests/RuntimeInstructionTransformTests.cs": "f03a83dc946bead90045aeb568758af33a9764523978aedc4f897fc947932393",
+    "recomp/tools/build_prime_runtime.ps1": "c9cc9ae00d2f38dd6b5dfb93d83c6229b212f33f412df4a56126bbe20e8fe6b9",
+    "recomp/tools/prepare_prime_rso_translation.py": "ad59a472e56602e96110283b70b88afbe026617086e305cdd4cb448563845960",
+    "recomp/tools/emit_prime_rso_registry.py": "7061b5c1c38a9045d8e4d92d4d4f2fbe95984dd49197845eee7287a5cd436459",
+    "recomp/tools/verify_prime_runtime_boot_probe.py": "968add5564db9f971342880cc4d13bab884b1b028b69685f0ec92ea8086b297c",
+    "recomp/tools/audit_live_prime_rso.py": "6d051e17e256d69514f38b43c17a4d5b03efc94e2303161ca4a8df10ca69de42",
+    "recomp/third_party/WiiCompiled/runtime/src/memory.cpp": "ef56c9a5104c9cb3c3850f83afcfea7f256641af0c78ef2ae86f42a734a394e2",
+    "recomp/third_party/WiiCompiled/runtime/src/prime_rso_runtime.cpp": "83f401e5a2126c607761298d8e4d89ab2aafed5525e780898a70e73f480d1ab5"
+  },
+  "tests": {
+    "translator": {
+      "passed": 691,
+      "failed": 0,
+      "test_assembly_sha256": "7ef938fdfdc4c4830453a00cc04649734526e7fed43859eb0cee77eaaaf73bc5"
+    },
+    "ctest": {
+      "passed": 9,
+      "failed": 0,
+      "log_sha256": "34851a1bf50ae2b61317880fbe192a2df805704c7824d6a3e638159aee726236"
+    },
+    "contracts_checkpoint": "recomp/checkpoints/20261020_prime_runtime_contract_tests.json"
+  },
+  "next_step": "Support simultaneous verified HOME/Tweaks bindings in MEM1/MEM2; execute actual Tweaks prolog and constructors.",
+  "limitations": [
+    "No verified game screen or audio.",
+    "RSO source translation is not matching decompilation.",
+    "Complete module placement, unload, cancellation, rendering and gameplay fidelity are unproven."
+  ]
+}

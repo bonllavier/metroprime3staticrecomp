@@ -1,0 +1,10 @@
+{
+  "result": "MultiModelActor real-link PASS; next untranslated ContextSensitiveAction prolog",
+  "pid": 19724,
+  "executable_sha256": "448e6e794956dce580ec4aa88cf0c6df56926a24523bd512104bab68cb999f54",
+  "multimodel_runtime_bind_verified": true,
+  "missing_target": "0x80fd081c",
+  "caller_lr": "0x8019f8cc",
+  "next_live_audit": "20261022_prime_context_action_live_relocations.json",
+  "thirty_minute_gameplay_verified": false
+}

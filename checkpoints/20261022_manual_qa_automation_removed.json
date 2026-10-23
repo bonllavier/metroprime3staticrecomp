@@ -1,0 +1,23 @@
+{
+  "result": "PASS build with automatic controller injection removed; manual QA handoff",
+  "request": "User returned and requested removal of all automatic button pressing",
+  "exe_sha256": "0507fcf34e929525e224af272b57fe463603bcc22e8aad29027e5377d471cb1b",
+  "removed": [
+    "KPAD command-file override and parser/file headers",
+    "automation input test and CMake target",
+    "send_prime_controller_command.ps1",
+    "click_prime_controller_target.ps1",
+    "exercise_prime_menu_click.ps1",
+    "probe keyboard injection job/options",
+    "active private command file"
+  ],
+  "retained": "Manual SDL keyboard/mouse input; passive captures, logs and historical receipts; performance observer",
+  "validation": [
+    "Runtime C++ rebuild/link exit 0",
+    "PowerShell probe syntax PASS",
+    "Python verifier syntax PASS",
+    "mkw_input_expr_tests PASS",
+    "CTest registry contains 16 tests and no automation input target"
+  ],
+  "gameplay_30_minutes_verified": false
+}

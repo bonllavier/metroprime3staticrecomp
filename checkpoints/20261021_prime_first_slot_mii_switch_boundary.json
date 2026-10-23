@@ -1,0 +1,66 @@
+{
+  "result": "PASS first-slot input, visible Mii Select and original switch boundary audit",
+  "revision": "RM3E01_00",
+  "switch_entry": "0x8019804C",
+  "missing_local_case": "0x80198330",
+  "table_address": "0x80594610",
+  "table_entries": [
+    "0x80198300",
+    "0x80198360",
+    "0x80198300",
+    "0x8019826c",
+    "0x801982f0",
+    "0x80198300",
+    "0x801982f0",
+    "0x80198300",
+    "0x80198330",
+    "0x80198300",
+    "0x80198330",
+    "0x80198300",
+    "0x80198248"
+  ],
+  "unique_cases": 6,
+  "original_function_bytes_in_guest_match": 1140,
+  "original_table_bytes_in_guest_match": 52,
+  "source_repair": "Current translator emitted all six original table destinations, 285 instructions, zero unsupported. Integration pending.",
+  "visual_observation": "80 s Game Select; 90 s Mii Select with noisy icon; later explicit missing jump while constructing WC24OtherFatalError popup. Not a successful full runtime test.",
+  "scope": "No case is registered as a standalone function or patched return. Mii rendering and WiiConnect24 service outcome remain unresolved.",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792619617_pid10084\\runtime_probe.json",
+      "sha256": "abe213b2d6aa7588e4ff03079f1e885a37a1fd840460ee023d3bcaf3f219bbf0"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792619617_pid10084\\console.log",
+      "sha256": "9441cab0aaebc51e3b64026d11f778f2dfcba130290eec0205aa8d956cb6cf99"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792619617_pid10084\\crash_missing_jump_target.txt",
+      "sha256": "172844e79348eca5ddbd5ef1d7cae4202042261b527db222498bc6c6a11a2efb"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792619617_pid10084\\mem1.bin",
+      "sha256": "0286b305c64af219a810792e1e579ed9bea085b8a05a936dc4bac17f48af3ef5"
+    },
+    {
+      "path": "recomp\\.tools\\prime_first_slot_click_pid10084.json",
+      "sha256": "ee3dc19086cfa29806861a8bc185baac17c295b2dff1a444ae6adadbb200d6fe"
+    },
+    {
+      "path": "recomp\\.tools\\dol-runtime-repairs\\func_8019804C.cpp",
+      "sha256": "6ca8d2bdac66d98cf5b2e8d198094a2c1b1b64cb22c9f3d8077c3ac7a7e6b54c"
+    },
+    {
+      "path": "recomp\\.tools\\dol-runtime-repairs\\func_8019804C.json",
+      "sha256": "013f8a475f2b91d7f6ca3d7a20aff4eb417c9760617e08fe14ad327a1c1fc03b"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\window_pid10084_80s.png",
+      "sha256": "c4adabaffc539880309b38010f681ba2fcae3ee83277ccb1ddbf5ca3246de523"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\window_pid10084_90s.png",
+      "sha256": "d6fca11e47eaa6cf739900608c35b5da80c88043528a2f1dd4eaaa0604a2af46"
+    }
+  ]
+}

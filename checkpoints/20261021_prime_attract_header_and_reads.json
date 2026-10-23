@@ -1,0 +1,71 @@
+{
+  "revision": "RM3E01_00",
+  "status": "original_attract_video_header_and_read_ranges_verified_output_not_verified",
+  "file": "recomp\\.tools\\disc-extraction-rm3e01\\files\\Video\\FrontEnd\\attract01.thp",
+  "file_sha256": "5d1ca7f6da67f1f1f4bd271b9b339e21f33bf447fce99c7c7dd9b7c015b0810b",
+  "file_size": 69720016,
+  "header_sha256": "a8a9c11803197c95eada45c6f89ffd730c28b2ed68e9a09654fbf817e41514b8",
+  "version_hex": "0x11000",
+  "width": 640,
+  "height": 448,
+  "frames": 1285,
+  "fps": 59.939998626708984,
+  "max_audio_samples": 0,
+  "component_count": 1,
+  "component_type": "video",
+  "first_frame_offset": 80,
+  "first_frame_bytes": 55328,
+  "last_frame_offset": 69665968,
+  "data_size": 69719936,
+  "reads": [
+    {
+      "offset": 0,
+      "length": 64,
+      "guest_buffer": "0x10DB47A0",
+      "fnv1a64": "273a68109ecf1891"
+    },
+    {
+      "offset": 48,
+      "length": 32,
+      "guest_buffer": "0x10DB47A0",
+      "fnv1a64": "6a181b0a5537bc76"
+    },
+    {
+      "offset": 68,
+      "length": 32,
+      "guest_buffer": "0x10DB47A0",
+      "fnv1a64": "5241d7919bc3d742"
+    },
+    {
+      "offset": 80,
+      "length": 55328,
+      "guest_buffer": "0x105F6440",
+      "fnv1a64": "eb481a1e40b4d773"
+    },
+    {
+      "offset": 55408,
+      "length": 54336,
+      "guest_buffer": "0x103A7F40",
+      "fnv1a64": "0aab2c556bb830d2"
+    },
+    {
+      "offset": 109744,
+      "length": 53408,
+      "guest_buffer": "0x103B53A0",
+      "fnv1a64": "0e6deea381cb4815"
+    },
+    {
+      "offset": 163152,
+      "length": 51808,
+      "guest_buffer": "0x1032DF40",
+      "fnv1a64": "32976ba47b8fca83"
+    }
+  ],
+  "log": {
+    "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792586360_pid20180\\console.log",
+    "sha256": "7b8d5389cb3266c590e5340bec530f4fce94418820a82a757b2d32a24b1420b3"
+  },
+  "game_title_screen_verified": false,
+  "video_output_verified": false,
+  "next": "Trace original THP worker, decode, queues, clock and GX presentation; no standalone video substitution."
+}

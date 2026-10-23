@@ -1,0 +1,37 @@
+{
+  "result": "PASS captured original half-scale copy decoded and native contract test 1/1; GPU execution pending",
+  "failed_probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792645530_pid3188\\runtime_probe.json",
+  "GXData": "0x805f4340",
+  "original_register_words": {
+    "0x240": "0x4900b000",
+    "0x244": "0x4a059e7f",
+    "0x248": "0x4d0000a0",
+    "0x24c": "0x52010263"
+  },
+  "source": [
+    0,
+    44,
+    640,
+    360
+  ],
+  "destination_size": [
+    320,
+    180
+  ],
+  "format": "RGBA8",
+  "stride_bytes": 5120,
+  "destination_bytes": 230400,
+  "test": "mkw_prime_raw_bp_tests",
+  "test_passed": 1,
+  "reference": "https://github.com/dolphin-emu/dolphin/blob/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/VideoCommon/BPMemory.h#L2022",
+  "reference_TextureCacheBase_sha256": "7f8626f31b3f8f924489e54a056aa5a75db40b7dcf7cc2d1796ae603b4d79665",
+  "scope": "Forward original half-scale flag and destination dimensions to existing Aurora filtered resolve. GPU filtering parity unverified; no copied reference implementation.",
+  "build_result": "PASS runtime C++ build",
+  "executable_sha256": "ed80b4d0baff76d4c574eab3a4b0b4c679496028418feca99ef62bf9312e542a",
+  "source_hashes": {
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_raw_bp.h": "cfadfd42511e7cf18ed862b99decd6073412244d82d7c0fd62f7dd80b0293bd0",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_copy.cpp": "8e5a8fef9c5145065acacd0a655a9a72c6dda65907a04ef46adc9194ab911eb1",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_fifo.cpp": "a06c80da2ca71c2d524b6ed5cb4553fe9085b7785089a215f0fbd38d9695368c",
+    "recomp/third_party/WiiCompiled/runtime/tests/prime_raw_bp_tests.cpp": "a2b3eee90b41d7a6f9d1f2b9ded7bc315befda742c3cd65258be1e5d0c650fd7"
+  }
+}

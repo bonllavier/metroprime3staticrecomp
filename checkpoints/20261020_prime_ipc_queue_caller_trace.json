@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-20",
+  "revision": "RM3E01_00",
+  "purpose": "Validate the caller of each IPC queue enqueue and narrow the post-VIDimming stall without changing guest behavior.",
+  "build": {
+    "result": "PASS",
+    "command": "recomp/.tools/portable-tools/Ninja/ninja.exe -C recomp/build/RM3E01_00_runtime_link_probe WiiCompiled.exe",
+    "executable": "recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe",
+    "sha256": "59e442551ab81ab91548aa2c19e4be497b31b25021e9ff05b30aa6c97996e6d2",
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "instrumentation": {
+    "file": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_a2d715df9e1746e53b49d31c.cpp",
+    "change": "The [ipc-queue-trace] field previously read r1+132, outside the current frame. It now reads r1+36, where func_8050441C saves its incoming LR after allocating 32 bytes, and labels it caller_lr.",
+    "source_function_prologue": "func_8050441C stores ctx->lr at current r1+36 after r1 -= 32.",
+    "diagnostic_only": true
+  },
+  "runtime": {
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792542082_pid10436/console.log",
+    "log_sha256": "9b46d6c5b628727cf3c5e406d3011625efc03e0a9079d4427eb491bd058dddfd",
+    "duration_seconds": 25,
+    "process_alive_at_harness_stop": true,
+    "fatal_error": false,
+    "last_observed_queue_entries": [
+      {"command": 6, "caller_lr": "0x805050F8", "thread": "0x8060B418", "outstanding": 1, "head": 27, "tail": 28},
+      {"command": 7, "caller_lr": "0x80505524", "thread": "0x8060B418", "outstanding": 0, "head": 28, "tail": 29},
+      {"command": 1, "caller_lr": "0x80504878", "thread": "0x8060B418", "outstanding": 0, "head": 28, "tail": 30},
+      {"command": 7, "caller_lr": "0x80505448", "thread": "0x8060B418", "outstanding": 0, "head": 28, "tail": 31},
+      {"command": 7, "caller_lr": "0x80505448", "thread": "0x8060B418", "outstanding": 0, "head": 28, "tail": 32},
+      {"command": 7, "caller_lr": "0x80505448", "thread": "0x8060B418", "outstanding": 0, "head": 28, "tail": 33}
+    ],
+    "caller_mapping": {
+      "0x805050F8": "return site in func_80504FE0.cpp",
+      "0x80505524": "return site in func_80505468.cpp",
+      "0x80504878": "return site in func_80504780.cpp",
+      "0x80505448": "return site in func_80505384.cpp"
+    },
+    "queue_observation": "The request at head 27/tail 28 submits IOS command 6. After that completion, command 7 is observed with head 28/tail 29 and no new IOS packet; the /dev/usb open and three command 7 enqueues follow while outstanding remains zero and head remains 28. No later IOS packet or handler trace appears before the harness stops the live process.",
+    "visual_result": "No game screen observed."
+  },
+  "interpretation": "The former caller values were invalid stack reads and are discarded. The saved LR now confirms that the final enqueues originate in func_80504780 and func_80505384. The trace narrows the next investigation to guest queue/thread wake and reschedule behavior after completion of command 6; it does not prove which scheduler transition is missing or justify synthetic IOS replies.",
+  "invariants": {
+    "matching_dol_modified": false,
+    "iso_modified": false,
+    "baseline_decomp_modified": false,
+    "guest_behavior_modified": false,
+    "generated_runtime_diagnostic_instrumentation": true
+  },
+  "next": "Trace the queue wake path through func_804E77A4/func_804E6BD4 and guest thread state around the command-6 completion. Verify whether a runnable IOS worker exists and why the guest scheduler does not submit the next ring entry. Do not fake completion or force a device response."
+}

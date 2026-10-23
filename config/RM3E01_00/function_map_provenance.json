@@ -1,0 +1,10 @@
+{
+  "source_symbols": "decomp\\config\\RM3E01_00\\symbols.txt",
+  "source_symbols_sha256": "aa5fd03f51f1b0d1d1bfdb4d67fd407cae2a62c57dd02a460e387ebec7e05749",
+  "output_map": "recomp\\config\\RM3E01_00\\functions.txt",
+  "output_map_sha256": "42c1c9c1654dd9cd7bffaa67d424ba6ca2a120f77c80d536c4a099ca6abc0586",
+  "unique_function_addresses": 21667,
+  "duplicate_address_groups": 0,
+  "duplicate_address_aliases": {},
+  "selection_rule": "One name per unique address; prefer non-generated and non-local-looking names for native registration. This is boundary metadata, not recovered code."
+}

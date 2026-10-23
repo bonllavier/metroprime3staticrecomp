@@ -1,0 +1,581 @@
+{
+  "revision": "RM3E01_00",
+  "game_screen_verified": false,
+  "outcome": "expected_missing_rso_translation",
+  "missing_guest_target": "0x9016e770",
+  "rso_boundary": {
+    "module": "RSO_rhbm.rso",
+    "role": "Wii HOME infrastructure, not Metroid title screen",
+    "original_sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+    "cached_load_base": "0x9015e880",
+    "prolog_section": 1,
+    "prolog_section_offset": 64976,
+    "section_file_offset": 288,
+    "prolog_target": "0x9016e770",
+    "translation_registered": false
+  },
+  "iso_partition_reads_verified": true,
+  "nod_provenance": {
+    "commit": "6a54b418e541ce5eeb364399116afd6e47b817bb",
+    "library_sha256": "dde0fd4608305f9c4fd0d358808fcf7b09a5863eb06070334ed6725cadb61279",
+    "header_sha256": "8fa7751dfa1868b3e26fbf01d218a25de216617e2b04caf8c1c6eaf1ac141580"
+  },
+  "blocked_mmio": null,
+  "host_thread_starts": [
+    [
+      "8098da28",
+      "8042fec4",
+      "804e70bc",
+      "8098da18"
+    ],
+    [
+      "8099f748",
+      "8042fec4",
+      "804e70bc",
+      "8099f738"
+    ]
+  ],
+  "host_thread_switches": [
+    [
+      "8060b418",
+      "8098da28"
+    ],
+    [
+      "8098da28",
+      "8060b418"
+    ],
+    [
+      "8060b418",
+      "8099f748"
+    ],
+    [
+      "8099f748",
+      "8060b418"
+    ]
+  ],
+  "dsp_upload": {
+    "source": "0x805a1c00",
+    "length": 8192,
+    "imem": 0,
+    "dmem_length": 0,
+    "entry": 16,
+    "hash_ector": "347112ba",
+    "original_dol_payload_sha256": "329e87afe881d4b571c74ac952c599eeab8ec6782748565c8fd15551c04bea24",
+    "backend_started": true,
+    "command_list_execution_verified": false
+  },
+  "build": {
+    "exe_sha256": "c4f3679f8c27111417136c98a480f4d144bc00dd854c2333a3286dcfbc193f35",
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "runtime": {
+    "revision": "RM3E01_00",
+    "started_utc": "2026-10-21T03:44:00.4317708Z",
+    "pid": 9928,
+    "observation_seconds": 15,
+    "alive_at_deadline": false,
+    "stopped_by_harness": false,
+    "process_exit_code": 1,
+    "fatal_dialogs_suppressed": true,
+    "executable_sha256": "c4f3679f8c27111417136c98a480f4d144bc00dd854c2333a3286dcfbc193f35",
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792554240_pid9928/console.log",
+    "log_sha256": "3cef5ddfaa48025312da44cf1ef896570f6e1a38b9d18078984cfda98787ae5b",
+    "failure_logged": true,
+    "first_game_screen_verified": false,
+    "note": "Being alive and creating a graphics window do not prove game execution or a rendered screen.",
+    "probe": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792554240_pid9928/runtime_probe.json"
+  },
+  "verified_resource_reads": [
+    {
+      "path": "/rhbm/homeBtnIcon.tpl",
+      "offset": 0,
+      "size": 6336,
+      "partition_offset": 7814148,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1025f2e0",
+      "read_sha256": "099f23b6866bd2334bd012520bbd4e63946257abd543340883e660f4eca2b2e6",
+      "file_sha256": "099f23b6866bd2334bd012520bbd4e63946257abd543340883e660f4eca2b2e6",
+      "fnv1a64": "4a9109fe0c8a5ba7"
+    },
+    {
+      "path": "/RSO/Rev2 Production/selfile.sel",
+      "offset": 0,
+      "size": 171360,
+      "partition_offset": 930226860,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x9a20e0",
+      "read_sha256": "de2f452040a2a82c250e23ac528c377b0962df69855ffd7cf915bd065a662a49",
+      "file_sha256": "de2f452040a2a82c250e23ac528c377b0962df69855ffd7cf915bd065a662a49",
+      "fnv1a64": "5ab0e049c65fbd6c"
+    },
+    {
+      "path": "/Standard.ntwk",
+      "offset": 0,
+      "size": 63584,
+      "partition_offset": 635419340,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x9cbe60",
+      "read_sha256": "b4e64a835078a54b2fac45e3e88c38c9e0f4e525f446b1033fd0fd220694dd93",
+      "file_sha256": "b4e64a835078a54b2fac45e3e88c38c9e0f4e525f446b1033fd0fd220694dd93",
+      "fnv1a64": "6b7a8740df4875f9"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 0,
+      "size": 64,
+      "partition_offset": 4270134688,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10260d20",
+      "read_sha256": "b1d918f6d0d1866f61250d0e49ca87cfde2ea0fb165d80574e5449a0ac55247a",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "70dd509e390241a4"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 64,
+      "size": 64,
+      "partition_offset": 4270134752,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10260d20",
+      "read_sha256": "e121480004c6bbe76afc6e3819d6a5306fbf1c970a01786ce63105c76c7e6f1a",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "7df063c6f3ffd9fc"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 128,
+      "size": 2624,
+      "partition_offset": 4270134816,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10260da0",
+      "read_sha256": "5226e41e9caaf423d0eb4a7463b19144f2df81ba645d9751a1bb3d4f5b2db545",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "c9e2ac93f8e0cdb1"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 2752,
+      "size": 4928,
+      "partition_offset": 4270137440,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102621c0",
+      "read_sha256": "b36130d4a1a7d1ce76469e2ab965d7dfbbe3b04b624fe50d9af6d8e930b226f0",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "0538835ae50feb97"
+    },
+    {
+      "path": "/Worlds.txt",
+      "offset": 0,
+      "size": 480,
+      "partition_offset": 4236010604,
+      "original_eof_alignment_bytes": 12,
+      "guest_dma_readback_verified": true,
+      "destination": "0x95e680",
+      "read_sha256": "f60eb9ff1a4f45820ad980eb33e362a5bd372f1556b0c0f7967644566d724e1a",
+      "file_sha256": "4a10528edb934a029c2bb8217468ce2b5af1f81baff4bba5cc7baa6816b3693c",
+      "fnv1a64": "86d6b84353d22789"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 352704,
+      "size": 27456,
+      "partition_offset": 4270487392,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102b53a0",
+      "read_sha256": "d9aa21971dbdf3bb4d24f98851dff098d36f8d0cbf611873b26424b939431a51",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "4756a432083f6c81"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 220672,
+      "size": 27520,
+      "partition_offset": 4270355360,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102bbf00",
+      "read_sha256": "be845ff637afbf7c36c076ed192231fc5f8d89cfe6fa5faab70754892dd72fa7",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "1547b234d3533285"
+    },
+    {
+      "path": "/MiscData.pak",
+      "offset": 0,
+      "size": 32,
+      "partition_offset": 632057804,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x95e960",
+      "read_sha256": "40cb2d13aca821814e7f68df6b1710dc3bf31cb1882a07097b9982f0c12627ec",
+      "file_sha256": "78799b1d4161a35362a6e5c9f89157c8ba1616e1c2ead91b4357f846c6524ca6",
+      "fnv1a64": "888f4221a9117915"
+    },
+    {
+      "path": "/RSO/Rev2 Production/RSO_rhbm.rso",
+      "offset": 0,
+      "size": 127648,
+      "partition_offset": 927317452,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1015e880",
+      "read_sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+      "file_sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+      "fnv1a64": "84dc47179b1a2ef3"
+    },
+    {
+      "path": "/rhbm/homeBtn_ENG.arc",
+      "offset": 0,
+      "size": 344800,
+      "partition_offset": 7820484,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1017db20",
+      "read_sha256": "a07095250b0957e8f9bdaf84f9202f8b7b3152ea906cc4602768bf24b7e32001",
+      "file_sha256": "a07095250b0957e8f9bdaf84f9202f8b7b3152ea906cc4602768bf24b7e32001",
+      "fnv1a64": "2fcb416375a9afc3"
+    },
+    {
+      "path": "/rhbm/SpeakerSe.arc",
+      "offset": 0,
+      "size": 59424,
+      "partition_offset": 10209708,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x101d1e00",
+      "read_sha256": "8d276735f7c0309b0695066d1bba89ef16e98c17209f7e090a4b0231804d276f",
+      "file_sha256": "8d276735f7c0309b0695066d1bba89ef16e98c17209f7e090a4b0231804d276f",
+      "fnv1a64": "74192d4b59efb3e2"
+    },
+    {
+      "path": "/rhbm/HomeButtonSe.arc",
+      "offset": 0,
+      "size": 320416,
+      "partition_offset": 9889316,
+      "original_eof_alignment_bytes": 27,
+      "guest_dma_readback_verified": true,
+      "destination": "0x101e0620",
+      "read_sha256": "4cb337fff20fe7d74ab696b541f356ee59eaeee73324b8721699212293a02681",
+      "file_sha256": "3620cebec5beedcf7058e5692cf185b585135e8d1365a822ce1ebe71f835d105",
+      "fnv1a64": "5e7e1f281d12bb16"
+    },
+    {
+      "path": "/MiscData.pak",
+      "offset": 0,
+      "size": 65536,
+      "partition_offset": 632057804,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x9db6e0",
+      "read_sha256": "79890b51d1b6259dfbe19a6dd1b63cc939b19074d234099e1e7be86c8a6f67d0",
+      "file_sha256": "78799b1d4161a35362a6e5c9f89157c8ba1616e1c2ead91b4357f846c6524ca6",
+      "fnv1a64": "dd28a2fd01167b84"
+    },
+    {
+      "path": "/MiscData.pak",
+      "offset": 65536,
+      "size": 65536,
+      "partition_offset": 632123340,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x9eb700",
+      "read_sha256": "269b46248e047c652ed5c655baf349710e054543e1e84d9be93a6a53872edc0f",
+      "file_sha256": "78799b1d4161a35362a6e5c9f89157c8ba1616e1c2ead91b4357f846c6524ca6",
+      "fnv1a64": "d4645ddba89f86f8"
+    }
+  ],
+  "runtime_overlay_manifest": {
+    "path": "recomp/generated/RM3E01_00_conservative/runtime_hooks/manifest.json",
+    "sha256": "ea97eb148972c6f27a79497ff719015c62bf95caee567be598a9056392c3e96a"
+  },
+  "hci_commands_observed": [
+    [
+      "0C03",
+      "0"
+    ],
+    [
+      "1005",
+      "0"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C13",
+      "248"
+    ],
+    [
+      "0C0A",
+      "1"
+    ],
+    [
+      "0C33",
+      "7"
+    ],
+    [
+      "1001",
+      "0"
+    ],
+    [
+      "1009",
+      "0"
+    ],
+    [
+      "1003",
+      "0"
+    ],
+    [
+      "0C45",
+      "1"
+    ],
+    [
+      "0C47",
+      "1"
+    ],
+    [
+      "0C43",
+      "1"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C18",
+      "2"
+    ],
+    [
+      "0C0D",
+      "7"
+    ],
+    [
+      "FC4F",
+      "1"
+    ],
+    [
+      "FC4C",
+      "184"
+    ],
+    [
+      "FC4F",
+      "92"
+    ],
+    [
+      "0C03",
+      "0"
+    ],
+    [
+      "1005",
+      "0"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C13",
+      "248"
+    ],
+    [
+      "0C0A",
+      "1"
+    ],
+    [
+      "0C33",
+      "7"
+    ],
+    [
+      "1001",
+      "0"
+    ],
+    [
+      "1009",
+      "0"
+    ],
+    [
+      "1003",
+      "0"
+    ],
+    [
+      "0C45",
+      "1"
+    ]
+  ],
+  "verified_hci_wire_events": [
+    {
+      "opcode": "0x0C03",
+      "packet": "0e0401030c00"
+    },
+    {
+      "opcode": "0x1005",
+      "packet": "0e0b010510005301000a000000"
+    },
+    {
+      "opcode": "0x0C24",
+      "packet": "0e0401240c00"
+    },
+    {
+      "opcode": "0x0C13",
+      "packet": "0e0401130c00"
+    },
+    {
+      "opcode": "0x0C0A",
+      "packet": "0e04010a0c00"
+    },
+    {
+      "opcode": "0x0C33",
+      "packet": "0e0401330c00"
+    },
+    {
+      "opcode": "0x1001",
+      "packet": "0e0c0101100003a740030f000e43"
+    },
+    {
+      "opcode": "0x1009",
+      "packet": "0e0a01091000010000000002"
+    },
+    {
+      "opcode": "0x1003",
+      "packet": "0e0c01031000ffff8dfe9bf90080"
+    },
+    {
+      "opcode": "0x0C45",
+      "packet": "0e0401450c00"
+    },
+    {
+      "opcode": "0x0C47",
+      "packet": "0e0401470c00"
+    },
+    {
+      "opcode": "0x0C43",
+      "packet": "0e0401430c00"
+    },
+    {
+      "opcode": "0x0C24",
+      "packet": "0e0401240c00"
+    },
+    {
+      "opcode": "0x0C18",
+      "packet": "0e0401180c00"
+    },
+    {
+      "opcode": "0x0C0D",
+      "packet": "0e08010d0c0000000000"
+    },
+    {
+      "opcode": "0xFC4F",
+      "packet": "0e04014ffc00"
+    },
+    {
+      "opcode": "0xFC4C",
+      "packet": "0e04014cfc00"
+    },
+    {
+      "opcode": "0xFC4F",
+      "packet": "0e04014ffc00"
+    },
+    {
+      "opcode": "0x0C03",
+      "packet": "0e0401030c00"
+    },
+    {
+      "opcode": "0x1005",
+      "packet": "0e0b010510005301000a000000"
+    },
+    {
+      "opcode": "0x0C24",
+      "packet": "0e0401240c00"
+    },
+    {
+      "opcode": "0x0C13",
+      "packet": "0e0401130c00"
+    },
+    {
+      "opcode": "0x0C0A",
+      "packet": "0e04010a0c00"
+    },
+    {
+      "opcode": "0x0C33",
+      "packet": "0e0401330c00"
+    },
+    {
+      "opcode": "0x1001",
+      "packet": "0e0c0101100003a740030f000e43"
+    },
+    {
+      "opcode": "0x1009",
+      "packet": "0e0a01091000010000000002"
+    },
+    {
+      "opcode": "0x1003",
+      "packet": "0e0c01031000ffff8dfe9bf90080"
+    },
+    {
+      "opcode": "0x0C45",
+      "packet": "0e0401450c00"
+    }
+  ],
+  "decrementer_delivered": true,
+  "unsupported_oh1_transfer_observed": false,
+  "source_hashes": {
+    "recomp/tools/prepare_prime_runtime_hooks.py": "424c2be58ae3da7c330e27727eab4aede75ad367a2d271ea66d9385f76b156dd",
+    "recomp/tools/build_prime_runtime.ps1": "45acbf7da108f1b9ab0834d835249bdda3eada35ad5e3056f7775326b194270c",
+    "recomp/tools/probe_prime_runtime.ps1": "1787193ab25931d3d8e3fd56a2ae6b25d5730a451fac85a0fe5bdb7792df6417",
+    "recomp/tools/verify_prime_runtime_boot_probe.py": "b73c58d8975c484621d2d09b634b48e3fbac35c94d430a1d588686f62ffe164b",
+    "recomp/third_party/WiiCompiled/runtime/src/memory.cpp": "5de3f8d6440a8f03f16eda6655fda1a96aae81c9a1c663463b2e650b92a4965c",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_ai_registers.h": "94e7428684d0518c148dd8a942a6ebd9f94d91ca37cb801da79731f60597009f",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_dsp_boot_registers.h": "c34c46c48203033b7d8c0beadd32f32dc1d7a6fa49906205828ec0be71854ea2",
+    "recomp/tools/prime_ai_registers_tests.cpp": "5da04e4026d2ecc9706ee759aff12e216a52050c0446addae69f763ffbde596d",
+    "recomp/tools/prime_dsp_boot_registers_tests.cpp": "e0cbc8acb60970311d7ccdb98899f7d79e51efcf7438ca4f377c28e8a7cd0b2d",
+    "recomp/tools/prime_host_continuations_tests.cpp": "4d0c58c1fba7c9099f1056a14709b52dd59e1fedd1bcbc3197ed9d09df13b717",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_host_continuations.h": "a6a350700838f8847d872694f6d728d623cdc522a5d57637d6a72e5bfb7ecce6",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_context.cpp": "b1578d5c1af94f2d91282fabfe6dbedf1a58b97da8fa96438e870c70f5af044d",
+    "recomp/third_party/WiiCompiled/runtime/src/main.cpp": "7d082ce18105ddafdb0c42a83a3eeec9fe8d2d4cb1d55fd3b8431b0ee157ec95",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_dsp.h": "23d99f9e8d6d5afd2434637e2ace72a03042db4010813fc561f819898ccf411d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_mix.cpp": "b2f9db50ad01e9273e3c268d1af9420711d361aac3df2ee708458c683947805f",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_internal.h": "b4cbc0fa80dca0ed1a054707a57f8e19394a3f79124cdea1a81d3d4bfe9cc346",
+    "recomp/third_party/WiiCompiled/runtime/include/runtime_config.h": "d49b089808256233aa7e26738b0aff3bf73ea0789b6bce2ab2074b0ce8fe3c72",
+    "recomp/third_party/WiiCompiled/runtime/cmake/PublicProducts.cmake": "5d9b8285040f0cc04c2e8cd1c11ce9f0d4025c93d4ad6b5024975efc3252e91c",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_fifo.cpp": "2bc20e6e070783ec2bd83c66c744d8f4dd40b52f77ae33febae720fc4e0cf38a",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/dolphin/gx/GXVert.cpp": "f5cb7bcad6e45c498442a7d62a99cd127592e266adf154c12cdd1f16b2d71222",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/fifo.hpp": "1b38444ae26816bbfb06e12e64aa12d6d990ad58a6ecdb8056e72e83dce0111a",
+    "recomp/tools/nod_partition_range_probe.cpp": "120d5e252cd73471138636eea613a1cd993643929f0d74fbceaa25715d13d0b6",
+    "recomp/tools/test_prime_runtime_contracts.ps1": "fd829e0acd2853903b295e066fc621c06ed00c090fecf43b6d12f0792bc4bf76",
+    "recomp/third_party/WiiCompiled/runtime/tests/runtime_config_tests.cpp": "cfdeebb510fc0e19430bd102ed02710b5969c7689f33e1b22e91c8407e5c9944",
+    "recomp/third_party/WiiCompiled/runtime/src/guest_flat_memory.cpp": "ae67d4079f173a87b3d8ff646990dfcdc3e2b7655330863c10f9a2fc98d7ea2d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/storage/nand_isfs.cpp": "a849d5f1f02831b3f012d5af8590508555d486fad6f87a1214f8f32d33f699e5",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/storage/dvd.cpp": "6c03ea41c287e206b15305fa52a92a532f5a1c43bed9c10cf23366f3a1ba2fac",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp": "e793d842df52d72a2262f2fa12cd9788c7d7f812fd9c88bc57e3ced3c18c1661",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_internal.h": "5fcb835a82b78c2e6801fb3848ac4e94b061f788c41568e2304f8aecdbbd0a9d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp": "8320bd32de531820338d4c338e1eeaafad12d29c9fd2b35eb4981def1a6aa5cc",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/Build/TranslatedBuildShardEmitter.cs": "a72790fba2ff8cb8df6d4243dff2a94215aa13b045e4e4e5a6a4d3f5fd175d0b",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/RuntimeNativeIndex.cs": "5d799cd172c1917bd250af1bc97e216575c2ecdd7e743ad9b8342b17c8ebc98a",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Cli/Program.cs": "d4bf0654140bc9eeca8dd27955e63d433c7967d511a45c3e62a1d1c7e47ff615"
+  },
+  "invariants": {
+    "matching_dol_exact": true,
+    "iso_size": 4699979776,
+    "iso_read_only": true
+  },
+  "reference_provenance": {
+    "path": "recomp/checkpoints/20261020_prime_runtime_reference_provenance.json",
+    "sha256": "69b6a3eeb46fa1cbea66caccdccbdbe1a98c7dc8714abc03c2dcb2c0d2136b79",
+    "commit": "cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b"
+  },
+  "limitations": [
+    "No game screen is verified.",
+    "ISO data reads are connected, but FST publication/startup still requires the private research extraction.",
+    "DSP task execution, AI/DSP interrupt dispatch and audio output remain unverified.",
+    "Controller has no paired remotes or ACL connections; HCI support is incomplete.",
+    "Host continuation transport is experimental; thread cancellation/reuse, general preemption, complete FPU contexts and graphics equivalence remain unverified.",
+    "Runtime test-suite results are separate evidence; this verifier covers the recorded boot path only."
+  ]
+}

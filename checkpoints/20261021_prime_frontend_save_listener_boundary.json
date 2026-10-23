@@ -1,0 +1,32 @@
+{
+  "result": "PASS original SaveGameInterface listener boundary",
+  "revision": "RM3E01_00",
+  "runtime_target": "0x80B00D60",
+  "nominal_target": "0x80699440",
+  "text_offset": "0x27E0",
+  "payload": [
+    0,
+    4294967295,
+    "runtime 0x80B01CB8 / nominal 0x8069A398"
+  ],
+  "original_prefix_bytes_verified": 24,
+  "scope": "Expected missing original callback. InsufficientSpace strings observed in original save interface; IOS GETUSAGE currently returns success without output. No storage fix or menu success claimed.",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792617343_pid6432\\runtime_probe.json",
+      "sha256": "af27352918188780ef47a14e24a71f4672bffeba60532cd8df204437fbaed181"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792617343_pid6432\\console.log",
+      "sha256": "16452dfd333bcfb908dc9cf955711d7c8f9224af9d73801ff50328ec8f7b79a6"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792617343_pid6432\\mem1.bin",
+      "sha256": "680dd4093a5ee09427d12c672154fecf08da3fa980e606bc03e44721b04e4668"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792617343_pid6432\\crash_missing_target.txt",
+      "sha256": "6590fcc43d7d1a40eb4b72189b810b5b8acb5a03873c474908066a6cd17e0ac2"
+    }
+  ]
+}

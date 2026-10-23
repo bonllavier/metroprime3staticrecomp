@@ -1,0 +1,50 @@
+{
+  "result": "PASS original new-slot/Mii selection observed; reload pending; runtime later failed at missing Achievement virtual method",
+  "probe": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792633534_pid8496/runtime_probe.json",
+  "visual_sequence": [
+    "Game Select: third slot New Game",
+    "Mii Select: seven visible choices",
+    "Selected first choice: original Mii Channel deletion warning",
+    "Acknowledged warning: third slot Game Start",
+    "Original WiiConnect24 error 109042 acknowledged",
+    "Main Menu -> Play Game -> Normal"
+  ],
+  "id_offsets": [
+    35156,
+    50650
+  ],
+  "save_sha256": "ed2998db6b84c685568e70c39249ec764e741c8c4a01f23179dafecc9e10537b",
+  "save_size": 65536,
+  "private_backup": "recomp\\.tools\\prime_third_slot_mii_20261021",
+  "input_semantics_samples": 45,
+  "input_scope": "SDL events and guest samples observed; no exclusive synthetic input claim",
+  "artifacts": [
+    {
+      "path": "recomp\\.tools\\mii_slot_8496_after_prompt.png",
+      "sha256": "c18d1b47e2e64c85724ed0793f174d689b079abe656dfa3eff9689c5436b2885"
+    },
+    {
+      "path": "recomp\\.tools\\mii_slot_8496_new_slot.png",
+      "sha256": "be06ca2ea2f9a9ef232e4c400db605df2d5094bd3e1826989a7b3ad56a6a5612"
+    },
+    {
+      "path": "recomp\\.tools\\prime_pid8496_mii_first_select.png",
+      "sha256": "b0fa4d49720c0bd3b8854805e818317dbf88e50e5029afc404ea4c67fea2d436"
+    },
+    {
+      "path": "recomp\\.tools\\prime_pid8496_mii_warning_accept.png",
+      "sha256": "6a0b56d78289fdfa771c5d9be046187b704eb678fd5957f97efec6fbfe530d80"
+    },
+    {
+      "path": "recomp\\.tools\\prime_pid8496_wc24_ack.png",
+      "sha256": "82de822d57fac260285a2305cd2cd6554938a3032d8bd27c04aedf0330405f2a"
+    },
+    {
+      "path": "recomp\\.tools\\prime_pid8496_play_game.png",
+      "sha256": "9e0471689471df477ad9e40dc1e099c20396ecf67d411d90bb04e44983428fd8"
+    }
+  ],
+  "full_save_reload_verified": false,
+  "portrait_fidelity_verified": false,
+  "gameplay_verified": false
+}

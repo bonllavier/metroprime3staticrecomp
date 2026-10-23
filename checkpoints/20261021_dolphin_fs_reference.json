@@ -1,0 +1,31 @@
+{
+  "commit": "cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b",
+  "license": "GPL-2.0-or-later",
+  "scope": "Private protocol research only. No upstream code copied into the runtime.",
+  "files": [
+    {
+      "path": "recomp\\.tools\\dolphin-fs-reference\\FileSystem.h",
+      "upstream_path": "Source/Core/Core/IOS/FS/FileSystem.h",
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/FS/FileSystem.h",
+      "sha256": "c590150df1ee5ed4561e2bfd38259b986676466740bb891532e62b6d685ad155"
+    },
+    {
+      "path": "recomp\\.tools\\dolphin-fs-reference\\HostBackend.cpp",
+      "upstream_path": "Source/Core/Core/IOS/FS/HostBackend/FS.cpp",
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/FS/HostBackend/FS.cpp",
+      "sha256": "740716d8c07d5c56dec6c58c2a0c6ff579c98701f7ae0e7350bd2d4e2fcb5911"
+    },
+    {
+      "path": "recomp\\.tools\\dolphin-fs-reference\\FileSystemProxy.cpp",
+      "upstream_path": "Source/Core/Core/IOS/FS/FileSystemProxy.cpp",
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/FS/FileSystemProxy.cpp",
+      "sha256": "b7e527a4527079a33ed695523ecdbd4aa8ecaa014e291d152c7a6c97b5135c96"
+    },
+    {
+      "path": "recomp\\.tools\\dolphin-fs-reference\\ES.cpp",
+      "upstream_path": "Source/Core/Core/IOS/ES/ES.cpp",
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/ES/ES.cpp",
+      "sha256": "4ef01d82152db9b47e532a10ed20cfd2253b6a87e2972eff654faae92a50009f"
+    }
+  ]
+}

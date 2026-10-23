@@ -1,0 +1,90 @@
+diff --git a/translator/src/Translator.Cli/Program.cs b/translator/src/Translator.Cli/Program.cs
+index db6ba74..2cd4161 100644
+--- a/translator/src/Translator.Cli/Program.cs
++++ b/translator/src/Translator.Cli/Program.cs
+@@ -1065,6 +1065,7 @@ int RunTranslateRecursive(string[] argsTail)
+             var componentByAddress = components
+                 .SelectMany(static (component, index) => component.Select(address => (address, index)))
+                 .ToDictionary(static pair => pair.address, static pair => pair.index);
++            var enableStateFreeAbi = RequireProject().Translation.EnableStateFreeAbi;
+             var eligibleComponents = components
+                 .Select((component, index) => new
+                 {
+@@ -1077,7 +1078,7 @@ int RunTranslateRecursive(string[] argsTail)
+                          (StateFreeInputValueCount(PlannedStateFreeContract(address)) <= 4 &&
+                           StateFreeOutputValueCount(PlannedStateFreeContract(address)) <= 2)))
+                 })
+-                .Where(static item => item.eligible)
++                .Where(item => enableStateFreeAbi && item.eligible)
+                 .Select(static item => item.index)
+                 .ToHashSet();
+             bool removedComponent;
+diff --git a/translator/src/Translator.Cli/TranslationProjectConfig.cs b/translator/src/Translator.Cli/TranslationProjectConfig.cs
+index bfbd71b..4b921e7 100644
+--- a/translator/src/Translator.Cli/TranslationProjectConfig.cs
++++ b/translator/src/Translator.Cli/TranslationProjectConfig.cs
+@@ -97,7 +97,8 @@ internal sealed class TranslationProjectConfig
+         var translation = new ProjectTranslation(
+             entryPoints,
+             functionMapPath,
+-            dto.Translation?.AllowUnsupportedInstructions ?? false);
++            dto.Translation?.AllowUnsupportedInstructions ?? false,
++            dto.Translation?.EnableStateFreeAbi ?? true);
+ 
+         var abiDirectories = (dto.Runtime?.NativeAbiDirectories ?? [])
+             .Select(pathValue => ResolvePath(workspaceRoot, pathValue))
+@@ -398,14 +399,13 @@ internal sealed class TranslationProjectConfig
+         public string? LoadAddress { get; init; }
+     }
+ 
+-    // Translation behaviour (state-free ABI, register residency, leaf inlining, flat guest memory) is
+-    // unconditional; only inputs are declared here. function_map is one: every function start in the
+-    // image, which the recursive pass seeds from.
++    // Codegen policies are explicit so projects can select a conservative ABI when needed.
+     private sealed class TranslationDto
+     {
+         public List<string>? EntryPoints { get; init; }
+         public FunctionMapDto? FunctionMap { get; init; }
+         public bool? AllowUnsupportedInstructions { get; init; }
++        public bool? EnableStateFreeAbi { get; init; }
+     }
+ 
+     private sealed class FunctionMapDto
+@@ -474,7 +474,8 @@ internal sealed record ProjectInputs(ProjectBinaryInput Dol, ProjectRelInput? Re
+ internal sealed record ProjectTranslation(
+     IReadOnlyList<uint> EntryPoints,
+     string? FunctionMapPath,
+-    bool AllowUnsupportedInstructions);
++    bool AllowUnsupportedInstructions,
++    bool EnableStateFreeAbi);
+ internal sealed record ProjectRuntime(
+     IReadOnlyList<string> NativeAbiDirectories,
+     string NativeRegistrationRoot,
+diff --git a/translator/tests/Translator.Tests/GenericProjectTests.cs b/translator/tests/Translator.Tests/GenericProjectTests.cs
+index 6893137..1dcb555 100644
+--- a/translator/tests/Translator.Tests/GenericProjectTests.cs
++++ b/translator/tests/Translator.Tests/GenericProjectTests.cs
+@@ -38,6 +38,7 @@ public sealed class GenericProjectTests
+ 
+             var project = TranslationProjectConfig.Load(projectPath);
+             Assert.Equal(mapPath, project.Translation.FunctionMapPath);
++            Assert.True(project.Translation.EnableStateFreeAbi);
+             Assert.Equal(0x80001000u, Assert.Single(FunctionMap.Load(project.Translation.FunctionMapPath!).Addresses));
+ 
+             File.WriteAllText(
+@@ -110,6 +111,7 @@ public sealed class GenericProjectTests
+                 translation:
+                   entry_points: [0x80001000]
+                   allow_unsupported_instructions: true
++                  enable_state_free_abi: false
+                 output:
+                   root: out
+                 """);
+@@ -117,6 +119,7 @@ public sealed class GenericProjectTests
+             var project = TranslationProjectConfig.Load(projectPath);
+             Assert.Null(project.Inputs.Rel);
+             Assert.Equal(entry, Assert.Single(project.Translation.EntryPoints));
++            Assert.False(project.Translation.EnableStateFreeAbi);
+ 
+             var dol = DolFile.Load(project.Inputs.Dol.Path);
+             var image = new ProgramImageBuilder().Build(dol, ramBase: project.Memory.Base, ramSize: project.Memory.Size);

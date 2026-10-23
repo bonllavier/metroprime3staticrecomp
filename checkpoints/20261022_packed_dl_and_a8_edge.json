@@ -1,0 +1,82 @@
+{
+  "revision": "RM3E01_00",
+  "result": "PASS build and 4 native component tests; manual scene retest active",
+  "previous_run": {
+    "pid": 12876,
+    "exe_sha256": "4c5258e6789a75dd63c1bb3d36147cd2d45ae7db5f0385cc2b8730f5957a2de5",
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792694726_pid12876/console.log",
+    "failure": {
+      "reason": "A8 right-edge copy rejected by adapter",
+      "trigger": "0x10873",
+      "pe": "0x1",
+      "stride_word": "0x1",
+      "source_xy": "0x2627e",
+      "source_wh": "0x11407",
+      "left": 638,
+      "top": 152,
+      "width": 8,
+      "height": 70,
+      "output_bytes": 576
+    },
+    "performance": "Scene still roughly 8-12 present FPS. New cache removed CMPR from top native samples but exposed vertex decode/publication costs.",
+    "palette_cache": "More than 250k replacements with only five metadata keys: alternating contents at the same pointers caused A/B/A churn.",
+    "profile": "recomp/.tools/prime_pid12876_cinematic_performance_after_cache.json"
+  },
+  "changes": {
+    "palette_versions": "Retain byte-exact variants within the same 8 MiB/256-entry cap. A palette hash filters candidates; BOTH full buffers are still compared so collisions cannot return the wrong image.",
+    "packed_display_lists": "Expand mixed direct/8-bit/16-bit indexed attributes by copying original big-endian array bytes. Preserve packed color, matrix index and normal NBT3 groups; use existing fallback for rejected layouts/ranges. No float conversion/round-trip.",
+    "submission": "GXBegin + native capacity-checked FIFO bulk append + GXEnd; preserves batching and native state publication.",
+    "right_edge_copy": "Allow the observed non-half A8 tail only when origin is inside EFB and right edge is <=647. Keep requested 8x70 destination and source sampling extent; clip clear region. Explicit clamp-to-edge sampler fills the out-of-range tail.",
+    "fidelity_limit": "Valid source texel spacing is preserved. Tail values outside hardware EFB are not established as hardware-exact; deterministic edge clamp is documented. Other unsupported outside rectangles still fail."
+  },
+  "rejected_experiment": {
+    "pid": 10972,
+    "exe_sha256": "ec15ffb0b78d6292b11e38f9c091b49b481d814455c5b15ca727b59c8ea92543",
+    "result": "Regression to about 1.85 FPS in front-end; closed and replaced.",
+    "cause": "Direct per-primitive submission repeated barriers/texture validation; corrected to producer FIFO batching.",
+    "profile": "recomp/.tools/prime_pid10972_packed_regression_profile.json",
+    "never_launched_review_rejection": "A draft call to write_data_grow was removed before launch because it doubles capacity on every invocation. Final code calls a capacity-checked write_data_bulk wrapper."
+  },
+  "tests": [
+    "CTest 4/4: prime_raw_bp, prime_raw_texture_snapshot, prime_trace_budget, prime_dl_vertex_expansion",
+    "Packed bytes: mixed 8/16-bit indices, stride, direct packed colors, matrix byte, NBT3 independent indices, IEEE NaN/negative-zero payloads and rejected bounds/layouts",
+    "Palette A/B/A exact reuse across 100 alternations, bounded LRU eviction, combined index/TLUT budget, buffer mutations and handle lifetime",
+    "Original A8 failing snapshot accepted as 8x70/576 bytes; wholly outside, excessive tail and vertical overflow remain rejected",
+    "Incremental final build exit 0; compiler temporary files redirected to G: and one compile job"
+  ],
+  "new_run": {
+    "pid": 2252,
+    "exe_sha256": "1890cdcdca3e501ffddeda9173fb998534fe07c4164da9ac88530e2e61eabaf2",
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792696295_pid2252/console.log",
+    "initial_present_fps": "roughly 49-60 during early/front-end screens",
+    "initial_palette_cache": "14079 lookups / 14075 hits / 4 misses / zero replacements / 4 entries",
+    "right_edge_live_copy_verified": false,
+    "scene_fps_verified": false,
+    "thirty_minutes_gameplay_verified": false,
+    "input": "Manual only; no automated presses"
+  },
+  "timing_review": {
+    "original_main": "0x802EDC9C uses float at 0x806795F8 = 0.01666666753590107; measured elapsed helper 0x802EBEC8 uses OSGetTime.",
+    "host_clock": "TimeBaseContract: 243 MHz bus / 4 = 60.75 MHz, host steady clock; low memory seeded from same constant.",
+    "scope": "No game timestep, clock scale or cinematic state patched. Irregular speed remains under investigation."
+  },
+  "reference": {
+    "url": "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/VideoCommon/TextureCacheBase.cpp",
+    "reviewed": "CopyEFBToCacheEntry / CopyEFB handling of out-of-EFB samples; hardware-tail values are not established here. Consulted source, no source code copied."
+  },
+  "source_hashes": {
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_dl_vertex_expansion.h": "7339670361a05b2046cd1d51f8c669370f0eece39fa26a1e882e607432ca7c0c",
+    "recomp/third_party/WiiCompiled/runtime/tests/prime_dl_vertex_expansion_tests.cpp": "96aa0377dda2ed9587838a37349d29e1bc0ce2614ac0279e4f6151fbf24411ab",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_dl.cpp": "52eaab911bc04676b8e964ba446f790c5439f631e476a10aefb39268de8ee704",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/fifo.cpp": "d68580dbd4937a57c16477ad5798eaa150a200ba94736a0688fb15b4f9f09068",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/fifo.hpp": "554e29aef923f3d6c5d3a7da45c5470772b2ed0cc6e2e39aa5dfb3d0d4ac40d3",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/raw_texture_snapshot_cache.hpp": "c93db969abfdcd6c0e9bf37438de3c811d3a13d53b7cc214bc70b00cf78f2434",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/gx.cpp": "a59acbab53d3e76356e710ba6eb751bde855263498a994b191c6ca3a16a8fb16",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_raw_bp.h": "b7b9695ee3b4c420e57f61a730490920b3a9400109ce22744d4fe0b5a8d71bc0",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gfx/common.cpp": "f7bdd567c6523db7064c3b0d606d5490ec5325b6054124a7f58f2cacb984d924",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gfx/tex_copy_format_contract.hpp": "88d39065b8f266a746983456162983329099390d4528f2f21fa260a31a548e67",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gfx/tex_copy_conv.cpp": "3a46079263c87facc95648067555ea8ac62ef44365be9c7dc7598182b22bc9af"
+  },
+  "original_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "iso_and_matching": "Unchanged; no matching coverage added."
+}

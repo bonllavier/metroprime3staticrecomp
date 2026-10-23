@@ -1,0 +1,59 @@
+{
+    "created_utc":  "2026-10-20T06:58:21Z",
+    "revision":  "RM3E01_00",
+    "purpose":  "Compile-only validation of the vendored Aurora core and GX libraries for the static recompilation path. This does not link the translated title or execute GX calls from Metroid Prime 3.",
+    "upstream_wiicompiled_commit":  "4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+    "input_dol_sha256":  "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "cmake":  "4.3.3",
+    "generator":  "Ninja 1.13.2",
+    "compiler":  "LLVM-MinGW Clang 22.1.8",
+    "target":  "Windows x86-64 COFF",
+    "aurora_options":  {
+                           "AURORA_ENABLE_GX":  true,
+                           "AURORA_ENABLE_DVD":  false,
+                           "AURORA_ENABLE_CARD":  false,
+                           "AURORA_DAWN_PROVIDER":  "package",
+                           "AURORA_DAWN_VERSION":  "v20260603.191052",
+                           "AURORA_DAWN_LINKAGE":  "shared",
+                           "AURORA_SDL3_PROVIDER":  "vendor",
+                           "AURORA_SDL3_LINKAGE":  "static",
+                           "AURORA_SDL3_LIBUSB":  false,
+                           "DAWN_USE_WINDOWS_UI":  false
+                       },
+    "dawn_package":  {
+                         "url":  "https://github.com/theofficialgman/dawn-build/releases/download/v20260603.191052/dawn-windows-amd64.tar.gz",
+                         "expected_and_observed_sha256":  "13be9cff8b9b179c42dcd16aeabb6effcc8f0dfdcc14463eda2a5caeda225142"
+                     },
+    "build":  {
+                  "target":  "aurora_gx",
+                  "exit_code":  0,
+                  "incremental_repeat":  "ninja: no work to do",
+                  "aurora_core_coff_x64_objects":  10,
+                  "aurora_gx_coff_x64_objects":  38,
+                  "non_x64_objects":  0,
+                  "artifacts":  [
+                                    {
+                                        "path":  "build/aurora-rm3-dawn-20261016-probe/libaurora_core.a",
+                                        "size":  658528,
+                                        "sha256":  "e76bc96ac3047aa292cae114f25e990108b46968c183ba65e15c281c25b421f"
+                                    },
+                                    {
+                                        "path":  "build/aurora-rm3-dawn-20261016-probe/libaurora_gx.a",
+                                        "size":  5413698,
+                                        "sha256":  "2093e1b19ef49a144fe80d1fae594d37d04e5a0f030a407bc3a023e5964afc76"
+                                    },
+                                    {
+                                        "path":  "build/aurora-rm3-dawn-20261016-probe/_deps/dawn_prebuilt-src/bin/webgpu_dawn.dll",
+                                        "size":  10382336,
+                                        "sha256":  "993168f231bd78305af92c6cd25dd088c9e6836e71f7316295c491b7b35c0ea0"
+                                    }
+                                ]
+              },
+    "limitations":  [
+                        "SDL3 libusb support is disabled for this probe because SDL3 static export failed when it was enabled; controller adapter support is not validated.",
+                        "DAWN_USE_WINDOWS_UI is disabled; this is a backend build test, not a product configuration decision.",
+                        "No native Wii system bindings, ISO reader, translated-title link, boot, GX command stream, or game image was tested.",
+                        "The source-built Dawn experiment at v20261016.190333 was rejected: Aurora\u0027s current source expected a different Dawn API. The exact pinned prebuilt Dawn package is the accepted build path for this checkpoint."
+                    ],
+    "game_output":  null
+}

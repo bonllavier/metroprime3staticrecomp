@@ -1,0 +1,22 @@
+{
+  "result": "PASS original SDK usage body preserved after stripping exactly three observation calls and one include",
+  "scope": "No guest state writes in tracing helper; disabled unless WII_COMPILED_TRACE_PRIME_NAND is set. Runtime observations pending.",
+  "artifacts": [
+    {
+      "path": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_805013D4.cpp",
+      "sha256": "ccce60fbd481bc9be609c918fcfe106ab9ecf754da6930f40caafc3ccd893c35"
+    },
+    {
+      "path": "recomp\\generated\\RM3E01_00_conservative\\runtime_hooks\\functions\\func_805013D4.cpp",
+      "sha256": "3ea17015c97c6ef87ee9eaf2ddb5dd757c6417730555c1f10c3e4d58d3abb6e8"
+    },
+    {
+      "path": "recomp\\third_party\\WiiCompiled\\runtime\\include\\hle\\prime_nand_trace.h",
+      "sha256": "c584800e3b22c53f88e7aa778c8f610bdc3c10f00bb52594e7e3de6f22645661"
+    },
+    {
+      "path": "recomp\\tools\\prepare_prime_runtime_hooks.py",
+      "sha256": "70097f4bec28a225a23809f3a74bae860148efd5d339f1d528ba805b6b1ba899"
+    }
+  ]
+}

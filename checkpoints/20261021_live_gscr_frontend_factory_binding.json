@@ -1,0 +1,39 @@
+{
+  "revision": "RM3E01_00",
+  "module": "RSO_ScriptGUIScreenFrontEndUI.rso",
+  "module_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792545588_pid20116\\runtime_probe.json",
+  "dispatcher": "0x8021d30c",
+  "dispatcher_source_sha256": "100bd655c8d62f32825d7117c2c010ac0a7d410719bde77016d8ba03c9b1d4eb",
+  "sda13": "0x806801c0",
+  "table_global": "0x8067c9fc",
+  "table_runtime": "0x80b10340",
+  "first_entry": "0x8021d2fc",
+  "called_entry_plus4": "0x80b0337c",
+  "local_factory_text_offset": "0x1675c",
+  "factory_nominal_identity": "0x806ad3bc",
+  "code_pointer_relocations": [
+    {
+      "source_file_offset": 79070,
+      "source_section": 1,
+      "source_section_offset": 78782,
+      "field_width": 2,
+      "type": 6,
+      "index": 1,
+      "target_offset": 91996
+    },
+    {
+      "source_file_offset": 79082,
+      "source_section": 1,
+      "source_section_offset": 78794,
+      "field_width": 2,
+      "type": 4,
+      "index": 1,
+      "target_offset": 91996
+    }
+  ],
+  "dump_sha256": "a569089a0f35e2c54a1b99d6f439b89672201b3f8d15bd1e62d35c72a0c427e7",
+  "evidence": "Live linked table and original translated +4 tail dispatch; does not interpret the first entry as the active call or patch a supposed cycle.",
+  "factory_body_executed": false,
+  "screen_verified": false
+}

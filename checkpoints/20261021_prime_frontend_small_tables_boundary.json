@@ -1,0 +1,35 @@
+{
+  "result": "PASS next original small-table callback boundary; harness progress write failed separately",
+  "revision": "RM3E01_00",
+  "runtime_target": "0x80b10f4c",
+  "nominal_target": "0x806A962C",
+  "table_section_offset": "data+0x1E0",
+  "object": "0x808dc570",
+  "vtable": "0x80b16a20",
+  "slot": 12,
+  "previous_missing_listener_no_longer_boundary": true,
+  "original_entry_bytes_verified": 12,
+  "harness_scope": "runtime_probe.json exists, but observation_complete sidecar replacement failed due PowerShell null string conversion. Not a successful runtime test. Fixed via NullString.Value, independently tested on a real replacement.",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792616816_pid14396\\runtime_probe.json",
+      "sha256": "497d522d3ccd02c2e09c6a24d904ef82232b8c79e6fe1d7cb9d4b59f6def0db2"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792616816_pid14396\\console.log",
+      "sha256": "e1e3aa7bdea80f7e2aac52a19845caba8ed23e6650b4aa181c23013f7f651e3e"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792616816_pid14396\\crash_missing_target.txt",
+      "sha256": "48f9a041398935f97c425324f5bee770cf25e4f3c30cc2fb5c25d6ddcb940961"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792616816_pid14396\\mem1.bin",
+      "sha256": "8723be4774c6794caebe8a998751476c839c189e7265745b9d54b45ec0b69e15"
+    },
+    {
+      "path": "recomp\\.tools\\probe_prime_runtime_before_nullstring_fix.ps1",
+      "sha256": "cd46c84df0e18f2c78740b57a2ace8245dfd38c3c5cca2053e193bfb202210fc"
+    }
+  ]
+}

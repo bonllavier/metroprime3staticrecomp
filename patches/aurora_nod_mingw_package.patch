@@ -1,0 +1,77 @@
+diff --git a/aurora-main/cmake/AuroraNodProvider.cmake b/aurora-main/cmake/AuroraNodProvider.cmake
+index b112d9d..13555aa 100644
+--- a/aurora-main/cmake/AuroraNodProvider.cmake
++++ b/aurora-main/cmake/AuroraNodProvider.cmake
+@@ -125,23 +125,56 @@ elseif (_aurora_nod_provider STREQUAL "package")
+   )
+   FetchContent_MakeAvailable(nod_prebuilt)
+ 
+-  # The prebuilt package ships a CMake config that creates nod::nod_shared,
+-  # nod::nod_static, and a default nod::nod (based on BUILD_SHARED_LIBS).
+-  # Set BUILD_SHARED_LIBS so the config selects the right default target.
+-  set(_aurora_nod_saved_bsl "${BUILD_SHARED_LIBS}")
+-  if (AURORA_NOD_LINKAGE STREQUAL "static")
+-    set(BUILD_SHARED_LIBS OFF)
++  # The Windows prebuilt package ships MinGW-compatible COFF archives named
++  # nod_static.lib and nod.lib. nodConfig.cmake currently looks for the GNU
++  # names libnod_static.a/libnod.dll.a when CMake uses MinGW, so import the
++  # package's actual files directly for this toolchain.
++  if (WIN32 AND MINGW)
++    set(_nod_incdir "${nod_prebuilt_SOURCE_DIR}/include")
++    if (AURORA_NOD_LINKAGE STREQUAL "static")
++      set(_nod_archive "${nod_prebuilt_SOURCE_DIR}/lib/nod_static.lib")
++      if (NOT EXISTS "${_nod_archive}")
++        message(FATAL_ERROR "nod static archive not found: ${_nod_archive}")
++      endif ()
++      add_library(nod::nod STATIC IMPORTED GLOBAL)
++      set_target_properties(nod::nod PROPERTIES
++        IMPORTED_LOCATION "${_nod_archive}"
++        INTERFACE_INCLUDE_DIRECTORIES "${_nod_incdir}"
++        INTERFACE_LINK_LIBRARIES "ntdll;userenv;ws2_32;dbghelp;bcrypt")
++    elseif (AURORA_NOD_LINKAGE STREQUAL "shared")
++      set(_nod_dll "${nod_prebuilt_SOURCE_DIR}/bin/nod.dll")
++      set(_nod_implib "${nod_prebuilt_SOURCE_DIR}/lib/nod.lib")
++      if (NOT EXISTS "${_nod_dll}" OR NOT EXISTS "${_nod_implib}")
++        message(FATAL_ERROR "nod shared library or import library not found in ${nod_prebuilt_SOURCE_DIR}")
++      endif ()
++      add_library(nod::nod SHARED IMPORTED GLOBAL)
++      set_target_properties(nod::nod PROPERTIES
++        IMPORTED_LOCATION "${_nod_dll}"
++        IMPORTED_IMPLIB "${_nod_implib}"
++        INTERFACE_INCLUDE_DIRECTORIES "${_nod_incdir}")
++    else ()
++      message(FATAL_ERROR "Invalid AURORA_NOD_LINKAGE: ${AURORA_NOD_LINKAGE} (must be shared or static)")
++    endif ()
++    message(STATUS "aurora: Imported nod ${AURORA_NOD_LINKAGE} library using MinGW package filenames")
+   else ()
+-    set(BUILD_SHARED_LIBS ON)
+-  endif ()
+-  find_package(nod REQUIRED CONFIG
+-    PATHS "${nod_prebuilt_SOURCE_DIR}"
+-    NO_DEFAULT_PATH
+-  )
+-  set(BUILD_SHARED_LIBS "${_aurora_nod_saved_bsl}")
+-  unset(_aurora_nod_saved_bsl)
+-  if (NOT TARGET nod::nod)
+-    message(FATAL_ERROR "Prebuilt nod package did not provide nod::nod target")
++    # The prebuilt package ships a CMake config that creates nod::nod_shared,
++    # nod::nod_static, and a default nod::nod (based on BUILD_SHARED_LIBS).
++    # Set BUILD_SHARED_LIBS so the config selects the right default target.
++    set(_aurora_nod_saved_bsl "${BUILD_SHARED_LIBS}")
++    if (AURORA_NOD_LINKAGE STREQUAL "static")
++      set(BUILD_SHARED_LIBS OFF)
++    else ()
++      set(BUILD_SHARED_LIBS ON)
++    endif ()
++    find_package(nod REQUIRED CONFIG
++      PATHS "${nod_prebuilt_SOURCE_DIR}"
++      NO_DEFAULT_PATH
++    )
++    set(BUILD_SHARED_LIBS "${_aurora_nod_saved_bsl}")
++    unset(_aurora_nod_saved_bsl)
++    if (NOT TARGET nod::nod)
++      message(FATAL_ERROR "Prebuilt nod package did not provide nod::nod target")
++    endif ()
+   endif ()
+ 
+ else ()

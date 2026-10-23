@@ -1,0 +1,175 @@
+{
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "function_map": "recomp\\config\\RM3E01_00\\functions.txt",
+  "function_map_sha256": "42c1c9c1654dd9cd7bffaa67d424ba6ca2a120f77c80d536c4a099ca6abc0586",
+  "function_map_entry_count": 21667,
+  "interpretation": "An address absent from this map is not proven to be a callable RM3E01 function entry; neighboring symbols are context only.",
+  "targets": [
+    {
+      "symbol": "func_801D9E94",
+      "address": "0x801D9E94",
+      "runtime_source": "network_config.cpp",
+      "exact_rm3e01_function_start": false,
+      "nearest_lower_map_entry": {
+        "address": "0x801D9DA8",
+        "name": "fn_801D9DA8"
+      },
+      "nearest_upper_map_entry": {
+        "address": "0x801D9EB4",
+        "name": "fn_801D9EB4"
+      },
+      "ghidra_containing_function": {
+        "address": "0x801D9DA8",
+        "name": "FUN_801d9da8",
+        "body_end_inclusive": "0x801D9EB3",
+        "target_offset": "+0xEC"
+      }
+    },
+    {
+      "symbol": "func_801D8D30",
+      "address": "0x801D8D30",
+      "runtime_source": "network_config.cpp",
+      "exact_rm3e01_function_start": false,
+      "nearest_lower_map_entry": {
+        "address": "0x801D8C04",
+        "name": "fn_801D8C04"
+      },
+      "nearest_upper_map_entry": {
+        "address": "0x801D8D74",
+        "name": "fn_801D8D74"
+      },
+      "ghidra_containing_function": {
+        "address": "0x801D8C04",
+        "name": "FUN_801d8c04",
+        "body_end_inclusive": "0x801D8D73",
+        "target_offset": "+0x12C"
+      }
+    },
+    {
+      "symbol": "func_8012B830",
+      "address": "0x8012B830",
+      "runtime_source": "audio/ax_effects.cpp",
+      "exact_rm3e01_function_start": false,
+      "nearest_lower_map_entry": {
+        "address": "0x8012B664",
+        "name": "CollidedWith__10CPatternedFRC9TUniqueIdRC18CCollisionInfoListR13CStateManager"
+      },
+      "nearest_upper_map_entry": {
+        "address": "0x8012B9F0",
+        "name": "ThinkAboutMove__10CPatternedFf"
+      },
+      "ghidra_containing_function": {
+        "address": "0x8012B664",
+        "name": "CollidedWith__10CPatternedFRC9TUniqueIdRC18CCollisionInfoListR13CStateManager",
+        "body_end_inclusive": "0x8012B9EF",
+        "target_offset": "+0x1CC"
+      }
+    },
+    {
+      "symbol": "func_801A0620",
+      "address": "0x801A0620",
+      "runtime_source": "os/os_alarm.cpp",
+      "exact_rm3e01_function_start": false,
+      "nearest_lower_map_entry": {
+        "address": "0x801A0528",
+        "name": "__ct__15SLdrRagDollDataFv"
+      },
+      "nearest_upper_map_entry": {
+        "address": "0x801A0648",
+        "name": "__dt__15SLdrRagDollDataFv"
+      },
+      "ghidra_containing_function": {
+        "address": "0x801A0528",
+        "name": "__ct__15SLdrRagDollDataFv",
+        "body_end_inclusive": "0x801A0647",
+        "target_offset": "+0xF8"
+      }
+    },
+    {
+      "symbol": "func_801AADE0",
+      "address": "0x801AADE0",
+      "runtime_source": "os/os_alarm.cpp",
+      "exact_rm3e01_function_start": false,
+      "nearest_lower_map_entry": {
+        "address": "0x801AACD8",
+        "name": "fn_801AACD8"
+      },
+      "nearest_upper_map_entry": {
+        "address": "0x801AAEA0",
+        "name": "fn_801AAEA0"
+      },
+      "ghidra_containing_function": {
+        "address": "0x801AACD8",
+        "name": "FUN_801aacd8",
+        "body_end_inclusive": "0x801AAE9F",
+        "target_offset": "+0x108"
+      }
+    },
+    {
+      "symbol": "func_8055531C",
+      "address": "0x8055531C",
+      "runtime_source": "os/os_init.cpp",
+      "exact_rm3e01_function_start": false,
+      "nearest_lower_map_entry": {
+        "address": "0x805552C4",
+        "name": "fn_805552C4"
+      },
+      "nearest_upper_map_entry": {
+        "address": "0x80555368",
+        "name": "fn_80555368"
+      },
+      "ghidra_containing_function": {
+        "address": "0x805552C4",
+        "name": "FUN_805552c4",
+        "body_end_inclusive": "0x80555367",
+        "target_offset": "+0x58"
+      }
+    },
+    {
+      "symbol": "func_801A1ED8",
+      "address": "0x801A1ED8",
+      "runtime_source": "os/os_scheduler.cpp",
+      "exact_rm3e01_function_start": false,
+      "nearest_lower_map_entry": {
+        "address": "0x801A1DE0",
+        "name": "fn_801A1DE0"
+      },
+      "nearest_upper_map_entry": {
+        "address": "0x801A2904",
+        "name": "fn_801A2904"
+      },
+      "ghidra_containing_function": {
+        "address": "0x801A1DE0",
+        "name": "FUN_801a1de0",
+        "body_end_inclusive": "0x801A2903",
+        "target_offset": "+0xF8"
+      }
+    },
+    {
+      "symbol": "func_801A961C",
+      "address": "0x801A961C",
+      "runtime_source": "os/os_init.cpp",
+      "exact_rm3e01_function_start": false,
+      "nearest_lower_map_entry": {
+        "address": "0x801A9600",
+        "name": "RenderUnsortedModelDataAndAddMeSorted__12CRenderActorCFRC14CRenderManager"
+      },
+      "nearest_upper_map_entry": {
+        "address": "0x801A9684",
+        "name": "AddMeToRenderSorted__12CRenderActorCFRC14CRenderManager"
+      },
+      "ghidra_containing_function": {
+        "address": "0x801A9600",
+        "name": "RenderUnsortedModelDataAndAddMeSorted__12CRenderActorCFRC14CRenderManager",
+        "body_end_inclusive": "0x801A9683",
+        "target_offset": "+0x1C"
+      }
+    }
+  ],
+  "ghidra_cross_check": {
+    "program": "main.dol",
+    "sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "result": "Ghidra reports all eight guest addresses as interior to existing Prime 3 function bodies, not callable function entries. The corresponding HLE imports must not be rebound to these locations."
+  }
+}

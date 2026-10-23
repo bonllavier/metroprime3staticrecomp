@@ -1,0 +1,93 @@
+{
+  "result": "FAIL independent THP plane bound",
+  "frame": 119,
+  "planes": {
+    "y": {
+      "samples": 286720,
+      "exact": 155269,
+      "maximum": 2,
+      "mean": 0.45863211495535716,
+      "over_one": 48
+    },
+    "u": {
+      "samples": 71680,
+      "exact": 41386,
+      "maximum": 2,
+      "mean": 0.42269810267857144,
+      "over_one": 5
+    },
+    "v": {
+      "samples": 71680,
+      "exact": 38869,
+      "maximum": 2,
+      "mean": 0.45887276785714287,
+      "over_one": 81
+    }
+  },
+  "executable_sha256": "ca351c12856b27a817f72793267de59be17a63dce06bd94d30f438692e11389a",
+  "ffmpeg_command": [
+    "${LOCAL_PATH}",
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-i",
+    "${LOCAL_PATH}",
+    "-vf",
+    "select='eq(n,119)'",
+    "-frames:v",
+    "1",
+    "-pix_fmt",
+    "yuvj420p",
+    "-f",
+    "rawvideo",
+    "-y",
+    "${LOCAL_PATH}"
+  ],
+  "scope": "Original SDK output after real LC DMA, exact compressed-frame identity, independent FFmpeg YUV decoder. Bound is per sample with no spatial tolerance; this is not proof of bit equality with Wii hardware or renderer fidelity.",
+  "artifacts": [
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "8f4731828d5801254b0bad4667520d01af319c9605451832d18c646a28e91323"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "1a2dcf34eee108a4173aa26517d5cef0f3fd1a53df77f8595b9371d028361401"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "3deee1f66936ea97c94db6e40734a1880e75d7ef6e9d4a729bacdaca31f54848"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "135c7545198e0810e424938a390087b7f71b484ea2205443f6a4497b45b5965a"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "49ebfa87fdc25a89ef82d0594622128c332c5f5e268137a12b14ac8ccba297a6"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "2ce797a0f88d7f067180338fb227f7b1928ea727bd9a4d7a1d022f7c52af71a3"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "24edf4390e0125278ba840dbde9bac04e0e7acaa363dca86d94dc4bdb00985b2"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "63c95bd48718831874cd32698e5fb71d802245085289c95d8dbffc28cd292ad8"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "1fe4cf876248188aebecdf46b2fd1ce209c0e5bdd683e7721b43a803ca2e377d"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "9ae6c2d08f2ba950a1105cf689c01cb82f7808c9fb98e8b2975c5cf6dc1509d8"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "807604f3d7c334dec614cce424f95853be81b3f74bac51d10519b3622c683e49"
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "result": "PASS optimized original readiness gate and legacy negative control",
+  "runs": [
+    {
+      "legacy": true,
+      "exit_code": 1,
+      "output": "scenario=0 actual=1 expected=1 preserved=1\nscenario=1 actual=0 expected=1 preserved=1\nscenario=2 actual=0 expected=0 preserved=1\nscenario=3 actual=0 expected=0 preserved=1\nscenario=4 actual=0 expected=0 preserved=1\nscenario=5 actual=1 expected=1 preserved=1\nscenario=6 actual=0 expected=1 preserved=1\n",
+      "source_sha256": "6cd2d2a8cb697425e0a0d251db26b32545859eef8131fee10ef7f83f0477025c",
+      "executable_sha256": "494fb9662eb4ac9936732479e3e121a58d1c0f0e7e18affb7d5cafa7bf992453",
+      "command": [
+        "${LOCAL_PATH}",
+        "-std=c++20",
+        "-O3",
+        "-fno-lto",
+        "-DLEGACY_IMPORT=1",
+        "-I",
+        "${LOCAL_PATH}",
+        "${LOCAL_PATH}",
+        "${LOCAL_PATH}",
+        "${LOCAL_PATH}",
+        "${LOCAL_PATH}",
+        "-o",
+        "${LOCAL_PATH}"
+      ]
+    },
+    {
+      "legacy": false,
+      "exit_code": 0,
+      "output": "scenario=0 actual=1 expected=1 preserved=1\nscenario=1 actual=1 expected=1 preserved=1\nscenario=2 actual=0 expected=0 preserved=1\nscenario=3 actual=0 expected=0 preserved=1\nscenario=4 actual=0 expected=0 preserved=1\nscenario=5 actual=1 expected=1 preserved=1\nscenario=6 actual=1 expected=1 preserved=1\n",
+      "source_sha256": "436fc6c4aa9915ea875e48eab95289654305b51104ae9d44003b62da8961fdf5",
+      "executable_sha256": "24c696026f322e3a8da8ad9b40509c5bdfb0c41d390f9c9b260a81041b0c8523",
+      "command": [
+        "${LOCAL_PATH}",
+        "-std=c++20",
+        "-O3",
+        "-fno-lto",
+        "-DLEGACY_IMPORT=0",
+        "-I",
+        "${LOCAL_PATH}",
+        "${LOCAL_PATH}",
+        "${LOCAL_PATH}",
+        "${LOCAL_PATH}",
+        "${LOCAL_PATH}",
+        "-o",
+        "${LOCAL_PATH}"
+      ]
+    }
+  ],
+  "modules": {
+    "rhbm": {
+      "functions": 19,
+      "explicit_context_import_sites": 10
+    },
+    "Tweaks": {
+      "functions": 298,
+      "explicit_context_import_sites": 2280
+    },
+    "ScriptGUIScreenFrontEndUI": {
+      "functions": 249,
+      "explicit_context_import_sites": 1494
+    },
+    "ScriptWorldTeleporter": {
+      "functions": 45,
+      "explicit_context_import_sites": 285
+    },
+    "ScriptAchievement": {
+      "functions": 22,
+      "explicit_context_import_sites": 79
+    },
+    "ScriptContextSensitiveActivator": {
+      "functions": 26,
+      "explicit_context_import_sites": 70
+    },
+    "ScriptGrapplePoint": {
+      "functions": 50,
+      "explicit_context_import_sites": 172
+    }
+  },
+  "scope": "Real translated readiness gate and IsLoading bodies with an abstract word-memory fixture and import provider. No original movie/script state is overridden in the game.",
+  "sources": {
+    "recomp\\.tools\\rso-runtime\\ScriptGUIScreenFrontEndUI\\functions\\rso3_func_806AB6A0.cpp": "436fc6c4aa9915ea875e48eab95289654305b51104ae9d44003b62da8961fdf5",
+    "recomp\\.tools\\rso-context-contract\\legacy_gate.cpp": "6cd2d2a8cb697425e0a0d251db26b32545859eef8131fee10ef7f83f0477025c",
+    "recomp\\generated\\RM3E01_00_conservative\\functions\\func_80259954.cpp": "aa80c99e638597c78bf62e099ccaf93cb2fa439c4747bb99065cfb586bfa233d",
+    "recomp\\tools\\verify_prime_rso_context_import.py": "a8256222fb1435aee773b02d143b91397c31f63596ef7358dd9aa822d86859df",
+    "recomp\\.tools\\portable-tools\\llvm-mingw\\bin\\clang++.exe": "a8b7a614eeadd9105f814be3701a7f312cda4cea51751b75b408c16100c94e85"
+  }
+}

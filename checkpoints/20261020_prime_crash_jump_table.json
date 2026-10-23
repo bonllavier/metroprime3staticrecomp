@@ -1,0 +1,37 @@
+{
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "crash_mem1_sha256": "c9c9cc1689292cdb2b70c4cd7b2bfb0bbf8347be0e8933154e2229d9478869ff",
+  "crash_mem1": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792529414_pid3552/mem1.bin",
+  "console_log_sha256": "18e28e3a47908f53504e3866ee038eeb591d908fac9d542bcb5a19bac856c908",
+  "table_value_after_embedded_data_load": "0x804C9770 (checked Memory and flat guest views)",
+  "table_value_after_dol_init_data_bss_clear": "0x804C9770",
+  "bss_init_ranges": [
+    {
+      "start": "0x805C0800",
+      "size": "0xB79B8",
+      "end_exclusive": "0x806781B8"
+    },
+    {
+      "start": "0x8067A040",
+      "size": "0x4978",
+      "end_exclusive": "0x8067E9B8"
+    },
+    {
+      "start": "0x80684380",
+      "size": "0x24",
+      "end_exclusive": "0x806843A4"
+    }
+  ],
+  "table": {
+    "virtual_address": "0x805A4480",
+    "index": 14,
+    "entry_address": "0x805A44B8",
+    "dol_section_index": 12,
+    "dol_file_offset": "0x5A0598",
+    "expected_target": "0x804C9770",
+    "crash_snapshot_target": "0x00000000",
+    "matches": false
+  },
+  "interpretation": "The table is valid in both guest memory views after embedded section loading and still valid after the DOL's __init_data BSS clear. Its entry is zero in the later crash snapshot, and the recorded BSS ranges do not cover it. The entry is lost later during startup; the exact OSInit writer or mapping failure remains unknown."
+}

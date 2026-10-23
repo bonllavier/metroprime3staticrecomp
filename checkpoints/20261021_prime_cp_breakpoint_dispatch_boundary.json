@@ -1,0 +1,195 @@
+{
+  "revision": "RM3E01_00",
+  "probe": {
+    "revision": "RM3E01_00",
+    "started_utc": "2026-10-21T02:32:18.6014563Z",
+    "pid": 15676,
+    "observation_seconds": 25,
+    "alive_at_deadline": true,
+    "stopped_by_harness": true,
+    "process_exit_code": -1,
+    "fatal_dialogs_suppressed": true,
+    "executable_sha256": "2a652fd9940d59766f74a5b2ca1ff468d9b1416e71dea0e6c3235d57ffe9f932",
+    "log": "${LOCAL_PATH}",
+    "log_sha256": "4d354b17fb9124cc64cfbc1526e5515aca63298355dd498ceeb214a58b658daf",
+    "failure_logged": false,
+    "first_game_screen_verified": false,
+    "note": "Being alive and creating a graphics window do not prove game execution or a rendered screen."
+  },
+  "armed_breakpoints": [
+    [
+      "37",
+      "684660",
+      "684660",
+      "684660",
+      "684660",
+      "1c",
+      "18",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ],
+    [
+      "37",
+      "684540",
+      "684540",
+      "684540",
+      "684540",
+      "1c",
+      "0",
+      "1"
+    ]
+  ],
+  "cp_interrupts_observed": 1,
+  "failure": "The CP status is pending, but the frame wait keeps selecting the same guest thread and does not enter the existing idle interrupt pump.",
+  "next_step": "Reproducible OSYieldThread overlay services the isolated interrupt pump before executing its original translated body; execution validation pending.",
+  "original_functions": {
+    "804D0AD0": "sets CP breakpoint low/high, BP enable and BP interrupt bits, then restores interrupts",
+    "804D009C": "CP interrupt handler calls callback stored at 8067E3C4 when status bit4 and control bit5 are active",
+    "803E9820": "disables CP breakpoint and sets frame state 8067DECC to1",
+    "803E9848": "VI pre callback switches XFB and advances state1 to2",
+    "803E9968": "VI post callback decrements pending frame count in state2",
+    "803E9F78": "waits for pending frames and aborts after 250ms"
+  },
+  "original_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "reference": "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/VideoCommon/CommandProcessor.cpp",
+  "screen_verified": false
+}

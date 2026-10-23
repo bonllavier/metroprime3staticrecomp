@@ -1,0 +1,27 @@
+{
+  "created_utc": "2026-10-20T07:57:27Z",
+  "input": {
+    "path": "../../Metroid Prime 3 - Corruption (USA).iso",
+    "size_bytes": 4699979776,
+    "read_only_attribute": true,
+    "sha256": "3621e6522f99e8c6755353530f2d571489b805bee85c054a96ac52c7e32ee71e",
+    "first_8_bytes_ascii": "RM3E01\u0000\u0000",
+    "disc_id_interpretation": "Validated raw Wii disc header: disc ID RM3E01, disc number 0, revision 0, and Wii disc magic. This confirms the header revision, not the encrypted partition DOL hash.",
+    "disc_number": 0,
+    "revision": 0,
+    "wii_disc_magic": "5d1c9ea3",
+    "header_validation_tool": "references/kartpad/scripts/inspect-disc-header.py"
+  },
+  "verification": {
+    "read_only_scan": "SHA-256 computed by opening the ISO read-only; no ISO content was written or extracted.",
+    "dol_inside_disc_compared": false,
+    "disc_backend_connected_to_runtime": false,
+    "game_executed": false,
+    "screen_rendered": false
+  },
+  "limitations": [
+    "The runtime DVD HLE still expects an extracted DATA directory and is not connected to direct ISO reads.",
+    "The DOL inside the encrypted partition has not yet been compared with the pinned RM3E01_00 main.dol.",
+    "The RVZ alongside the ISO was not opened or modified."
+  ]
+}

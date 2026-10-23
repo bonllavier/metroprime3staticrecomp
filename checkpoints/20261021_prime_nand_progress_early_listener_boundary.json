@@ -1,0 +1,33 @@
+{
+  "result": "PASS filesystem query progress and next original early listener boundary",
+  "revision": "RM3E01_00",
+  "runtime_target": "0x80b121cc",
+  "nominal_target": "0x806aa8ac",
+  "text_offset": "0x13C4C",
+  "node_words": [
+    "0x8096cfb8",
+    "0x8096cfb8",
+    "0x80875638",
+    "0x80b121cc",
+    "0x80a53700",
+    "0x0",
+    "0xffffffff",
+    "0x80b12420"
+  ],
+  "original_prefix_bytes_verified": 24,
+  "scope": "ES now provides original title path; title data directory is provisioned without creating a save. GETUSAGE reports actual empty-directory inode. Runtime explicitly fails at next untranslated callback, not at storage wait.",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792619269_pid18308\\console.log",
+      "sha256": "7673366a860ffdb98092c969686e8d5c84c51d5db3bae28207de477d52c2c2b5"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792619269_pid18308\\mem1.bin",
+      "sha256": "b834d9d3084cbc2324dd51829acfe9519c7eedc375a1e8a30d8061fb1d864c4d"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792619269_pid18308\\crash_missing_target.txt",
+      "sha256": "b6cf53feac7bc1820611b2e36811f79459cd989433e03fab2f17a1e85387c5d5"
+    }
+  ]
+}

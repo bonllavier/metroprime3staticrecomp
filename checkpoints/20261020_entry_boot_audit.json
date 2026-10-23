@@ -1,0 +1,181 @@
+{
+  "created_utc": "2026-10-20T07:31:47.412695+00:00",
+  "revision": "RM3E01_00",
+  "entry_point": "0x80006320",
+  "input_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "entry_source": "recomp/generated/RM3E01_00_conservative/functions/func_80006320.cpp",
+  "entry_source_sha256": "f7efdb12769e9d323a0cc461a8bc1b915b578c8dbc5e1155b15271dcef170265",
+  "main_source": "recomp/generated/RM3E01_00_conservative/functions/func_802D5150.cpp",
+  "main_source_sha256": "bc4f87efe413b15323283bee78576e0039a2ab8a0899795dee62a01d5b2065e6",
+  "symbol_map": "decomp/config/RM3E01_00/symbols.txt",
+  "symbol_map_sha256": "aa5fd03f51f1b0d1d1bfdb4d67fd407cae2a62c57dd02a460e387ebec7e05749",
+  "direct_calls_in_source_order": [
+    {
+      "order_in_emitted_source": 1,
+      "address": "0x8000648C",
+      "symbol": "__init_registers",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 2,
+      "address": "0x800065C4",
+      "symbol": "__init_hardware",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 3,
+      "address": "0x8000651C",
+      "symbol": "__init_data",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 4,
+      "address": "0x804DE05C",
+      "symbol": "OSInit",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 5,
+      "address": "0x800062E4",
+      "symbol": "__check_pad3",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 6,
+      "address": "0x804B9F34",
+      "symbol": "InitMetroTRK_BBA",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 7,
+      "address": "0x804E9BDC",
+      "symbol": "__init_user",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 8,
+      "address": "0x802D5150",
+      "symbol": "main",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 9,
+      "address": "0x804E9C44",
+      "symbol": "exit",
+      "has_generated_translation": true
+    }
+  ],
+  "main_direct_calls_in_source_order": [
+    {
+      "order_in_emitted_source": 1,
+      "address": "0x804CB70C",
+      "symbol": "fn_804CB70C",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 2,
+      "address": "0x803F6700",
+      "symbol": "fn_803F6700",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 3,
+      "address": "0x8038F6D4",
+      "symbol": "fn_8038F6D4",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 4,
+      "address": "0x802D50CC",
+      "symbol": "fn_802D50CC",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 5,
+      "address": "0x8038F998",
+      "symbol": "fn_8038F998",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 6,
+      "address": "0x802D5048",
+      "symbol": "fn_802D5048",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 7,
+      "address": "0x80382264",
+      "symbol": "fn_80382264",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 8,
+      "address": "0x803EC04C",
+      "symbol": "fn_803EC04C",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 9,
+      "address": "0x802D4D24",
+      "symbol": "fn_802D4D24",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 10,
+      "address": "0x802D5310",
+      "symbol": "fn_802D5310",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 11,
+      "address": "0x803DDD48",
+      "symbol": "__ct__6CTokenFP4IObj",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 12,
+      "address": "0x802EAB50",
+      "symbol": "fn_802EAB50",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 13,
+      "address": "0x803DDE7C",
+      "symbol": "__dt__6CTokenFv",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 14,
+      "address": "0x803EC094",
+      "symbol": "fn_803EC094",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 15,
+      "address": "0x803822BC",
+      "symbol": "fn_803822BC",
+      "has_generated_translation": true
+    },
+    {
+      "order_in_emitted_source": 16,
+      "address": "0x8038F8F4",
+      "symbol": "fn_8038F8F4",
+      "has_generated_translation": true
+    }
+  ],
+  "main_interpretation": "Source-order calls emitted for main at 0x802D5150. Branches can skip calls; presence of generated bodies proves translation output only, not correctness, runtime availability, or first-screen arrival.",
+  "indirect_call_observed": {
+    "address_expression": "0x804C0000 - 24932 = 0x804B9E9C",
+    "call_site": "0x800063C0",
+    "target_address": "0x804B9E9C",
+    "target_is_registered_function_entry": true,
+    "symbol": "InitMetroTRK",
+    "target_instruction_words": [
+      "0x3821FFFC",
+      "0x90610000"
+    ],
+    "target_instruction_interpretation": "stwu r1,-4(r1); stw r3,0(r1)",
+    "note": "The target equals the registered InitMetroTRK entry. Ghidra's decompilation of __start identifies this indirect branch as InitMetroTRK; runtime branch conditions still determine whether this debug path executes."
+  },
+  "interpretation": "Static source-order inventory only. It is not a dynamic trace, does not prove branch conditions or first-screen reachability, and does not validate HLE semantics or graphics output."
+}

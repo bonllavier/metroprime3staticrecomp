@@ -1,0 +1,19 @@
+{
+  "result": "PASS bounded observation 100 seconds without logged fatal; gameplay not verified",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792632374_pid6660\\runtime_probe.json",
+  "visual_game_select": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid6660_95s.png",
+  "local_profile_identity": "89917cbd904d2813",
+  "RFL_index_zero_acceptance": [
+    "[prime-mii-lookup] index=0 result=0x9054c3e4 id0=0x89917cbd id1=0x904d2813 name0=0x4a0075",
+    "[prime-mii-lookup] index=0 result=0x9054c3e4 id0=0x89917cbd id1=0x904d2813 name0=0x4a0075",
+    "[prime-mii-lookup] index=0 result=0x9054c3e4 id0=0x89917cbd id1=0x904d2813 name0=0x4a0075",
+    "[prime-mii-lookup] index=0 result=0x9054c3e4 id0=0x89917cbd id1=0x904d2813 name0=0x4a0075",
+    "[prime-mii-lookup] index=0 result=0x9054c3e4 id0=0x89917cbd id1=0x904d2813 name0=0x4a0075"
+  ],
+  "same_profile_reloaded_from_NAND": true,
+  "slot_identity_association_verified": false,
+  "gameplay_verified": false,
+  "ScriptAchievement_execution_observed": false,
+  "scope": "Game Select visible at95s; persistent Mii ID accepted by original RFL. Full ISO/GPU gate PASS in linked checkpoint; gameplay and complete slot identity association remain unverified.",
+  "full_boot_checkpoint": "recomp/checkpoints/20261021_prime_mii_cache_regenerated_boot.json"
+}

@@ -1,0 +1,12 @@
+{
+  "result": "PASS passive capture tool fixture, ASLR symbolization fixture, observer process-exit fixture and PowerShell syntax; actual frozen game snapshot pending",
+  "scope": "Manual input only. Observer detects Windows UI unresponsiveness for 15 seconds, captures once, never injects inputs or closes/restarts game. Native thread sampling briefly suspends/resumes threads.",
+  "opt_out": "run_prime_keyboard_mouse.ps1 -NoHangCapture",
+  "sources": {
+    "recomp/tools/capture_prime_hang.py": "e262f3ee2eb755bf82eca20421610fd603dc62d6ef52e03c0200766803d8fca2",
+    "recomp/tools/watch_prime_hang.ps1": "16d7c4607b4d31d3da55fb854701a6670389092468eb624119f09b4f2b81a749",
+    "recomp/tools/run_prime_keyboard_mouse.ps1": "9670a424bf06d6566598e85fa1259d321e172f21de6e885faec1d75322b49444"
+  },
+  "actual_game_hang_captured": false,
+  "fix_verified": false
+}

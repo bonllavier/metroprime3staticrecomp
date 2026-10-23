@@ -1,0 +1,111 @@
+{
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "probe_module": "FrontEndUI synthetic REL relocated image",
+  "probe_start": "0x80690000",
+  "probe_size": 128740,
+  "probe_end_exclusive": "0x806AF6E4",
+  "dol_allocated_segments": [
+    {
+      "kind": "text",
+      "index": 0,
+      "start": "0x80004000",
+      "end": 2147509952,
+      "size": 9920,
+      "end_exclusive": "0x800066C0",
+      "size_hex": "0x26C0"
+    },
+    {
+      "kind": "data",
+      "index": 0,
+      "start": "0x800066C0",
+      "end": 2147510816,
+      "size": 864,
+      "end_exclusive": "0x80006A20",
+      "size_hex": "0x360"
+    },
+    {
+      "kind": "data",
+      "index": 1,
+      "start": "0x80006A20",
+      "end": 2147511968,
+      "size": 1152,
+      "end_exclusive": "0x80006EA0",
+      "size_hex": "0x480"
+    },
+    {
+      "kind": "text",
+      "index": 1,
+      "start": "0x80006EA0",
+      "end": 2153207424,
+      "size": 5695456,
+      "end_exclusive": "0x80575680",
+      "size_hex": "0x56E7E0"
+    },
+    {
+      "kind": "data",
+      "index": 2,
+      "start": "0x80575680",
+      "end": 2153209664,
+      "size": 2240,
+      "end_exclusive": "0x80575F40",
+      "size_hex": "0x8C0"
+    },
+    {
+      "kind": "data",
+      "index": 3,
+      "start": "0x80575F40",
+      "end": 2153209696,
+      "size": 32,
+      "end_exclusive": "0x80575F60",
+      "size_hex": "0x20"
+    },
+    {
+      "kind": "data",
+      "index": 4,
+      "start": "0x80575F80",
+      "end": 2153312640,
+      "size": 102912,
+      "end_exclusive": "0x8058F180",
+      "size_hex": "0x19200"
+    },
+    {
+      "kind": "data",
+      "index": 5,
+      "start": "0x8058F180",
+      "end": 2153514976,
+      "size": 202336,
+      "end_exclusive": "0x805C07E0",
+      "size_hex": "0x31660"
+    },
+    {
+      "kind": "bss",
+      "index": 0,
+      "start": "0x805C0800",
+      "end": 2154316708,
+      "size": 801700,
+      "end_exclusive": "0x806843A4",
+      "size_hex": "0xC3BA4"
+    },
+    {
+      "kind": "data",
+      "index": 6,
+      "start": "0x806781C0",
+      "end": 2154274880,
+      "size": 7808,
+      "end_exclusive": "0x8067A040",
+      "size_hex": "0x1E80"
+    },
+    {
+      "kind": "data",
+      "index": 7,
+      "start": "0x8067E9C0",
+      "end": 2154316672,
+      "size": 22976,
+      "end_exclusive": "0x80684380",
+      "size_hex": "0x59C0"
+    }
+  ],
+  "static_dol_overlap_count": 0,
+  "interpretation": "The probe image does not overlap DOL text/data/BSS ranges. This does not reserve the address against the game heap or prove that the actual RSO loader uses it."
+}

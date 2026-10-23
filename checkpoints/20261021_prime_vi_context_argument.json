@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-21",
+  "revision": "RM3E01_00",
+  "purpose": "Correct and validate the r4 argument passed to Prime's VI interrupt handler, including Prime's idle context.",
+  "artifacts": {
+    "dol": {
+      "path": "decomp/orig/RM3E01_00/sys/main.dol",
+      "sha256": "6B550F221602074747A2E61B0AA064203FD493F6865DFB3B1A912682065E6104"
+    },
+    "executable": {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe",
+      "sha256": "670228F287436BB462D4036C1A993DC2EA4EA1BE4B9300F41998B6042E51C704"
+    },
+    "runtime_source": {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp",
+      "sha256": "EC1E66E9255678F0FACF844E2E7BBE85BD74B7B5C28E089BB75683F7FA47E36D"
+    },
+    "diagnostic_shard": {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_70795d80da5f526108c7e76e.cpp",
+      "sha256": "E29F2DE9A732D46F4BA051C3C2D0EC02CE6250A86578D36D9C2F16B4AC281BAA"
+    }
+  },
+  "source_evidence": {
+    "handler": "FUN_804EEB6C is registered for interrupt 0x18 by FUN_804EF71C.",
+    "argument_use": "The handler preserves its incoming r4 and restores it through FUN_804E00DC; therefore r4 must be the interrupted guest OSContext pointer, not the interrupted CPU's ordinary r4 value.",
+    "idle_context": "Prime's own scheduler FUN_804E6BD4 uses OSContext 0x8060B830 when its running-context pointer becomes zero.",
+    "null_range_behavior": "Memory::Contains(0, 0x2C8) returned true in this runtime, so the selector now rejects zero explicitly before accepting a context address."
+  },
+  "runtime": {
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792543499_pid10504/console.log",
+    "log_sha256": "D2A731D4AE438C0A133B6CC13930C13EAF3E78EDCCAA542AE4D522A6B74E4A43",
+    "duration_seconds": 25,
+    "process_alive_at_harness_stop": true,
+    "fatal_error": false,
+    "screen_observed": false,
+    "context_cases": [
+      {
+        "running_context": "0x8060B418",
+        "selected_os_context": "0x8060B418",
+        "handler_entry_r4": "0x8060B418",
+        "valid": true
+      },
+      {
+        "running_context": "0x00000000",
+        "prime_current_context": "0x8060B830",
+        "selected_os_context": "0x8060B830",
+        "handler_entry_r4": "0x8060B830",
+        "valid": true
+      }
+    ],
+    "startup_progress": "IOS queue reaches head 29/tail 29; the command-7 synchronous request at head 28 returns 0. Earlier behavior stalled before consuming that entry. The run later continues polling retraces but does not show a game frame."
+  },
+  "validation": {
+    "ninja_wiicomplied_target": "PASS",
+    "ctest": "PASS 9/9",
+    "verifier": "python -B recomp/tools/verify_prime_vi_context_argument.py"
+  },
+  "invariants": {
+    "matching_dol_modified": false,
+    "baseline_decomp_modified": false,
+    "iso_path": "Metroid Prime 3 - Corruption (USA).iso",
+    "iso_size": 4699979776,
+    "iso_read_only": true,
+    "friends_report_modified": false
+  },
+  "next": "Trace the translated guest PC and scheduler/thread states after the synchronous command-7 completion at head 28. Keep the VI callback context fix unless new DOL evidence contradicts its OSContext argument; do not fabricate IOS results or claim a rendered frame."
+}

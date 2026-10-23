@@ -1,0 +1,19 @@
+{
+  "result": "PASS RM3E01 original game-partition ticket title identity",
+  "iso_size": 4699979776,
+  "opened_read_only": true,
+  "partitions": [
+    {
+      "partition_offset": "0xf800000",
+      "partition_type": 0,
+      "ticket_title_id_offset": "0x1DC",
+      "title_id": "00010000524d3345",
+      "ticket_sha256": "34d76e680ffded73411e620aa83bcb201994fcdbf0abd2054fec911bced35af1"
+    }
+  ],
+  "independent_layout_source": {
+    "path": "recomp\\.tools\\nod-source\\nod\\src\\disc\\wii.rs",
+    "sha256": "13b6e381672c63d924197d6ed04c698605e55003a80379dd454a55f45ff92ae9"
+  },
+  "scope": "Ticket title bytes only; original ISO is untouched. Current Prime category must be 00010000, not upstream Mario Kart 00010004."
+}

@@ -1,0 +1,10 @@
+{
+  "result": "PASS factory/root translation and full runtime build; runtime verification pending",
+  "module": "ScriptAchievement",
+  "functions": 12,
+  "relocations_checked": 213,
+  "nominal_factory": "0x80691644",
+  "original_factory_offset": "0xE44",
+  "executable_sha256": "43e91e5625f86fe7457188d99903543e78d22c65b962841b1a78328bee7211cb",
+  "context_contract": "20261021_prime_rso_context_achievement_factory_contract.json"
+}

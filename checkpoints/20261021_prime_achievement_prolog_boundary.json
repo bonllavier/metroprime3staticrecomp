@@ -1,0 +1,12 @@
+{
+  "result": "PASS ScriptAchievement original prolog and complete relocation-masked text boundary; runtime failed missing translation",
+  "module_sha256": "795ca322e9b177e4bb929d7cf810309a22520b6399b95adbfa4366cfe389b73f",
+  "live_module_base": "0x80c3aaa0",
+  "live_section_table": "0x80c3aaf8",
+  "live_text_base": "0x80c3abb8",
+  "target": "0x80C3BD7C",
+  "text_bytes_verified": 5064,
+  "masked_relocation_sites": 203,
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792632176_pid17432\\runtime_probe.json",
+  "initial_unmasked_prefix_check": "Rejected: two original branch placeholders are relocated by SDK. Final check masks only independently enumerated relocation fields across complete text."
+}

@@ -1,0 +1,38 @@
+{
+  "revision": "RM3E01_00",
+  "ctest": {
+    "passed": 9,
+    "failed": 0,
+    "last_test_log": "recomp/build/RM3E01_00_runtime_link_probe/Testing/Temporary/LastTest.log",
+    "log_sha256": "6b5a74beea336a7b2f3cf2ebee26a3499c7e97f80915e2b42f6c209f6a5a33c5",
+    "updated_config_test_executable_sha256": "7b54d4a67270e2abfcabb2178149fb03b798843d8345eb6b9c4015b6b08fede1"
+  },
+  "component_contracts": {
+    "passed": 3,
+    "checkpoint": "recomp/checkpoints/20261020_prime_runtime_contract_tests.json",
+    "sha256": "1401e1f885cada1c943f39b67a0625dd93a30ba4484c92e9e07bdc321ccca158"
+  },
+  "runtime_evidence": {
+    "checkpoint": "recomp/checkpoints/20261020_prime_iso_rhbm_prolog_boundary.json",
+    "sha256": "378217813ff3dcc603268c035c506430524b01266897bfcd8852c6579958473b",
+    "outcome": "expected_missing_rso_translation",
+    "iso_reads_verified": 17,
+    "module": {
+      "module": "RSO_rhbm.rso",
+      "role": "Wii HOME infrastructure, not Metroid title screen",
+      "original_sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+      "cached_load_base": "0x9015e880",
+      "prolog_section": 1,
+      "prolog_section_offset": 64976,
+      "section_file_offset": 288,
+      "prolog_target": "0x9016e770",
+      "translation_registered": false
+    },
+    "exit_code": 1
+  },
+  "game_screen_verified": false,
+  "audio_output_verified": false,
+  "matching_dol_exact": true,
+  "iso_readonly": true,
+  "next_step": "Translate/register the actual rhbm RSO prolog and dependencies with verified relocations and runtime placement; preserve the original loader."
+}

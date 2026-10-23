@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-20",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "change": "Completed all 23 literal target cases in the second dispatch table of func_804D6690; previous runtime target 0x804D6EB0 now routes to the existing epilogue, and added DOL-derived cases 0x804D6E84, 0x804D6E94, 0x804D6EA4, 0x804D6C6C.",
+  "verification": {
+    "command": "python -B recomp/tools/verify_prime_gx_state_switches.py",
+    "result": "PASS: all 36 state-selector entries and 23 attribute-selector entries from RM3E01_00 DOL map to source switch cases.",
+    "checkpoint": "recomp/checkpoints/20261020_prime_gx_state_switches.json",
+    "source_sha256": "0d865bae52630281c382c0ce93110fe17f9516383968659d220c4ffce6b9a24d",
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "build": {
+    "command": "cmake --build recomp/build/RM3E01_00_runtime_link_probe --target WiiCompiled -j 8",
+    "result": "PASS",
+    "executable_sha256": "e21eb9ffba1d8b908056a9240847ff45ef6d3c0d9b48a9622cbc93a7877f5be4"
+  },
+  "runtime_runs": [
+    {
+      "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792535184_pid14376/console.log",
+      "console_sha256": "a92364ffdbf1f57428095d6a69bd210e6a9c6f26cad68a5e5ea104fcac220e33",
+      "observed_duration_seconds": 30,
+      "result": "Process remained alive at timeout; no guest memory fatal or indirect-jump failure recorded; pipeline cache prewarm completed."
+    },
+    {
+      "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792535222_pid11984/console.log",
+      "console_sha256": "72447b25b7df146ea5dd18b510e6a551c9abbb679584acca3f7cd4ccaf5c0e8c",
+      "observed_duration_seconds": 20,
+      "result": "Window created and remained alive; process was stopped after capture."
+    }
+  ],
+  "visual_check": {
+    "capture": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_capture.png",
+    "sha256": "dcc860660732032b48242f0221d0fda3a1666e9cc98f1f2f59bea1becfd53f40",
+    "dimensions": "870x519",
+    "result": "Entire client area is black. This is not the game title screen."
+  },
+  "limitations": [
+    "Runtime now passes the previously crashing 0x804D6BBC/0x804D6EB0 state-machine dispatch.",
+    "A black window is the only visible result; game-screen goal remains unmet.",
+    "Aurora logged dropped SetViewport and SetScissor commands before graphics recording became active; determine whether these are harmless startup calls or a missing frame path.",
+    "The manually translated state-switch body is not instruction-level matched; only the table target coverage is checked.",
+    "Runtime still uses the private extracted research data, not the final ISO-backed reader."
+  ],
+  "next": "Trace the first frame after pipeline prewarm: find why no active Aurora render pass or completed framebuffer is presented, then continue through Prime startup dependencies. Keep original DOL and ISO hashes pinned."
+}

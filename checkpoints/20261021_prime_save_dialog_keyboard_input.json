@@ -1,0 +1,136 @@
+{
+  "result": "PASS targeted Windows messages through SDL into captured PPC32 input samples",
+  "revision": "RM3E01_00",
+  "executable_sha256": "b266a0238f29795db641ba9101a3e989a72f7d4299cb0d5f80222f593853bf94",
+  "records": [
+    {
+      "retrace": 25,
+      "destination": "0x80698F80",
+      "hold": 0,
+      "trigger": 0,
+      "release": 0,
+      "stick": [
+        0.0,
+        0.0
+      ],
+      "pointer_valid": true,
+      "pointer": [
+        0.6065573692321777,
+        0.11249995231628418
+      ]
+    },
+    {
+      "retrace": 4058,
+      "destination": "0x80699130",
+      "hold": 0,
+      "trigger": 0,
+      "release": 0,
+      "stick": [
+        0.0,
+        0.0
+      ],
+      "pointer_valid": true,
+      "pointer": [
+        -0.25058549642562866,
+        -0.06666672229766846
+      ]
+    },
+    {
+      "retrace": 4114,
+      "destination": "0x80699130",
+      "hold": 2048,
+      "trigger": 2048,
+      "release": 0,
+      "stick": [
+        0.0,
+        0.0
+      ],
+      "pointer_valid": true,
+      "pointer": [
+        -0.25058549642562866,
+        -0.06666672229766846
+      ]
+    },
+    {
+      "retrace": 4135,
+      "destination": "0x80699130",
+      "hold": 0,
+      "trigger": 0,
+      "release": 2048,
+      "stick": [
+        0.0,
+        0.0
+      ],
+      "pointer_valid": true,
+      "pointer": [
+        -0.25058549642562866,
+        -0.06666672229766846
+      ]
+    },
+    {
+      "retrace": 4157,
+      "destination": "0x80699130",
+      "hold": 0,
+      "trigger": 0,
+      "release": 0,
+      "stick": [
+        0.0,
+        1.0
+      ],
+      "pointer_valid": true,
+      "pointer": [
+        -0.25058549642562866,
+        -0.06666672229766846
+      ]
+    },
+    {
+      "retrace": 4178,
+      "destination": "0x80699130",
+      "hold": 0,
+      "trigger": 0,
+      "release": 0,
+      "stick": [
+        0.0,
+        0.0
+      ],
+      "pointer_valid": true,
+      "pointer": [
+        -0.25058549642562866,
+        -0.06666672229766846
+      ]
+    },
+    {
+      "retrace": 4221,
+      "destination": "0x80699130",
+      "hold": 0,
+      "trigger": 0,
+      "release": 0,
+      "stick": [
+        0.0,
+        0.0
+      ],
+      "pointer_valid": true,
+      "pointer": [
+        0.6065573692321777,
+        0.11249995231628418
+      ]
+    }
+  ],
+  "game_title_screen_verified": false,
+  "physical_wiimote_verified": false,
+  "scope": "Exercises keyboard A press/release, Nunchuk stick, mouse pointing and original connect/extension callbacks. Full motion, physical remotes, input latency and title rendering remain unverified.",
+  "artifacts": [
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "70cf884cdaac0c14f26b7acc83ada27d772e9ca9af0ac5dbdf8a148604b062cf"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "50016d167948b243dcbd945d2e9f994726b2f63568b90f7bb72c36acc4c7e698"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "8300d9195c532445d522e18a3d595b3c355f85c13d343b4de169b91972688795"
+    }
+  ]
+}

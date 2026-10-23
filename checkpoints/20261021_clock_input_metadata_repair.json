@@ -1,0 +1,2593 @@
+{
+  "revision": "RM3E01_00",
+  "source_bytes_unchanged": true,
+  "compiler_inputs": [
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_80698C34.cpp",
+      "sha256": "5f77eb53b0ca705ed4d512af410bf63c87a11d62b3d4daf9a8cf3f54ce2980bf",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_8069CD44.cpp",
+      "sha256": "27b0bbc48596d266d1a8cb1e469e600f6cb09425c55b5c9efdbfe45f7887141f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_8069D890.cpp",
+      "sha256": "8fb8616df592b1e6cd85ed26725588b67c84d4e2e1c409aea202b835198af65d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_8069E990.cpp",
+      "sha256": "06f4019afedf349924c3aa9137047ebc018116501067b622f697b4aaebf20e13",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_8069FA24.cpp",
+      "sha256": "5770e8de8cb3d415236091be57a428598359f790412c0049429348ce075a49b3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A2AF8.cpp",
+      "sha256": "79d46a5f29bc780e57e56d2cd60d6bc5d9aad1d299697311e22cf304b103880b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A2CE8.cpp",
+      "sha256": "3cbd71b244409fb14aace5d56b48d86875b6dc3bdb6c989675f54fa286feb870",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A2CF4.cpp",
+      "sha256": "77938d3378b121e630e5bedc5a000b077bc4c62ebac997a58eb5d5bb72b9e454",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A2D30.cpp",
+      "sha256": "ed5e6af93cb4da451480824add904f562d8a819bfe83e3131b72fe1d1a162f27",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A3178.cpp",
+      "sha256": "14617db9ede971f83532487027bce2cada3d2114e0ad345d056b57aca4c2e14e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A3750.cpp",
+      "sha256": "dd63d4f69fc768f880ee274e442a115257757cb560be6096721d1b4bc8f214fb",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A3838.cpp",
+      "sha256": "4f6e709ef99dd0b674a6e5b34d21871e3d718b151d1a1b5f946c218392bdce5b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A7348.cpp",
+      "sha256": "d69c22fb0d9895091450abdaea79290e2267ef06277d8f80c12aa16243ef30fc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A7350.cpp",
+      "sha256": "75cf3276d358b2b035434a8e86da6ef98557693c398a3e41e1d653341479f072",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A8320.cpp",
+      "sha256": "7ff0a7fb4a39f4afd5c0fe90f5cc8d4f8875e5e6f8f2d85f6e8eaf1c8e2374f7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A8368.cpp",
+      "sha256": "2f10f34cefb467f84653a0dfc61df92a8f01bc323cc7df169d03e9331eb2e868",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A83B0.cpp",
+      "sha256": "08f57d7be6a4f2dc386e96f05a3028cbdcfa51a33b2e2f349842bb568f76663b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A83B4.cpp",
+      "sha256": "86f7bfe51a7f777d5bbb5290066e703a5bca5518197de536c77bf738abdf5afe",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/functions/rso1_func_806A83B8.cpp",
+      "sha256": "a0abe27ba8122ebfc1b61c794234e2177ed48e7092aad1c8cfd1455464049ff1",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/rhbm/registry.cpp",
+      "sha256": "c81d1838c29fbbeca6eff7496393e32e7a1e612f07b57f79843cd20a50ed9442",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A600.cpp",
+      "sha256": "6454045d4b18eba5e7279ead88030976d0f155605da6387e8205ff3a362140c8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A624.cpp",
+      "sha256": "2d250d8887a20c189a644e959a7d64a49e3017303b13e2344b8fdb5e90c21ca1",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A648.cpp",
+      "sha256": "2a0f53f4b0c065b78707ed7f4ef2f921444d59fefb756216d2215c5bf1ca0f9f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A710.cpp",
+      "sha256": "308cc736bd61e544de8242d007706aa72dfddc932200224660d943478f2c5fda",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A774.cpp",
+      "sha256": "715c667f0c0085c5baffdd79b74cd91abc4f4d012d71a52fcf3af06c1475f540",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A7A4.cpp",
+      "sha256": "a9d8a6258170109bf0c5a9255e7c754f0b43f0fa89d0621e659a26da08f7df75",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A7A8.cpp",
+      "sha256": "4c40efae6020b61d4feaf8ee9977d8595de09892a058b4f98c3a38273d8520bc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A7B0.cpp",
+      "sha256": "aedb190f0f000c59471eaccef6408f0a508bfeec3b4f91677734ff3f605b7ad2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A7D8.cpp",
+      "sha256": "097d729a04b372d8e00e65d0d3ca1c5e6039c0af1d0789947ad14d0bf260ed6e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A818.cpp",
+      "sha256": "4b865eb60a8543581d47d057390977b8b245667a6aedcc6986572d5f70749147",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069A900.cpp",
+      "sha256": "7b0d1d664a3b28628259a33d29534e9845fe2546b2e3ae4f5bee190c0ebd6879",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069AAB4.cpp",
+      "sha256": "5f3f9e7f9bacb2eff456178f41b390da40574457507c8b063c8a76acbd083549",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069AAF4.cpp",
+      "sha256": "be2f6212911cccdd65ffbdf76687e1ec17fb4dbc3e4f1544c776fb38842674ea",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069B22C.cpp",
+      "sha256": "716db4b737c3b67cfcb95165a4b1f8963fb7636f2a7d3e88c85858fbafe9fc2e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069B7F0.cpp",
+      "sha256": "4bcafb06e6152da54f90cc3297859f52440c7fcf01073e7e27aa9afba3696b64",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069B870.cpp",
+      "sha256": "29208b0af715039d7dfd99a238f1998c4c377944cbe4d532a953c3cef6c85a9d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069C5B0.cpp",
+      "sha256": "90cd03ce8911fcc15f417c3a23b6d7d170ad8ebe18ffba52e29c6d9ee9f96aa8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069C6FC.cpp",
+      "sha256": "7522481cf2daf273bf7f2f5aec0e493a4f409e8490f61ba507726cf9234882b0",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069C73C.cpp",
+      "sha256": "aa9d7eb8a90d485fceb6dc52837900808dfc29245bc5cd7822dc1c581f8c26da",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069C8CC.cpp",
+      "sha256": "2fc17febd903adf992018b8df21c6a27c5d31e2a5c7fd3d8317c0f2b9c3bd427",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069C9A8.cpp",
+      "sha256": "2b7729953b64b88768c5f1edfde59c6caee911967c7215d743a130a76fdd2a9b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069CA04.cpp",
+      "sha256": "d1af6dd6f69f4e14e606521653081c43dba5be3543ab15a099a3898d735af91a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069CC74.cpp",
+      "sha256": "e2c4c23b2f93d16b944a71e5f85ae5357245284d20efbbebcc28320b192a3a12",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069CEB0.cpp",
+      "sha256": "668cd263b0cf683dd9bde6ead46941413b05ce065327e05ac1cfcac449a59ed7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069CEF0.cpp",
+      "sha256": "f95c2645e55d3525d37cbd4e35d160de3196d7158d97c10af5a606440dfbe3e7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069D654.cpp",
+      "sha256": "b4a25a4c6576e651fc9ed3695e745d33aa20590b253be50016339bd256eb9860",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069D684.cpp",
+      "sha256": "ca780f80f2c5b0bf608a41992f147a5624d3c62efac9543504627127d2ed260e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069D6DC.cpp",
+      "sha256": "706fe41185f0d4ab6f5423a87e4910323d24c1a39b511d5d1e6114fdaa6bde2f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069D788.cpp",
+      "sha256": "5d2829ddd7bf0fe46fe0a69a44b2cd9b3c33a0271336539f466c27942ab50d50",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069D7EC.cpp",
+      "sha256": "63e792809d444d39c7f1324140895f5e9903a3942207d25d4a7d2eef16f75e91",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069D848.cpp",
+      "sha256": "1a386fbe1cdda6c96afb06c2926e6e089a1d9179987b7b34dbbe840e12031a71",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069D914.cpp",
+      "sha256": "5b9445c779c2432ac1deeed424ab2b6df01c0a0911b613d138b787edec1f95ab",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069D9E4.cpp",
+      "sha256": "7248357fe078a25409947eed89d4db501ff11540181307d513bd25bef5f7da3b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069DA40.cpp",
+      "sha256": "137abda359a67065b6c66261bd547b4fd37cfbd137b594a17bea5e8047001076",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069DCFC.cpp",
+      "sha256": "03993bf5a44b5e9f315a1d127a599f971f694b98db4a6807000e49d10532d499",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069DD60.cpp",
+      "sha256": "2974dcf479cff2ef76673851c776dbf31994e3f4bc3249001b405045aa3b98a6",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069DDBC.cpp",
+      "sha256": "4f9e04e5b173531ddc1a2a3fa23a12d96a9de9964e7c7ede65213da2b956e9fc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069DE88.cpp",
+      "sha256": "77041e3e71c609ce77aeb387fe5c97d6553f217592008ddaf504814b3e7af520",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069DEDC.cpp",
+      "sha256": "d8c4a588869073bd4e9f90e10c8bfedae13590f0f27ac074180c5f6751429c6e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069DF34.cpp",
+      "sha256": "c26911254450b79661dff0a3b61792b8453dc9e12342038dc16a6565fa67d572",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069DFE0.cpp",
+      "sha256": "86dcd8070310335350cc367216753d8825baea17e48f7fefcac5477d2c03ade3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E044.cpp",
+      "sha256": "9f69ec63b78401fcdef61bb421074e164b15e2e0249b0b89b151c7c8a7e8c0b3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E0A0.cpp",
+      "sha256": "5ba546bc89d4363d7790a2b6d7e50501ce6428d2eff8384665b8494a6cf23881",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E16C.cpp",
+      "sha256": "c76b9c1a55e0e8f3c096fd03ce8cbe31c02b770d700a005a45e267296162170f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E194.cpp",
+      "sha256": "8f376525ef5fb502bd3d8cbf8b28b7ef729219ab42a5ede19d761efcbdd32dde",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E1D4.cpp",
+      "sha256": "1099c196e50759d91d30749d9740f2f393e785ccfdd1aff3678ff8bee641e104",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E38C.cpp",
+      "sha256": "d6265e692972185eec1103efee6cdd0fe86573f3c08b2b9af8a8a18e000eec21",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E3A8.cpp",
+      "sha256": "704310854b338e5df0fd795052cefefa85c2532ba248a58b0c660ee228bac7ef",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E3E8.cpp",
+      "sha256": "174350a732f5c174fbd882a9b0d3df9204b166451e41093dfa9d7239f154bd08",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E4B4.cpp",
+      "sha256": "dab6c534ad913c4c7552530ac95d334d0e2555a2525c58141eb37390256932cd",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E628.cpp",
+      "sha256": "a85436bdb7970277f2558b5fca0c61efffbd1291fbd8f0bdcc1390ffd047fb63",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E6A0.cpp",
+      "sha256": "1f94c85d675bf7ac2b7060fad349f0d9bab09cb46b825f2bf31863934ea85e3a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069E940.cpp",
+      "sha256": "0deab755ed1655c78bee2c6e0efb44d8a03899d9395ac1565d21c781f58850c2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069EA20.cpp",
+      "sha256": "5067ead46f488255adf535148b45ec3ec3390587038372f2e046be065629eb57",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069EA98.cpp",
+      "sha256": "60c91155aedfb7ceb1079e269238c6ad4c6ad1d0ec5aabebb81c6721f49ee7ed",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069EC88.cpp",
+      "sha256": "f180c51aebd48bf60c1c4425b5088cda33540b5ce074f4189ff5eefef5057b24",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069EE68.cpp",
+      "sha256": "7dc764233cbba13b878bc205998238a5704bea610cce4e949c071161c6a625fb",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069EEA8.cpp",
+      "sha256": "509bf74f618de44fa56115cd07a0baef90fd2e1cba0f0c0abaed692ac179dbda",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069F0D8.cpp",
+      "sha256": "f40b92509ce3fe16f57e8b7e83e01d194ec4f3a6dae81619f21e9777f91ad462",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069F114.cpp",
+      "sha256": "3b14cd78372bcd0c38959dbd05e9f829ea49ae9e364669e09837fd53678a875b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069F154.cpp",
+      "sha256": "88f31c88096e63c628b92bf50dd44b0f39fdb1c416d0837a5e35b7bc8fb82100",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069F290.cpp",
+      "sha256": "3927fc4838f6bedf4049f4fc630a0d4df8bd522b21be0a4deb12c528feed6c06",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069F878.cpp",
+      "sha256": "bc8abc4d370c4cd9c2a96fdc776cf7e7e67446d33b6b0164180eb80e5e1b2ee0",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_8069F964.cpp",
+      "sha256": "6acdab0c59215f8c2f4980125763ddcfd15556c2ae25a1272ba4a911a2a88a59",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A0EA8.cpp",
+      "sha256": "094c93ec7d9e9447741c6e85ab9972ccfbaf7dde8188aec43f1c24ef3d76e569",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A119C.cpp",
+      "sha256": "84fb65ef740be48ad969352fd3129f89fe211b39fbf7af53bc41b41511faf093",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A127C.cpp",
+      "sha256": "22565219c4af5dd84bfdbb74f9ad278ca235400b16e8ffda3518ca10d75aa05a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A17C4.cpp",
+      "sha256": "8eb98f57576b88776a6a71e3d0a21805bb31f66d3ef5466705bb0e46c762020c",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A18F8.cpp",
+      "sha256": "2554ae86b7497763b4d99dbc741a0e5f740961ae2af31ee471aa0808a334af5b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A1978.cpp",
+      "sha256": "6acd2e8d9f76e7ec44b1ce9715cd5ca441a13d8e81d7ba39ab8ffc2fed3ce991",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A1C20.cpp",
+      "sha256": "2a6fe8530bc37574b1d601c862387aada2be76d4ba755a1c08b752a162b496a0",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A1C50.cpp",
+      "sha256": "bae3b8df0c69264b5a2ea83753a8470e0650b5564510145bb19a6728dd5cdcca",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A1C90.cpp",
+      "sha256": "83daa6317349f50b1d6da86d88229b27ee989aa1a12d1d877f6b7c41836b8d48",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A1DB8.cpp",
+      "sha256": "ccad718a627c5163ff2d72f89faa7f1b6ec659fccf8976cfc4c1ee7decc5b70f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A1E70.cpp",
+      "sha256": "09eb61de53ee48a6dbe932bde9c122e0e522275f735b654e6017d256a57e78b2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A1EB0.cpp",
+      "sha256": "665f546a3d309d4276e72da995fbc44700220d0e9545b263ca094354154c19e9",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A2018.cpp",
+      "sha256": "2cbca9a93e088c8e4c393e9b285a682d453075d946e4e81d11e411e0fdebeae8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A2034.cpp",
+      "sha256": "34e6479f52ff837480c03cfd63fa29f4cacb8efdd1832bb3c4b17d661308b438",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A2074.cpp",
+      "sha256": "9cf885e885a3b3b8f00451dff849d725d0fdfc3200d39a1334f062304db8ddef",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A2178.cpp",
+      "sha256": "1eba3ce67b38806990568376d8f3029e4ccf698ef9fd34e8de38a64701290068",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A2310.cpp",
+      "sha256": "4d20dc452c1f659aae4de336491ade18a6393b39de98d712acf462990492467e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A23E4.cpp",
+      "sha256": "f8cf34d897e44564ee9a32f6c4cfb5eca2e1909e62e0405d0dd0cb95a534506d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A291C.cpp",
+      "sha256": "01f0129f1d721d6d1667e0abb37074a786ddd04266afbde1e02d619db00dfd9e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A29B0.cpp",
+      "sha256": "6125aaa484a7afd816a187629af47e17c773ccab707a7e3508ae99a650ff3798",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A29F0.cpp",
+      "sha256": "066fd304472abf99e4a5d030d814240ff832eeec19faf66f3dde87cd305715fc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A2ACC.cpp",
+      "sha256": "f12b1070b87978d8473dc91def56b42922b2cd4918fd258c372772777b337303",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A2DD8.cpp",
+      "sha256": "010630848207710bbe0d8ce936b9572599c033ab78fbfd624fa9b34185c2fd25",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A2E18.cpp",
+      "sha256": "9e6dbae324ed2e88e8bb33fdfe502122c649fa3852ec13d88cf5bfe6a1b94f44",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A3334.cpp",
+      "sha256": "84a1e6eed267c44a0bf2da064be3d2244081bcc5cb8b8cbc4e6b27d69671f547",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A3ED8.cpp",
+      "sha256": "d1a6a1696e477701f8169e2ebfd53a76ca93e6a3eef549868d12ee5667d2e11e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A3F18.cpp",
+      "sha256": "0ee703014d1885a33fd6081e32f7cb1b895f3a9cfa6cf43a1ed34bd0ab75d8d0",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A52CC.cpp",
+      "sha256": "bf9d9887de7069afdae6033a39e26dbb3340b893cf78b192b8cadd5d634a4564",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A548C.cpp",
+      "sha256": "20e9eb4f5a01c3ca9218e481bf67810c4aaa13713e92cc0c30aa5810e2055bb9",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A54CC.cpp",
+      "sha256": "a0a4fa9c5e5ef6409e8f1d36919d86ff405cbcf09d7bc08e90680190c6c9e0de",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A56FC.cpp",
+      "sha256": "62ab84826692336300c59900251c990f43e845ba699a22e1f42d625dfb5a8a4c",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A5720.cpp",
+      "sha256": "5fd7096024607b23999d436fb5ae9ffadb8cb59d1bd5ad52f2dcd6f21d930a8e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A5760.cpp",
+      "sha256": "5cfd65db0fe094013d6a829d8d9f6511ff8306ad137c85078c6e4efb99e744dc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A58CC.cpp",
+      "sha256": "a6c5cbc73a369ab73d78ab1116492625625205848dfaba7275121595ca803b4d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A59B0.cpp",
+      "sha256": "a633749242f57fa779122146641aab8f23dcea1af25acc592b5676c19c6cdde4",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A59F0.cpp",
+      "sha256": "fcc89bf4d97a1797bb3c929a248f0b354af27d7bba2ade658f513090dbfa1186",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A5FCC.cpp",
+      "sha256": "0042c2d7b7c3b9be564af8173bfc9dbe97de21e2fc8808ad0b3aaf09a895c6ee",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A600C.cpp",
+      "sha256": "4d83f352b722e14f9de8d4908087018d4b257c168ea75cfca111d9e882b2e43e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A604C.cpp",
+      "sha256": "51d28f0d247cdbc064816898f9dab7fe2f7bb1d9904a6f5348096d7be0f62e7e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A616C.cpp",
+      "sha256": "23fe0fbe9ba77da1e21bcba1487f2bf79ce7ac65e51a6841a94c2e38f4bcd2a7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A6190.cpp",
+      "sha256": "70d1823b2fe46941aafe52573166c83014038b411db2232ca8e36fc0f12265a3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A61D0.cpp",
+      "sha256": "b2933d5ae03b663bbb41063d58c19bcc6cec67632493ad60c5b39be4695cfbde",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A62BC.cpp",
+      "sha256": "f6cde921c132f4da57042141f781a2a8b51d834debeaa3896150b9ef929bb55b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A62F0.cpp",
+      "sha256": "826f1b4239cff3938d70f0efa25c392a473cba12554ded441dbb4d35aab5644b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A6330.cpp",
+      "sha256": "14ecaa3babcfe0f5c005dddc60a333ae8b6192fc29609260a3fd63bb0d116701",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A6434.cpp",
+      "sha256": "15507ae3bc558cdec7f57a7b71c2245344672081fef6eccc7529240470f2f490",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A659C.cpp",
+      "sha256": "8beebcbf1c0563da1fa6b4f059fc6c9efb1ba7f4b377df50ae385f9d8b670921",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A6658.cpp",
+      "sha256": "1c647ad9f31dac12f89b577d8762346a39f4e188a6bf25ed2cfc0de439cd122e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A6B80.cpp",
+      "sha256": "d8cdeab8f280a5772b198a5d819803ac04679936f051c30490dfaf44eccfeeee",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A6C14.cpp",
+      "sha256": "e28a03bb8d5f0885c5d796a9e51f1759a38dec20e1785dd790fd7cc900dc3122",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A6C54.cpp",
+      "sha256": "cb3c633ef4aedb8a20b5c0c1edf54baddd8a3b4be3f1010f0a69ea44b4ee89bc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A6F2C.cpp",
+      "sha256": "71bf8f5d5d3206acf9b7c05d915021bfdd7864f1f4862e9f04c9181553650f79",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A7224.cpp",
+      "sha256": "f720a32c6deb443278e157b45daa56e539a2f42ee8eb661802ac6c3c19c25d95",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A7264.cpp",
+      "sha256": "040f8a9a43f93287dbc17940673e4bc46559dc1fe9e4c49d8c7d40a473b4b9ec",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A821C.cpp",
+      "sha256": "7010bdbd8aec64758fdc857fff27233322459d74c0bae1fdb677debc9715e7a2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A8440.cpp",
+      "sha256": "47b14a688f87ff60be67e29dabcb6c2663b44c8e83b7044e90f62c58d75d56df",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A8480.cpp",
+      "sha256": "969126e3b33b7cdcb0b1be29baa07d42b9ef4f5095e3c1e8277a462f0cf6d311",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A8C50.cpp",
+      "sha256": "9c125a6471b9990352ac059e19d97c478ed0af824e08e330bca6b5b3dcbc6278",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A8C94.cpp",
+      "sha256": "83ae88147fcf142e634b6eaf16961808cef2d86986a689ba802ad0de00531618",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A8CD4.cpp",
+      "sha256": "eadec7e3a554dfcb0e5c92facf6e29919849ba9f3379e9f28972831df7e01a16",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A8EAC.cpp",
+      "sha256": "19d24da2c74bc3b849499c39755b383c31c3adc8255a33e09491f562feb2925c",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A8EDC.cpp",
+      "sha256": "8b8508936e0689d61b9e511eeff572cc62b2102d49ff7779e0cc1313776330e7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A8F1C.cpp",
+      "sha256": "c812fb63fc5368449902465d0a51d0d25b97e3c9a7c21e42dad912c7d90b95f3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A9030.cpp",
+      "sha256": "dfade780630fc00bf5bfba8308f67bdc26a2e43e70aa8072e8bf3bced098ef2a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A9040.cpp",
+      "sha256": "71803329bc7048b8913830b18f36c1b5cf4c0d323b7977f16d7eca848f340fa2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A9080.cpp",
+      "sha256": "5b4ba1c8099df60c80a404908d888c2e6357b322735beed018fab16a40fe10b1",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A912C.cpp",
+      "sha256": "36eabff0144356ca0164a4d7bc2a231bd35199293db7d2cc08251e95942f293f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A91DC.cpp",
+      "sha256": "b62816e172267175659f0977809d757ca958aec2f7322021b118a727e42e7005",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A921C.cpp",
+      "sha256": "75f4e52ecbc577dd4599d3346fd6faf2d706a5fcc14c2ee6d00cad57da61c4e1",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A941C.cpp",
+      "sha256": "6ba9eebfa34be85f92e4c4083e18d7dd737431c000e4a4b50717ea839fd55160",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A94FC.cpp",
+      "sha256": "2c920bc8646250122834c7b9eab73153dcad82a64f77face1e9d292b48d97f1b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A9558.cpp",
+      "sha256": "ea614e32bfdaab5688444f1889767cab816668a76650198bd71b690c5815d453",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A98C4.cpp",
+      "sha256": "b2df2453efa8518f3bc4beaa6657dbed7ff63726e55c3e0e2844809d07783b7d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A98EC.cpp",
+      "sha256": "355d824d513528bdba03aa036c699a5709d2fb4b6315457b911b1485610d40d3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A992C.cpp",
+      "sha256": "f41deddb3f1e1a7344dcb682d4c3e0d4b856f1ac977647b3e6f23bb9aa688f49",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A9A14.cpp",
+      "sha256": "c3dd0e6c6bf1425874e92458de93728f8b7ce9dd86f02a1f332c3a5c988d4131",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A9B58.cpp",
+      "sha256": "0e8f0e266812eda38a8fcd07f21bd55816f6e50173b69f2282b2ec5a9479a25b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A9BD8.cpp",
+      "sha256": "29f9124c0601729aa0c592800dfc38f26362c231a3fcbc80ff8b3f869dbbf9d7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A9F1C.cpp",
+      "sha256": "dc257db95f0803ca54880801028564a3abea934df29d4fb9c227d417aadd25b2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A9F48.cpp",
+      "sha256": "865b5d3deae7715b1afa79d78e7d66320b2486eff640e4389431d38dd0ad7ef5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806A9F88.cpp",
+      "sha256": "d78008b613fefc8af233c71e0cce9824ef159ba69550ac7e51e7e62e7ee6b562",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA08C.cpp",
+      "sha256": "c92810aa08ca6c2dc9a17c9e96e7cadb40c447db38dcf4b851985a78f22e2ba8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA0AC.cpp",
+      "sha256": "045eb5e49cf54b3b11c404cea93aab5aa836d06a9f00b054145e2767222ace77",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA0EC.cpp",
+      "sha256": "5e20e672dc21ca8f705dc3a230ee7a40db19a1ba632aa14d5bce951421f10456",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA20C.cpp",
+      "sha256": "a4546c2a770d4b668de73a8e32533abcfd7d3112d051d7f30f0fd72f4fbd017e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA29C.cpp",
+      "sha256": "0c45ad590cb7b642330a1abcd3974bb5ecc6a1c529e5d811a6eea31d8a3e4e65",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA2DC.cpp",
+      "sha256": "1464816c7ef06c99a7fd87e8ae8a1edf921e52f13232fb803686f4d3c7806a7c",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA3D8.cpp",
+      "sha256": "47615c9ddda714b67c554b9191d80c0b0c49530994815381ed5799aba4599235",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA444.cpp",
+      "sha256": "26d7c125ea1649c3bec3988de2a43fbe24ad2d68720bfd50c02424441bb6b82f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA4B8.cpp",
+      "sha256": "7c4844ba0f5b7ca6815c58b4093f8a947ee49677c5ad0b5a0d77f6c0dcb16bdd",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA5C0.cpp",
+      "sha256": "1cafa257df7a03d942eb1b8baf33088f220d962e66ade22705e8193d64fb3ece",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA72C.cpp",
+      "sha256": "ebe56454f576f8464454b82f61dbd4d8c620814abceea819db56072a90de7900",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AA80C.cpp",
+      "sha256": "be0749060fa19656268ca43b49a9e2f07201613928b97a1ed7e86ab3832f91e7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AAAC4.cpp",
+      "sha256": "32bf835df4b20b6eca6ea04a6cd95cd165581f2f03827b87dd8b0d3e8d25a5ca",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AAB64.cpp",
+      "sha256": "9fd63c868c193ee65068c5250d82c510ebdccac89eaab6c6b14ee3570053ad38",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AAC48.cpp",
+      "sha256": "a6926d2b3d51d32325adbcba52504dcc939c8362952ecb16e09db06c1ee04d6e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AAF90.cpp",
+      "sha256": "32667934ae3700c3375b94de83183873c39216b87f17d591a831a012bd13ed34",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AB150.cpp",
+      "sha256": "8e6c45105747d5702c5dc2cbd2c68e54744f77714248a6601148e861ccc95801",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AB354.cpp",
+      "sha256": "7863d3a19eb25827fde60f5c139c37809aeb5490b1ec89da3991b17958edf7c8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ABC3C.cpp",
+      "sha256": "536428c9714cf6a6d091add9c5c0ca9a2953bc482bb6fe9188f9b89caa09da69",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ABCF4.cpp",
+      "sha256": "2613d850bbac69abcfa97e856a6b506d5a9b1c829be7ccd910b20b8548283279",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ABD34.cpp",
+      "sha256": "e095420b7e3a57f8b19ed338ee31b5441ba619ecb6e538c4ab38da01cf0c64a3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ABED8.cpp",
+      "sha256": "13617bb1f235bc1babf0b67d3ef417c81ad8559f4209b99be7437b9d88200a8a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ABF7C.cpp",
+      "sha256": "03290c98fd6c5211f06f3a638be8e86cb05ab38285a8f08314713beeb7599641",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ABFBC.cpp",
+      "sha256": "3d501dae3ad6b511f0e08593e969a1835058b72b0d4792ff5296b06db0843498",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC100.cpp",
+      "sha256": "7de3c447aaa631e8db8c1f715e3ae8f400cf80189f85baf2a29e16489a249a53",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC174.cpp",
+      "sha256": "f4506bf5e00f69c4bad59d2f3a33fc16b582c1b44933f2cfa013417f21ce4fde",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC1B4.cpp",
+      "sha256": "24333f360808b3cef3d624a0471fabb0b8089d9670872eaa4b767345fab147c2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC2A4.cpp",
+      "sha256": "a770de6a9aa7876c58bfa981b48b2ac59357814c936b473c018f5deeb1ca73d9",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC338.cpp",
+      "sha256": "50e5520061dcc6a8c26e7d290adf824b5052a9dcc242807ddce434ac7f208e8f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC378.cpp",
+      "sha256": "534de0392b57ce6b6e39cdc087b8646b82985b2fb32facfefa9ec08715e32124",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC4A4.cpp",
+      "sha256": "e032dce28cd53ceb512525168c0bc59f328ac43e6a1287d6b74982143aa62e9e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC4D8.cpp",
+      "sha256": "59dbf4d3ca0c3717a1147ba98d25bbe1621abfbe946d4a8c3076ba2ff2944106",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC518.cpp",
+      "sha256": "419973906600c1c871b928407133e6f3ba0c65a4d38cd9f7d16be458430c2559",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC66C.cpp",
+      "sha256": "cc0829574298e88277a24ce29a3ca387b8115ecb5f12904fe22ec1a4b4a587e9",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC6C0.cpp",
+      "sha256": "1c5a4acebb40ffdd0cf8ec857e93bdb574ba0001e2b855ddc02d0308340c2bb3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC738.cpp",
+      "sha256": "6e83f09d2a6c7f0df39ef4c878e2ad21701514a9b6ced58f63352bd56754a6d0",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC838.cpp",
+      "sha256": "ee1143e72260d90b848ffec9ffdeb7b9704cbfef01380f51150a39ee119c9b35",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC8CC.cpp",
+      "sha256": "d1f90dbe8eabfbb744bee4ffe823428647a8adbfd84403f839ab7010029e3839",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AC9A4.cpp",
+      "sha256": "3a8548c17ed196b0dbfced6c15cbb1ca4271c54a111da29cb949b23c8f66fcfd",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ACBC0.cpp",
+      "sha256": "30ebbac67ec919aacb1cd5d1b3bdd7bba0db7ff04eaa0ebe81fb41caaff21109",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ACC6C.cpp",
+      "sha256": "8e35d9a5ea1a935476ce576d7324f8520a0f90f33e81b8af430369952d4ffca4",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ACCC4.cpp",
+      "sha256": "909d3b4be7c9a240b76848e01a8635a20e2dcd8a1a8661f6d803f4f5d0c60fe5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ACF70.cpp",
+      "sha256": "ae18e96b7ccb86be23e158bbb819ba9f9295edd3ec43d6afc7a0b4f3590ae7c5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AD08C.cpp",
+      "sha256": "87e3fc04200a12f61eefe6c1e00842b9f642637b8aa2c8aead3f52231930fcbc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AD11C.cpp",
+      "sha256": "c693401a086f7abb80d933ed5bb9b8067ccc8da7cbc274756fa7a7590a950c87",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AD528.cpp",
+      "sha256": "d24786156d33d53747edcc8d5e638b68faba6c04d9eb01e984add07a5db50132",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AD5BC.cpp",
+      "sha256": "bc25c8f5e95d6883867e71ec77d51c8633593b09e5d3ec23846eefa5e1b53414",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AD694.cpp",
+      "sha256": "dfbd0ed7d6c9e36af7d1a4bc74a5c3af8685e73712dda6a3412ef1d6698c3444",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AD8B0.cpp",
+      "sha256": "7d1f9f946943404d6cc9d159406ff325022aff216a2dc418c59f43787f3f2645",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AD96C.cpp",
+      "sha256": "96d93dedaf1132c390aed52759f4b5ed7f2bbddda4a2de6c1df913bee27e7d1c",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ADA80.cpp",
+      "sha256": "e7d8e63b3f46bcc8d603103eca9bf231f6374c49c953571538473b3cf86beb02",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ADD50.cpp",
+      "sha256": "6778f4b743b4dd9af0763039b4ba55978bf3bb0459e15f844a397f284f22274f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ADD90.cpp",
+      "sha256": "524dbb1be2485d89537decdfa97baa93626239051a5dd2c5f7d2ecdaa929ce96",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ADE14.cpp",
+      "sha256": "11e1008eb7e8e48a0edc890cd346e1f1a71de005be670e985317b342d17f1d6e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806ADF78.cpp",
+      "sha256": "190137e71703c7d5d2d6dbc188768c38c237f75fdb400b85e8d525b222dbe538",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AE038.cpp",
+      "sha256": "c3b10b89e2aa65f129ca2554b9ea7097f4282e242d157b7829c1aad461d4814a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AE140.cpp",
+      "sha256": "8a881f885bcca03f46dda778b2f937065c14f61e98dd652fb88a5d0e272ae73a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AE458.cpp",
+      "sha256": "62b082cfda346864612c6e583b210c78d7feb2d3b34774601fc71a395721115b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AE4EC.cpp",
+      "sha256": "b6abca02410d0d521bf5344f534c3436966b0b4d22292952e81d104c64c77026",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AE5C4.cpp",
+      "sha256": "0bd101db733425a355c4c3f928e329eb8768dcf3896a105528e7121d83de6388",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AE7E0.cpp",
+      "sha256": "59369a3ab99abda2e125984ef0d3bb25b09179dee0555b6e9fc3a8fa962fb592",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AE850.cpp",
+      "sha256": "d892950a77aac930121d0359754cb57142990f334e08552daf5bc7f243556fc8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AE8E0.cpp",
+      "sha256": "47078f9e8e97a058ef67c87ba80d18e596420cae1da44a9dff6b1f60172d8c8a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AEA34.cpp",
+      "sha256": "4fa8239bab19b96091c9c0f77ead29423b7993aee51618c7319e0f1ae2517d27",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AEBA0.cpp",
+      "sha256": "b0d5bfdfda83c39fe2fb05546eddc0f1cf6b020c92936e84c80afca45372ec35",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AEC24.cpp",
+      "sha256": "a03e07dc326f4ebb7de91b0979f68dad953eb8152a6910521ff39c020ed279d7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AEF9C.cpp",
+      "sha256": "8e977ccccc4a61070495c853b0e7d5e4fbd002ff4344e6a890ebdcd4f0ad890b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AF738.cpp",
+      "sha256": "7698c327d19aceb5c54de7bd1da5b40dbebd05a08c89c531720efd2fd1b3b05d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806AF828.cpp",
+      "sha256": "2d9ed04057173b763976fc4ba9c11e830036595f84399d6bc2ded97cd63efdaa",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B0CEC.cpp",
+      "sha256": "ab1053ad4d7d37c3492e028aea7e5c3a0f5253cf645345857792bc1f699ba491",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B0D28.cpp",
+      "sha256": "260c7da625453ce1d88c458493e68276b38ff139a1313b911db8a719f9ecef9d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B0D90.cpp",
+      "sha256": "a263bbf4b0c4d8bc508fa2b0cf0eef630cce1f6a9a7445a355f95c1e244ef95d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B0E78.cpp",
+      "sha256": "982de6a90c0df700cd0d06b80f8ea6d689a03f33a7da639f8755b6e25ae3ad57",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B0EAC.cpp",
+      "sha256": "b98c3d99ca185c43d56dac8f51ae5731f2decc8e5aa2532b27764240dd3003aa",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B0EEC.cpp",
+      "sha256": "65a6e5d0843dbb0b5b09f85b6c7221ade1a134430014eef841d45daaca7aa4bb",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B0FF0.cpp",
+      "sha256": "d390ba018af33f5b172d205e16e6609450508442826de62633d671688d8be832",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B101C.cpp",
+      "sha256": "95b0a4e19b8fcda8830868fe071de2d53dc87f18e85555c75210c70b9441246b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B105C.cpp",
+      "sha256": "e57b81723a1e2471270509240ed076c12ce4f52bede419b51820e49b2c705b04",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1160.cpp",
+      "sha256": "928a012d4a28cf7abb7e9dfcc7ef95d2161e2e3dda7375883cceb288fe0d48bd",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B11A4.cpp",
+      "sha256": "63b42af6a1aa09368191e428106c4782383c70ad5aba9eff376a04c3c6e60f04",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B11E4.cpp",
+      "sha256": "d598a1ae060a18a102b92066fadde8022d5ba409e25a526100d78b82ac10a0d1",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1320.cpp",
+      "sha256": "b6e6f3d9d1f724c5b43bfd4ad46e92edcd6ba1738d29ca65ad2985a7b68902db",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B136C.cpp",
+      "sha256": "e42ca7707a9042e62e76c3cea107b2a2f8e5fa7299f3e339c97e86015adb5e23",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B13E0.cpp",
+      "sha256": "f782eed3b1eb6e0914ed68be7aab13895ccf5f2d8e788f331dcb0f2a3e7e0baa",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1514.cpp",
+      "sha256": "9adeeb457525f78db1780605c68cf787c70041b7207c30d39c44a5be55d24d9c",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1590.cpp",
+      "sha256": "045456d2990b60c1e6a93e12bc5b97a7ffb1b522491f36b75e620ab347afdea7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1610.cpp",
+      "sha256": "6dc0f17a1e8907dc9d6b95a450a1f4e50be0bb8e57924193007155efbc5d77fe",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1868.cpp",
+      "sha256": "501f0c4c293634ad72449b127aea7aaac9c7e36e79c85b316977c55c0f85714e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1940.cpp",
+      "sha256": "b1a97e6263db024c9c47fb6a9c7257898df09553ccf6e4dc568042920b53617c",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1A98.cpp",
+      "sha256": "18970f4540afe7535ad6f47dd710afb464bad3c7ffb5be15805ae3ff76f58704",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1E28.cpp",
+      "sha256": "7976d48a35391275b010d4743df018f35d0912bc9b9f2dc95ba822d8289d8bb3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1E88.cpp",
+      "sha256": "7d94efad1d7e4d32d25506bcf799ec7fd2cda2f1aa1eb89b96d2ee0f6884e559",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B1F2C.cpp",
+      "sha256": "d4bc5bf5fe5117a57d17923ad126996cad531c06ffa41ca56c10b19fd01c2ed8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2084.cpp",
+      "sha256": "885b2d5f421208050746ea6d5ae8d718b9a7de3762bd06d94133e0221db86f6d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B20CC.cpp",
+      "sha256": "4af20117eab2d3f2c81a2969835c2aeef0e0eaf3a8fed66a5a9795735e8203a5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B214C.cpp",
+      "sha256": "362e0846109605f929f537a1692d8affe07efb945bdb2b3bbae78117f3607b82",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2250.cpp",
+      "sha256": "800af9ded12f80e7fdce267518194d72fccead47be9b6d3056b7ed4d92d438a5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B229C.cpp",
+      "sha256": "296cacc071b79e10a5fb818cb0c38d6122741640d762bfdc28f3aca878ebb785",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2310.cpp",
+      "sha256": "2952c2c95fbba2a633385f65b118e19aaa05bedeff6be2fc6149ff5a243d84e7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2474.cpp",
+      "sha256": "862bf7a115a685dc3cf05d45a92d326c49e9d093a32ce41b850496dc73549548",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2564.cpp",
+      "sha256": "a66b573fbc920cb7fb516229cd32574220a82b9e04ebb74c94a8fb977d8efbdc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B26E0.cpp",
+      "sha256": "719140ec18e57aa45e4b369a04ba03088b88fe8684f3eb9cc30af7e21dfc23ec",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2ADC.cpp",
+      "sha256": "909f23d795ccb3012887f6d0fe226ce10d28abdaf3fed899cbee1cfd375dbb75",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2B34.cpp",
+      "sha256": "8602eea19471d6d98474cc4cb59294d9eb47bda5a908b26450934dc603e3d658",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2BCC.cpp",
+      "sha256": "253144eaae41272fe6baa8abd12eebcc267382dbfd25bd1a1050fce81b56e0b7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2D08.cpp",
+      "sha256": "beb544dcb0689d364aedce8b52ab2cf228060d5a12949fa36550bdf8584d05b0",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2D78.cpp",
+      "sha256": "4c28c3b75534b732e6c06e1204d38d77f020c8631d71a151b07914baf7617d33",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B2E4C.cpp",
+      "sha256": "aa7e452b8f2e5655a0c3ecfc681b5f45f78b1a7fef6cb67a9eb7508b87cda54e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B3048.cpp",
+      "sha256": "fb0c9bda954f830f73574077e3d9b2302aa62069c92808fa0e59ca89c23bbf8f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B30A0.cpp",
+      "sha256": "572b24b923827c4f9dc985df7e8ff0a6d01aa744d52e2f3986710b75d955ab0d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B3150.cpp",
+      "sha256": "93afb285cdfef7a421982d7c9b95a2e74032e19e761de002febf9167ce83807e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B328C.cpp",
+      "sha256": "3e653cf9c6e8b37981cde341f6b48ca3cf65c26236af622ce13fbb5a6ca9f27a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B32F4.cpp",
+      "sha256": "13b993aa3ca8c858102bef07f2e99aadf1b352ae3b3693bf078f6e8e440a58b6",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B33A4.cpp",
+      "sha256": "a5a5464f12bc94895a7d413e6cf4c2d8547b1c549e72adaea80503151f7a6c33",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B353C.cpp",
+      "sha256": "6f51c77d21548b7c54bd0aebdead9ed4bffa4500d264bfa581bd2673717c8409",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B362C.cpp",
+      "sha256": "7d56df8b830eef7626f2a90831a8e5c93da8ca4df06799f32d66d653ccd10d49",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B37A8.cpp",
+      "sha256": "79dee1613eb17cb54be9eaf5e38436e1e73d1806f2d5138a7f0f44f0100048e7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B3BA4.cpp",
+      "sha256": "343702c14992ecbbe8b4dbdbc6972d4d605f533ff77a1160d877e471db9a2d08",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B3C44.cpp",
+      "sha256": "59b61446dd8026e420bef6fd7daab03df9330b580852e966c0099ebd54c29bde",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B3D90.cpp",
+      "sha256": "5be32d1ab62a7e336b13d8aed75b14fe4cfb79e9cf9ee1015025b9318cd1f042",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B40F4.cpp",
+      "sha256": "a8fcbd28281566016c3cf0d75e4892b7b054d6b9ac6f0d30f1f22583bf7ecb36",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4194.cpp",
+      "sha256": "ba796208133e93e9ffea57a04e58f164e94135c8f0c059860fda08b394cd54ff",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B42C8.cpp",
+      "sha256": "e367ec5c87afead32d6b9a4c1e3b6eee7c8f86009f7cd216c4112d534905ce6e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B45CC.cpp",
+      "sha256": "d95622757aadf7f1004345873e49f533dbd2ea1011646ab78536f5af25370dd5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4644.cpp",
+      "sha256": "5370906e11cf721c82fb2c44c0c3b5466b44037df2dc037eee2d765b8008eccb",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B46F4.cpp",
+      "sha256": "bf1a4c96ad00fbebe67c40420ee38d440b0d551909300de0f5078cce20f6ca5f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B48DC.cpp",
+      "sha256": "c6aa5375d7a39368412b82ea9d73ac8837bc21200e485f951ebd545a5645dc11",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4928.cpp",
+      "sha256": "f478271523acfd7cf49d40ecfc77409f0ede0a47a6cd98b62ba08d99c410a7a5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4994.cpp",
+      "sha256": "154bdabf79cdb4fc1f3a7ad185097bfaf7133e22854af45cdb88447a054f2cbc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4A78.cpp",
+      "sha256": "76db2f36ba530ce6d8034898a25a1e62e88210ad63095a965074149171de4bc8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4AC4.cpp",
+      "sha256": "d10f28fadde498935052de84f9ca2c409375985fece1559f01c7b34c6d6dbff0",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4B30.cpp",
+      "sha256": "dbce955ce400932dda58ac72c86ea3f1ebeef65db028b3a59041b4f9793c968f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4C14.cpp",
+      "sha256": "4f063c388cf19f8a6e2065fe615efd18cbdaec94d7a35778e1b271327b7f2597",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4C60.cpp",
+      "sha256": "81870682cade1c225a8818d912814d53bf3ec047c352cce84df4c9b71416e2c3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4CCC.cpp",
+      "sha256": "7c1e26a99a5cd3c0b2a2425c845b2c58c6718c93babae0596b53d5d23a204660",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4DB0.cpp",
+      "sha256": "1de6e9ab7e71411e338be7ad3fb299e5b50ab4c737a664e661b3657f67ff3d7f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4EAC.cpp",
+      "sha256": "d77b779b1445e94e2bda13963e53a5caf40db176ac449b7404e323ed7be8cadf",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B4F2C.cpp",
+      "sha256": "a1b7452059a966331dea5bca0e8d57246fe85149e68e51189fd5cb15a8753564",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B51B8.cpp",
+      "sha256": "658cd24ab3ea0c5a46873ca6d65952c1f7db90e8e91a889667dee7558e0863f8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B5254.cpp",
+      "sha256": "2cf7da462c19586d2c14e5ecd1a94f49a9fcd26c7950f22762b437db97a10cb5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B52D4.cpp",
+      "sha256": "d14a730c0a945cbab7c071ea2647a9b81200ec265925d3e0370bf79eabaa0a49",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B54B4.cpp",
+      "sha256": "fff135a8b030a54b24caa2929b52783cc4e8d926d46c0bc23a62bd0efed48c9a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B5690.cpp",
+      "sha256": "95d46bd48e9133025b4a2e6e501cfe77a83eca951b7a6ee43d663a3ab379b62f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B56D0.cpp",
+      "sha256": "fb16c9b5eadc5a83e55cb484faf223f59dad643dc4da1a08cbb2446bf8dd9aba",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B5C44.cpp",
+      "sha256": "f8618ea51711ef102bdf0fc5d459c20a74b7f02106e75838fb0314e003bbc149",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B5CFC.cpp",
+      "sha256": "101f79bd730780d2887c9fec28094cb4adbcd92a522671ecb6f0047eff9e33b4",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B5E18.cpp",
+      "sha256": "c60dd895aec0649383b8a22ee91f093ee9025fd6428b77e7b34e538cd1f9d621",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B6014.cpp",
+      "sha256": "a42993b5a22cf51a09c3710520a3aa1021f4e450fc5337b7c84191a65f95d895",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B6194.cpp",
+      "sha256": "22216bf8acfa548c1533073435434c0213087ae42f3fdbd3a533102616fd1dd3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B65B8.cpp",
+      "sha256": "e165ce341b57e464136e4b955c80ea3bf1de76a1515e2c1fb4a57dcbe0f1cd4e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B6798.cpp",
+      "sha256": "64a2f255c1e066bb5b67c8ae04efa15297a8766910e67e47c05d81f1b979a87d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B67FC.cpp",
+      "sha256": "4f89f916836a6dbd480768286514accc6b74f9b50f582f75fe4e09a832a6f567",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/functions/rso2_func_806B6844.cpp",
+      "sha256": "6af2da4e4a7668cd488da0eaa6616adf6a6ac57d428e46f88535d8e893d7de46",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/.tools/rso-runtime/Tweaks/registry.cpp",
+      "sha256": "f4edb0ecf01dadf4cc35def7de2f563c86adcdc9996008cddedbd4599b0d893c",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/CMakeFiles/mkw_runtime_common.dir/Unity/unity_runtime_3_cxx.cxx",
+      "sha256": "c8e0ff333d9f5cbd746d0af75a0626962667098bb482ec01a5cc22dd845dc416",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_0240318e9cb006a7d7a06573.cpp",
+      "sha256": "aac85ac3b77fc3ac0db1072faa0a338ad908299d5d19049bbe3144b961d34ff9",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_0306efa14e3ed58ccc7119c0.cpp",
+      "sha256": "61bdaef76f7e876562b16b643fca97882efa6a7e72cb00e4011151d388ccd939",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_0306efa14e3ed58ccc7119c0_traits.h",
+      "sha256": "abe9f34608cce4fdcd50f4edebf3cad0a0b50bea3f4a8bd105a253bf3c5b9230",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_04a8663d0b47e71248ef41af.cpp",
+      "sha256": "ac4f5f081d05cf209815b64d7c46e7ac1f01f2948b9f9e5a67c2d848f64bda82",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_0785d6d94f2a82545732bc17.cpp",
+      "sha256": "b54f4618d4cac3ca9152fd25a4a1ce15d1b48f20263b9211558a71c18c30355f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_09a887d17e4e8d7551478cab.cpp",
+      "sha256": "91ae029a1a44f59e2f857e9de3126b24c4fb5ba78ff557f1f5d8832c4822cc3f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_1097b7726a728c00879df659.cpp",
+      "sha256": "4af5b7800a380e2fa55006b2e91290774644e74dc3a497883843a297661055b6",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_10e4f6fb14e33cb6060af9f6.cpp",
+      "sha256": "fa34ce08101c497ac7ae85789fb1ab0b40776c6dab3afe27afb1d5b05fde0fec",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_13dd73cfb0661aaa92cd4d6c.cpp",
+      "sha256": "3b3b533264e17a68a70eb5123fbdff7c9d4967a6fd676f5d016bc49e79d3ef8e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_15a8efa128793380964b398d.cpp",
+      "sha256": "daac56335d078bea2a8b5d6f7a2e1d84b547470e3ae83fffe70a8f94d59100f1",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_1611d81bbbc2fc80dfabe0f4.cpp",
+      "sha256": "7893e99dec0bc993502801e17ed202d1b11e1aa6007cfeb5f6d358d8c4870555",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_1a7f3886c2eb95c6358c96d3.cpp",
+      "sha256": "31b32f824558f1330249997fb8817922f78deb54e573baa164593f971f644f6e",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_1c776471419d74f919e96ff9.cpp",
+      "sha256": "47860ecb6599db97d2c54a64c5293272e384f4348a2f8c4363d4652f34f04caa",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_292cd6487945cc3b502f6f08.cpp",
+      "sha256": "6dd498a4b95c01a55d8ddc2bc42778c32e26d3c8c27ad6b5ee3553906441ea27",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_2b79e274e36f6dbb8cdc1749.cpp",
+      "sha256": "a009f70c79435834b5223685f1b4b7234d453fd1a73a33e3b1c2703cd9d6c560",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_2e4abdca98e79d843bfabbc0.cpp",
+      "sha256": "87002a18c4db01d57350c051b7349303965dd7a5dad51f2a707e73e7882bd202",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_34fc2f1835ef6b4588e2b336.cpp",
+      "sha256": "9bd18b9de2c268ebf4c7237cd32f6f1ab834cdcb14406e9e4c475c331eed45c6",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_42c71b27651f924c992bd162.cpp",
+      "sha256": "cc39d431164438e7fbdab02543c668813a3ef34ce60240a8ab3b6118ef73dc02",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_4972ca2de1c47e033c9bb2b0.cpp",
+      "sha256": "a421db2bf4b7b2bd8f85c5140f0e6cc340485af54be04cd24b6ca8621e22b0bc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_4a2669a07ba6f0e7aaaaa2d9.cpp",
+      "sha256": "2490bfbf0ee2a53dea34d710f9276f6633b4119d9b60be0f759534c8c541c1a4",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_4ecc5bfd74607ea91a5cd269.cpp",
+      "sha256": "0e02f6ca781be530a3ba48bc32ad1ccf7e9da5b2b918ac5919c11b76ba80ddd0",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_4f240ef160b134cf8c70388a.cpp",
+      "sha256": "876c92ea1aa671767a9c4fb79105a897e603be7f41845c0ec66c800efa00d761",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_5003bac6138a472777d69080.cpp",
+      "sha256": "5a8f10a1cb50bddee08235c87c67abfe51a8cb77f55055deedcd19fcd6e5e655",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_56304579245fa47a133b24d9.cpp",
+      "sha256": "048725b3ad15820018d592119a2fbd6dd6a3f0b2461145ced5753f4e7578cdd5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_58e6f59832c23eb220a7bdf8.cpp",
+      "sha256": "1bc4c46ad42b025e330c4ecf0b641f343d577f696c1feb2d0866f943f686ad43",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_58e6f59832c23eb220a7bdf8_traits.h",
+      "sha256": "e73b14e84a1401df839d20b649db249f491634ba9acebfa8154ab6eccc4f08b7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_59e4c1494e23054e2ad136a0.cpp",
+      "sha256": "69e50aca37c5e72304e102b28b0a2255295b9a7ed14b79487475206135e61409",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_5f468201945b08c6c6b7df71.cpp",
+      "sha256": "e7504bc03a6f6d3c842f9977c0fb67cd5839a4bb097d63ecdb5c481c222278a1",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_5fc1bc88bc4c2979483e172d.cpp",
+      "sha256": "49ad86d06f3ceea0fa235da9392d8bafec4436267311d2668f0c16c5da6e36c3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_6111a39d437a780345f5ed24.cpp",
+      "sha256": "4c85f870c321fd9747ee09554cfafedba899d280d13a5076c45fac901c651b32",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_64adbfd3f75a7f414457600a.cpp",
+      "sha256": "b514fd1cc2f611dbb2eee43912ac3066514669127ee9c8938955ac43db19a93b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_702bb4e74c4335ea52e2fd3c.cpp",
+      "sha256": "51b7d865cb1d7379cdd5bd9a5bbc79c267394cd2eeabff36e8e37d066f205bd8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_703a67ce9296c340a20372ab.cpp",
+      "sha256": "7532819f9cefdd9c64b33dd38b1805d71478367c07a4738c6c16fbd5d98593f2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_7389e6f46e9eda7c746ed7cc.cpp",
+      "sha256": "af1defe1889cb1d369c1288c61314b9f3ec1cb15067702620c456818ea5ec009",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_74dcfe2271662dba296f2439.cpp",
+      "sha256": "a1adc5a070ad6f0368f33d3e359890d10a6879f20e172ae4e61d331d0ba68fe6",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_74dcfe2271662dba296f2439_traits.h",
+      "sha256": "f1aebb0fa4d036ac29bb85d7e6d69e7a66efbb7e0d3df6af0d867a85d4602a30",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_76b11970bf62fc55cda566cd.cpp",
+      "sha256": "6d3d3357e6fbf69ffd2d8f1a74d6e895ebef0d7ee4e7d3458bdd3e1f0ba2e1bf",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_8084662ddfc4162826050226.cpp",
+      "sha256": "1dcd850b06f7369000b8bb233ee6c678d88ed419fdc1d59ca07fe86d733a51f9",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_85606b63b7fa0d6fb1dd8c8f.cpp",
+      "sha256": "54ca52c141279ebea1c86cd95bdf92fed1c4b8a782f241284aca6dc7b16f08f6",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_864ad1ffa4c0160ec31a9057.cpp",
+      "sha256": "5d3d4df69dd5140a8e0fac5f392cf07e8b071b2c7cd256c78a9e87bfb9c9e6fd",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_8c35b66305893198615f9a57.cpp",
+      "sha256": "2ab4aced2209710d9d3e86c6c1e0bd0e4aa62e176329cf3f6ad42530c671a728",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_90a5f2eaaffe5cd3b0bdd84a.cpp",
+      "sha256": "9bc413d31474a259ab6ac958055904b0098032b7767ef14a05e96066f3211a3f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_9266d42f8f203e3947a10f74.cpp",
+      "sha256": "00eee1aecb64d8be3f30b0b5ef946035be683420ad56849b8ebca4a2f904c1b8",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_9266d42f8f203e3947a10f74_traits.h",
+      "sha256": "63579065fdbcd9bc6858b615c3dc63dc50e11c67f370c457ad241187d56d74cc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_97f3ec6ae5261830bd354995.cpp",
+      "sha256": "b077b54825e407339feac701e074f43ed3726a3a88a153d555a19a86cceef639",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_9c0e42a7079107140dd62c15.cpp",
+      "sha256": "8d8136f4174e14f51d1365effa8976a6603651fb2c4d802fef0e3d051b853081",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_9f5bb1f25ac04025201c0627.cpp",
+      "sha256": "312ee75fad1275277893bf016f43dcad23b6fa5361544eceeac456bb7639c09f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_a2c66654f444f46734541440.cpp",
+      "sha256": "c9c5b6c28cff5e2652427765bc7b8c853654d2d8222547bed47d7f09d47b5597",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_a2d715df9e1746e53b49d31c.cpp",
+      "sha256": "76d55fd46afb383381697e1aef04f0b331990e6222518cf0362f8243fea2e98c",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_a4c1b201ea8379899b9b2850.cpp",
+      "sha256": "ed52cac4bfcca2e123d4efca602e71ac06bd85417acc08ca64fbe18aca778400",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_a6f75c7dfb3740db15f54f53.cpp",
+      "sha256": "6138244a6ad5b06b17f9f6d9f85fb69159a5469dd40672bb1b05681d2e1be8f7",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_b6e9bb0e75e1f7dfa4d15291.cpp",
+      "sha256": "aa6d46f3241ff74a5ac35632dad16bebfe0ab64cc2addb0adb8aedec9ea01bd9",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_b9a478b135b5bab87dd70087.cpp",
+      "sha256": "c63c18479cf026bf45f014452c62f9504dc3c2d1436248c29470f70cba74f1f6",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_ba6033550b204cec84f9a131.cpp",
+      "sha256": "330a5dd54c2b8e31d984366948b6c339637cbf66617ee2ef479dd908fffe684a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_ba6033550b204cec84f9a131_traits.h",
+      "sha256": "a8a3fd8e42dcd4571ef5b9b67642a4839afca2652ccadb680ccb143b7551ab19",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_bb4355c3b42002996302dca4.cpp",
+      "sha256": "6bd63729c53cdd6c6889100390aac3e58ca9105437baf1bea0ddccafdf4c0ea4",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_bb47fc3a8d5fc6ac54992a3f.cpp",
+      "sha256": "e69b4eb3a3394281ba9f11253b2d0255fc413b6f78c289085c94abd4d98c874a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_bbb3291af9f95060f6176188.cpp",
+      "sha256": "12b05f6d135a4f0d81242ec27041141fa6e25d2c2f87c2f727b1e760efe998a0",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_c1fa34446484375184c5b415.cpp",
+      "sha256": "5945a144e03f04db91efd9740088d8b5f68cd4f012d9cce31c918a50e6ad02c2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_c453602168973f716cbef659.cpp",
+      "sha256": "822d19267f7214c2de0ea624d0f3256ff5186fd4c79c017db4b35e73f95db6bc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_cb5d2a01038e72b2724e3eae.cpp",
+      "sha256": "1bf2a3e021d061827770ec65c265adc9aa5e91ab676b6dc9f3ddb3bc905282fb",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_cba979a34a17661da5155766.cpp",
+      "sha256": "4ea9183f11aff8e2d91c5c16dc9e532122d00db4c10bd0a746227416920c48b0",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_cba979a34a17661da5155766_traits.h",
+      "sha256": "e64c48d835722f78dea0c186a35f03607d4c1951e91a2daeec3b78ecfb745172",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_d0268295754a83ba419ba085.cpp",
+      "sha256": "c9508e0fa78248ac5530859ca75c138719186099b147ef8b17d1f58f7514bf3b",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_d2db5ed8ace72683ad07c62f.cpp",
+      "sha256": "9f732b6e62cb98cdcb6f142c3efacd4308e0b7f936e833d122d2f4a734e35039",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_d2dd5d83a0318c5c98c176d1.cpp",
+      "sha256": "0877a57c4ef90d18f4c82dd551104d4167615c4ce641cfbb7ca80bc8fa5885c9",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_d76fc2c8e54eef69365b9486.cpp",
+      "sha256": "c046373d40315459b9f0546ef18c04d33b9561ef210dec4756a2bbc9cef398eb",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_d875e1cfdbf8dc7473129be2.cpp",
+      "sha256": "65a341b63208b6706281ef3f576488464746fef6cdc08908bbbb796b0204fdb6",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_daca255eeaa970c5bc92ebd7.cpp",
+      "sha256": "53b3efefe5c11941647fba39255d138dd7157add8ac7089a7dedfddc1c255a76",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_e2a9daea23e9094005a0059f.cpp",
+      "sha256": "7ffa5e4709adbe4422ad36badf37437a2c99c8a58cde1d18989e93e5a4cc16b5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_e2a9daea23e9094005a0059f_traits.h",
+      "sha256": "d37eae2c47fbbed7995a5d491d1623840fd00d92b1cfbf54a5f3bda9c71e862d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_e43fd15bcd79f173bd5f2041.cpp",
+      "sha256": "ea04bf5224d6fddca7e0f695fd84f3d6865ce2319d0bbf8a84c31356601368ef",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_e93feb034fafdd47827f65cc.cpp",
+      "sha256": "54134914d447b48836b152bf105655d146ed35f2f159e9f558175c76da527223",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_eb5049b64d25224eadb885df.cpp",
+      "sha256": "c2ae2d6f2581e1d54ad0c1d74865ccdb06e8317d9991f60228380bfe5cc10e9f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_ece17b66c9b959959c207b5c.cpp",
+      "sha256": "546f4df67759f263d6022e46c258ee343f8cdd643a3377b04fcebcd17a2e9757",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_f38c7c5e2b9c23f3bf76727a.cpp",
+      "sha256": "7b10a312b84e3a5787deccdf4912e4583d84d12fdeedb6c095c9c9384aeb6c04",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_f4d4457f8d3e81f519532894.cpp",
+      "sha256": "fed493f3a523aa4095de111b086290e51a7cebc353b0293a56d991b0cdd0606d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_f702f91e0a0607a476fcb28d.cpp",
+      "sha256": "0a586692d84c3d5ca0481381d0ae5d2df1471956c6911fd54300a9595d9f5320",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_fe29d341de561307e1b6d11e.cpp",
+      "sha256": "da855b4d71e0b9c9ae0ea62b0a3243c2f4d06ee348fbac2ee82a546d56cea3e5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_dispatch/indirect_dispatch_a2848b2f874f20a5.cpp",
+      "sha256": "a917a7be4721ccaa882353519d0d8020232896cae2ef75f0ed9dd3b514115a9f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_registration/registration_00_f25ad627907ac949.cpp",
+      "sha256": "17e6e951cd01dbcafbda87e9d7305ac1d0290f2091efdcff0d11898157075bd4",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_registration/registration_01_137d83df33fd11d3.cpp",
+      "sha256": "6ecab677362a1446aa287797f996d8c2cd764cef9175b8fa5b2b514b3ca7203a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_registration/registration_02_16e5382dabb48a56.cpp",
+      "sha256": "ca128224fd4d9cba30d8cf4a492e67660cebed8601008c1116ae87a8078abd44",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_registration/registration_03_45ccad2f74ca689a.cpp",
+      "sha256": "1f58d79b6bca283707d55d9f30db82056ec67d1ea9353dbeb90bc06de531adf9",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_registration/registration_06_f86c643f2ec38f67.cpp",
+      "sha256": "65eb6a15e54680442e2b7bbc2f4af045662fc3782124df65610f90b73bacdf91",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_registration/registration_09_5b7b6fb62c105560.cpp",
+      "sha256": "cc55ce1c81a2d7445a81d824700395b999e47032f5fab0eb1b2c0e74e547de47",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_registration/registration_10_e74732c675107a0a.cpp",
+      "sha256": "3ff337c2dfa435b13a7d92f16fd33d3b1d796a547e982b5a6c4c17a8eb0856ab",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_registration/registration_12_a6900d7f5de7d908.cpp",
+      "sha256": "bc2f7845f3c3881f67898de2c009033099911025e13f1ada5e60ad796d3d261c",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/build_shards/base_registration/registration_13_88eb74e437cf448e.cpp",
+      "sha256": "9785c5e7c88d2122d2c2d67706acae019f62125f6f6e55dfb7f3250d6a3e9cd3",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/aurora-main/lib/dolphin/gx/GXVert.cpp",
+      "sha256": "f5cb7bcad6e45c498442a7d62a99cd127592e266adf154c12cdd1f16b2d71222",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/aurora-main/lib/gx/fifo.hpp",
+      "sha256": "1b38444ae26816bbfb06e12e64aa12d6d990ad58a6ecdb8056e72e83dce0111a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/include/guest_abi/dispatch.h",
+      "sha256": "7d8824f5e9ab47e417f75009ecbd4a94c56fe3ae4d9104df5c72df6566ebe1c5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/include/hle/prime_ai_registers.h",
+      "sha256": "94e7428684d0518c148dd8a942a6ebd9f94d91ca37cb801da79731f60597009f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/include/hle/prime_dsp_boot_registers.h",
+      "sha256": "c34c46c48203033b7d8c0beadd32f32dc1d7a6fa49906205828ec0be71854ea2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/include/hle/prime_host_continuations.h",
+      "sha256": "a6a350700838f8847d872694f6d728d623cdc522a5d57637d6a72e5bfb7ecce6",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/include/hle/prime_rso_relocations.h",
+      "sha256": "f7d3668a4a69bba02f007496287042048abcb9c3ec04c1bc4c10528ecf735536",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/include/runtime_config.h",
+      "sha256": "d49b089808256233aa7e26738b0aff3bf73ea0789b6bce2ab2074b0ce8fe3c72",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/guest_flat_memory.cpp",
+      "sha256": "ae67d4079f173a87b3d8ff646990dfcdc3e2b7655330863c10f9a2fc98d7ea2d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_dsp.h",
+      "sha256": "23d99f9e8d6d5afd2434637e2ace72a03042db4010813fc561f819898ccf411d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_mix.cpp",
+      "sha256": "b2f9db50ad01e9273e3c268d1af9420711d361aac3df2ee708458c683947805f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_fifo.cpp",
+      "sha256": "2bc20e6e070783ec2bd83c66c744d8f4dd40b52f77ae33febae720fc4e0cf38a",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/ios.cpp",
+      "sha256": "e5312b553a813916e394ace3c29a5baaa1b1e665c8553430bf36773b502a2b2f",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_context.cpp",
+      "sha256": "b1578d5c1af94f2d91282fabfe6dbedf1a58b97da8fa96438e870c70f5af044d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_internal.h",
+      "sha256": "5fcb835a82b78c2e6801fb3848ac4e94b061f788c41568e2304f8aecdbbd0a9d",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp",
+      "sha256": "e793d842df52d72a2262f2fa12cd9788c7d7f812fd9c88bc57e3ced3c18c1661",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/storage/dvd.cpp",
+      "sha256": "6c03ea41c287e206b15305fa52a92a532f5a1c43bed9c10cf23366f3a1ba2fac",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/storage/nand_isfs.cpp",
+      "sha256": "a849d5f1f02831b3f012d5af8590508555d486fad6f87a1214f8f32d33f699e5",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp",
+      "sha256": "8320bd32de531820338d4c338e1eeaafad12d29c9fd2b35eb4981def1a6aa5cc",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/main.cpp",
+      "sha256": "7d082ce18105ddafdb0c42a83a3eeec9fe8d2d4cb1d55fd3b8431b0ee157ec95",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/src/memory.cpp",
+      "sha256": "ef56c9a5104c9cb3c3850f83afcfea7f256641af0c78ef2ae86f42a734a394e2",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    },
+    {
+      "path": "recomp/third_party/WiiCompiled/runtime/tests/runtime_config_tests.cpp",
+      "sha256": "cfdeebb510fc0e19430bd102ed02710b5969c7689f33e1b22e91c8407e5c9944",
+      "previous_mtime_ns": 1792544528237497900,
+      "normalized_mtime_ns": 1792544525383751200
+    }
+  ],
+  "scope": "Future compiler source/header mtimes only, after successful rebuild; no ISO/DOL/resource metadata is touched."
+}

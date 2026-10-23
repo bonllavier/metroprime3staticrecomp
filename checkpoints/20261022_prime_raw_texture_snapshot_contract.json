@@ -1,0 +1,70 @@
+{
+  "result": "OBSERVED repeated raw texture uploads; bounded exact-source reuse candidate passes native tests, runtime pending",
+  "trace_probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792646263_pid13248\\runtime_probe.json",
+  "allocation_records": 4096,
+  "trace_limit": 4096,
+  "source_bytes_uploaded_in_recorded_allocations": 463912352,
+  "all_recorded_native_object_and_source_caches_empty": true,
+  "most_repeated_shapes": [
+    {
+      "data": "000002514E302AA0",
+      "width": 640,
+      "height": 480,
+      "mips": 1,
+      "format": 14,
+      "allocations": 886
+    },
+    {
+      "data": "000002514E3282C0",
+      "width": 640,
+      "height": 480,
+      "mips": 1,
+      "format": 14,
+      "allocations": 600
+    },
+    {
+      "data": "000002514E970B80",
+      "width": 32,
+      "height": 64,
+      "mips": 1,
+      "format": 14,
+      "allocations": 594
+    },
+    {
+      "data": "000002514E412AE0",
+      "width": 256,
+      "height": 128,
+      "mips": 5,
+      "format": 14,
+      "allocations": 252
+    },
+    {
+      "data": "000002514E301540",
+      "width": 640,
+      "height": 448,
+      "mips": 1,
+      "format": 1,
+      "allocations": 65
+    },
+    {
+      "data": "000002514E36DF40",
+      "width": 320,
+      "height": 224,
+      "mips": 1,
+      "format": 1,
+      "allocations": 65
+    }
+  ],
+  "trace_run_failure": "Native Windows exception 0xC0000005; root cause not inferred from allocation counts alone",
+  "candidate": "Raw unpaletted static texture sources compared byte-for-byte every resolve; at most 64 handles /16 MiB source snapshots. Palette path unchanged. Draw references retain ownership.",
+  "tests": "mkw_prime_raw_bp_tests and mkw_prime_raw_texture_snapshot_tests 2/2 PASS",
+  "GPU_parity_verified": false,
+  "OOM_root_cause_verified": false,
+  "build_result": "PASS complete runtime C++ build",
+  "executable_sha256": "b59c8b25b4af72cc4a8ea37bdee25bb3ff6a7fb89cfb2f6946d8792afce0f272",
+  "source_hashes": {
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/gx.cpp": "a7f5890bf4d1bbcc57b595c80941a40f449b7b20f9d22990de96c00b823141cc",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/raw_texture_snapshot_cache.hpp": "f1295779291e61df068d95aa99baf2fbc6d7e56a53eab03d36c373d2629aca05",
+    "recomp/third_party/WiiCompiled/runtime/tests/prime_raw_texture_snapshot_tests.cpp": "fbf62184480874e3f9a6caf2cf5609579f508ae0493210d0f44cff7eaeaa83ef"
+  }
+}

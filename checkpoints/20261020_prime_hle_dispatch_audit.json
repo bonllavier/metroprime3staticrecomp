@@ -1,0 +1,502 @@
+{
+  "created_utc": "2026-10-20T07:50:00Z",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "active_hle_audit": "20261020_prime_profile_hle_overlap.json",
+  "active_registered_hle_addresses": 569,
+  "exact_function_map_starts": 0,
+  "ghidra_body_address_audit": {
+    "query_count": 569,
+    "function_body_interiors": 561,
+    "exact_function_starts": 0,
+    "query_no_function": [
+      "0x80124048",
+      "0x8012405C",
+      "0x8012406C",
+      "0x80124084",
+      "0x80124094",
+      "0x80173A70",
+      "0x80173A8C",
+      "0x80197380"
+    ],
+    "sample_interiors": [
+      {
+        "target": "0x80006348",
+        "body_start": "0x80006320",
+        "body_end": "0x8000648B",
+        "function_name": "__start"
+      },
+      {
+        "target": "0x800077C8",
+        "body_start": "0x800076CC",
+        "body_end": "0x80007887",
+        "function_name": "LoadTypedefHyperModeData__FR17SLdrHyperModeDataR12CInputStream"
+      },
+      {
+        "target": "0x80015500",
+        "body_start": "0x80015408",
+        "body_end": "0x800155AF",
+        "function_name": "__ct__Q23CAi17CJumpCalculationsFRCQ23CAi15CJumpParametersRC9CVector3fRC9CVector3f"
+      },
+      {
+        "target": "0x8002001C",
+        "body_start": "0x8001FD70",
+        "body_end": "0x800200CB",
+        "function_name": "FUN_8001fd70"
+      },
+      {
+        "target": "0x80044B30",
+        "body_start": "0x80044864",
+        "body_end": "0x80044D97",
+        "function_name": "FUN_80044864"
+      },
+      {
+        "target": "0x80048C30",
+        "body_start": "0x80048B90",
+        "body_end": "0x80048C4B",
+        "function_name": "FUN_80048b90"
+      },
+      {
+        "target": "0x800847C0",
+        "body_start": "0x800846F0",
+        "body_end": "0x80084803",
+        "function_name": "FUN_800846f0"
+      },
+      {
+        "target": "0x80084D20",
+        "body_start": "0x80084854",
+        "body_end": "0x80084E2B",
+        "function_name": "FUN_80084854"
+      },
+      {
+        "target": "0x800A35E0",
+        "body_start": "0x800A33B8",
+        "body_end": "0x800A3A0B",
+        "function_name": "FUN_800a33b8"
+      },
+      {
+        "target": "0x800BD860",
+        "body_start": "0x800BD768",
+        "body_end": "0x800BDC17",
+        "function_name": "FUN_800bd768"
+      },
+      {
+        "target": "0x80123F88",
+        "body_start": "0x80123EF4",
+        "body_end": "0x80123FF3",
+        "function_name": "SetSoftConstraints__19CPathMeshConstraintFRCQ24rstl52vector<15CSoftConstraint,Q24rstl17rmemory_allocator>"
+      },
+      {
+        "target": "0x80123FCC",
+        "body_start": "0x80123EF4",
+        "body_end": "0x80123FF3",
+        "function_name": "SetSoftConstraints__19CPathMeshConstraintFRCQ24rstl52vector<15CSoftConstraint,Q24rstl17rmemory_allocator>"
+      },
+      {
+        "target": "0x801240B0",
+        "body_start": "0x8012409C",
+        "body_end": "0x8012417B",
+        "function_name": "PreThink__19CPathMeshConstraintFR13CPhysicsActorR15CPathFindSearch"
+      },
+      {
+        "target": "0x801269BC",
+        "body_start": "0x80126988",
+        "body_end": "0x80126B1F",
+        "function_name": "FUN_80126988"
+      },
+      {
+        "target": "0x8012E574",
+        "body_start": "0x8012E3EC",
+        "body_end": "0x8012E63B",
+        "function_name": "PursuePlayer__10CPatternedFR13CStateManager9EStateMsgff"
+      },
+      {
+        "target": "0x8012E57C",
+        "body_start": "0x8012E3EC",
+        "body_end": "0x8012E63B",
+        "function_name": "PursuePlayer__10CPatternedFR13CStateManager9EStateMsgff"
+      },
+      {
+        "target": "0x8012E594",
+        "body_start": "0x8012E3EC",
+        "body_end": "0x8012E63B",
+        "function_name": "PursuePlayer__10CPatternedFR13CStateManager9EStateMsgff"
+      },
+      {
+        "target": "0x8012E59C",
+        "body_start": "0x8012E3EC",
+        "body_end": "0x8012E63B",
+        "function_name": "PursuePlayer__10CPatternedFR13CStateManager9EStateMsgff"
+      }
+    ]
+  },
+  "ghidra_xrefs": {
+    "queried_addresses": 569,
+    "addresses_with_any_xrefs": 31,
+    "xref_count": 46,
+    "call_or_data_xrefs": [],
+    "branch_xrefs": [
+      {
+        "target": "0x8015D50C",
+        "from": "0x8015D4E4",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8015D49C",
+        "caller_name": "FUN_8015d49c"
+      },
+      {
+        "target": "0x8015DC60",
+        "from": "0x8015DC48",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8015DC08",
+        "caller_name": "Knockback__11CPlayerArmsFR13CStateManagerRC11CDamageInfoRC9CVector3f"
+      },
+      {
+        "target": "0x801643FC",
+        "from": "0x801641DC",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80164138",
+        "caller_name": "FUN_80164138"
+      },
+      {
+        "target": "0x80164848",
+        "from": "0x8016482C",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801646EC",
+        "caller_name": "FUN_801646ec"
+      },
+      {
+        "target": "0x80169260",
+        "from": "0x80169138",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80169088",
+        "caller_name": "FUN_80169088"
+      },
+      {
+        "target": "0x80169BCC",
+        "from": "0x80169BC4",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80169904",
+        "caller_name": "FUN_80169904"
+      },
+      {
+        "target": "0x8016B720",
+        "from": "0x8016B714",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8016AE88",
+        "caller_name": "FUN_8016ae88"
+      },
+      {
+        "target": "0x8016D4C0",
+        "from": "0x8016D4A8",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8016CFB8",
+        "caller_name": "FUN_8016cfb8"
+      },
+      {
+        "target": "0x8016DB08",
+        "from": "0x8016DA40",
+        "type": "UNCONDITIONAL_JUMP",
+        "caller_address": "0x8016CFB8",
+        "caller_name": "FUN_8016cfb8"
+      },
+      {
+        "target": "0x8016DD5C",
+        "from": "0x8016DD44",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8016CFB8",
+        "caller_name": "FUN_8016cfb8"
+      },
+      {
+        "target": "0x8016E250",
+        "from": "0x8016E238",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8016DF3C",
+        "caller_name": "FUN_8016df3c"
+      },
+      {
+        "target": "0x8016E37C",
+        "from": "0x8016E374",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8016E324",
+        "caller_name": "FUN_8016e324"
+      },
+      {
+        "target": "0x8016E3C0",
+        "from": "0x8016E3B0",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8016E3A8",
+        "caller_name": "FUN_8016e3a8"
+      },
+      {
+        "target": "0x8016EAB0",
+        "from": "0x8016E9AC",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8016E980",
+        "caller_name": "FUN_8016e980"
+      },
+      {
+        "target": "0x8016EAB0",
+        "from": "0x8016E9B8",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8016E980",
+        "caller_name": "FUN_8016e980"
+      },
+      {
+        "target": "0x8016EAB0",
+        "from": "0x8016E9C8",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8016E980",
+        "caller_name": "FUN_8016e980"
+      },
+      {
+        "target": "0x8016EAB0",
+        "from": "0x8016EA40",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8016E980",
+        "caller_name": "FUN_8016e980"
+      },
+      {
+        "target": "0x80171CE0",
+        "from": "0x80171CB8",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80171C70",
+        "caller_name": "FUN_80171c70"
+      },
+      {
+        "target": "0x80171F30",
+        "from": "0x80171F1C",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80171D04",
+        "caller_name": "FUN_80171d04"
+      },
+      {
+        "target": "0x80171F30",
+        "from": "0x80171F24",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80171D04",
+        "caller_name": "FUN_80171d04"
+      },
+      {
+        "target": "0x801727CC",
+        "from": "0x8017279C",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801726B8",
+        "caller_name": "FUN_801726b8"
+      },
+      {
+        "target": "0x801727CC",
+        "from": "0x801727A8",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801726B8",
+        "caller_name": "FUN_801726b8"
+      },
+      {
+        "target": "0x801727CC",
+        "from": "0x801727B8",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801726B8",
+        "caller_name": "FUN_801726b8"
+      },
+      {
+        "target": "0x80172824",
+        "from": "0x8017281C",
+        "type": "UNCONDITIONAL_JUMP",
+        "caller_address": "0x801726B8",
+        "caller_name": "FUN_801726b8"
+      },
+      {
+        "target": "0x80172EB4",
+        "from": "0x80172E6C",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80172C98",
+        "caller_name": "FUN_80172c98"
+      },
+      {
+        "target": "0x80172EB4",
+        "from": "0x80172E74",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80172C98",
+        "caller_name": "FUN_80172c98"
+      },
+      {
+        "target": "0x80172EB4",
+        "from": "0x80172E7C",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80172C98",
+        "caller_name": "FUN_80172c98"
+      },
+      {
+        "target": "0x80172EB4",
+        "from": "0x80172E88",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80172C98",
+        "caller_name": "FUN_80172c98"
+      },
+      {
+        "target": "0x80172EB4",
+        "from": "0x80172E98",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80172C98",
+        "caller_name": "FUN_80172c98"
+      },
+      {
+        "target": "0x80173080",
+        "from": "0x80172FD0",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80172C98",
+        "caller_name": "FUN_80172c98"
+      },
+      {
+        "target": "0x80173080",
+        "from": "0x80172FE0",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x80172C98",
+        "caller_name": "FUN_80172c98"
+      },
+      {
+        "target": "0x801732E8",
+        "from": "0x801732E0",
+        "type": "UNCONDITIONAL_JUMP",
+        "caller_address": "0x80173134",
+        "caller_name": "FUN_80173134"
+      },
+      {
+        "target": "0x80173A1C",
+        "from": "0x80173990",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8017393C",
+        "caller_name": "FUN_8017393c"
+      },
+      {
+        "target": "0x80173A1C",
+        "from": "0x801739A0",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8017393C",
+        "caller_name": "FUN_8017393c"
+      },
+      {
+        "target": "0x8019B43C",
+        "from": "0x8019B424",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8019B374",
+        "caller_name": "FUN_8019b374"
+      },
+      {
+        "target": "0x8019B43C",
+        "from": "0x8019B430",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8019B374",
+        "caller_name": "FUN_8019b374"
+      },
+      {
+        "target": "0x8019E770",
+        "from": "0x8019E714",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8019E6C4",
+        "caller_name": "FUN_8019e6c4"
+      },
+      {
+        "target": "0x801A4EC4",
+        "from": "0x801A4EAC",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801A4DF4",
+        "caller_name": "FUN_801a4df4"
+      },
+      {
+        "target": "0x801A66E0",
+        "from": "0x801A66C4",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801A661C",
+        "caller_name": "FUN_801a661c"
+      },
+      {
+        "target": "0x801A66E0",
+        "from": "0x801A66CC",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801A661C",
+        "caller_name": "FUN_801a661c"
+      },
+      {
+        "target": "0x801A66E0",
+        "from": "0x801A66D4",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801A661C",
+        "caller_name": "FUN_801a661c"
+      },
+      {
+        "target": "0x801AD1D4",
+        "from": "0x801AD1A4",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801AD144",
+        "caller_name": "FUN_801ad144"
+      },
+      {
+        "target": "0x801BF640",
+        "from": "0x801BF634",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801BF350",
+        "caller_name": "FUN_801bf350"
+      },
+      {
+        "target": "0x801BF64C",
+        "from": "0x801BF63C",
+        "type": "UNCONDITIONAL_JUMP",
+        "caller_address": "0x801BF350",
+        "caller_name": "FUN_801bf350"
+      },
+      {
+        "target": "0x801C0B54",
+        "from": "0x801C0B28",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x801C0274",
+        "caller_name": "FUN_801c0274"
+      },
+      {
+        "target": "0x8021B344",
+        "from": "0x8021B334",
+        "type": "CONDITIONAL_JUMP",
+        "caller_address": "0x8021B330",
+        "caller_name": "FUN_8021b330"
+      }
+    ]
+  },
+  "aligned_dol_word_scan": {
+    "checkpoint": "20261020_prime_profile_hle_literal_refs.json",
+    "addresses_with_word_hits": 2,
+    "occurrences": [
+      {
+        "address": "0x80173AA8",
+        "occurrences": [
+          {
+            "section_kind": "text",
+            "section_index": 1,
+            "dol_file_offset": "0x1459B8",
+            "guest_location": "0x8014A098"
+          }
+        ]
+      },
+      {
+        "address": "0x801A00E0",
+        "occurrences": [
+          {
+            "section_kind": "text",
+            "section_index": 1,
+            "dol_file_offset": "0x435958",
+            "guest_location": "0x8043A038"
+          }
+        ]
+      }
+    ],
+    "disassembly": {
+      "0x8014A098": "lwz r0,0x3aa8(r23), not an absolute function pointer",
+      "0x8043A038": "lwz r0,0xe0(r26), not an absolute function pointer"
+    },
+    "checkpoint_sha256": "b5ef501304af2ec3cc7de76722cf0749821956d3b4e138be899f4ad755633c45"
+  },
+  "direct_call_closure": {
+    "checkpoint": "20261020_direct_call_closure.json",
+    "hle_overlaps": 0
+  },
+  "interpretation": "All active fixed-address HLE registrations are either inside other Prime function bodies or not defined by Ghidra as functions. The observed static xrefs are branch targets only; no call or data xref was found. This does not rule out computed pointers, dynamically registered callbacks, or references from REL/RSO modules.",
+  "active_hle_audit_sha256": "cbc96533a77eb44814a629f5c71f39bdbe18c34b41a49bc407af5fd9e84abb30"
+}

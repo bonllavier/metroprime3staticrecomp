@@ -1,0 +1,47 @@
+{
+  "result": "PASS original translated copy body against host memmove in 45 isolated scenarios",
+  "revision": "RM3E01_00",
+  "guest_entry": "0x80004000",
+  "lengths": [
+    0,
+    1,
+    2,
+    31,
+    32,
+    33,
+    63,
+    64,
+    65
+  ],
+  "destinations": [
+    96,
+    128,
+    129,
+    192,
+    256
+  ],
+  "source": 128,
+  "compiler_flags": [
+    "-std=c++17",
+    "-O2"
+  ],
+  "scope": "Actual original generated body and abstract byte memory; tests no-overlap, both overlap directions, identity, zero size and unchanged bytes outside destination. Does not prove caller supplies the right arguments.",
+  "artifacts": [
+    {
+      "path": "recomp/generated/RM3E01_00_conservative/functions/func_80004000.cpp",
+      "sha256": "e9e81258184c6d50f17fb4f9c526d325ce715b293ccd282f18fa7fd29e60b82c"
+    },
+    {
+      "path": "recomp/.tools/nand-copy-contract/guest_abi/guest_abi.h",
+      "sha256": "5d63c3d46d2109ace7d4f2f9153a9564cf5428a1b07eed7ea8f4bfeccf9d541d"
+    },
+    {
+      "path": "recomp/.tools/nand-copy-contract/driver.cpp",
+      "sha256": "a5da03add416436256834dd13febdeea7fdbae39f049cfb2d36768a2ef52e4bc"
+    },
+    {
+      "path": "recomp/.tools/nand-copy-contract/copy_contract.exe",
+      "sha256": "f4209138e4d21a8d32f2dab8166173294ac5cbba475017eaa60bc170ed9d6728"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "revision": "RM3E01_00",
+  "probe_log": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792549164_pid17500\\console.log",
+  "log_sha256": "21876c8e0b871b2abbcfae8785194b2ae5179dc62a046335547d01c8d6a35702",
+  "first_draw": {
+    "opcode": "0x90",
+    "trace_sequence": 1061,
+    "byte_offset": 2973,
+    "vertex_count": 288,
+    "vertex_stride": 24,
+    "packet_bytes": 6915,
+    "packet_sha256": "936c3c442e7b1cbd8e2731beb53273935289fb6f3ddf2308e812e5273d8bdbd7",
+    "cp": {
+      "0x50": "0x2200",
+      "0x60": "0x1",
+      "0x70": "0x41377009"
+    },
+    "next_command": "0x61",
+    "next_trace_sequence": 2791
+  },
+  "previous_fifo_capacity": 4096,
+  "old_behavior": "Capacity overflow discarded the incomplete command packet, then parsed vertex bytes as opcodes.",
+  "capture": "recomp/.tools/prime_fifo_probe_window.png",
+  "capture_sha256": "ffa204aa991fcf32961b7ae236443a13b9268baa385f130fc2808b5fca0f747a",
+  "first_game_screen_verified": false,
+  "primary_reference": "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/Core/HW/ProcessorInterface.cpp"
+}

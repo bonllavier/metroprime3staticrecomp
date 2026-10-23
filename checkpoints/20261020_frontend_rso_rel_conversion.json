@@ -1,0 +1,191 @@
+{
+  "revision": "RM3E01_00",
+  "module": "RSO_ScriptGUIScreenFrontEndUI.rso",
+  "rso_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+  "synthetic_rel_sha256": "3b8fdfd6b8badd8cb38aa964580e690ded2d68df21ae1a1933d90a6c3cf14ed4",
+  "synthetic_rel_size": 128548,
+  "module_load_address_for_probe": "0x80690000",
+  "sections": [
+    {
+      "index": 0,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 1,
+      "file_offset": "0x6C60",
+      "size": 93020,
+      "executable_flag": false
+    },
+    {
+      "index": 2,
+      "file_offset": "0x1D7C0",
+      "size": 20,
+      "executable_flag": false
+    },
+    {
+      "index": 3,
+      "file_offset": "0x1D7E0",
+      "size": 4,
+      "executable_flag": false
+    },
+    {
+      "index": 4,
+      "file_offset": "0x1D800",
+      "size": 5960,
+      "executable_flag": false
+    },
+    {
+      "index": 5,
+      "file_offset": "0x1EF60",
+      "size": 1732,
+      "executable_flag": false
+    },
+    {
+      "index": 6,
+      "file_offset": "0x0",
+      "size": 132,
+      "executable_flag": false
+    },
+    {
+      "index": 7,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 8,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 9,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 10,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 11,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 12,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 13,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 14,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 15,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 16,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 17,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 18,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 19,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 20,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 21,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 22,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 23,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    },
+    {
+      "index": 24,
+      "file_offset": "0x0",
+      "size": 0,
+      "executable_flag": false
+    }
+  ],
+  "imports_resolved_by_pinned_selfile": 333,
+  "internal_relocations": 1622,
+  "external_relocations": 1799,
+  "relocation_type_counts": {
+    "6": 505,
+    "4": 536,
+    "10": 2032,
+    "1": 348
+  },
+  "entry_points": {
+    "prolog": {
+      "section": 1,
+      "offset": 92504
+    },
+    "epilog": {
+      "section": 1,
+      "offset": 92540
+    },
+    "unresolved": {
+      "section": 1,
+      "offset": 92576
+    }
+  },
+  "bss_size": 132,
+  "synthetic_rel_path": "recomp\\.tools\\rso-rel\\FrontEndUI.synthetic.rel",
+  "limitations": [
+    "Private translation probe only; the RSO was not modified.",
+    "Uses WiiCompiled RelFile as the loader for the synthetic image; no runtime loading was added.",
+    "Chosen guest load address is a probe placement and is not asserted as the game's actual RSO address.",
+    "Import names/addresses were checked against the pinned static SEL and named DOL symbols."
+  ]
+}

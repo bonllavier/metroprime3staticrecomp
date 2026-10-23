@@ -1,0 +1,285 @@
+{
+  "result": "PASS original title-sequence activation and transfer evidence",
+  "revision": "RM3E01_00",
+  "executable_sha256": "e99503e3b70b27c6b19125f4545eaf233f2d24e2ea5519f50f6dda1ca4241bf3",
+  "decoder_success_returns": 64,
+  "dma_observations": [
+    [
+      271324480,
+      3758096384,
+      4096,
+      0
+    ],
+    [
+      271328576,
+      3758100480,
+      4096,
+      0
+    ],
+    [
+      271332672,
+      3758104576,
+      2048,
+      0
+    ],
+    [
+      271769408,
+      3758107136,
+      2560,
+      0
+    ],
+    [
+      282557568,
+      3758109824,
+      2560,
+      0
+    ],
+    [
+      271334720,
+      3758096384,
+      4096,
+      0
+    ],
+    [
+      271338816,
+      3758100480,
+      4096,
+      0
+    ],
+    [
+      271342912,
+      3758104576,
+      2048,
+      0
+    ],
+    [
+      271771968,
+      3758107136,
+      2560,
+      0
+    ],
+    [
+      282560128,
+      3758109824,
+      2560,
+      0
+    ],
+    [
+      271344960,
+      3758096384,
+      4096,
+      0
+    ],
+    [
+      271349056,
+      3758100480,
+      4096,
+      0
+    ],
+    [
+      271353152,
+      3758104576,
+      2048,
+      0
+    ],
+    [
+      271774528,
+      3758107136,
+      2560,
+      0
+    ],
+    [
+      282562688,
+      3758109824,
+      2560,
+      0
+    ],
+    [
+      271355200,
+      3758096384,
+      4096,
+      0
+    ],
+    [
+      271359296,
+      3758100480,
+      4096,
+      0
+    ],
+    [
+      271363392,
+      3758104576,
+      2048,
+      0
+    ],
+    [
+      271777088,
+      3758107136,
+      2560,
+      0
+    ],
+    [
+      282565248,
+      3758109824,
+      2560,
+      0
+    ],
+    [
+      271365440,
+      3758096384,
+      4096,
+      0
+    ],
+    [
+      271369536,
+      3758100480,
+      4096,
+      0
+    ],
+    [
+      271373632,
+      3758104576,
+      2048,
+      0
+    ],
+    [
+      271779648,
+      3758107136,
+      2560,
+      0
+    ],
+    [
+      282567808,
+      3758109824,
+      2560,
+      0
+    ],
+    [
+      271375680,
+      3758096384,
+      4096,
+      0
+    ],
+    [
+      271379776,
+      3758100480,
+      4096,
+      0
+    ],
+    [
+      271383872,
+      3758104576,
+      2048,
+      0
+    ],
+    [
+      271782208,
+      3758107136,
+      2560,
+      0
+    ],
+    [
+      282570368,
+      3758109824,
+      2560,
+      0
+    ],
+    [
+      271385920,
+      3758096384,
+      4096,
+      0
+    ],
+    [
+      271390016,
+      3758100480,
+      4096,
+      0
+    ]
+  ],
+  "texture_copies": 32,
+  "original_bodies_preserved": [
+    {
+      "address": "0x804ee4a8",
+      "raw_sha256": "ffcf04d4012e94d529503d259f4ef851eb477028e08f05b2b25f18ccf6d15fd5",
+      "overlay_sha256": "359bb0342f83971b175524f94ab5797716daff40299e8029fa4b41c623ade478"
+    },
+    {
+      "address": "0x804eb174",
+      "raw_sha256": "a0d6ca1b77873ef9c5ae26192fe1a41613bda6387de72ec18ce1a112b3d65325",
+      "overlay_sha256": "24f0fe05cc6e92a05351ac12ace2ff856b5544f231421aac432223d37eb6e45c"
+    },
+    {
+      "address": "0x80353f70",
+      "raw_sha256": "c50087b49d5918708c6023a11562e3f47a3d11265dd4f628517616975acd22da",
+      "overlay_sha256": "d9ca05dc181afe1a135868330de27924916eedd2e9c494b91bb554830c9140c1"
+    },
+    {
+      "address": "0x803540a8",
+      "raw_sha256": "3b4573a06961b94584428665dceae9dc126a764dedc1df5bf4da2c8368dafef7",
+      "overlay_sha256": "ead6047373c923553288de39ae4b8418ef04e2a56fbeebaf3b882b05ef7af0f2"
+    },
+    {
+      "address": "0x80259474",
+      "raw_sha256": "1cfce665e36f06b54cbfc3af22242f4166d0628d5b559101ce4d270b085f4cd0",
+      "overlay_sha256": "941c114bf3812f8fea2c641f271531fadcacb126200bb7469a5a16bcd5c0c31a"
+    },
+    {
+      "address": "0x80259978",
+      "raw_sha256": "3277a6f9f50f362c3638750baee40eb7942db8e6bd9d9ffedf43eef626f70bf2",
+      "overlay_sha256": "5413da22f2d2c0c6ae1f88d73f4b4afc7bd24cfc77703ddc56c401f66b5171df"
+    },
+    {
+      "address": "0x802598b0",
+      "raw_sha256": "0715121dcb5f568ba4f3f4f36b767d7b4fc75ae0961cd0af2459c68424f459e4",
+      "overlay_sha256": "7289e70ddaccdcec1c81b3ea4cc0c0682183c044b809a20f6c5f639eab82dfad"
+    },
+    {
+      "address": "0x802599fc",
+      "raw_sha256": "cc06a343a8e1d47434729beb8f70cc7430204e5f85a4e76da11788f8e5304334",
+      "overlay_sha256": "345c6121831cbfa76419f6aff1e042a037b7c0e9ca804b60169fdc8a9ac5f028"
+    }
+  ],
+  "captures": [
+    {
+      "at_second": 15,
+      "path": "${LOCAL_PATH}",
+      "print_window_return": true,
+      "sha256": "1e89de9c0e536af0ce0f952da9bbe5d83374e29c88bba442d695487ac74d5fe3"
+    },
+    {
+      "at_second": 25,
+      "path": "${LOCAL_PATH}",
+      "print_window_return": true,
+      "sha256": "4000d4977fbaa9de9ab09e7e0ebf738369a8da28687e3c5d1a5d45785c65bf2e"
+    },
+    {
+      "at_second": 35,
+      "path": "${LOCAL_PATH}",
+      "print_window_return": true,
+      "sha256": "eab8cd8870808548764a985739e9b34646f09b2a9bcb9c60d0158fc36f1f219c"
+    },
+    {
+      "at_second": 45,
+      "path": "${LOCAL_PATH}",
+      "print_window_return": true,
+      "sha256": "7ce58af1fe934b3a4b2a302f4d6f422c6372e4641ce9c94134fed13cb3b53b09"
+    }
+  ],
+  "limitation": "Execution/transfer proof is separate from independent decoded-pixel comparison, original-GPU parity, title-menu interactivity, audio and performance validation.",
+  "game_title_screen_verified": false,
+  "artifacts": [
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "790951382f7ef98d67fb8695b9274505911723456ab69a802f0377b0f4ace5e7"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "c0c3e2b4e717951bf7e5c95cfccf262428bdb5f06679b754bf428976e9cc66e0"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "798c98e00a7123408caeae53a22a16c0fac02899ecf26efb09178106f45b3d81"
+    }
+  ]
+}

@@ -1,0 +1,395 @@
+{
+  "created_utc": "2026-10-20T08:21:28.491005+00:00",
+  "revision": "RM3E01_00",
+  "goal": "Translate the real FrontEndUI RSO prolog and observed constructor callbacks in an isolated static-recompilation probe.",
+  "input": {
+    "module": "RSO_ScriptGUIScreenFrontEndUI.rso",
+    "sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+    "size": 164896,
+    "source": "private ignored data-partition extraction; no binary copied into product sources"
+  },
+  "rel_conversion": {
+    "synthetic_rel_sha256": "3b8fdfd6b8badd8cb38aa964580e690ded2d68df21ae1a1933d90a6c3cf14ed4",
+    "synthetic_rel_size": 128548,
+    "chosen_probe_base": "0x80690000",
+    "probe_guest_memory_end": "0x80700000",
+    "rso_section_layout": [
+      {
+        "index": 0,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 1,
+        "file_offset": "0x6C60",
+        "size": 93020,
+        "executable_flag": false
+      },
+      {
+        "index": 2,
+        "file_offset": "0x1D7C0",
+        "size": 20,
+        "executable_flag": false
+      },
+      {
+        "index": 3,
+        "file_offset": "0x1D7E0",
+        "size": 4,
+        "executable_flag": false
+      },
+      {
+        "index": 4,
+        "file_offset": "0x1D800",
+        "size": 5960,
+        "executable_flag": false
+      },
+      {
+        "index": 5,
+        "file_offset": "0x1EF60",
+        "size": 1732,
+        "executable_flag": false
+      },
+      {
+        "index": 6,
+        "file_offset": "0x0",
+        "size": 132,
+        "executable_flag": false
+      },
+      {
+        "index": 7,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 8,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 9,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 10,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 11,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 12,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 13,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 14,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 15,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 16,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 17,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 18,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 19,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 20,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 21,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 22,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 23,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      },
+      {
+        "index": 24,
+        "file_offset": "0x0",
+        "size": 0,
+        "executable_flag": false
+      }
+    ],
+    "all_333_imports_resolved_by_pinned_selfile": true,
+    "module_imports": 333
+  },
+  "relocation_verification": {
+    "checkpoint": "20261020_frontend_rso_relocation_verify.json",
+    "relocations_checked": 3421,
+    "rel24_checked": 2032,
+    "type_counts": {
+      "6": 505,
+      "4": 536,
+      "10": 2032,
+      "1": 348
+    },
+    "exact_matches": true,
+    "branch_range_failures": 0,
+    "basis": "Independent PPC relocation expressions transcribed from Ghidra decompile of RM3E01_00 RSOLink apply helper 0x805414F4; image produced by WiiCompiled Translator.Core RelFile.BuildImage."
+  },
+  "entry_and_constructor_table": {
+    "address": "0x806AD7C0",
+    "values": [
+      "0x806A9F90",
+      "0x806AD298",
+      "0x806AD554",
+      "0x806AD6C8",
+      "0x00000000"
+    ],
+    "interpretation": "Four relocated module addresses followed by a null terminator; observed by reading the REL image returned by RelFile.BuildImage."
+  },
+  "translation": {
+    "translator_commit": "4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+    "project_manifest": ".tools/rso-rel/frontend_probe.yml",
+    "function_map_entries": 294,
+    "map_contents": "290 distinct FrontEndUI imported DOL function addresses plus four relocated module constructor callback pointers",
+    "generated_functions_total": 3779,
+    "generated_rso_functions": 8,
+    "rso_functions": [
+      {
+        "address": "0x806A9F90",
+        "source": "func_806A9F90.cpp",
+        "size": 2518,
+        "sha256": "9c22048be5717c635e7243266d2e8c18c04df9ee0671a342869cd444109f09bc",
+        "interior_to_other_translation": false,
+        "direct_call_dependencies": []
+      },
+      {
+        "address": "0x806AA014",
+        "source": "func_806AA014.cpp",
+        "size": 1129,
+        "sha256": "39e43acde875b7735cbf6179422e59de26a5ef5902a9fea5895217bf4dbf824a",
+        "interior_to_other_translation": false,
+        "direct_call_dependencies": []
+      },
+      {
+        "address": "0x806AA038",
+        "source": "func_806AA038.cpp",
+        "size": 521,
+        "sha256": "c3fb9906ed8596d7a506948cd0be4becf5b1fd3a38b59ef31120fc0cf6623354",
+        "interior_to_other_translation": false,
+        "direct_call_dependencies": [
+          "0x806AA014"
+        ]
+      },
+      {
+        "address": "0x806AD298",
+        "source": "func_806AD298.cpp",
+        "size": 2049,
+        "sha256": "5f76a9c62ed6b3d1c278b9a3ff2b84b2af57d7be8b638c85f3dbe6bd3d613851",
+        "interior_to_other_translation": false,
+        "direct_call_dependencies": []
+      },
+      {
+        "address": "0x806AD554",
+        "source": "func_806AD554.cpp",
+        "size": 2049,
+        "sha256": "126d4f8fb95ec5ba9dc3a90aef65bdec7d12df8284da7190d657a21c2e398956",
+        "interior_to_other_translation": false,
+        "direct_call_dependencies": []
+      },
+      {
+        "address": "0x806AD5B8",
+        "source": "func_806AD5B8.cpp",
+        "size": 1045,
+        "sha256": "c37620fb69d947f5aee5321bc3e7b07375e217dc7608d7360b325ccc8006c91a",
+        "interior_to_other_translation": false,
+        "direct_call_dependencies": [
+          "0x806AA038",
+          "0x806AD72C"
+        ]
+      },
+      {
+        "address": "0x806AD6C8",
+        "source": "func_806AD6C8.cpp",
+        "size": 2049,
+        "sha256": "772f3761575ef4065cec32dabcc00c3a8c754ded7101657775d608ca727ee5c6",
+        "interior_to_other_translation": false,
+        "direct_call_dependencies": []
+      },
+      {
+        "address": "0x806AD72C",
+        "source": "func_806AD72C.cpp",
+        "size": 1953,
+        "sha256": "74a3e9ddf5ab1f6c4c489f547a084d9ca8aae2610edf2cafb23604503b08226a",
+        "interior_to_other_translation": false,
+        "direct_call_dependencies": []
+      }
+    ],
+    "unsupported_instructions": 0,
+    "invalid_ssa_functions": 0,
+    "translated_output_metadata_sha256": "e87701a6061e55134b6f4c175cfd539b80a206b92f324e9380f39eedd91e8758",
+    "source_hashes": [
+      {
+        "source": "func_806A9F90.cpp",
+        "sha256": "9c22048be5717c635e7243266d2e8c18c04df9ee0671a342869cd444109f09bc"
+      },
+      {
+        "source": "func_806AA014.cpp",
+        "sha256": "39e43acde875b7735cbf6179422e59de26a5ef5902a9fea5895217bf4dbf824a"
+      },
+      {
+        "source": "func_806AA038.cpp",
+        "sha256": "c3fb9906ed8596d7a506948cd0be4becf5b1fd3a38b59ef31120fc0cf6623354"
+      },
+      {
+        "source": "func_806AD298.cpp",
+        "sha256": "5f76a9c62ed6b3d1c278b9a3ff2b84b2af57d7be8b638c85f3dbe6bd3d613851"
+      },
+      {
+        "source": "func_806AD554.cpp",
+        "sha256": "126d4f8fb95ec5ba9dc3a90aef65bdec7d12df8284da7190d657a21c2e398956"
+      },
+      {
+        "source": "func_806AD5B8.cpp",
+        "sha256": "c37620fb69d947f5aee5321bc3e7b07375e217dc7608d7360b325ccc8006c91a"
+      },
+      {
+        "source": "func_806AD6C8.cpp",
+        "sha256": "772f3761575ef4065cec32dabcc00c3a8c754ded7101657775d608ca727ee5c6"
+      },
+      {
+        "source": "func_806AD72C.cpp",
+        "sha256": "74a3e9ddf5ab1f6c4c489f547a084d9ca8aae2610edf2cafb23604503b08226a"
+      }
+    ],
+    "known_function_starts_after_root_added": 296
+  },
+  "compilation": {
+    "compiler": "LLVM-MinGW Clang 22.1.8",
+    "flags": [
+      "-std=c++20",
+      "-O2",
+      "-march=x86-64-v3",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-fno-slp-vectorize",
+      "-w"
+    ],
+    "compiled_module_objects": 8,
+    "objects": [
+      {
+        "object": "func_806A9F90.o",
+        "size": 1216,
+        "sha256": "7f540cd8dd223d15258a22cc82dda5efcb31a6740ebdaa47f4ab0f9dff50bebc",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "object": "func_806AA014.o",
+        "size": 1136,
+        "sha256": "aa46d2fa7eb13808ef5b5bd6ec42c59bb98e8adb7e2f39eca2b4c065e4e052bb",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "object": "func_806AA038.o",
+        "size": 15953,
+        "sha256": "284dc7a41cfaf4dacf9d7d7c39781e1ca13926bd26725bdd25a104bae4083d75",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "object": "func_806AD298.o",
+        "size": 944,
+        "sha256": "b7a6ba7ad0f261f2fcb0ab3301d3eb8d673b59c17cd60f1a129b4b27ee7eb5a9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "object": "func_806AD554.o",
+        "size": 944,
+        "sha256": "94196c1602214ddd60bc155d9e822f99dd2353a9a48dece5f9744d41822150fe",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "object": "func_806AD5B8.o",
+        "size": 19810,
+        "sha256": "93c1091b545c703e9c69d189306addc9763e3295bf9abb4a18758c84f5883191",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "object": "func_806AD6C8.o",
+        "size": 944,
+        "sha256": "141e403f45ba327f5a81f164c8e70453a25fa391cc22fe8e552e3936aed52436",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "object": "func_806AD72C.o",
+        "size": 28660,
+        "sha256": "d7228560d105c5f9ed9103931c4a9c177ab6f9adcce7c6ab0787754f1b75c057",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      }
+    ],
+    "all_objects_coff_amd64": true
+  },
+  "limitations": [
+    "This is an isolated translation and object-compilation probe, not a linked game executable.",
+    "The RSO was not modified; its synthetic REL copy and generated code remain under ignored recomp/.tools.",
+    "The selected module load address is a free-space probe placement, not claimed to match the original runtime allocator.",
+    "Translation metadata and host compilation do not prove semantic equivalence, correct dynamic callback behavior, or first-screen reachability.",
+    "No runtime module loader, ISO reader, scheduler bridge, renderer binding, or screen presentation was added.",
+    "The ISO remains read-only and unchanged."
+  ],
+  "screen_presented": false,
+  "executable_created": false
+}

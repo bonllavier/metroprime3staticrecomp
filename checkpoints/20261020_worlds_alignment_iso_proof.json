@@ -1,0 +1,29 @@
+{
+  "revision": "RM3E01_00",
+  "finding": "The 480-byte DVD request is valid; the old FST-file-only reader rejected 12 alignment bytes after a 468-byte file.",
+  "fst_entry": {
+    "fst_index": 234,
+    "partition_byte_offset": 4236010604,
+    "file_length": 468
+  },
+  "requested_length": 480,
+  "aligned_length": 480,
+  "iso_prefix_matches_extracted_file": true,
+  "partition_cluster_hashes_validated": true,
+  "partition_range_sha256": "f60eb9ff1a4f45820ad980eb33e362a5bd372f1556b0c0f7967644566d724e1a",
+  "file_sha256": "4a10528edb934a029c2bb8217468ce2b5af1f81baff4bba5cc7baa6816b3693c",
+  "original_padding_length": 12,
+  "original_padding_sha256": "66c41e415ec559128a91e7b7137cd4daba6dd28d5c3595120b483980537fb22a",
+  "invented_padding": false,
+  "nod_commit": "6a54b418e541ce5eeb364399116afd6e47b817bb",
+  "source_hashes": {
+    "recomp/tools/nod_partition_range_probe.cpp": "120d5e252cd73471138636eea613a1cd993643929f0d74fbceaa25715d13d0b6",
+    "recomp/.tools/nod_partition_range_probe.exe": "1f3bfc4121db083c48ba02bb1528f8ce57a23290332e507ea9a6fd43f830b78c",
+    "recomp/.tools/nod-source/target/x86_64-pc-windows-gnu/release/libnod.a": "dde0fd4608305f9c4fd0d358808fcf7b09a5863eb06070334ed6725cadb61279",
+    "recomp/.tools/nod-source/nod-ffi/include/nod.h": "8fa7751dfa1868b3e26fbf01d218a25de216617e2b04caf8c1c6eaf1ac141580"
+  },
+  "fst_sha256": "bf2f1187e0791d050951057976578ee43d8320ebdc26a961ed9cbce0a8924ded",
+  "iso_size": 4699979776,
+  "iso_readonly": true,
+  "game_screen_verified": false
+}

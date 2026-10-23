@@ -1,0 +1,321 @@
+{
+  "revision": "RM3E01_00",
+  "game_screen_verified": false,
+  "outcome": "expected_context_transfer_boundary",
+  "dsp_upload": {
+    "source": "0x805a1c00",
+    "length": 8192,
+    "imem": 0,
+    "dmem_length": 0,
+    "entry": 16,
+    "hash_ector": "347112ba",
+    "original_dol_payload_sha256": "329e87afe881d4b571c74ac952c599eeab8ec6782748565c8fd15551c04bea24",
+    "backend_started": true,
+    "command_list_execution_verified": false
+  },
+  "build": {
+    "exe_sha256": "6a26187182019185d12d09c3ed7b80f16013d628d0e7d0f037ca01fa2550bdd6",
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "runtime": {
+    "revision": "RM3E01_00",
+    "started_utc": "2026-10-21T03:19:08.9104635Z",
+    "pid": 14192,
+    "observation_seconds": 8,
+    "alive_at_deadline": true,
+    "stopped_by_harness": true,
+    "executable_sha256": "6a26187182019185d12d09c3ed7b80f16013d628d0e7d0f037ca01fa2550bdd6",
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792552749_pid14192/console.log",
+    "log_sha256": "91c1127877962223e0c8b4c53803baf47018722c17db422188a307a8fde8c67c",
+    "failure_logged": true,
+    "first_game_screen_verified": false,
+    "note": "Being alive and creating a graphics window do not prove game execution or a rendered screen.",
+    "probe": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792552749_pid14192/runtime_probe.json"
+  },
+  "verified_resource_reads": [
+    {
+      "path": "/rhbm/homeBtnIcon.tpl",
+      "offset": 0,
+      "size": 6336,
+      "destination": "0x1025f2e0",
+      "read_sha256": "099f23b6866bd2334bd012520bbd4e63946257abd543340883e660f4eca2b2e6",
+      "file_sha256": "099f23b6866bd2334bd012520bbd4e63946257abd543340883e660f4eca2b2e6",
+      "fnv1a64": "4a9109fe0c8a5ba7"
+    }
+  ],
+  "runtime_overlay_manifest": {
+    "path": "recomp/generated/RM3E01_00_conservative/runtime_hooks/manifest.json",
+    "sha256": "0edfc2d4fbd86d538f217f537a56f3a17a396296f19994027ceff6fa20d8b9b9"
+  },
+  "hci_commands_observed": [
+    [
+      "0C03",
+      "0"
+    ],
+    [
+      "1005",
+      "0"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C13",
+      "248"
+    ],
+    [
+      "0C0A",
+      "1"
+    ],
+    [
+      "0C33",
+      "7"
+    ],
+    [
+      "1001",
+      "0"
+    ],
+    [
+      "1009",
+      "0"
+    ],
+    [
+      "1003",
+      "0"
+    ],
+    [
+      "0C45",
+      "1"
+    ],
+    [
+      "0C47",
+      "1"
+    ],
+    [
+      "0C43",
+      "1"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C18",
+      "2"
+    ],
+    [
+      "0C0D",
+      "7"
+    ],
+    [
+      "FC4F",
+      "1"
+    ],
+    [
+      "FC4C",
+      "184"
+    ],
+    [
+      "FC4F",
+      "92"
+    ],
+    [
+      "0C03",
+      "0"
+    ],
+    [
+      "1005",
+      "0"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C13",
+      "248"
+    ],
+    [
+      "0C0A",
+      "1"
+    ],
+    [
+      "0C33",
+      "7"
+    ],
+    [
+      "1001",
+      "0"
+    ],
+    [
+      "1009",
+      "0"
+    ],
+    [
+      "1003",
+      "0"
+    ],
+    [
+      "0C45",
+      "1"
+    ]
+  ],
+  "verified_hci_wire_events": [
+    {
+      "opcode": "0x0C03",
+      "packet": "0e0401030c00"
+    },
+    {
+      "opcode": "0x1005",
+      "packet": "0e0b010510005301000a000000"
+    },
+    {
+      "opcode": "0x0C24",
+      "packet": "0e0401240c00"
+    },
+    {
+      "opcode": "0x0C13",
+      "packet": "0e0401130c00"
+    },
+    {
+      "opcode": "0x0C0A",
+      "packet": "0e04010a0c00"
+    },
+    {
+      "opcode": "0x0C33",
+      "packet": "0e0401330c00"
+    },
+    {
+      "opcode": "0x1001",
+      "packet": "0e0c0101100003a740030f000e43"
+    },
+    {
+      "opcode": "0x1009",
+      "packet": "0e0a01091000010000000002"
+    },
+    {
+      "opcode": "0x1003",
+      "packet": "0e0c01031000ffff8dfe9bf90080"
+    },
+    {
+      "opcode": "0x0C45",
+      "packet": "0e0401450c00"
+    },
+    {
+      "opcode": "0x0C47",
+      "packet": "0e0401470c00"
+    },
+    {
+      "opcode": "0x0C43",
+      "packet": "0e0401430c00"
+    },
+    {
+      "opcode": "0x0C24",
+      "packet": "0e0401240c00"
+    },
+    {
+      "opcode": "0x0C18",
+      "packet": "0e0401180c00"
+    },
+    {
+      "opcode": "0x0C0D",
+      "packet": "0e08010d0c0000000000"
+    },
+    {
+      "opcode": "0xFC4F",
+      "packet": "0e04014ffc00"
+    },
+    {
+      "opcode": "0xFC4C",
+      "packet": "0e04014cfc00"
+    },
+    {
+      "opcode": "0xFC4F",
+      "packet": "0e04014ffc00"
+    },
+    {
+      "opcode": "0x0C03",
+      "packet": "0e0401030c00"
+    },
+    {
+      "opcode": "0x1005",
+      "packet": "0e0b010510005301000a000000"
+    },
+    {
+      "opcode": "0x0C24",
+      "packet": "0e0401240c00"
+    },
+    {
+      "opcode": "0x0C13",
+      "packet": "0e0401130c00"
+    },
+    {
+      "opcode": "0x0C0A",
+      "packet": "0e04010a0c00"
+    },
+    {
+      "opcode": "0x0C33",
+      "packet": "0e0401330c00"
+    },
+    {
+      "opcode": "0x1001",
+      "packet": "0e0c0101100003a740030f000e43"
+    },
+    {
+      "opcode": "0x1009",
+      "packet": "0e0a01091000010000000002"
+    },
+    {
+      "opcode": "0x1003",
+      "packet": "0e0c01031000ffff8dfe9bf90080"
+    },
+    {
+      "opcode": "0x0C45",
+      "packet": "0e0401450c00"
+    }
+  ],
+  "decrementer_delivered": true,
+  "unsupported_oh1_transfer_observed": false,
+  "source_hashes": {
+    "recomp/tools/prepare_prime_runtime_hooks.py": "7a2fbad930051c04ffa22b853e25fa86d0cc921e75b599d42d79c3e52635dd40",
+    "recomp/tools/build_prime_runtime.ps1": "c467fd1455b11c6553a1ffcd972c8e8c828593f4a73ebd11c2683c89e917624f",
+    "recomp/tools/probe_prime_runtime.ps1": "954b79595aa77aaa1e22eb821014c7f9359ee485a05c7f11ce05dbe1fbca34ff",
+    "recomp/tools/verify_prime_runtime_boot_probe.py": "2d23f11c489938bc889a94a7785d8d51b688b1bb85288dd39af3bde2c43d1eba",
+    "recomp/third_party/WiiCompiled/runtime/src/memory.cpp": "0274d22cb19982072fdd0074f52ddfa07bc794f7a81e8df1c9d3ebb3ab6d5b96",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_ai_registers.h": "94e7428684d0518c148dd8a942a6ebd9f94d91ca37cb801da79731f60597009f",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_dsp_boot_registers.h": "c34c46c48203033b7d8c0beadd32f32dc1d7a6fa49906205828ec0be71854ea2",
+    "recomp/tools/prime_ai_registers_tests.cpp": "5da04e4026d2ecc9706ee759aff12e216a52050c0446addae69f763ffbde596d",
+    "recomp/tools/prime_dsp_boot_registers_tests.cpp": "e0cbc8acb60970311d7ccdb98899f7d79e51efcf7438ca4f377c28e8a7cd0b2d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_dsp.h": "23d99f9e8d6d5afd2434637e2ace72a03042db4010813fc561f819898ccf411d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_mix.cpp": "facef9a0f27f53af1435d44c8b571e6f07ae485180c1e3ee24438417eabfbaea",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_internal.h": "b4cbc0fa80dca0ed1a054707a57f8e19394a3f79124cdea1a81d3d4bfe9cc346",
+    "recomp/third_party/WiiCompiled/runtime/src/guest_flat_memory.cpp": "ae67d4079f173a87b3d8ff646990dfcdc3e2b7655330863c10f9a2fc98d7ea2d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/storage/nand_isfs.cpp": "a849d5f1f02831b3f012d5af8590508555d486fad6f87a1214f8f32d33f699e5",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/storage/dvd.cpp": "22d9b3260af7e183b862fa61844dc9119b88b893784129824a01beedd087a769",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp": "126f474aa4d69671ad88472412fc17804260f3b50c108e9f3e3b5a0b3524534e",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_internal.h": "5fcb835a82b78c2e6801fb3848ac4e94b061f788c41568e2304f8aecdbbd0a9d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp": "8320bd32de531820338d4c338e1eeaafad12d29c9fd2b35eb4981def1a6aa5cc",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/Build/TranslatedBuildShardEmitter.cs": "a72790fba2ff8cb8df6d4243dff2a94215aa13b045e4e4e5a6a4d3f5fd175d0b",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/RuntimeNativeIndex.cs": "5d799cd172c1917bd250af1bc97e216575c2ecdd7e743ad9b8342b17c8ebc98a",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Cli/Program.cs": "d4bf0654140bc9eeca8dd27955e63d433c7967d511a45c3e62a1d1c7e47ff615"
+  },
+  "invariants": {
+    "matching_dol_exact": true,
+    "iso_size": 4699979776,
+    "iso_read_only": true
+  },
+  "reference_provenance": {
+    "path": "recomp/checkpoints/20261020_prime_runtime_reference_provenance.json",
+    "sha256": "8d7ce81b0e1853564d79787ff065bd15f43cd0a2b10cb2fa418d18a1ad21f695",
+    "commit": "cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b"
+  },
+  "limitations": [
+    "No game screen is verified.",
+    "Research DVD backend uses extracted files, not a direct ISO reader.",
+    "DSP task execution, AI/DSP interrupt dispatch and audio output remain unverified.",
+    "Controller has no paired remotes or ACL connections; HCI support is incomplete.",
+    "Cross-thread rfi host-stack transfer and full graphics equivalence remain unverified.",
+    "Runtime test-suite results are separate evidence; this verifier covers the recorded boot path only."
+  ]
+}

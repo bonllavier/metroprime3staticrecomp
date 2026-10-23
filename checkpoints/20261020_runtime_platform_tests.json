@@ -1,0 +1,30 @@
+{
+  "created_utc": "2026-10-20T05:39:52.049549+00:00",
+  "game_revision": "RM3E01_00",
+  "upstream": "WiiCompiled runtime platform tests; generic host/platform subset only",
+  "compiler": "LLVM-MinGW Clang 22.1.8",
+  "cmake": "4.3.3",
+  "ninja": "1.13.2",
+  "configuration": {
+    "MKW_PLATFORM_TESTS_ONLY": true,
+    "MKW_BUILD_PRODUCTS": false,
+    "build_type": "Release",
+    "target": "Windows x86_64"
+  },
+  "build_targets": 23,
+  "tests_passed": 9,
+  "tests_failed": 0,
+  "test_names": [
+    "mkw_platform_paths_tests",
+    "mkw_runtime_config_tests",
+    "mkw_nand_save_tests",
+    "mkw_nand_settings_tests",
+    "mkw_sc_serial_tests",
+    "mkw_input_expr_tests",
+    "mkw_windows_host_context_tests",
+    "mkw_ppc_pair_fma_v2_tests",
+    "mkw_ppc_pair_fma_v3_tests"
+  ],
+  "execution_note": "CTest required LLVM-MinGW bin on PATH so its C++ runtime DLLs could be found.",
+  "limitations": "These tests do not build or validate the WiiCompiled game runtime/HLE, Aurora, RM3E01_00 startup, ISO loading, or rendering."
+}

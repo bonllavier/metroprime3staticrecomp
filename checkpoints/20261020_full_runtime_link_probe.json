@@ -1,0 +1,421 @@
+{
+  "created_utc": "2026-10-20T07:24:46Z",
+  "game_revision": "RM3E01_00",
+  "input_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "upstream_wiicompiled_commit": "4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+  "build_directory": "build/RM3E01_00_runtime_link_probe",
+  "configuration": {
+    "generator": "Ninja",
+    "compiler": "LLVM-MinGW Clang 22.1.8",
+    "build_type": "Release",
+    "cpu_profile": "x86-64-v3",
+    "translated_manifest": "generated/RM3E01_00_conservative/build_shards/shards.cmake",
+    "translated_functions": 21712,
+    "translated_shards": 92,
+    "aurora": [
+      "core",
+      "gx",
+      "pad",
+      "si",
+      "vi",
+      "mtx"
+    ],
+    "cppwinrt_headers_generated": true,
+    "windows_resource_compiler_path_added_to_process_path": true
+  },
+  "boot_entry_mismatch": {
+    "wiicompiled_default_entry": "0x800060A4",
+    "source": "third_party/WiiCompiled/runtime/include/system_bridge.h",
+    "prime3_entry": "0x80006320",
+    "prime3_symbol": "__start",
+    "prime3_function_map_contains_wiicompiled_entry": false,
+    "status": "fixed in the isolated static-recompilation checkout",
+    "implementation": "RuntimeConfigGenerator emits BOOT_ENTRY_POINT from the pinned DOL header entry field; system_bridge.h uses that generated constant instead of the Mario Kart literal.",
+    "generated_prime3_value": "0x80006320",
+    "validation": "All 685 translator tests pass; RuntimeConfig.h was regenerated with BOOT_ENTRY_POINT=0x80006320; CMake target mkw_runtime_common rebuilt successfully.",
+    "limitation": "The WiiCompiled.exe product still does not link because of the HLE conflicts and missing runtime symbols recorded below; no guest entry was executed."
+  },
+  "additional_title_specific_runtime_assumptions": [
+    {
+      "source": "third_party/WiiCompiled/runtime/src/system_bridge.cpp",
+      "assumption": "Seeds low memory and the application game code as RMCP (Mario Kart Wii).",
+      "prime3_requirement": "RM3E01_00 identity and its verified low-memory fields must be used; current values are incorrect for Prime 3."
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/system_bridge.cpp",
+      "assumption": "Invokes main-DOL constructors from fixed address range 0x80244DE0..0x80244EA0 and StaticR constructors from 0x8088F400..0x8088F704.",
+      "prime3_requirement": "Constructor ranges and module lifecycle must be derived from RM3E01_00; the StaticR range is Mario Kart-specific and cannot be applied as-is."
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/system_bridge.cpp",
+      "assumption": "Seeds IOS36 low-memory version/date values.",
+      "prime3_requirement": "Check the actual RM3E01_00 disc/IOS metadata before selecting these values."
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/fiber_manager.cpp",
+      "assumption": "Special-cases guest thread entry 0x8024373C as EGG::Thread::start and reads its object vtable slot +0x0C.",
+      "prime3_requirement": "Validate the thread ABI and start routine for Prime 3 before reusing this special case."
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/music_attenuation.cpp",
+      "assumption": "Uses Mario Kart's sound-manager address 0x809C2898 and sound-player layout from revo_kart.brsar.",
+      "prime3_requirement": "Do not enable this title-specific audio hook for Prime 3 without a separate address/layout audit."
+    }
+  ],
+  "disc_resource_path": {
+    "runtime_source": "third_party/WiiCompiled/runtime/src/hle/storage/dvd.cpp",
+    "current_behavior": "DVD HLE resolves [paths].dvd_root and requires a pre-extracted Mario Kart DATA directory containing files/ and sys/; error messages identify the Mario Kart DATA tree.",
+    "sampled_wiicompiled_guest_addresses_absent_from_prime3_function_map": [
+      "0x8015EA1C",
+      "0x8015E834",
+      "0x8015E74C",
+      "0x801628CC"
+    ],
+    "address_audit_note": "These are the source-commented DVDInit/read entry points in the upstream HLE; none is a function start in the RM3E01_00 function map, so matching DVD ABI behavior cannot be inferred from address reuse.",
+    "product_links_aurora_dvd": false,
+    "aurora_dvd_probe": "aurora_dvd was compiled separately in the DVD/nod checkpoint, but the full runtime link probe disabled AURORA_ENABLE_DVD and PublicProducts links no aurora::dvd target.",
+    "required_product_behavior": "Read RM3E01_00 content directly from the user's ISO at runtime, without requiring an extracted DATA tree. An ISO-backed Prime 3 DVD adapter remains unimplemented."
+  },
+  "compile_result": {
+    "translated_shard_archive": "build/RM3E01_00_runtime_link_probe/libmkw_base_shared.a",
+    "translated_shard_archive_size": 66787442,
+    "translated_shard_archive_sha256": "ef520c6d7d1b2898e20a6ad8cfe1aa638cb820867ec8eef11950005cddb44a88",
+    "runtime_translation_and_product_sources_compiled": true,
+    "aurora_archives": {
+      "libaurora_core.a": "482dab042b78c6cff8987df34d7aedff5dd86c1a06485a93d9a4388b0466fdec",
+      "libaurora_gx.a": "02a394dff2afac2930c03e800624af4951c4669cf9a000a8bbf3e591e5114ded",
+      "libaurora_pad.a": "9cca9ed838ea8969d8196f7d4c7eacfb03617f929af65da9d7489287cb109ff9",
+      "libaurora_si.a": "ce4b73e8ff135ab8f0f31b499163e28882a329e1f968291ecadcca0592165dcc",
+      "libaurora_vi.a": "4b8fa773b4c16d8e0a969421c4ea7ef8c3a33153445e316503366f396ed78eb6",
+      "libaurora_mtx.a": "fd9ab60d17b8d8a30c11e51fe5b67501f05d904c08cb0142f3c767823cd2bed6"
+    }
+  },
+  "strict_link_result": {
+    "exit_code": 1,
+    "duplicate_guest_entry_points": [
+      {
+        "address": "0x8012409C",
+        "runtime_binding": "AIGetDSPSampleRate_8012409c",
+        "runtime_source": "third_party/WiiCompiled/runtime/src/hle/audio/audio.cpp",
+        "prime3_translation": "generated/RM3E01_00_conservative/functions/func_8012409C.cpp"
+      },
+      {
+        "address": "0x80168288",
+        "runtime_binding": "EXIDma_80168288",
+        "runtime_source": "third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp",
+        "prime3_translation": "generated/RM3E01_00_conservative/functions/func_80168288.cpp"
+      },
+      {
+        "address": "0x801A661C",
+        "runtime_binding": "OS____InterruptInit_801a661c",
+        "runtime_source": "third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp",
+        "prime3_translation": "generated/RM3E01_00_conservative/functions/func_801A661C.cpp"
+      },
+      {
+        "address": "0x801AAAA4",
+        "runtime_binding": "OSWakeupThread_HLE_801aaaa4",
+        "runtime_source": "third_party/WiiCompiled/runtime/src/hle/os/os_scheduler.cpp",
+        "prime3_translation": "generated/RM3E01_00_conservative/functions/func_801AAAA4.cpp"
+      }
+    ],
+    "phase": "baseline WiiCompiled runtime before applying RM3E01_00 HLE exclusions"
+  },
+  "other_registered_hle_overlaps": [
+    {
+      "address": "0x8016DF28",
+      "rm3_symbol": "fn_8016DF28",
+      "runtime_binding": "GX__SetVtxAttrFmt_caseD_11_8016df28",
+      "runtime_source": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp"
+    },
+    {
+      "address": "0x8016E3A8",
+      "rm3_symbol": "fn_8016E3A8",
+      "runtime_binding": "GX__SetTexCoordGen2_caseD_0_8016e3a8",
+      "runtime_source": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp"
+    },
+    {
+      "address": "0x8016E3D8",
+      "rm3_symbol": "fn_8016E3D8",
+      "runtime_binding": "GX__SetTexCoordGen2_caseD_13_8016e3d8",
+      "runtime_source": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp"
+    },
+    {
+      "address": "0x8017393C",
+      "rm3_symbol": "fn_8017393C",
+      "runtime_binding": "GX__SetGPMetric_caseD_12_8017393c",
+      "runtime_source": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp"
+    },
+    {
+      "address": "0x80173A54",
+      "rm3_symbol": "EnableButtonPressingMode__14CPlayerLeftArmFRC9CVector2fRC9CVector2ff",
+      "runtime_binding": "GX__SetGPMetric_caseD_1c_80173a54",
+      "runtime_source": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp"
+    }
+  ],
+  "hle_overlap_context": "The five entries above are registered by guest address but do not appear as duplicate linker symbols because the runtime uses lower-case hexadecimal spelling in the C symbol names. The pre-build static scan found nine total address overlaps, including these five and the four strict-link collisions. None falls in the current 1,906-entry direct-call closure from the boot entry; dynamic dispatch reachability remains unresolved.",
+  "diagnostic_link_result": {
+    "method": "Repeated the link with --allow-multiple-definition solely to expose further unresolved references; this option was not used in the normal build and the result was not launched.",
+    "exit_code": 1,
+    "unresolved_runtime_references": [
+      "func_801D9E94",
+      "func_801D8D30",
+      "func_8012B830",
+      "func_801A0620",
+      "func_801AADE0",
+      "func_801A961C",
+      "func_8055531C",
+      "func_801A1ED8"
+    ],
+    "interpretation": "The first two references come from the runtime's NHTTP startup helper, the audio reference from an AXFX reverb callback, and the remaining references from OS alarm/thread helpers and a StaticR prolog. They are runtime/game glue dependencies, not proof that translated Prime 3 implementations are missing.",
+    "phase": "baseline diagnostic link with allow-multiple-definitions; never launched"
+  },
+  "game_output": null,
+  "limitations": [
+    "The WiiCompiled runtime embeds Mario Kart Wii HLE behavior and static-module assumptions; removing collisions without replacing those services would not establish correctness.",
+    "No RM3E01_00 ISO was available in recomp/input/RM3E01_00, so no resource access or game boot was tested.",
+    "No controller, audio, or GX behavior was validated by running the game.",
+    "Latest RM3E01_00 profile link removes all duplicate symbols and reduces unresolved runtime references to func_801A0620, func_801AADE0 and func_801A1ED8; see latest_prime_profile_checkpoint."
+  ],
+  "runtime_guest_target_audit": {
+    "checkpoint": "checkpoints/20261020_runtime_guest_target_audit.json",
+    "script": "tools/audit_runtime_guest_targets.py",
+    "exact_rm3e01_function_starts": 0,
+    "unresolved_runtime_guest_addresses": 8,
+    "result": "No shim or duplicate-definition link override was accepted; these addresses are absent as RM3E01_00 map starts."
+  },
+  "hle_overlap_ghidra_cross_check": {
+    "program": "main.dol",
+    "sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "result": "All nine registered HLE addresses coincide with RM3E01_00 function-map entrypoints. Ghidra identifies seven as function bodies at those exact addresses; two map entries are not currently defined as functions in the open Ghidra database and their bytes were recorded. The HLE labels describe Mario Kart Wii services/GX fatal paths and cannot be assumed to match the Prime 3 functions. The five GX fatal overrides are especially incompatible by name with Prime symbols, including a player-arm method at 0x80173A54. Direct-call closure has zero overlaps, but indirect runtime dispatch remains unaudited.",
+    "addresses": {
+      "0x8012409C": {
+        "runtime_binding": "AIGetDSPSampleRate_8012409c",
+        "prime3_map_entry": "PreThink__19CPathMeshConstraintFR13CPhysicsActorR15CPathFindSearch",
+        "ghidra_function": {
+          "start": "0x8012409C",
+          "end_inclusive": "0x8012417B",
+          "size": 224
+        }
+      },
+      "0x80168288": {
+        "runtime_binding": "EXIDma_80168288",
+        "prime3_map_entry": "fn_80168288",
+        "ghidra_function": {
+          "start": "0x80168288",
+          "end_inclusive": "0x801686F3",
+          "size": 1128
+        }
+      },
+      "0x801A661C": {
+        "runtime_binding": "OS____InterruptInit_801a661c",
+        "prime3_map_entry": "fn_801A661C",
+        "ghidra_function": {
+          "start": "0x801A661C",
+          "end_inclusive": "0x801A692F",
+          "size": 788
+        }
+      },
+      "0x801AAAA4": {
+        "runtime_binding": "OSWakeupThread_HLE_801aaaa4",
+        "prime3_map_entry": "fn_801AAAA4",
+        "ghidra_function": "not defined in Ghidra; map contains exact start",
+        "memory_bytes": "38 00 00 00 90 03 00 08 4E 80 00 20"
+      },
+      "0x8016DF28": {
+        "runtime_binding": "GX__SetVtxAttrFmt_caseD_11_8016df28",
+        "prime3_map_entry": "fn_8016DF28",
+        "ghidra_function": {
+          "start": "0x8016DF28",
+          "end_inclusive": "0x8016DF33",
+          "size": 12
+        }
+      },
+      "0x8016E3A8": {
+        "runtime_binding": "GX__SetTexCoordGen2_caseD_0_8016e3a8",
+        "prime3_map_entry": "fn_8016E3A8",
+        "ghidra_function": {
+          "start": "0x8016E3A8",
+          "end_inclusive": "0x8016E3D7",
+          "size": 48
+        }
+      },
+      "0x8016E3D8": {
+        "runtime_binding": "GX__SetTexCoordGen2_caseD_13_8016e3d8",
+        "prime3_map_entry": "fn_8016E3D8",
+        "ghidra_function": {
+          "start": "0x8016E3D8",
+          "end_inclusive": "0x8016E77F",
+          "size": 936
+        }
+      },
+      "0x8017393C": {
+        "runtime_binding": "GX__SetGPMetric_caseD_12_8017393c",
+        "prime3_map_entry": "fn_8017393C",
+        "ghidra_function": {
+          "start": "0x8017393C",
+          "end_inclusive": "0x80173A53",
+          "size": 280
+        }
+      },
+      "0x80173A54": {
+        "runtime_binding": "GX__SetGPMetric_caseD_1c_80173a54",
+        "prime3_map_entry": "EnableButtonPressingMode__14CPlayerLeftArmFRC9CVector2fRC9CVector2ff",
+        "ghidra_function": "not defined in Ghidra; map contains exact start",
+        "memory_bytes": "88 03 01 69 C0 84 00 00 C0 64 00 04 60 00 00 80 C0 45 00 00 C0 05 00 04 D0 83 01 78 D0 63 01 7C"
+      }
+    },
+    "source_checkpoint_sha256": "e1704527c9c9466c1551f1535a938c0e228ca9cdefabe4227c3051bd0be0e044",
+    "address_scan_counts": {
+      "registration_occurrences": 582,
+      "unique_addresses": 582,
+      "map_overlaps": 9
+    },
+    "prime_profile_scan_sha256": "cbc96533a77eb44814a629f5c71f39bdbe18c34b41a49bc407af5fd9e84abb30"
+  },
+  "ghidra_xrefs_to_hle_overlaps": {
+    "program_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "observations": [
+      {
+        "target": "0x8012409C",
+        "direct_xrefs": [],
+        "exact_target_role": "PreThink__19CPathMeshConstraintFR13CPhysicsActorR15CPathFindSearch"
+      },
+      {
+        "target": "0x80168288",
+        "direct_xrefs": [],
+        "exact_target_role": "fn_80168288"
+      },
+      {
+        "target": "0x801A661C",
+        "direct_xrefs": [
+          {
+            "site": "0x801A653C",
+            "caller": "0x801A64C4"
+          }
+        ],
+        "exact_target_role": "fn_801A661C"
+      },
+      {
+        "target": "0x801AAAA4",
+        "direct_xrefs": [],
+        "exact_target_role": "fn_801AAAA4",
+        "note": "Function map exact start; Ghidra xref API found no defined function references."
+      },
+      {
+        "target": "0x8016DF28",
+        "direct_xrefs": [
+          {
+            "site": "0x80174E44",
+            "caller": "0x801744FC"
+          }
+        ],
+        "exact_target_role": "fn_8016DF28"
+      },
+      {
+        "target": "0x8016E3A8",
+        "direct_xrefs": [
+          {
+            "site": "0x8016E424",
+            "caller": "0x8016E3D8"
+          }
+        ],
+        "exact_target_role": "fn_8016E3A8"
+      },
+      {
+        "target": "0x8016E3D8",
+        "direct_xrefs": [
+          {
+            "site": "0x8016D00C",
+            "caller": "0x8016CFB8"
+          }
+        ],
+        "exact_target_role": "fn_8016E3D8"
+      },
+      {
+        "target": "0x8017393C",
+        "direct_xrefs": [
+          {
+            "site": "0x80172458",
+            "caller": "0x801722A4"
+          },
+          {
+            "site": "0x80175314",
+            "caller": "0x80175160"
+          },
+          {
+            "site": "0x80173938",
+            "caller": "0x80173934"
+          }
+        ],
+        "exact_target_role": "fn_8017393C"
+      },
+      {
+        "target": "0x80173A54",
+        "direct_xrefs": [],
+        "exact_target_role": "EnableButtonPressingMode__14CPlayerLeftArmFRC9CVector2fRC9CVector2ff",
+        "note": "Map exact start; Ghidra xref API found no defined function references."
+      }
+    ],
+    "interpretation": "Ghidra reports direct references to several HLE-overridden Prime 3 functions, including a GX fatal stub target reached from three sites. The earlier zero-overlap statement is only for the static direct-call closure rooted at __start; it does not imply the overrides are safe or unreachable. Xref absence does not rule out indirect dispatch."
+  },
+  "latest_prime_profile_checkpoint": "checkpoints/20261020_prime_profile_hle_suppression.json",
+  "latest_prime_profile_link_result": {
+    "target": "WiiCompiled.exe",
+    "exit_code": 1,
+    "duplicate_symbols": [],
+    "undefined_guest_targets": [
+      "func_801A0620",
+      "func_801AADE0",
+      "func_801A1ED8"
+    ],
+    "output_executable_created": false,
+    "interpretation": "Nine overlapping native replacements are omitted in the Prime profile. NHTTP, AXFX reverb, and Mario Kart mod/StaticR hooks were also excluded. Remaining alarm/context helper references are still inside unrelated Prime 3 function bodies and have no verified callable ABI; no shims were added.",
+    "unresolved_guest_target_evidence": [
+      {
+        "symbol": "func_801A0620",
+        "address": "0x801A0620",
+        "runtime_reference_source": "runtime/src/hle/os/os_alarm.cpp",
+        "runtime_callers": [
+          "OsHleInternal::ProcessAlarmQueue",
+          "OS__SetPeriodicAlarm_801a08e0"
+        ],
+        "ghidra_containing_prime_function": {
+          "start": "0x801A0528",
+          "end_inclusive": "0x801A0647",
+          "name": "__ct__15SLdrRagDollDataFv",
+          "offset": "+0xF8"
+        }
+      },
+      {
+        "symbol": "func_801AADE0",
+        "address": "0x801AADE0",
+        "runtime_reference_source": "runtime/src/hle/os/os_alarm.cpp",
+        "runtime_callers": [
+          "OS__SetPeriodicAlarm_801a08e0"
+        ],
+        "ghidra_containing_prime_function": {
+          "start": "0x801AACD8",
+          "end_inclusive": "0x801AAE9F",
+          "name": "FUN_801aacd8",
+          "offset": "+0x108"
+        }
+      },
+      {
+        "symbol": "func_801A1ED8",
+        "address": "0x801A1ED8",
+        "runtime_reference_source": "runtime/src/hle/os/os_scheduler.cpp",
+        "runtime_callers": [
+          "SelectThread_801a9c08"
+        ],
+        "ghidra_containing_prime_function": {
+          "start": "0x801A1DE0",
+          "end_inclusive": "0x801A2903",
+          "name": "FUN_801a1de0",
+          "offset": "+0xF8"
+        }
+      }
+    ],
+    "ghidra_program_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "prime_profile_dispatch_audit": "checkpoints/20261020_prime_hle_dispatch_audit.json"
+}

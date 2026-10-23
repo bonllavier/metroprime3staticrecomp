@@ -1,0 +1,12 @@
+{
+  "revision": "RM3E01_00",
+  "result": "PASS original OS arena-low constant decoded; new runtime pending",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "original_osinit_address": "0x804DE16C",
+  "instructions": "3c60806a3863c3c0",
+  "arena_low": "0x8069C3C0",
+  "initial_stack_pointer": "0x8069A3A8",
+  "old_seed": "0x806843C0",
+  "failure_probe": "base_1792621827_pid12336",
+  "diagnosis": "old CPU FIFO RAM range 0x806843C0..0x806E43BF overlaps original main stack; BSS end excludes original stack reservations"
+}

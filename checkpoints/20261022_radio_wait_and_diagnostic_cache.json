@@ -1,0 +1,36 @@
+{
+  "revision": "RM3E01_00",
+  "result": "Candidate build PASS; four component tests PASS; not promoted or launched",
+  "candidate_sha256": "b778ce850ee48f2e753a3c2d47f1bd5d9619cc778caf91e6e65b75c4141c097c",
+  "live_pid": 2252,
+  "live_sha256": "1890cdcdca3e501ffddeda9173fb998534fe07c4164da9ac88530e2e61eabaf2",
+  "changes": [
+    "Reuse vertex publication only for consecutive same-format draws, invalidate at every non-draw command",
+    "Cache process-lifetime diagnostic environment switches on GX hot paths and resource/Mii/NAND trace helpers"
+  ],
+  "tests": {
+    "directory": "recomp/build/runtime-platform-tests",
+    "ctest": "4/4 PASS: raw_bp, raw_texture_snapshot, trace_budget, dl_vertex_expansion",
+    "initial_wrong_directory": "Runtime-link build registered tests without binaries: NOT RUN; rerun in standalone platform test build PASS"
+  },
+  "qa": {
+    "whole_scene_acceleration": "User confirms whole scene/animations accelerate sometimes; root cause unresolved; no timebase or timestep patch",
+    "radio": "User reports no next action after code. Process responsive and actively rendering; acceptance of code not yet established. Awaiting confirmation/audio detail.",
+    "motion_gap": "Keyboard/mouse KPAD publishes neutral accelerometer and fixed pointer distance; no forward Wiimote gesture. Nintendo guide requires forward gesture after successful radio code and left-side engine control. This is a confirmed later input gap, not yet proven cause of radio issue.",
+    "guide": "https://www.guiasnintendo.com/2a_WII/metroid_prime3_corruption/metroid_prime3_corruption_sp/1_1_samus_ship.html",
+    "profile": "recomp/.tools/prime_pid2252_radio_wait_profile.json",
+    "latest_live_fps": "8-13 in radio/hologram; earlier cockpit35-39 is different phase, not controlled A/B",
+    "status": "No 30-minute gameplay validation. No automated inputs or guest state edits."
+  },
+  "sources": {
+    "aurora-main/lib/gx/pipeline.cpp": "dcd0e2828780a3fdf21b1421bdbcbb54bf89f4634f9e14b604ea8fd225378de9",
+    "aurora-main/lib/gx/command_processor.cpp": "b60d77c76120be0997d90943f80ff1ca50c9bb244681872b4d69c2a31124dfaf",
+    "aurora-main/lib/gx/shader_info.cpp": "99abb18b826c2d546e266bc201dda03449797d1b0049fdf35a9fee7294803d24",
+    "aurora-main/lib/gfx/common.cpp": "20a424d26449302ae51d464910262dfb40c90c67d47d22fc1065b21448d18393",
+    "runtime/src/hle/gx/gx_dl.cpp": "ccdce2bf7c8337bf20a1b62b716317652863b2de8567f573d877bbad70fcde1d",
+    "runtime/src/hle/gx/gx_fifo.cpp": "86762097f32a58d1aab070b7cc593ad6310858b6b71d499063eca437562fb9c5",
+    "runtime/include/hle/prime_mii_trace.h": "2d058ddc59edb7f55e9a9aba61bd6a2f509f28767d6e0cc52121c911d38c9269",
+    "runtime/include/hle/prime_resource_trace.h": "d5fddfad6f3db8b247618eee51653ac6209729e8e7bb88d314bb2935cfdde29a",
+    "runtime/include/hle/prime_nand_trace.h": "481f9fe1508a6db08f4f108a42a7b1a4aa1b55d6e438fa758f20131ce65ec339"
+  }
+}

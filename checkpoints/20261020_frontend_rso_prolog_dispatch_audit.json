@@ -1,0 +1,149 @@
+{
+  "revision": "RM3E01_00",
+  "validator_script": "recomp/tools/verify_frontend_rso_prolog.py",
+  "validator_sha256": "14e85487ce3f400de2c87a9532bb8bcefa9fc7a441c303633a9b238698a16aa7",
+  "rso_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+  "relocated_image_sha256": "302998f8025dbb16849bc1d57f673696b80cadf7a43110c69251fd1e49bfbfcd",
+  "probe_load_base": "0x80690000",
+  "callback_table_address": "0x806AD7C0",
+  "callback_table_values": [
+    "0x806A9F90",
+    "0x806AD298",
+    "0x806AD554",
+    "0x806AD6C8",
+    "0x00000000"
+  ],
+  "callback_count": 4,
+  "prolog": {
+    "address": "0x806AD5B8",
+    "decoded_instructions": 9,
+    "calls_in_order": [
+      "0x806AD72C",
+      "0x806AA038"
+    ]
+  },
+  "callback_loop": {
+    "address": "0x806AD72C",
+    "decoded_instructions": 18,
+    "indirect_call_site": "0x806AD74C",
+    "table_stride_bytes": 4,
+    "terminates_on_null": true
+  },
+  "callback_body_audit": [
+    {
+      "address": "0x806A9F90",
+      "source_sha256": "9c22048be5717c635e7243266d2e8c18c04df9ee0671a342869cd444109f09bc",
+      "direct_call_dependencies": 0,
+      "direct_dispatch_sites": 0,
+      "indirect_dispatch_sites": 0,
+      "memory_write_sites": 12,
+      "interpretation": "Call-free translated initialization body; write targets and runtime ordering remain data/ABI behavior, not established semantics."
+    },
+    {
+      "address": "0x806AD298",
+      "source_sha256": "5f76a9c62ed6b3d1c278b9a3ff2b84b2af57d7be8b638c85f3dbe6bd3d613851",
+      "direct_call_dependencies": 0,
+      "direct_dispatch_sites": 0,
+      "indirect_dispatch_sites": 0,
+      "memory_write_sites": 9,
+      "interpretation": "Call-free translated initialization body; write targets and runtime ordering remain data/ABI behavior, not established semantics."
+    },
+    {
+      "address": "0x806AD554",
+      "source_sha256": "126d4f8fb95ec5ba9dc3a90aef65bdec7d12df8284da7190d657a21c2e398956",
+      "direct_call_dependencies": 0,
+      "direct_dispatch_sites": 0,
+      "indirect_dispatch_sites": 0,
+      "memory_write_sites": 9,
+      "interpretation": "Call-free translated initialization body; write targets and runtime ordering remain data/ABI behavior, not established semantics."
+    },
+    {
+      "address": "0x806AD6C8",
+      "source_sha256": "772f3761575ef4065cec32dabcc00c3a8c754ded7101657775d608ca727ee5c6",
+      "direct_call_dependencies": 0,
+      "direct_dispatch_sites": 0,
+      "indirect_dispatch_sites": 0,
+      "memory_write_sites": 9,
+      "interpretation": "Call-free translated initialization body; write targets and runtime ordering remain data/ABI behavior, not established semantics."
+    }
+  ],
+  "registration": {
+    "thunk": "0x806AA038",
+    "target": "0x806AA014",
+    "dispatcher_table_entry": "+0",
+    "factory_table_entry": "+4",
+    "published_by": "0x8021D2F4"
+  },
+  "compiled_functions": [
+    {
+      "address": "0x806AD5B8",
+      "source_sha256": "c37620fb69d947f5aee5321bc3e7b07375e217dc7608d7360b325ccc8006c91a",
+      "object_sha256": "93c1091b545c703e9c69d189306addc9763e3295bf9abb4a18758c84f5883191",
+      "object_machine": "COFF-x86-64/AMD64",
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x806AD72C",
+      "source_sha256": "74a3e9ddf5ab1f6c4c489f547a084d9ca8aae2610edf2cafb23604503b08226a",
+      "object_sha256": "d7228560d105c5f9ed9103931c4a9c177ab6f9adcce7c6ab0787754f1b75c057",
+      "object_machine": "COFF-x86-64/AMD64",
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x806AA038",
+      "source_sha256": "c3fb9906ed8596d7a506948cd0be4becf5b1fd3a38b59ef31120fc0cf6623354",
+      "object_sha256": "284dc7a41cfaf4dacf9d7d7c39781e1ca13926bd26725bdd25a104bae4083d75",
+      "object_machine": "COFF-x86-64/AMD64",
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x806AA014",
+      "source_sha256": "39e43acde875b7735cbf6179422e59de26a5ef5902a9fea5895217bf4dbf824a",
+      "object_sha256": "aa46d2fa7eb13808ef5b5bd6ec42c59bb98e8adb7e2f39eca2b4c065e4e052bb",
+      "object_machine": "COFF-x86-64/AMD64",
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x806A9F90",
+      "source_sha256": "9c22048be5717c635e7243266d2e8c18c04df9ee0671a342869cd444109f09bc",
+      "object_sha256": "7f540cd8dd223d15258a22cc82dda5efcb31a6740ebdaa47f4ab0f9dff50bebc",
+      "object_machine": "COFF-x86-64/AMD64",
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x806AD298",
+      "source_sha256": "5f76a9c62ed6b3d1c278b9a3ff2b84b2af57d7be8b638c85f3dbe6bd3d613851",
+      "object_sha256": "b7a6ba7ad0f261f2fcb0ab3301d3eb8d673b59c17cd60f1a129b4b27ee7eb5a9",
+      "object_machine": "COFF-x86-64/AMD64",
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x806AD554",
+      "source_sha256": "126d4f8fb95ec5ba9dc3a90aef65bdec7d12df8284da7190d657a21c2e398956",
+      "object_sha256": "94196c1602214ddd60bc155d9e822f99dd2353a9a48dece5f9744d41822150fe",
+      "object_machine": "COFF-x86-64/AMD64",
+      "interior_to_other_translation": false
+    },
+    {
+      "address": "0x806AD6C8",
+      "source_sha256": "772f3761575ef4065cec32dabcc00c3a8c754ded7101657775d608ca727ee5c6",
+      "object_sha256": "141e403f45ba327f5a81f164c8e70453a25fa391cc22fe8e552e3936aed52436",
+      "object_machine": "COFF-x86-64/AMD64",
+      "interior_to_other_translation": false
+    }
+  ],
+  "validation": {
+    "table_matches_expected_relocated_values": true,
+    "all_callback_addresses_in_function_map": true,
+    "all_eight_sources_match_translation_metadata": true,
+    "all_eight_objects_coff_amd64": true,
+    "all_four_callbacks_are_call_free_leaves": true,
+    "unsupported_instructions": 0,
+    "invalid_ssa_functions": 0
+  },
+  "limitations": [
+    "This verifies a synthetic relocated probe, not execution of the RSO prolog.",
+    "The runtime still needs ISO-backed loading, guest-memory allocation, relocation, BSS initialization, function registration, and a verified lifecycle point for calling the prolog.",
+    "No executable has linked or presented the game screen."
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "revision": "RM3E01_00",
+  "executable_sha256": "1e6e8414efee9b4c5ffbac8ad73cf4f0dd44759eb7a9b7cc1345bb56b96825b7",
+  "status": "experimental_host_keyboard_mouse_bridge_verified_movie_path_still_black",
+  "game_title_screen_verified": false,
+  "physical_wiimote_verified": false,
+  "implemented": [
+    "SDL keyboard/mouse event provider with focus release and diagonal normalization.",
+    "Opt-in virtual channel0 with Nunchuk; original callback slots and isolated register context.",
+    "Two optional input overlays: WPADProbe 0x804F66B8 and processed reader 0x804D9138.",
+    "At most one current 132-byte PPC32 sample per original VI retrace.",
+    "Targeted Windows-message/cursor integration probe with window ownership validation and cursor/focus restoration."
+  ],
+  "tests": {
+    "native_contract": "PASS CTest mkw_gx_fifo_storage_tests (includes input contract)",
+    "windows_to_guest": "PASS seven captured input samples; A press/release, stick up/neutral, mouse pointer; original callbacks 0x803C48AC/0x803C499C",
+    "negative_fixtures_rejected": 3,
+    "keyboard_mode_boot": {
+      "seconds": 40,
+      "iso_reads_verified": 217,
+      "gpu_validation": true,
+      "fifo_resets": 0
+    },
+    "disabled_mode_boot": {
+      "seconds": 55,
+      "iso_reads_verified": 213,
+      "raw_texture_and_tlut_gate": true,
+      "gpu_validation": true,
+      "fifo_resets": 0
+    }
+  },
+  "previous_failed_experiments": [
+    "Probe-only virtual connection produced no KPAD samples: missing original connection/extension events.",
+    "Unfocused posted Windows messages were accepted by Windows but produced no guest key samples; not counted as successful input.",
+    "Raw-texture verifier requires TLUT events from disconnected-font screen; that gate is covered by disabled-mode run, not the keyboard/video path."
+  ],
+  "next_step": "Trace original attract01.thp decode/timing/presentation after input callbacks; investigate black frames without skipping original boot.",
+  "known_limits": [
+    "Keyboard bridge is opt-in and incomplete for full Metroid motion mechanics.",
+    "Pointer parameters/derivatives, input sampling fidelity and general reconnect behavior need more work.",
+    "Physical Wii Remote/Nunchuk transport remains unverified.",
+    "Movie output/title/audio/gameplay performance/ISO-only published packaging remain incomplete."
+  ],
+  "evidence": [
+    {
+      "path": "recomp/checkpoints/20261021_prime_keyboard_mouse_windows_input.json",
+      "sha256": "c92b8e4ed36497ca2c40df763575122ebd101e583741168dd1a890036d6c496d"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_keyboard_mouse_negative_checks.json",
+      "sha256": "04161d126d89d4008b468caaf42d216697c341f5ba7796cc9a4bb53565122392"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_keyboard_mouse_boot.json",
+      "sha256": "9da248a0443809a0f53c349a60ed1fcdda780d2b091569c84f3330b60782235c"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_keyboard_final_disabled_boot.json",
+      "sha256": "31c940969721317527b6e63d3c5bf756c9532d18e84e86eadbdb8d34630d98db"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_input_boundary_research.json",
+      "sha256": "6fbf94c06e4d86facb565c718f801cba41418bff5757f208ead4ef664b40b58f"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_attract_header_and_reads.json",
+      "sha256": "a59f1bed5eeb2327091345a26bbab20f24130bcb6f0491d81af98dcbab7c29e5"
+    }
+  ],
+  "source_hashes": {
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_keyboard_mouse.h": "48558632e5a9f7def3b0e6ffd510d80b77c144948ac69db3596fd5df15f36590",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/input/kpad.cpp": "168e9d5b7cb42647506af8f52e332ab7be8089feb265e56c583f59135dd157a6",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp": "edda5066263f81693eb9281d528b0cc54efc4a95065e111c593a2ed3970d33af",
+    "recomp/third_party/WiiCompiled/runtime/include/aurora_events.h": "936a066e2f709804cff19d4e7421a4c2ee6fc4705a0e6869d2a060c3287fb6fd",
+    "recomp/tools/prepare_prime_runtime_hooks.py": "f43e88f05cb322a3ee6f9fe7002244dc67bdcd0c1735eca4da72575f77415809",
+    "recomp/tools/probe_prime_runtime.ps1": "eaf9e119ebbe6dbc929dc4773285d56dd36a43a2e23f7bed445ec7f977b540d2",
+    "recomp/tools/verify_prime_keyboard_input.py": "7913c697e4b2aedcd36f1461ecd5c2852f947761d912513687ad6a82615ea5c7",
+    "recomp/tools/run_prime_keyboard_mouse.ps1": "ee2237ffbb8e14bcf4f40bcbac6ea60b6da5e7c19e083f359a6a4405610569eb"
+  },
+  "matching_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "input_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "disabled_mode_visual_regression": {
+    "result": "PASS byte-identical normal warning PNG before/after optional input bridge",
+    "sha256": "5808551d63e5c2c1d7de32e13b611ef7a5dedb4b1eb8ffbe99dc6d464f80e036",
+    "before": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid20112_25s.png",
+    "after": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid15944_25s.png"
+  }
+}

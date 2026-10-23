@@ -1,0 +1,18 @@
+{
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "ctors_address": "0x80575680",
+  "ctors_blob_bytes": 2240,
+  "ctors_blob_sha256": "4d202e96444328dcec10d3126d2da863c76c25a05d1dd7d08762a015cd0ab38b",
+  "function_map_sha256": "42c1c9c1654dd9cd7bffaa67d424ba6ca2a120f77c80d536c4a099ca6abc0586",
+  "table_word_count": 560,
+  "null_terminator_index": 554,
+  "nonzero_entries_before_terminator": 554,
+  "unique_entries": 554,
+  "duplicate_entry_count": 0,
+  "entries_exactly_present_in_function_map": 554,
+  "entries_missing_from_function_map": [],
+  "first_entry": "0x80305754",
+  "accepted": true,
+  "interpretation": "The DOL guest __init_cpp iterates this table until the first null entry; table membership does not prove that every constructor body is behaviorally recovered."
+}

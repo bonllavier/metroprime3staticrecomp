@@ -1,0 +1,23 @@
+{
+  "result": "PARTIAL initial 3D scene visible and half-scale copies executed; runtime failed at next RSO prolog",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792647158_pid16240\\runtime_probe.json",
+  "probe_sha256": "91b15e6400a2c46f8452ff2f41b38075485812bb0e79b6cd6fe3ea6b6d507efc",
+  "executable_sha256": "b59c8b25b4af72cc4a8ea37bdee25bb3ff6a7fb89cfb2f6946d8792afce0f272",
+  "visual_artifact": {
+    "path": "recomp\\.tools\\prime_pid16240_after_half_copy.png",
+    "sha256": "3a9846d4fccd276dccea26ae59c6cd146e4039377d83e6eaeb03f0de3630680d"
+  },
+  "visual_observation": "Blue-toned initial scene geometry visible; substantial visual defects, no Wii pixel parity or interactive gameplay verification",
+  "half_scale_execution_confirmed": true,
+  "prior_CreateHeap_failure_repeated": false,
+  "memory_fix_proven": false,
+  "failure_module": "ScriptContextSensitiveActivator",
+  "runtime_base": "0x80FAA720",
+  "missing_prolog": "0x80FAB6F4",
+  "prolog_offset": "0xEBC",
+  "original_relocations_verified": 199,
+  "original_sections_verified": true,
+  "audit": "20261022_prime_context_activator_live_relocations.json",
+  "input_provenance": "Mixed observed SDL input; posted messages alone do not prove all menu actions",
+  "next": "Translate pinned original module prolog/ctors, then original published factory and virtual table as supported by evidence"
+}

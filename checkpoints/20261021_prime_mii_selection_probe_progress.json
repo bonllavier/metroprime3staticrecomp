@@ -1,0 +1,26 @@
+{
+  "result": "PASS bounded survival only; no new save association proof",
+  "runs": [
+    {
+      "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792633059_pid4416\\runtime_probe.json",
+      "probe_sha256": "909e2309a479cad17b7c0fba83c4971e0ed17076688059d70af4a3a27be46fea",
+      "seconds": 150,
+      "alive_at_deadline": true,
+      "failure_logged": false,
+      "visual_scope": "4416: Game Select; 3288: title and introduction only",
+      "ScriptAchievement_bound": false
+    },
+    {
+      "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792633341_pid3288\\runtime_probe.json",
+      "probe_sha256": "18d0a1876c596852f2f3052be3c19cd53f32712ad7312d6ddadfdd0d86eb3e1c",
+      "seconds": 180,
+      "alive_at_deadline": true,
+      "failure_logged": false,
+      "visual_scope": "4416: Game Select; 3288: title and introduction only",
+      "ScriptAchievement_bound": false
+    }
+  ],
+  "factory_execution_verified": false,
+  "script_change": "Optional probe duration upper bound increased from 180 to 600 seconds; default unchanged. Current runs have individual script hashes.",
+  "probe_script_sha256": "ea8305085bd771c012b3d18be8ab4caacb6fa3faf96c6e17c3770e83826c9044"
+}

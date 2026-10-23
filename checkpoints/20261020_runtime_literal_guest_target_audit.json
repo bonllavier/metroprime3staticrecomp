@@ -1,0 +1,380 @@
+{
+  "created_utc": "2026-10-20T19:23:05.014339+00:00",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "inputs": {
+    "function_map_sha256": "42c1c9c1654dd9cd7bffaa67d424ba6ca2a120f77c80d536c4a099ca6abc0586",
+    "symbols_sha256": "aa5fd03f51f1b0d1d1bfdb4d67fd407cae2a62c57dd02a460e387ebec7e05749",
+    "runtime_root": "recomp/third_party/WiiCompiled/runtime/src"
+  },
+  "scope": "Literal constant targets passed as the first argument to InvokeIndirectCpu/InvokeIndirectJump in runtime C++ sources.",
+  "summary": {
+    "runtime_cpp_files_scanned": 83,
+    "literal_call_sites": 14,
+    "unique_targets": 14,
+    "site_classifications": {
+      "inside_rm3e01_function_body": 14
+    },
+    "targets_with_inside_function_body_sites": 14
+  },
+  "interpretation": "A target inside another Prime 3 function is not established as a callable entry and must not be dispatched as one without machine-level/control-flow evidence. This is an address-collision inventory, not proof that a particular path executes.",
+  "limitations": [
+    "Runtime indirect targets computed in registers or memory are not covered.",
+    "This scan does not model preprocessor guards, runtime reachability, or native HLE registration paths.",
+    "Symbols without explicit size cannot classify an interior address; absence from the map is not proof of invalid code."
+  ],
+  "targets": [
+    {
+      "target": "0x8016ED50",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_egg.cpp"
+      ]
+    },
+    {
+      "target": "0x80192F7C",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp"
+      ]
+    },
+    {
+      "target": "0x801A20BC",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_thread.cpp"
+      ]
+    },
+    {
+      "target": "0x801A735C",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp"
+      ]
+    },
+    {
+      "target": "0x801A7424",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp"
+      ]
+    },
+    {
+      "target": "0x801A8088",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_thread.cpp"
+      ]
+    },
+    {
+      "target": "0x80219FB4",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_egg.cpp"
+      ]
+    },
+    {
+      "target": "0x80550CC0",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp"
+      ]
+    },
+    {
+      "target": "0x80550F48",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp"
+      ]
+    },
+    {
+      "target": "0x80550F9C",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp"
+      ]
+    },
+    {
+      "target": "0x80551054",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp"
+      ]
+    },
+    {
+      "target": "0x80551378",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp"
+      ]
+    },
+    {
+      "target": "0x80551658",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp"
+      ]
+    },
+    {
+      "target": "0x80551D38",
+      "site_count": 1,
+      "classifications": {
+        "inside_rm3e01_function_body": 1
+      },
+      "runtime_sources": [
+        "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp"
+      ]
+    }
+  ],
+  "sites": [
+    {
+      "target": "0x80219FB4",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_egg.cpp",
+      "source_sha256": "adbd3270b24b424a0ff2b22897ed19a6140d69f4429c71137b9dc1d61728f094",
+      "line": 119,
+      "source_line": "InvokeIndirectCpu(0x80219FB4u, ctx);",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_80219F78",
+        "start": "0x80219F78",
+        "end_exclusive": "0x8021A014",
+        "offset": "+0x3C"
+      }
+    },
+    {
+      "target": "0x8016ED50",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_egg.cpp",
+      "source_sha256": "adbd3270b24b424a0ff2b22897ed19a6140d69f4429c71137b9dc1d61728f094",
+      "line": 120,
+      "source_line": "InvokeIndirectCpu(0x8016ED50u, ctx);",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_8016EAD0",
+        "start": "0x8016EAD0",
+        "end_exclusive": "0x8016ED6C",
+        "offset": "+0x280"
+      }
+    },
+    {
+      "target": "0x80192F7C",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp",
+      "source_sha256": "72b05b9de36ef11844b01d471dd5692063ff419804c6a72c06575bc7656be493",
+      "line": 496,
+      "source_line": "InvokeIndirectCpu(0x80192F7Cu, ctx);",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_80192D40",
+        "start": "0x80192D40",
+        "end_exclusive": "0x80193164",
+        "offset": "+0x23C"
+      }
+    },
+    {
+      "target": "0x801A8088",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_thread.cpp",
+      "source_sha256": "0bfb4e93423e09cebb203f74f164df4ac26caab6e502439704482f6ed5600ccf",
+      "line": 219,
+      "source_line": "InvokeIndirectCpu(0x801A8088u, cpu); // __OSUnlockAllMutex",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "__ct__12CRenderActorF9TUniqueIdRCQ24rstl66basic_string<c,Q24rstl14char_traits<c>,Q24rstl17rmemory_allocator>RC11CEntityInfoUiRC12CTransform4fRCQ24rstl22auto_ptr<10CModelData>RC13CMaterialListRC16CActorParameters9TUniqueId",
+        "start": "0x801A8014",
+        "end_exclusive": "0x801A85F8",
+        "offset": "+0x74"
+      }
+    },
+    {
+      "target": "0x801A20BC",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_thread.cpp",
+      "source_sha256": "0bfb4e93423e09cebb203f74f164df4ac26caab6e502439704482f6ed5600ccf",
+      "line": 314,
+      "source_line": "InvokeIndirectCpu(0x801A20BCu, cpu); // OSInitContext",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_801A1DE0",
+        "start": "0x801A1DE0",
+        "end_exclusive": "0x801A2904",
+        "offset": "+0x2DC"
+      }
+    },
+    {
+      "target": "0x80550CC0",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp",
+      "source_sha256": "560eee00e0978871df8a88794760064a11402dfb711eac950cde3695f25210de",
+      "line": 55,
+      "source_line": "InvokeIndirectCpu(0x80550CC0u, cpu);",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_80550AF4",
+        "start": "0x80550AF4",
+        "end_exclusive": "0x80550CC8",
+        "offset": "+0x1CC"
+      }
+    },
+    {
+      "target": "0x80551658",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp",
+      "source_sha256": "560eee00e0978871df8a88794760064a11402dfb711eac950cde3695f25210de",
+      "line": 63,
+      "source_line": "InvokeIndirectCpu(0x80551658u, cpu); // THP__PlayerStop",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_80551484",
+        "start": "0x80551484",
+        "end_exclusive": "0x80551764",
+        "offset": "+0x1D4"
+      }
+    },
+    {
+      "target": "0x80550F48",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp",
+      "source_sha256": "560eee00e0978871df8a88794760064a11402dfb711eac950cde3695f25210de",
+      "line": 64,
+      "source_line": "InvokeIndirectCpu(0x80550F48u, cpu); // THP__PlayerClose",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_80550DFC",
+        "start": "0x80550DFC",
+        "end_exclusive": "0x80550F88",
+        "offset": "+0x14C"
+      }
+    },
+    {
+      "target": "0x80551D38",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp",
+      "source_sha256": "560eee00e0978871df8a88794760064a11402dfb711eac950cde3695f25210de",
+      "line": 84,
+      "source_line": "InvokeIndirectCpu(0x80551D38u, cpu); // THP__PlayerGetVideoInfo",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_80551C80",
+        "start": "0x80551C80",
+        "end_exclusive": "0x805528D8",
+        "offset": "+0xB8"
+      }
+    },
+    {
+      "target": "0x80550F9C",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp",
+      "source_sha256": "560eee00e0978871df8a88794760064a11402dfb711eac950cde3695f25210de",
+      "line": 85,
+      "source_line": "InvokeIndirectCpu(0x80550F9Cu, cpu); // THP__PlayerCalcNeedMemory",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_80550F88",
+        "start": "0x80550F88",
+        "end_exclusive": "0x80551124",
+        "offset": "+0x14"
+      }
+    },
+    {
+      "target": "0x80551054",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp",
+      "source_sha256": "560eee00e0978871df8a88794760064a11402dfb711eac950cde3695f25210de",
+      "line": 95,
+      "source_line": "InvokeIndirectCpu(0x80551054u, cpu); // THP__PlayerSetBuffer",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_80550F88",
+        "start": "0x80550F88",
+        "end_exclusive": "0x80551124",
+        "offset": "+0xCC"
+      }
+    },
+    {
+      "target": "0x80551378",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp",
+      "source_sha256": "560eee00e0978871df8a88794760064a11402dfb711eac950cde3695f25210de",
+      "line": 106,
+      "source_line": "InvokeIndirectCpu(0x80551378u, cpu); // THP__PlayerPrepare",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_80551334",
+        "start": "0x80551334",
+        "end_exclusive": "0x80551468",
+        "offset": "+0x44"
+      }
+    },
+    {
+      "target": "0x801A7424",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp",
+      "source_sha256": "560eee00e0978871df8a88794760064a11402dfb711eac950cde3695f25210de",
+      "line": 165,
+      "source_line": "InvokeIndirectCpu(0x801A7424u, cpu); // OSReceiveMessage",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_801A73F0",
+        "start": "0x801A73F0",
+        "end_exclusive": "0x801A74D8",
+        "offset": "+0x34"
+      }
+    },
+    {
+      "target": "0x801A735C",
+      "kind": "InvokeIndirectCpu",
+      "source": "recomp/third_party/WiiCompiled/runtime/src/hle/task_thread.cpp",
+      "source_sha256": "560eee00e0978871df8a88794760064a11402dfb711eac950cde3695f25210de",
+      "line": 201,
+      "source_line": "InvokeIndirectCpu(0x801A735Cu, cpu); // OSSendMessage",
+      "classification": "inside_rm3e01_function_body",
+      "containing_symbol": {
+        "name": "fn_801A7350",
+        "start": "0x801A7350",
+        "end_exclusive": "0x801A73F0",
+        "offset": "+0xC"
+      }
+    }
+  ]
+}

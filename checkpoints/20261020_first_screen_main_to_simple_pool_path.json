@@ -1,0 +1,221 @@
+{
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "evidence_source": "Ghidra MCP on matching pinned main.dol; cross-checked emitted conservative static-translation metadata/sources",
+  "verified_call_edges": [
+    {
+      "from": "0x80006320",
+      "to": "0x802D5150",
+      "call_site": "0x80006484",
+      "kind": "UNCONDITIONAL_CALL"
+    },
+    {
+      "from": "0x802D5150",
+      "to": "0x802EAB50",
+      "call_site": "0x802D52A8",
+      "kind": "UNCONDITIONAL_CALL"
+    },
+    {
+      "from": "0x802EAB50",
+      "to": "0x802EA930",
+      "kind": "UNCONDITIONAL_CALL",
+      "call_site": "0x802EAB90"
+    },
+    {
+      "from": "0x802EAB50",
+      "to": "0x802EDC9C",
+      "call_site": "0x802EABA4",
+      "kind": "UNCONDITIONAL_CALL"
+    },
+    {
+      "from": "0x802EDC9C",
+      "to": "0x802EB0E8",
+      "call_site": "0x802EDD50",
+      "kind": "UNCONDITIONAL_CALL"
+    },
+    {
+      "from": "0x802EB0E8",
+      "to": "0x8067DBFC",
+      "kind": "global pointer write",
+      "note": "Ghidra xref identifies a WRITE at 0x802EB1C8"
+    }
+  ],
+  "functions": [
+    {
+      "address": "0x80006320",
+      "source": "recomp/generated/RM3E01_00_conservative/functions/func_80006320.cpp",
+      "source_sha256": "f7efdb12769e9d323a0cc461a8bc1b915b578c8dbc5e1155b15271dcef170265",
+      "metadata_sha256": "f7efdb12769e9d323a0cc461a8bc1b915b578c8dbc5e1155b15271dcef170265",
+      "entryPoint_exact": true,
+      "interior_to_other_translation": false,
+      "direct_call_dependencies": [
+        "0x800062E4",
+        "0x8000648C",
+        "0x8000651C",
+        "0x800065C4",
+        "0x802D5150",
+        "0x804B9F34",
+        "0x804DE05C",
+        "0x804E9BDC",
+        "0x804E9C44"
+      ]
+    },
+    {
+      "address": "0x802D5150",
+      "source": "recomp/generated/RM3E01_00_conservative/functions/func_802D5150.cpp",
+      "source_sha256": "bc4f87efe413b15323283bee78576e0039a2ab8a0899795dee62a01d5b2065e6",
+      "metadata_sha256": "bc4f87efe413b15323283bee78576e0039a2ab8a0899795dee62a01d5b2065e6",
+      "entryPoint_exact": true,
+      "interior_to_other_translation": false,
+      "direct_call_dependencies": [
+        "0x802D4D24",
+        "0x802D5048",
+        "0x802D50CC",
+        "0x802D5310",
+        "0x802EAB50",
+        "0x80382264",
+        "0x803822BC",
+        "0x8038F6D4",
+        "0x8038F8F4",
+        "0x8038F998",
+        "0x803DDD48",
+        "0x803DDE7C",
+        "0x803EC04C",
+        "0x803EC094",
+        "0x803F6700",
+        "0x804CB70C"
+      ]
+    },
+    {
+      "address": "0x802EAB50",
+      "source": "recomp/generated/RM3E01_00_conservative/functions/func_802EAB50.cpp",
+      "source_sha256": "5260d7b691d428db4e8953c5b892bb80205b0d613ca9270224cef081e711f52f",
+      "metadata_sha256": "5260d7b691d428db4e8953c5b892bb80205b0d613ca9270224cef081e711f52f",
+      "entryPoint_exact": true,
+      "interior_to_other_translation": false,
+      "direct_call_dependencies": [
+        "0x802EA930",
+        "0x802EABD0",
+        "0x802EDC9C"
+      ]
+    },
+    {
+      "address": "0x802EA930",
+      "source": "recomp/generated/RM3E01_00_conservative/functions/func_802EA930.cpp",
+      "source_sha256": "849045b900001e643655171e68ef32d0d5a440317bf56ff326de74312b3dab27",
+      "metadata_sha256": "849045b900001e643655171e68ef32d0d5a440317bf56ff326de74312b3dab27",
+      "entryPoint_exact": true,
+      "interior_to_other_translation": false,
+      "direct_call_dependencies": [
+        "0x800B6B14",
+        "0x803E7C58",
+        "0x804E824C",
+        "0x804E88C0"
+      ]
+    },
+    {
+      "address": "0x802EDC9C",
+      "source": "recomp/generated/RM3E01_00_conservative/functions/func_802EDC9C.cpp",
+      "source_sha256": "8b31a0160efe91667666c6ecca540f1b695113babeb9e1a09b6cc5bf53ce4503",
+      "metadata_sha256": "8b31a0160efe91667666c6ecca540f1b695113babeb9e1a09b6cc5bf53ce4503",
+      "entryPoint_exact": true,
+      "interior_to_other_translation": false,
+      "direct_call_dependencies": [
+        "0x8001A440",
+        "0x8007E578",
+        "0x800ACF9C",
+        "0x800ADABC",
+        "0x800B7224",
+        "0x800B7618",
+        "0x800B80D0",
+        "0x800B8390",
+        "0x800CCC3C",
+        "0x800D66AC",
+        "0x800D6830",
+        "0x800D7358",
+        "0x8019C8B4",
+        "0x8019FCF4",
+        "0x8026B028",
+        "0x8026B030",
+        "0x802EA8E0",
+        "0x802EAB18",
+        "0x802EAE40",
+        "0x802EAFDC",
+        "0x802EB0E8",
+        "0x802EB208",
+        "0x802EB5A4",
+        "0x802EBAF4",
+        "0x802EBEC8",
+        "0x802EBF24",
+        "0x802EBF84",
+        "0x802EC088",
+        "0x802ED14C",
+        "0x802ED6C4",
+        "0x802EE3C4",
+        "0x802EE448",
+        "0x802EE6CC",
+        "0x802EE83C",
+        "0x802EE8A0",
+        "0x802EE8F0",
+        "0x802EE94C",
+        "0x802EE9B8",
+        "0x802EEA00",
+        "0x802EEC68",
+        "0x802EF0C4",
+        "0x802F1378",
+        "0x802F1754",
+        "0x802F1AE8",
+        "0x802F1B58",
+        "0x80305988",
+        "0x8032FD74",
+        "0x8036F2CC",
+        "0x8036F3F8",
+        "0x803763A4",
+        "0x803763E4",
+        "0x8038291C",
+        "0x803BB8EC",
+        "0x803CBE98",
+        "0x803E7C58",
+        "0x803E97E0",
+        "0x803E9F78",
+        "0x804DFAD0",
+        "0x805025F8"
+      ]
+    },
+    {
+      "address": "0x802EB0E8",
+      "source": "recomp/generated/RM3E01_00_conservative/functions/func_802EB0E8.cpp",
+      "source_sha256": "4abfba82a4d43272be2f9e927c1720de08139e783eb0c722d50331d99f3b0503",
+      "metadata_sha256": "4abfba82a4d43272be2f9e927c1720de08139e783eb0c722d50331d99f3b0503",
+      "entryPoint_exact": true,
+      "interior_to_other_translation": false,
+      "direct_call_dependencies": [
+        "0x800B6C58",
+        "0x800CC804",
+        "0x802C1C7C",
+        "0x803826BC",
+        "0x803B9BE0",
+        "0x803C79FC",
+        "0x803FB024",
+        "0x80476960"
+      ]
+    }
+  ],
+  "key_state_flow": {
+    "simple_pool_global": "0x8067DBFC",
+    "write_site": "0x802EB1C8 inside 0x802EB0E8, called by 0x802EDC9C at 0x802EDD50; main reaches 0x802EDC9C through 0x802EAB50",
+    "consumer": "0x800CAEF0 CGuiCursor ctor reads the gpSimplePool pointer and invokes its vtable slot +0x18; this constructor is reached from the FrontEndUI factory RSO at 0x806AA044",
+    "qualification": "Static call/xref chain proves the initialization path exists in the DOL. The main constructor 0x802EA930 remains a matching/decompilation blocker; translation-source presence does not prove runtime execution.",
+    "constructor_table_distinction": "0x802EB0E8 is not an entry in the DOL _ctors pointer array at 0x80575680. It is called from the application main-loop initialization path after main enters."
+  },
+  "limitations": [
+    "The precise indirect targets/ABIs for the pool dispatch are not yet validated.",
+    "No guest entry or first screen has been executed.",
+    "This does not assert 0x802EB0E8 is in the DOL .ctors array; Ghidra xrefs show it is called from the main loop initialization path.",
+    "This path evidence clarifies control/data flow but does not prove the static recomp runtime has reached main or that the FrontEndUI factory is invoked."
+  ],
+  "source_hashes": {
+    "full_translation_metadata_sha256": "447788350e23ff18e4319f88ebd9345e70ace44d9b34b0e2c374e848cbf2b704",
+    "function_map_sha256": "42c1c9c1654dd9cd7bffaa67d424ba6ca2a120f77c80d536c4a099ca6abc0586"
+  }
+}

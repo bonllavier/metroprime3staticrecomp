@@ -1,0 +1,10 @@
+{
+  "result": "ContextSensitiveAction runtime binding PASS; next untranslated ButtonPressing prolog",
+  "pid": 20012,
+  "exe_sha256": "b373747a75365f830600ef995356c6dee61b12e27be8f6beef29385e511cc068",
+  "context_action_bind_verified": true,
+  "next_target": "0x80fd73f8",
+  "caller_lr": "0x8019f8cc",
+  "next_live_audit": "20261022_prime_button_action_live_relocations.json",
+  "thirty_minute_gameplay_verified": false
+}

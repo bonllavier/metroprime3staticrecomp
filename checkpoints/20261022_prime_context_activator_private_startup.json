@@ -1,0 +1,31 @@
+{
+  "result": "PASS private startup/factory/observed-vtable translation; not integrated or executed",
+  "module": "ScriptContextSensitiveActivator",
+  "functions": 26,
+  "unsupported_instructions": 0,
+  "relocations_checked": 199,
+  "manifest_sha256": "a44f629c1f935c46acf89adacb780bbee6cfc352a146444db82186f97e43d3cd",
+  "translation_sha256": "e22e1d14294148df67ae89af416b37ac231ec26fa67d4c462d3efb740b1d8a61",
+  "private_preparation_sha256": "d8c809b15eba3d73191e3ef1d98679ed1978abacbfb9076070e0ab8a80f87e8a",
+  "live_audit": "20261022_prime_context_activator_live_relocations.json",
+  "next": "Integrate module into canonical preparation/registry/build after running old executable gate completes; preserve original factory/table references",
+  "factory_offset": "0x210",
+  "factory_HA_LO_fields": [
+    14,
+    30
+  ],
+  "constructor_offset": "0x40",
+  "vtable_data_offset": "0x18",
+  "vtable_prefix_words": [
+    0,
+    0
+  ],
+  "vtable_method_count": 30,
+  "local_methods": 11,
+  "imported_methods_preserved": 19,
+  "constructor_table_reference_fields": [
+    298,
+    306
+  ],
+  "constructor_offset_note": "Nominal 0x806907E0 minus text base 0x806907A0; table reference pair checked in constructor range."
+}

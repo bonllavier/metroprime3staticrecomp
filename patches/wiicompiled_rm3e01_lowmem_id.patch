@@ -1,0 +1,31 @@
+--- a/runtime/src/system_bridge.cpp
++++ b/runtime/src/system_bridge.cpp
+@@ -505,13 +505,21 @@
+     constexpr uint32_t kIosReservedSize = 0x20000u;
+ 
+     // The boot code exposes the current disc ID in low memory before DVDInit.
+-    // Retro Rewind reads the region byte directly from here while building its
+-    // Retro-WFC payload URL, and OSGetAppGamename reads the app code mirrors
+-    // at 0x80003180/0x80003194 while building NAS auth fields.
+-    entries.push_back({0x80000000u, 0x524D4350u, "Disc game code"}); // RMCP
+-    entries.push_back({0x80000004u, 0x30310100u, "Disc maker/id"});  // 01 + disc 1
+-    entries.push_back({0x80003180u, 0x524D4350u, "OS app game code"}); // RMCP
+-    entries.push_back({0x80003194u, 0x524D4350u, "OS app gamename"});  // RMCP
++    // The Prime profile follows the first eight bytes of its verified disc ID
++    // (RM3E01\0\0); the default profile retains Mario Kart's RMCP01\0\0.
++    // OSGetAppGamename reads the four-byte app-code mirrors at 0x80003180 and
++    // 0x80003194.
++#if defined(MKW_GAME_PROFILE_RM3E01_00)
++    constexpr uint32_t kGameIdCode = 0x524D3345u; // RM3E
++    constexpr uint32_t kGameIdTail = 0x30310000u; // 01\0\0
++#else
++    constexpr uint32_t kGameIdCode = 0x524D4350u; // RMCP
++    constexpr uint32_t kGameIdTail = 0x30310100u; // 01 + disc 1
++#endif
++    entries.push_back({0x80000000u, kGameIdCode, "Disc game code"});
++    entries.push_back({0x80000004u, kGameIdTail, "Disc ID tail"});
++    entries.push_back({0x80003180u, kGameIdCode, "OS app game code"});
++    entries.push_back({0x80003194u, kGameIdCode, "OS app gamename"});
+     if (RuntimeProduct::IsRetroRewind()) {
+         entries.push_back({0x800017D8u, 0x00000001u, "Retro Rewind recomp runtime marker", true});
+     }

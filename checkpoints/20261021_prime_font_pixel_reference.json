@@ -1,0 +1,36 @@
+{
+  "result": "PASS original-font GPU raster within one 8-bit channel step of independent reference",
+  "revision": "RM3E01_00",
+  "executable_sha256": "82088d65098c1264f3199c97204316bb8a2420110e9e1d64237b38515b6b0f33",
+  "quads": 50,
+  "distinct_bitplane_palettes": 4,
+  "nonblack_pixels": 2635,
+  "compared_pixels": 286720,
+  "exact_pixel_matches": 286537,
+  "max_channel_error": 1,
+  "allowed_channel_error": 1,
+  "game_title_screen_verified": false,
+  "scope": "Selected stable font raster agrees with the first 50 original raw vertex/texture/palette inputs using bilinear sampling and SRC_ALPHA blending; native rounding differs by at most one 8-bit channel step. Does not establish title-screen reachability or complete console renderer equivalence.",
+  "artifacts": [
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "07590f62c575635287a1dbb5085991134aa550e4185ab42893051a1de8763124"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "4543fb6a1cdbb5585c69e86ddf34284aff7c68d6cfb04c776aa74eafd5818ae6"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "7c746e40bc6d1daa020bed36bfc74fa873613ab89fa1e48fae3f754fdc52ce19"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "822f6cf03fc34f361bacf9b01f3461c6230185a80b34d3053f2d97e074c1d880"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "cd2c224147325e9056fa69353dec91ea6863fdb72c4576a60be17c1f07218a5c"
+    }
+  ]
+}

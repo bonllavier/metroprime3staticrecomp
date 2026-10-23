@@ -1,0 +1,77 @@
+{
+  "created_utc": "2026-10-20T07:44:22.010510+00:00",
+  "revision": "RM3E01_00",
+  "compile_profile": "all",
+  "upstream": "WiiCompiled runtime/src/hle, commit 4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+  "registration_macro_occurrences": 582,
+  "unique_registered_addresses": 582,
+  "addresses_present_in_rm3_function_map": 9,
+  "overlap_addresses": [
+    "0x8012409C",
+    "0x80168288",
+    "0x8016DF28",
+    "0x8016E3A8",
+    "0x8016E3D8",
+    "0x8017393C",
+    "0x80173A54",
+    "0x801A661C",
+    "0x801AAAA4"
+  ],
+  "overlap_entries": [
+    {
+      "address": 2148679836,
+      "rm3_symbol": "PreThink__19CPathMeshConstraintFR13CPhysicsActorR15CPathFindSearch",
+      "path": "third_party/WiiCompiled/runtime/src/hle/audio/audio.cpp",
+      "line": 313
+    },
+    {
+      "address": 2148982568,
+      "rm3_symbol": "fn_8016DF28",
+      "path": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp",
+      "line": 117
+    },
+    {
+      "address": 2148983720,
+      "rm3_symbol": "fn_8016E3A8",
+      "path": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp",
+      "line": 144
+    },
+    {
+      "address": 2148983768,
+      "rm3_symbol": "fn_8016E3D8",
+      "path": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp",
+      "line": 152
+    },
+    {
+      "address": 2149005628,
+      "rm3_symbol": "fn_8017393C",
+      "path": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp",
+      "line": 213
+    },
+    {
+      "address": 2149005908,
+      "rm3_symbol": "EnableButtonPressingMode__14CPlayerLeftArmFRC9CVector2fRC9CVector2ff",
+      "path": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp",
+      "line": 227
+    },
+    {
+      "address": 2149213724,
+      "rm3_symbol": "fn_801A661C",
+      "path": "third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp",
+      "line": 240
+    },
+    {
+      "address": 2148958856,
+      "rm3_symbol": "fn_80168288",
+      "path": "third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp",
+      "line": 450
+    },
+    {
+      "address": 2149231268,
+      "rm3_symbol": "fn_801AAAA4",
+      "path": "third_party/WiiCompiled/runtime/src/hle/os/os_scheduler.cpp",
+      "line": 465
+    }
+  ],
+  "interpretation": "Address overlap is a signal for per-title audit only; matching addresses do not prove matching function semantics or ABI. This scan does not resolve indirect/dynamic registrations."
+}

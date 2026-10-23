@@ -1,0 +1,118 @@
+{
+  "project": "dolphin-emu/dolphin",
+  "commit": "cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b",
+  "license": "GPL-2.0-or-later (SPDX in each referenced file)",
+  "purpose": "Independent behavior reference; not proof of Prime compatibility.",
+  "files": [
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/IOS.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/IOS.cpp",
+      "sha256": "545c0890e39920320996c00663f9b0c99251d63b77b6cf9a4081485da8a21eb2"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/DI/DI.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/DI/DI.cpp",
+      "sha256": "466f93d9203a32d619aebdc9d19bb885e8dfeed5edaf616f0a0596303efb6d31"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/DI/DI.h",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/DI/DI.h",
+      "sha256": "6dedf0e7ad553b76db182a2d93123d407140a8545243c441c6aadab6828f0904"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DVD/DVDInterface.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DVD/DVDInterface.cpp",
+      "sha256": "81d025e3da9320230aea9f77976a8bd690d79f84b0ff396e81e225049c857e0e"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/USB/Bluetooth/BTEmu.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/USB/Bluetooth/BTEmu.cpp",
+      "sha256": "778182b8ebd92614291fa21ee7788fe4e8f5228f68f65dffd7606adc58cc4029"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/USB/Bluetooth/BTReal.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/IOS/USB/Bluetooth/BTReal.cpp",
+      "sha256": "925af8a84344e06c975e3bafa441b49359eb1b25d7d2bf94cf2c1cafa7b71744"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/WII_IPC.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/WII_IPC.cpp",
+      "sha256": "ed54d05e6c0498830413a126535ab3784739185e1fd4ae8552c83ba9537cdba1"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/WII_IPC.h",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/WII_IPC.h",
+      "sha256": "330dca0ba86839c15a6025c6a1709907e2fd9781563891b8d6cbe1609c67e704"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/AudioInterface.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/AudioInterface.cpp",
+      "sha256": "614793f4868d4a3be07ee58ebbb9ba4fbbd9da4da4da68973df8131d9bdb0606"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/AudioInterface.h",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/AudioInterface.h",
+      "sha256": "cc5182d6de14b4ff10ed6cd7b6461d58691fd454cd9ee8a3f04ae30efeb750f2"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSP.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSP.cpp",
+      "sha256": "4339d47f9c052dd1bb95a107ae1702d0453bd76e440cd8b0ef440ed80eb273eb"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/DSPHLE.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/DSPHLE.cpp",
+      "sha256": "2c183b1f78548bc7b573aa9b79ba6a0ea028326731df22d49fc4d898c08ceb0b"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/UCodes/INIT.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/UCodes/INIT.cpp",
+      "sha256": "cda3602c6457259de3e8a83be6d77ba8a3bcbafe4d00231553e29d918974fdd3"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSP.h",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSP.h",
+      "sha256": "9c5f35c870a7a591cb4372a5bd30a0a5461b7f91afe7b1bf3c1af5f0b5c4e648"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/MemoryInterface.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/MemoryInterface.cpp",
+      "sha256": "8d26b671aec17eff12b8b6b43c1ca201961fe84ae9cbb500e2d343f554ae80f3"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/ProcessorInterface.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/ProcessorInterface.cpp",
+      "sha256": "217b5bf0b96f197f8712f478e394a41d7c09da952843d8189e9737a57b705261"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/UCodes/UCodes.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/UCodes/UCodes.cpp",
+      "sha256": "eb05907c21145c43785d699bf64e26da435daebce0c0da0adede8ca8acd5d16a"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/UCodes/AX.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/UCodes/AX.cpp",
+      "sha256": "18a5ce8ef4220d9559447f8ae93cff578df713e4113bfe534d2b936916f6a46a"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/UCodes/AXWii.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/UCodes/AXWii.cpp",
+      "sha256": "bb89a48576520b2be79ba7b0256b0a9ce1969f5e82dc95d33b43937f1217d21e"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/MailHandler.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/MailHandler.cpp",
+      "sha256": "39f16dcf199aa306e55a3dca165021e88787b2a96999ea9e03415286765b400f"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/UCodes/ROM.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/DSPHLE/UCodes/ROM.cpp",
+      "sha256": "0fb18fa2e6c9331fbd7f3ffc8f0f94d1db029fe7384338645998d7177507cbe6"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Common/Hash.cpp",
+      "file": "recomp/.tools/references/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Common/Hash.cpp",
+      "sha256": "a66b941cf6a1f2ab8c30fc2a0491a1e473eabd37ec657ff5318f9ce23d3d3db5"
+    }
+  ]
+}

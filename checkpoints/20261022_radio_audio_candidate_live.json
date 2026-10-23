@@ -1,0 +1,68 @@
+{
+  "pid": 7304,
+  "revision": "RM3E01_00",
+  "read_only": true,
+  "atomic_snapshot": false,
+  "groups": [
+    {
+      "name": "sfx",
+      "address": "0x80975fe0",
+      "requested_volume": 0.75,
+      "current_volume": 0.75,
+      "channel_list_empty": false
+    },
+    {
+      "name": "music",
+      "address": "0x809760e0",
+      "requested_volume": 0.75,
+      "current_volume": 0.75,
+      "channel_list_empty": false
+    },
+    {
+      "name": "speech",
+      "address": "0x809761e0",
+      "requested_volume": 0.75,
+      "current_volume": 0.75,
+      "channel_list_empty": true
+    }
+  ],
+  "loaded_speech_actors": [],
+  "threads": [
+    {
+      "address": "0x8060b418",
+      "state": 2,
+      "suspend_count": 0,
+      "stack": "0x80699ad0",
+      "queue": "0x0"
+    },
+    {
+      "address": "0x809a5a28",
+      "state": 1,
+      "suspend_count": 1,
+      "stack": "0x809a5968",
+      "queue": "0x0"
+    },
+    {
+      "address": "0x809b7748",
+      "state": 1,
+      "suspend_count": 1,
+      "stack": "0x809b7688",
+      "queue": "0x0"
+    },
+    {
+      "address": "0x80e7e188",
+      "state": 4,
+      "suspend_count": 0,
+      "stack": "0x80e7e118",
+      "queue": "0x80e5a484"
+    },
+    {
+      "address": "0x80e8b788",
+      "state": 4,
+      "suspend_count": 0,
+      "stack": "0x80e8b718",
+      "queue": "0x80e6b564"
+    }
+  ],
+  "file_callback_list_empty": true
+}

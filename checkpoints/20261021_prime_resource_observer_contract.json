@@ -1,0 +1,20 @@
+{
+  "result": "PASS observation-only overlay strip reproduces original generated body; build/link completed; clock metadata check passed separately after conversion fix",
+  "entry": "0x803BBF38",
+  "body_sha256": "c2ad19826a2db3c04855930700c410015c86e65c6b1d11b8cd8b5c9e9a404cbd",
+  "clock_fix": "Validate derived Ninja epoch with independent PCH/object timestamps rather than rejecting unchanged objects older than one day",
+  "files": [
+    {
+      "path": "recomp\\third_party\\WiiCompiled\\runtime\\include\\hle\\prime_resource_trace.h",
+      "sha256": "cb34aba7b50a9645397907e9aeb264f6a0854aa25844a38a6334e8bdd7d995e9"
+    },
+    {
+      "path": "recomp\\tools\\prepare_prime_runtime_hooks.py",
+      "sha256": "9e07bbd47a7c5e1b6b886e779aa7cccd6e6483835878fbdd67ba9c5fa22bbe2c"
+    },
+    {
+      "path": "recomp\\tools\\repair_prime_clock_metadata.py",
+      "sha256": "4d71c70da00c1323e12e74abc35529e927a664687948a6dcb4f4bf31988389d0"
+    }
+  ]
+}

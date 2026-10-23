@@ -1,0 +1,12 @@
+{
+  "result": "PASS bounded title survival only; in-game memory/rendering regression unverified",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792646491_pid2840\\runtime_probe.json",
+  "probe_sha256": "4db5659b55a8322ba076828731fcc122f89ecd02612cfe316b86c99cb1929619",
+  "seconds": 180,
+  "executable_sha256": "b59c8b25b4af72cc4a8ea37bdee25bb3ff6a7fb89cfb2f6946d8792afce0f272",
+  "input_provenance": "Additional SDL keys observed; no exclusive synthetic input claim",
+  "visual": "Original title visible in 75-second capture; no verified gameplay",
+  "GPU_allocation_failure_reproduced": false,
+  "GPU_allocation_failure_fixed_proven": false,
+  "full_gate": "in progress in prime_snapshot_boot_verifier_20261022.log"
+}

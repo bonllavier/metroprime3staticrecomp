@@ -1,0 +1,37 @@
+{
+  "result": "Build PASS; live token consumption and cinematic advancement observed; stability/fidelity pending",
+  "prior_pid": 16060,
+  "evidence": [
+    "manual_hang_pid16060_direct_20261022.json",
+    "manual_hang_pid16060_20261022_144446_9412.json"
+  ],
+  "observed_main_thread": "803F486C allocation retry -> 803F4A5C deferred release -> 803EC2C8/803EC0FC PE token polling",
+  "original_issue_function": "804D2584 emits BP48/BP47",
+  "original_read_function": "804D2638 reads PE+0x0E",
+  "change": "Publish lower 16 bits of merged BP47 to PE+0x0E after existing GXApplyBPReg producer drain. No forced allocator success or guest loop patch.",
+  "limits": "No new token IRQ implementation; source-lifetime completion boundary relies on Aurora producer consumption and copied upload data. Actual in-game reuse/fidelity and stability require runtime verification.",
+  "tests": "Existing raw BP and texture snapshot 2/2 PASS; not a token end-to-end proof",
+  "exe_sha256": "6d2a333d5a97617fd2ee0c8a9194a0fa014f708bdc6b429cfd769aa963fd6f64",
+  "stable_gameplay_verified": false,
+  "runtime_observation": {
+    "pid": 9008,
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792682959_pid9008/console.log",
+    "token_logs_observed": [
+      30,
+      31,
+      32
+    ],
+    "ui_responding": true,
+    "main_thread_snapshot": "recomp/.tools/manual_pid9008_blue_state_20261022.json",
+    "main_native_symbols": [
+      "GXSetVtxDesc",
+      "write_numeric_component"
+    ],
+    "captures": [
+      "recomp/.tools/prime_pid9008_token_observation.png",
+      "recomp/.tools/prime_pid9008_scene_followup.png"
+    ],
+    "observed_progress": "Blue frame followed by changed 3D chamber/cinematic shot; no controlled gameplay proof",
+    "graphics_defects_visible": true
+  }
+}

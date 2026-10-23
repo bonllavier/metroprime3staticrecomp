@@ -1,0 +1,27 @@
+{
+  "result": "Original save now contains local Mii CreateID, association/reload still pending",
+  "before_backup": "recomp/.tools/prime_before_single_mii_20261021/save.bin",
+  "after_backup": "recomp\\.tools\\prime_after_single_mii_20261021\\save.bin",
+  "id_hex": "89917cbd904d2813",
+  "before_offset": -1,
+  "after_offset": 35156,
+  "changed_bytes": 1030,
+  "profile_NAND_unchanged": true,
+  "files": [
+    {
+      "path": "title/00010000/524d3345/data/save.bin",
+      "sha256": "0d27b0c1fd319faa4f9d4d344269da9ca4441e05af5bb150720369e2d1f2f7e2",
+      "size": 65536
+    },
+    {
+      "path": "title/00010000/524d3345/data/banner.bin",
+      "sha256": "d3e24f0ea66d1c69dbf1fc3a1e6cc88d3a468c8a71f4ebf9e6cf694686a2498f",
+      "size": 61600
+    },
+    {
+      "path": "shared2/menu/FaceLib/RFL_DB.dat",
+      "sha256": "278a56a0c229c683d0a44c2f22cc06ae54dd49188c3a827b3a1150353465f5dd",
+      "size": 767456
+    }
+  ]
+}

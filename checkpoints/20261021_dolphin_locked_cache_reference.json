@@ -1,0 +1,37 @@
+{
+  "reference": "Dolphin locked-cache register documentation and existing behavior",
+  "commit": "cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b",
+  "files": [
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/PowerPC/Gekko.h",
+      "path": "recomp\\.tools\\dolphin-lc-reference\\Gekko.h",
+      "sha256": "739ace6d79be9e7acfbf4da271647b88f1f5a0a4c053346700cd48d228e7498f",
+      "license": "GPL-2.0-or-later; SPDX in source"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/PowerPC/Interpreter/Interpreter_SystemRegisters.cpp",
+      "path": "recomp\\.tools\\dolphin-lc-reference\\Interpreter_SystemRegisters.cpp",
+      "sha256": "9ccd30aee07232cd59ceabdc8545c644ad5485564b81b4291743a0e621863437",
+      "license": "GPL-2.0-or-later; SPDX in source"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/dolphin-emu/dolphin/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/PowerPC/MMU.cpp",
+      "path": "recomp\\.tools\\dolphin-lc-reference\\MMU.cpp",
+      "sha256": "4c1b6c50e2620af749226d5f6cc2df88cbf09f4cf89b5f813c3bf27b2f5f3596",
+      "license": "GPL-2.0-or-later; SPDX in source"
+    }
+  ],
+  "implementation": "Independent bounded adapter uses the documented fields and original SDK encodings; Dolphin source files remain private reference material. Synchronous completion does not implement hardware DMA queue/timing.",
+  "original_sdk": [
+    {
+      "address": "0x804dfb30",
+      "size": 36,
+      "sha256": "28fc07cc3d029f40a5ffafa21d676b13940a916eed2dffa964d3c17e43941259"
+    },
+    {
+      "address": "0x804dfb54",
+      "size": 160,
+      "sha256": "56334a1b3e1ef97be3711dd27489b3c8726fb19f0126fa94e1c0512dd3aa8b5a"
+    }
+  ]
+}

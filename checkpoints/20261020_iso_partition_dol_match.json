@@ -1,0 +1,49 @@
+{
+  "created_utc": "2026-10-20T08:06:30Z",
+  "disc_id": "RM3E01",
+  "disc_number": 0,
+  "revision": 0,
+  "iso": {
+    "path": "../../Metroid Prime 3 - Corruption (USA).iso",
+    "size_bytes": 4699979776,
+    "sha256": "3621e6522f99e8c6755353530f2d571489b805bee85c054a96ac52c7e32ee71e",
+    "read_only_attribute": true
+  },
+  "tool": {
+    "name": "nodtool",
+    "version": "2.0.0-alpha.9",
+    "commit": "6a54b418e541ce5eeb364399116afd6e47b817bb",
+    "source": "https://github.com/encounter/nod/releases/tag/v2.0.0-alpha.9",
+    "binary_sha256": "0696c1c4b65fee6358c4bfdfdb8d957a39886d0d5c465ee240eb9b10c237eb73"
+  },
+  "extraction": {
+    "partition": "data",
+    "path": ".tools/disc-extraction-rm3e01",
+    "purpose": "temporary private inspection only; under ignored .tools; not a product runtime requirement"
+  },
+  "dol_comparison": {
+    "iso_partition_main_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "iso_partition_main_dol_sha1": "3e81f9b09dfb1e7c02e22b9c6c48a4a1390224b2",
+    "size_bytes": 6045952,
+    "pinned_main_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "pinned_main_dol_sha1": "3e81f9b09dfb1e7c02e22b9c6c48a4a1390224b2",
+    "size_bytes_pinned": 6045952,
+    "sha256_match": true,
+    "sha1_match": true,
+    "byte_for_byte_match": true
+  },
+  "nodtool_image_verification": {
+    "info": "RM3E01, disc 0, revision 0; data partition identified",
+    "verify_decrypt": "completed; Redump hash not found",
+    "interpretation": "The game header and partition DOL match the pinned target. The whole image is not certified as a Redump-verified dump."
+  },
+  "iso_modified": false,
+  "runtime_reads_iso_directly": false,
+  "game_executed": false,
+  "screen_presented": false,
+  "limitations": [
+    "Temporary extraction is for research only.",
+    "No direct ISO reader is connected to WiiCompiled DVD/FST calls.",
+    "Runtime link and scheduler/HLE compatibility remain unresolved."
+  ]
+}

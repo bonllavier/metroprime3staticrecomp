@@ -1,0 +1,99 @@
+{
+  "created_utc": "2026-10-21T11:03:43.950917+00:00",
+  "revision": "RM3E01_00",
+  "status": "original_startup_safety_visible_title_and_fidelity_pending",
+  "executable_sha256": "f7d185ff1797a357492124308525b927fe6ce54d18e854ed5472368b55a4f28d",
+  "first_original_startup_safety_screen_verified": true,
+  "metroid_title_screen_verified": false,
+  "gameplay_verified": false,
+  "current_runtime_checkpoint": "recomp/checkpoints/20261021_prime_stable_xf_packets_boot.json",
+  "latest_verified_iso_reads": 209,
+  "runtime_seconds": 55,
+  "backends_verified_for_bounded_boot": [
+    "d3d12",
+    "vulkan"
+  ],
+  "backend_image_equivalence_verified": false,
+  "matching_dol_unchanged_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "matching_input_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "native_fifo_tests": "PASS: storage bounds/compaction, CP, BP, TLUT, nested consumer ownership, per-XFB freshness",
+  "prior_test_results_not_rerun": [
+    "Translator.Core 693 tests",
+    "RSO translator 9 tests",
+    "200 host continuation transfers"
+  ],
+  "evidence": [
+    {
+      "path": "recomp/checkpoints/20261021_prime_stable_xf_packets_boot.json",
+      "sha256": "e5556c7f1a089465612e2130c70991bfa4301ae365298cb957d29ad6c8552e68"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_vulkan_sampled_palettes.json",
+      "sha256": "c934a57eceb11e9dd31cd29c06b09961398588b54b210ddace731fa2e70f828d"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_first_startup_screen_visual_review.json",
+      "sha256": "e92de5b21cd71a7fa6585259e898b435e959e0421d6d630ab2b483497f3a4dae"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_font_gpu_input_audit.json",
+      "sha256": "4bcdea3a146fe847ad172426a45205b0acc972298108eae39f9767137103571c"
+    }
+  ],
+  "rso_manifests": [
+    {
+      "manifest": "recomp/.tools/rso-runtime/rhbm/module.json",
+      "sha256": "a097513f4d21b0d74e1d0a8b04c83d03c42ba958a214c98bfb28433b6700eba3",
+      "keys": [
+        "module",
+        "module_id",
+        "original_sha256",
+        "sections",
+        "constructor_entries",
+        "original_imports"
+      ]
+    },
+    {
+      "manifest": "recomp/.tools/rso-runtime/ScriptGUIScreenFrontEndUI/module.json",
+      "sha256": "543a6016ee66c261a390798e88caac0d713300da4fb8bcba20686706d6483ca6",
+      "keys": [
+        "module",
+        "module_id",
+        "original_sha256",
+        "sections",
+        "constructor_entries",
+        "original_imports"
+      ]
+    },
+    {
+      "manifest": "recomp/.tools/rso-runtime/ScriptWorldTeleporter/module.json",
+      "sha256": "18f8ea4343fe6ae76e9b14b1fd76e8a04d959da8fcac99ab1e66bc0b59c031b0",
+      "keys": [
+        "module",
+        "module_id",
+        "original_sha256",
+        "sections",
+        "constructor_entries",
+        "original_imports"
+      ]
+    },
+    {
+      "manifest": "recomp/.tools/rso-runtime/Tweaks/module.json",
+      "sha256": "afc988da732e847e266583ae5700fc6804e4a1cfa5af6a2432196107d57d0263",
+      "keys": [
+        "module",
+        "module_id",
+        "original_sha256",
+        "sections",
+        "constructor_entries",
+        "original_imports"
+      ]
+    }
+  ],
+  "limitations": [
+    "Later text/geometry corrupt or black; no title-screen proof.",
+    "ISO-only published startup has not removed private FST/research extraction.",
+    "Audio, physical controls, performance and full fidelity remain unverified.",
+    "Visual resources and readback buffers remain private; no publication authorized."
+  ]
+}

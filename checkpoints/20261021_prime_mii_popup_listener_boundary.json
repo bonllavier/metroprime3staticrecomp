@@ -1,0 +1,86 @@
+{
+  "result": "PASS original popup choice listener boundary, overall runtime still fails missing translation",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792621952_pid2356\\runtime_probe.json",
+  "runtime_delta": "0x47F920",
+  "runtime_target": "0x80B204AC",
+  "nominal_target": "0x806A0B8C",
+  "text_offset": "0x9F2C",
+  "original_prefix_bytes_verified": 32,
+  "original_prefix": "9421ffd07c0802a69001003493e1002c7cdf337893c100287cbe2b7838a0000c",
+  "references": [
+    {
+      "source_file_offset": 39514,
+      "source_section": 1,
+      "source_section_offset": 39226,
+      "field_width": 2,
+      "type": 6,
+      "index": 1,
+      "target_offset": 40748
+    },
+    {
+      "source_file_offset": 39522,
+      "source_section": 1,
+      "source_section_offset": 39234,
+      "field_width": 2,
+      "type": 4,
+      "index": 1,
+      "target_offset": 40748
+    },
+    {
+      "source_file_offset": 47562,
+      "source_section": 1,
+      "source_section_offset": 47274,
+      "field_width": 2,
+      "type": 6,
+      "index": 1,
+      "target_offset": 40748
+    },
+    {
+      "source_file_offset": 47570,
+      "source_section": 1,
+      "source_section_offset": 47282,
+      "field_width": 2,
+      "type": 4,
+      "index": 1,
+      "target_offset": 40748
+    },
+    {
+      "source_file_offset": 72358,
+      "source_section": 1,
+      "source_section_offset": 72070,
+      "field_width": 2,
+      "type": 6,
+      "index": 1,
+      "target_offset": 40748
+    },
+    {
+      "source_file_offset": 72366,
+      "source_section": 1,
+      "source_section_offset": 72078,
+      "field_width": 2,
+      "type": 4,
+      "index": 1,
+      "target_offset": 40748
+    },
+    {
+      "source_file_offset": 72978,
+      "source_section": 1,
+      "source_section_offset": 72690,
+      "field_width": 2,
+      "type": 6,
+      "index": 1,
+      "target_offset": 40748
+    },
+    {
+      "source_file_offset": 72986,
+      "source_section": 1,
+      "source_section_offset": 72698,
+      "field_width": 2,
+      "type": 4,
+      "index": 1,
+      "target_offset": 40748
+    }
+  ],
+  "Mii_RFL_accepted": true,
+  "save_reload_verified": false
+}

@@ -1,0 +1,57 @@
+diff --git a/runtime/CMakeLists.txt b/runtime/CMakeLists.txt
+index c34b148..c285f65 100644
+--- a/runtime/CMakeLists.txt
++++ b/runtime/CMakeLists.txt
+@@ -54,6 +54,8 @@ endif()
+ 
+ option(MKW_BUILD_PRODUCTS "Build translated WiiCompiled product targets" ON)
+ option(MKW_BUILD_PSQ_TESTS "Build focused PSQ ISA tests" OFF)
++option(MKW_GAME_PROFILE_RM3E01_00
++    "Use Metroid Prime 3 RM3E01_00 startup behavior in this isolated recompilation build" OFF)
+ set(MKW_X86_CPU_PROFILE "v3" CACHE STRING
+     "Minimum x86-64 CPU profile for translated products (v2 or v3)")
+ set_property(CACHE MKW_X86_CPU_PROFILE PROPERTY STRINGS v2 v3)
+diff --git a/runtime/cmake/PublicProducts.cmake b/runtime/cmake/PublicProducts.cmake
+index 38c5254..9543880 100644
+--- a/runtime/cmake/PublicProducts.cmake
++++ b/runtime/cmake/PublicProducts.cmake
+@@ -69,6 +69,9 @@ if(MKW_RUNTIME_USE_PREBUILT)
+     file(CONFIGURE OUTPUT "${MKW_RUNTIME_PREBUILT_STAMP}" CONTENT "${MKW_NP_RUNTIME_FINGERPRINT}\n")
+ else()
+     mkw_add_runtime_library(mkw_runtime_common OBJECT ${SOURCES})
++    if(MKW_GAME_PROFILE_RM3E01_00)
++        target_compile_definitions(mkw_runtime_common PRIVATE MKW_GAME_PROFILE_RM3E01_00=1)
++    endif()
+ endif()
+ 
+ add_library(mkw_game_data OBJECT ${MKW_GAME_DATA_SOURCES})
+diff --git a/runtime/src/system_bridge.cpp b/runtime/src/system_bridge.cpp
+index c67eb8a..8f87d4d 100644
+--- a/runtime/src/system_bridge.cpp
++++ b/runtime/src/system_bridge.cpp
+@@ -320,9 +320,14 @@ void SystemBridge::Initialize() {
+     RT_LOG(RT_TAG_RUNTIME) << "Initializing data sections from embedded DOL/REL data" << std::endl;
+     InitializeDataSections();
+ 
+-    // Constructors run before the main entry point, but they still require the
+-    // PowerPC ABI environment. Keep using the persistent context here: the old
+-    // AbiCallContext path implicitly selected and seeded it for every ctor.
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
++    // Mario Kart's constructor arrays are not the RM3E01_00 arrays. Prime 3's
++    // __start calls OSInit and then __init_user -> __init_cpp, which walks the
++    // DOL's own .ctors table. Keep that guest order for the Prime profile.
++    // Other WiiCompiled products retain their established pre-entry behavior.
++
++    // Constructors run before the main entry point for the existing MKW
++    // profile, but they still require the PowerPC ABI environment.
+     InitializePersistentCpuContext();
+     CpuContext& cpu = GetPersistentCpuContext();
+     cpu.gpr[1] = 0x81700000u;
+@@ -410,6 +415,7 @@ void SystemBridge::Initialize() {
+     }
+     g_suppressSehReporting = false;
+     RT_LOG(RT_TAG_RUNTIME) << "Executed " << count << " static constructors." << std::endl;
++#endif
+ }
+ 
+ void SystemBridge::WriteGuestMemorySnapshot(std::ostream& os, const std::filesystem::path& mem1Path) {

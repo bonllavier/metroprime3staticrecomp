@@ -1,0 +1,2662 @@
+{
+  "created_utc": "2026-10-20T08:31:07.531894+00:00",
+  "revision": "RM3E01_00",
+  "module": "RSO_ScriptGUIScreenFrontEndUI.rso",
+  "rso_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+  "synthetic_rel_sha256": "3b8fdfd6b8badd8cb38aa964580e690ded2d68df21ae1a1933d90a6c3cf14ed4",
+  "probe_base": "0x80690000",
+  "function_map": {
+    "entry_count": 392,
+    "seed_sources": "290 unique DOL function imports from FrontEndUI; 101 unique internal ADDR32 reloc targets to RSO text; explicit _prolog at 0x806AD5B8",
+    "candidate_internal_code_targets": 101
+  },
+  "translation": {
+    "translator_commit": "4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+    "generated_function_count_total": 4033,
+    "generated_rso_bodies": 262,
+    "rso_candidate_boundaries_excluded_as_interior": 2,
+    "accepted_rso_bodies": 260,
+    "excluded_entries": [
+      {
+        "address": "0x806AB3D8",
+        "source": "func_806AB3D8.cpp",
+        "interior_to_other_translation": true
+      },
+      {
+        "address": "0x806AB3F4",
+        "source": "func_806AB3F4.cpp",
+        "interior_to_other_translation": true
+      }
+    ],
+    "unsupported_instructions": 0,
+    "invalid_ssa_functions": 0,
+    "metadata_sha256": "bb9bdaa91e56f1b14008e14d0cec163ec03b9fe96cf10adca9ccfec50e9eafc8",
+    "source_set_sha256": "f351010b1a42c1759b249a751f57172bd8dab932a554061af6b75d3442df2099"
+  },
+  "compilation": {
+    "compiler": "LLVM-MinGW Clang 22.1.8",
+    "target": "Windows x86-64 COFF AMD64",
+    "flags": [
+      "-std=c++20",
+      "-O2",
+      "-march=x86-64-v3",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-fno-slp-vectorize",
+      "-w"
+    ],
+    "objects_compiled": 260,
+    "objects_failed": 0,
+    "object_formats_checked_with_llvm_readobj": 260,
+    "non_coff_or_wrong_machine_objects": 0,
+    "objects": [
+      {
+        "address": "0x80696C60",
+        "source": "func_80696C60.cpp",
+        "source_sha256": "f2f0c54f47a47f53839ec92afd61b9bb3f21a2ac479b511ed36931ddfaa51c8a",
+        "object": "func_80696C60.o",
+        "object_size": 766,
+        "object_sha256": "1c0f7d964186494f4359c49cded46e4510ec8e6727919167e061d09dfcd29e55",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80696C84",
+        "source": "func_80696C84.cpp",
+        "source_sha256": "e5bac11fb28701380cea590f6248eccd31f8163034115f3119929df3aa937ed8",
+        "object": "func_80696C84.o",
+        "object_size": 34607,
+        "object_sha256": "1a26437ef41f09be9c85c2e8388343aa28f9dfcd484c2912686383f8cdf59909",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80696D1C",
+        "source": "func_80696D1C.cpp",
+        "source_sha256": "635d55b7dcd3c705829685212d842af5b6bc47bc80f5febb802c76bc423783dd",
+        "object": "func_80696D1C.o",
+        "object_size": 20105,
+        "object_sha256": "541043892d49ec55f29cd5bcbdd1a5a5b22c72a9a0004fa690e9b2aecba906ca",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80696D70",
+        "source": "func_80696D70.cpp",
+        "source_sha256": "97019513f1f284e60b75a1cdecd57d8f90046ee68aae1fe7711b0c4ba4f686a6",
+        "object": "func_80696D70.o",
+        "object_size": 16798,
+        "object_sha256": "02e76241b2e28e76ff3f0dd56e833a76b8496846ed34a6894ec30d0986ae7e41",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80696DB4",
+        "source": "func_80696DB4.cpp",
+        "source_sha256": "65e9c141039300f1c1899c6a7494e060e85db5a053a51515dbe4f6cc609e95fe",
+        "object": "func_80696DB4.o",
+        "object_size": 15953,
+        "object_sha256": "fc02aac5570d380d7b7bb49070e5923da6478f81ec8bfdc51ae069d8abedb34f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80696DB8",
+        "source": "func_80696DB8.cpp",
+        "source_sha256": "37c1b67fc8bd3ca166a9ca24a7ec9d37d936bb490f68a623117eb416634b584d",
+        "object": "func_80696DB8.o",
+        "object_size": 41089,
+        "object_sha256": "73eb4925bd536004597191c68a913d2a7008514de392974359066843c9486b93",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806971A8",
+        "source": "func_806971A8.cpp",
+        "source_sha256": "fa6e3f209c97438fec4d3e080794a1f5d4a059762c7897a8cd95d7370cccb093",
+        "object": "func_806971A8.o",
+        "object_size": 21332,
+        "object_sha256": "131db56eb4ed307b610b24442981df591c570fc105046fa70fcd2a97b2264010",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069729C",
+        "source": "func_8069729C.cpp",
+        "source_sha256": "9a8def2232a66c0aca3ef0f6b70ce0fc1c9b1448bffc20c5e206646813f8f5cb",
+        "object": "func_8069729C.o",
+        "object_size": 661,
+        "object_sha256": "c60bf62dc60a08610990c72337eec5e6e34744f0ee273225a50a50e6fce0230a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806972A0",
+        "source": "func_806972A0.cpp",
+        "source_sha256": "a0abc3fb375083e7a43228947d5f738a776593b315cb51c2a99126600a06d0fa",
+        "object": "func_806972A0.o",
+        "object_size": 16469,
+        "object_sha256": "e0f0bcf236dd8e92adb49d48925481ab44c24f75de0036cf8c54df45d7e31f4d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806972F0",
+        "source": "func_806972F0.cpp",
+        "source_sha256": "5a7e7114279429051628a403f20694a5cdbd98e8eb864016da5eb9c20391748e",
+        "object": "func_806972F0.o",
+        "object_size": 16469,
+        "object_sha256": "3860bf2481ef0cc10443437329071a109ade5fc55128afd94297c3a41af8c5c4",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80697340",
+        "source": "func_80697340.cpp",
+        "source_sha256": "2cddd509c36a455e08787c7948b43658f9b0b7f1b3a14ae862dcabb96f17de47",
+        "object": "func_80697340.o",
+        "object_size": 102180,
+        "object_sha256": "00eff259fbd3842bee8ecfb3b57bd00c5d129587876b80bc7a83e89aa161595b",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806979B4",
+        "source": "func_806979B4.cpp",
+        "source_sha256": "63fbea959746da923e8bbf03c70ea9f91be75b6889237c51be53af7ebd192ba3",
+        "object": "func_806979B4.o",
+        "object_size": 20105,
+        "object_sha256": "79d63b2ae31b00a03aa9ce4994c0974e9ddaf006a368d33e971a2a2f13caa493",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80697A08",
+        "source": "func_80697A08.cpp",
+        "source_sha256": "526fa7ef6ae658b014272859ad848c837a927268483269f5b97ccde15ad6f954",
+        "object": "func_80697A08.o",
+        "object_size": 69906,
+        "object_sha256": "fac6aadbc891d52e136b888f3f9e9800c1d760353f0c197fcd1d4200b6ba49ab",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80697EB0",
+        "source": "func_80697EB0.cpp",
+        "source_sha256": "01012876c03aa9348b8c50c372e560dfe6df6f1cb1e4ab91c529911deb035874",
+        "object": "func_80697EB0.o",
+        "object_size": 678,
+        "object_sha256": "777a5db42ca74f50ed5d471b5c72b3b0c7b12f12a12d17332cc214d262a91f40",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80697EBC",
+        "source": "func_80697EBC.cpp",
+        "source_sha256": "703e465ee9c5a4a9e35f64d35a5adeeeab4d96a02fd681978bec3805636a7c49",
+        "object": "func_80697EBC.o",
+        "object_size": 67993,
+        "object_sha256": "b224f70f0bc1cdcd8a4ea812f8269cc8ec47c357cf2671fd1eb9f09a64b02aeb",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698820",
+        "source": "func_80698820.cpp",
+        "source_sha256": "a858352f673032646f5164c89f63cdeff145472304b84b5841190f1abd26f273",
+        "object": "func_80698820.o",
+        "object_size": 2074,
+        "object_sha256": "39992ee2f95a7bda2410d6da16851d81e8d7cbaef09175da97b15fbf653ccfa4",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698948",
+        "source": "func_80698948.cpp",
+        "source_sha256": "30fb679e60b2a6ad211c03ca4d8a4f5d73a58f0aca7c000c15afa553683e444f",
+        "object": "func_80698948.o",
+        "object_size": 63265,
+        "object_sha256": "1fd960111f3167879e098fcc0a6e36179aea365c80654af6c782e8b79c6e407e",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698B9C",
+        "source": "func_80698B9C.cpp",
+        "source_sha256": "298109899a1edf1cbfcfed0dfcab82d38638f63db616ea253a91a94c409ef80e",
+        "object": "func_80698B9C.o",
+        "object_size": 1213,
+        "object_sha256": "07b480dcb7497dba3e391ae158dd5049173b8e06f37d127292eef23d66fae61c",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698BB8",
+        "source": "func_80698BB8.cpp",
+        "source_sha256": "5d9a825e2e3d2e2ccb6ffc6f9243c0e8372046d6b90f0724ff920b21f8eccd50",
+        "object": "func_80698BB8.o",
+        "object_size": 46906,
+        "object_sha256": "0b2da0d76e307838b8075a45b8f695d3167a41b2a10748dfecd6e7a6c6592bd6",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698C7C",
+        "source": "func_80698C7C.cpp",
+        "source_sha256": "997b2db59f0f1a4687058e59114b1635d2f26f4781094c98bdc7a66321b0c75e",
+        "object": "func_80698C7C.o",
+        "object_size": 32698,
+        "object_sha256": "618af3d7c035465fd02903d4bfc559181ab442817ebdb6fe76b2ac84131da868",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698D0C",
+        "source": "func_80698D0C.cpp",
+        "source_sha256": "be1dfe1d6ca4c4671f9bee56a4797d4f4d0b8515e3e913095a2baead4254c865",
+        "object": "func_80698D0C.o",
+        "object_size": 36137,
+        "object_sha256": "e9296c1016db16c61b9899000f6958afc753dde20e43adbad1f677c419105d05",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698D7C",
+        "source": "func_80698D7C.cpp",
+        "source_sha256": "9b87e9aecc1c23eeba7f22f11dbc792e0952d165356a08c27d997145e6bba40f",
+        "object": "func_80698D7C.o",
+        "object_size": 43975,
+        "object_sha256": "8aa953713613bfa2cc00ed04c5b802636b176663cdf8ce49aa5c42c6298425bf",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698E7C",
+        "source": "func_80698E7C.cpp",
+        "source_sha256": "bd8ff48154801e24f31fcd795f9cbdc09564ca065120c1f89dc9c02d31e7a1be",
+        "object": "func_80698E7C.o",
+        "object_size": 665,
+        "object_sha256": "960e746547ac99ede21fcdd9213f987b0fe51ae5fdab1cc704e394ecbe5af241",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698E84",
+        "source": "func_80698E84.cpp",
+        "source_sha256": "5468d079754093728822a0b8c33ce9310c3f0ce3cae0c239fe721a992616d0d3",
+        "object": "func_80698E84.o",
+        "object_size": 16545,
+        "object_sha256": "e71834eb3e923c4de9fc87a4272b7d00e63c5ae1adcb8b96c8a0b153c288bdbf",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698EE0",
+        "source": "func_80698EE0.cpp",
+        "source_sha256": "24c2002feb9242a559a54b46c48ecce59540c17d33b8ce0d7d546b9da2e1f10f",
+        "object": "func_80698EE0.o",
+        "object_size": 16588,
+        "object_sha256": "98087a5f2f28d77bd3f8a7e1c950fadeb6adf1b9948c5998afc7d698ffa50029",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80698F30",
+        "source": "func_80698F30.cpp",
+        "source_sha256": "78ced229921f04e0a03794d0cd45057512a6ebaca369c5255627cd15fbfdbacf",
+        "object": "func_80698F30.o",
+        "object_size": 99211,
+        "object_sha256": "ea4c8d372d365f88ee02e42b3782fccd1d91e3109edcd788d2b5c0418d488ee9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80699494",
+        "source": "func_80699494.cpp",
+        "source_sha256": "77837130ffa019059979068c852d8f845b97b56264e95789fdf5032e2ca23205",
+        "object": "func_80699494.o",
+        "object_size": 26559,
+        "object_sha256": "5e3dc70a6fc0deef1bb2653c20189157493c6ff095dfbf46fa98b5912321763b",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80699684",
+        "source": "func_80699684.cpp",
+        "source_sha256": "2b26c06605581209a6e7dbfca9c396fce8f2a7d077005c052bd377e890abd560",
+        "object": "func_80699684.o",
+        "object_size": 703,
+        "object_sha256": "436efde08d96c4c09136d5fddf59934dfb888adc55f98c6df0e594282398f704",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80699694",
+        "source": "func_80699694.cpp",
+        "source_sha256": "87a323dd29a776f04e882d4faa5a4092a218bde795c9fdbd2eec85a2172eed35",
+        "object": "func_80699694.o",
+        "object_size": 50900,
+        "object_sha256": "e0d030df0f2c3d09e2eb22c45f620ea96d15de030cd8f957e7544fa83554e0b0",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069973C",
+        "source": "func_8069973C.cpp",
+        "source_sha256": "2fdb76057587ad3181a5fa21d49787d1569b6c8d8343ee3a57b9bc8ecc8a4529",
+        "object": "func_8069973C.o",
+        "object_size": 701,
+        "object_sha256": "060b6fe3b3745cda7a717a62db7278f9259113c683c058b6385c73563e30a302",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80699750",
+        "source": "func_80699750.cpp",
+        "source_sha256": "0d7333c398cc0b5fa91d1e2ce004b6037c0e9127c70b851a255656bf505ac552",
+        "object": "func_80699750.o",
+        "object_size": 87215,
+        "object_sha256": "50afa2b548e33b2a918754326466d157839e07b0ecf64d1ca52081d29a1ba9d1",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80699C64",
+        "source": "func_80699C64.cpp",
+        "source_sha256": "ca01cd7714ae055784cddf7b11f4a11240cf204886f5ed4fe094db726a838c1a",
+        "object": "func_80699C64.o",
+        "object_size": 16441,
+        "object_sha256": "9e859b52a6d3ee16f206b15f50681776c04c399946f703199924a9e792a3428f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80699CA8",
+        "source": "func_80699CA8.cpp",
+        "source_sha256": "57d36a2658296081f2f4b60b014f432ce3d611c5bccd2e8f27323939bc72458c",
+        "object": "func_80699CA8.o",
+        "object_size": 28707,
+        "object_sha256": "8284b74f83eac665e6964d4f61b241b57391a9a0240eb43491dc5c0d65a195bb",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80699CFC",
+        "source": "func_80699CFC.cpp",
+        "source_sha256": "2812e58b6148c0133d98359d42e2ac0f89f1bf60c5a7099d87342e9e16848a54",
+        "object": "func_80699CFC.o",
+        "object_size": 16635,
+        "object_sha256": "727f8baeba0d2f174d18ad63355b7cdd1535991f92025f0cf7c19e7eadf14c66",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x80699D7C",
+        "source": "func_80699D7C.cpp",
+        "source_sha256": "914cc00dcb3c25dbd47c27f2731ccaf06f53c0040cb8201d950e90ddf02d06ff",
+        "object": "func_80699D7C.o",
+        "object_size": 95793,
+        "object_sha256": "f35e551681ece75e76eec5667675d4d54ee66f883a5b6230aa680c312946c0bf",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069A204",
+        "source": "func_8069A204.cpp",
+        "source_sha256": "66a64f7b68d3cd70e9783eba033b075692cfd6b0bf12ee4b57957282a54500bd",
+        "object": "func_8069A204.o",
+        "object_size": 682,
+        "object_sha256": "ba19414598f45b1fc7b8097d71ead7ea127000334ae6ff4c9eadb02a3455162b",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069A20C",
+        "source": "func_8069A20C.cpp",
+        "source_sha256": "45ce761ef43b453bff00d2cdcdd0d42f75c124891363e93c2c78a5d07d5886d6",
+        "object": "func_8069A20C.o",
+        "object_size": 20440,
+        "object_sha256": "2492f3930f128d24d8dbcaa09e9d8ff9a7ab6dd21c33e719c7af396ebbb7995d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069A2A4",
+        "source": "func_8069A2A4.cpp",
+        "source_sha256": "1d8af4d9d1ad48d99325e06ecf33ab54c841750dc7ab175fa0eccd6abc757854",
+        "object": "func_8069A2A4.o",
+        "object_size": 699,
+        "object_sha256": "cd4e7314a0645558ff909e6398c7f18389b86813f8264ce59eb7056cd6ecb1f0",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069A2B4",
+        "source": "func_8069A2B4.cpp",
+        "source_sha256": "16c108ca0c923583c7a35f8d636a3dbd9f90c0dbac54a4b7de2752110d93a2a5",
+        "object": "func_8069A2B4.o",
+        "object_size": 24382,
+        "object_sha256": "0d525a55fe4119b472918b77877e3fbb821ff604a88ae6d9318e06a96626ebd6",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069A398",
+        "source": "func_8069A398.cpp",
+        "source_sha256": "af91d382fd798ef56bb7f3ca33a9e8a97c4902953855f8f098e4580d0ac29cb6",
+        "object": "func_8069A398.o",
+        "object_size": 40668,
+        "object_sha256": "cc22a0e448a6fedabb806cc0cc752edd2efc5c2d2797bbb991462907527270b9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069A53C",
+        "source": "func_8069A53C.cpp",
+        "source_sha256": "cf02df4a1f1d8113b2c4e83df02fd57c3c9e1bd720ea48567b2c412b12b7e209",
+        "object": "func_8069A53C.o",
+        "object_size": 26559,
+        "object_sha256": "b9d8b27121d88d836dbd8adf53a88bc45eb563ce957f112b8d5707ca1f174644",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069A72C",
+        "source": "func_8069A72C.cpp",
+        "source_sha256": "c9bf089bb9e44068b72ffb1ca17b7001b4b2f4e8aa22a2eb47492f488e07205e",
+        "object": "func_8069A72C.o",
+        "object_size": 34937,
+        "object_sha256": "c64d6d63a3ebdb122075c1b397d7a71a0eb6d0f89082d8865171cb269b9dea2b",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069A85C",
+        "source": "func_8069A85C.cpp",
+        "source_sha256": "84267beed8af9d16e36bb9d4014d7c929464ecccc18d24b10aabe6e45b305ce6",
+        "object": "func_8069A85C.o",
+        "object_size": 58158,
+        "object_sha256": "1026c0678de8714baa9e7ab32b148eb9ca56d175fbbdf3a105183e0075308d26",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069AA00",
+        "source": "func_8069AA00.cpp",
+        "source_sha256": "7258eeba2cd0b09a6e77a7476a767ec58c98331c868a7163e957774599719c52",
+        "object": "func_8069AA00.o",
+        "object_size": 97643,
+        "object_sha256": "963dae76b103aec77582df4c99240d2d8185a5e68a74a6feb8a39758325e55d5",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069AD94",
+        "source": "func_8069AD94.cpp",
+        "source_sha256": "bd0b8e0a1bfa8bd864cd1add35a2be05c5e91e602c6c80f9e52e8e6a5a1088cf",
+        "object": "func_8069AD94.o",
+        "object_size": 682,
+        "object_sha256": "451d0595f9808fbb94bfb92381cb4e5e7eb657e983a3fed0932f7d8f14057b4f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069AD9C",
+        "source": "func_8069AD9C.cpp",
+        "source_sha256": "407dc64d8eef824a3f8f642e807971b7ee8b90eefe309dbf751cfc69dd0cea65",
+        "object": "func_8069AD9C.o",
+        "object_size": 16736,
+        "object_sha256": "e49361e1a7b9e435f93debfe61ac4046f9ba476359e396775a173a448c5a3d0f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069AE10",
+        "source": "func_8069AE10.cpp",
+        "source_sha256": "b48365e42c96402a1e232cdd1d04fad66d55515af142ddc571d4c80710d0a51f",
+        "object": "func_8069AE10.o",
+        "object_size": 20321,
+        "object_sha256": "bc50ed61291fc0dbf52e8631f014811691d1261695e3311d7dda4238954bc1d6",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069AE84",
+        "source": "func_8069AE84.cpp",
+        "source_sha256": "4ead08003a1c0f06cb703a3c849cefea37eaafa294b733d31e12d011dd37071c",
+        "object": "func_8069AE84.o",
+        "object_size": 71237,
+        "object_sha256": "c77b585ae664e5062ba73cdc230d165db8a65face9bf0c10e691ed537c0a5171",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069B3E0",
+        "source": "func_8069B3E0.cpp",
+        "source_sha256": "7784645f9b199c2926ed91db7537e01cb2780de51047cb68968afff33d6c8bae",
+        "object": "func_8069B3E0.o",
+        "object_size": 20393,
+        "object_sha256": "5bb9466330db5b4960a92affe3c47a0556502bb05b9f0fc673c1c18b6d971e1d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069B46C",
+        "source": "func_8069B46C.cpp",
+        "source_sha256": "fcef40ab3aa2fd2f3c4febaca570445b1c55a035211524da88d7504a58a83361",
+        "object": "func_8069B46C.o",
+        "object_size": 35577,
+        "object_sha256": "c4f8d306c277960defbeda79ba2a407899fc11a70a0fd07ef05e477eb623e4e1",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069B614",
+        "source": "func_8069B614.cpp",
+        "source_sha256": "a30348a85e12dbd6aca40e2203e6128d1d02a453fffda1757f81ba61ac1801e1",
+        "object": "func_8069B614.o",
+        "object_size": 40857,
+        "object_sha256": "07559e8e823c8aedc57127bcc5293d8e1ee73aa52422b7b77ab063165428e98f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069B7C4",
+        "source": "func_8069B7C4.cpp",
+        "source_sha256": "eda944d4b8aed46c3edb8ffd3eb99c3d8442f0aa87683b85d2a514f5db9480ab",
+        "object": "func_8069B7C4.o",
+        "object_size": 20711,
+        "object_sha256": "9a89f35fb8abe48bc2421f69209bdd12515d5eccb9afa1308edb714bb343e99a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069B864",
+        "source": "func_8069B864.cpp",
+        "source_sha256": "18ae4d80a21b04e2ccc9e50d93bf2908114fe50e54d4c28d91a32b99b0430408",
+        "object": "func_8069B864.o",
+        "object_size": 16874,
+        "object_sha256": "7670c8dfd0408cecfc09351bbe388ceef0d5d3c4f093f1ec2c447de118541fdc",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069B968",
+        "source": "func_8069B968.cpp",
+        "source_sha256": "7e2102cdb44993fef92c66734163f214375f8becb76623c04315c18ee3dd331d",
+        "object": "func_8069B968.o",
+        "object_size": 111453,
+        "object_sha256": "ae2adab9ff43e342164c5015047a8af7fda893c2024c8fec2349f0706e9b1671",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C090",
+        "source": "func_8069C090.cpp",
+        "source_sha256": "ab406bf0a12326f5893c7f3b435fb63b2de7b2c04a11dcfe98015d5d4e4fdfc8",
+        "object": "func_8069C090.o",
+        "object_size": 691,
+        "object_sha256": "a647590febc9ea1fdd71fbdf445cb19a60d6453c4504647c676b60262378569d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C09C",
+        "source": "func_8069C09C.cpp",
+        "source_sha256": "7d879fa7c49548dcc60ac535d21928ec39f3f98df6ef43f9ef0bad5004b74f73",
+        "object": "func_8069C09C.o",
+        "object_size": 668,
+        "object_sha256": "3f0745e1ac76ec2a0141e6b7bc4e59025f3c849cccd7d0e16dc87d87ee1962fb",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C0A4",
+        "source": "func_8069C0A4.cpp",
+        "source_sha256": "e108c2c7b21f9dbabaa919ad8345cf37d4ce0452919453dab6afa7919504a688",
+        "object": "func_8069C0A4.o",
+        "object_size": 685,
+        "object_sha256": "8ff5c22dac0c23336353a14cdafe5a6460ad1cfd4655721f1739e187041eaf3a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C0AC",
+        "source": "func_8069C0AC.cpp",
+        "source_sha256": "658815cd286d7d37b0a4135f5c647df158edfa94b6619c6700bdb18267c58afe",
+        "object": "func_8069C0AC.o",
+        "object_size": 682,
+        "object_sha256": "2de892d815d4161e4653e160bec9cde89f31b878d16f8cc574c30469c5d22f75",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C0B4",
+        "source": "func_8069C0B4.cpp",
+        "source_sha256": "6ede4f6040eee1ef163f7100f532d3b533d58ccace4e64c9d452d2def30fb6bf",
+        "object": "func_8069C0B4.o",
+        "object_size": 684,
+        "object_sha256": "5dcd4fb96ee111cb1f6f5bf35b84d2cd1a222ff892657135ec4466df3fee6c50",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C0BC",
+        "source": "func_8069C0BC.cpp",
+        "source_sha256": "04d355ee2f78acbaace12b8406e6e8b600e4e7487cace89edd40423888ae7b0f",
+        "object": "func_8069C0BC.o",
+        "object_size": 665,
+        "object_sha256": "877cd104b9d5bf99c10e37f64d2d54749a83c37fcc6d587cfc3536a5184ee263",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C0C4",
+        "source": "func_8069C0C4.cpp",
+        "source_sha256": "cfd58de8c32d85e8db13918d6b4bb9262feebaff18e639643002d656c59d83f7",
+        "object": "func_8069C0C4.o",
+        "object_size": 2144,
+        "object_sha256": "de4429d89bb7b914e55bbfbc3e1a5028fbdfe6659b4a54a27128e6e0f899d26f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C220",
+        "source": "func_8069C220.cpp",
+        "source_sha256": "72de16c03a264f11f131c397a58ec9f8372e5b2ec79b7e5e3f359a618ecea599",
+        "object": "func_8069C220.o",
+        "object_size": 1824,
+        "object_sha256": "c692f2fbb3721045b020792c207e0f1fd35fe60eaa5280c3ff90aed37f142230",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C380",
+        "source": "func_8069C380.cpp",
+        "source_sha256": "47c6e7b4172b231e36dfeed785fcc6387d8c2505e86d00355644651dd8208411",
+        "object": "func_8069C380.o",
+        "object_size": 685,
+        "object_sha256": "235f90ec456bd86336a0742b115e1e93d385bc8bdeb9fad7022f946af057c1ca",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C388",
+        "source": "func_8069C388.cpp",
+        "source_sha256": "c6ea3fe2e1191cdb5cf275e01574b32b1177d84d76a83a6d88807d4ad7d46b0c",
+        "object": "func_8069C388.o",
+        "object_size": 52945,
+        "object_sha256": "8f4704df24c5f68b5120843fc40265710f959bf1c9eeaad0b66b474f98f7f427",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C9D4",
+        "source": "func_8069C9D4.cpp",
+        "source_sha256": "9514ac74337359eb2fcd62294815fe75ea9f89c555b4c8cd330dab742a3fdc5e",
+        "object": "func_8069C9D4.o",
+        "object_size": 665,
+        "object_sha256": "9ed35864fdd812e4c60dd6c9d6d4e6650d11375ab7ad771edd5234ba07140f6a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069C9DC",
+        "source": "func_8069C9DC.cpp",
+        "source_sha256": "d2e3eda3b6db35c096e40d8b66ca2dfc5ff0ed4975596afaf5ad15d1b8d4b272",
+        "object": "func_8069C9DC.o",
+        "object_size": 114932,
+        "object_sha256": "efd636c9795b8f361ad51bb620229aca311b2aa6338c2d54e6880da9be5b1ba2",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D578",
+        "source": "func_8069D578.cpp",
+        "source_sha256": "02b41c07c57eb53e22418b60be79bc791942f976c19eb9555c25fc59032e75e8",
+        "object": "func_8069D578.o",
+        "object_size": 689,
+        "object_sha256": "2f2d8692661762674e630cf5812259fd0db867bd0a2c29a632c96ee8f394bd85",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D580",
+        "source": "func_8069D580.cpp",
+        "source_sha256": "43a1dee59c5dcd31b479d0f1c245f3e94e66f2db862ee7605d06a889a0425fca",
+        "object": "func_8069D580.o",
+        "object_size": 689,
+        "object_sha256": "64d66d7b688565a478955fa0c09ee09cf5cd694ace2c488cfaca917ba14190e0",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D588",
+        "source": "func_8069D588.cpp",
+        "source_sha256": "9452da816a4554449b87e99960fd3285146a6092f03b710803d303ef1137eca6",
+        "object": "func_8069D588.o",
+        "object_size": 1108,
+        "object_sha256": "fecf44317286c2dc0897336d30faa766412792a1add7ddfe3bbb14f6cf6901d1",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D59C",
+        "source": "func_8069D59C.cpp",
+        "source_sha256": "3bab65078281e261a9efbfeb4a392861663aa4766c3aedd1335860b70a17c9c3",
+        "object": "func_8069D59C.o",
+        "object_size": 20440,
+        "object_sha256": "129b5b7919e3e6c15ca27f4d5b5c02049bf152a38d307d478c9bf130d86204db",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D634",
+        "source": "func_8069D634.cpp",
+        "source_sha256": "9c7ec9f64ea677bb4ce40dd387714d59afbe9aae389b64f0430cf2a1d5a26ca0",
+        "object": "func_8069D634.o",
+        "object_size": 1668,
+        "object_sha256": "c68f9b1100ab71544d19568a32bda723fda0f1f941660cae1dc84ae1e7e78ccb",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D658",
+        "source": "func_8069D658.cpp",
+        "source_sha256": "89fc49eff66ce5df79f339fde326d8eb3eeebeb374ff291ba2a4307cfdced07b",
+        "object": "func_8069D658.o",
+        "object_size": 43809,
+        "object_sha256": "724f1583a80d79638e80ea6ccc629ed254c1d331d896ef0667e5337e31aa46ef",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D764",
+        "source": "func_8069D764.cpp",
+        "source_sha256": "26353cac0ca39836b10746681a4b1e394239cc54b6e0068c2dcd2aa96945eb0c",
+        "object": "func_8069D764.o",
+        "object_size": 23565,
+        "object_sha256": "31c0655cd2ac2c14be07115de30d85a1e488cdf73033cdb58199f5e51477fae9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D7AC",
+        "source": "func_8069D7AC.cpp",
+        "source_sha256": "e30c057ec97ba3220089f5cd7b106e9ec0a27bd678e5b26d472122d9574d4a6c",
+        "object": "func_8069D7AC.o",
+        "object_size": 27187,
+        "object_sha256": "93c4b0210afb3fb56717eb00760f922b91e58ea137c2618a3cba694452058704",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D808",
+        "source": "func_8069D808.cpp",
+        "source_sha256": "71619b00133a5788c6452441897dc99bfeb62386d5e200a8d23a52bb4d0ed677",
+        "object": "func_8069D808.o",
+        "object_size": 23565,
+        "object_sha256": "608825e38c6c9ac12a3d905bc9167371bc0d888b9178e6fc9bc53722d0608fb9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D850",
+        "source": "func_8069D850.cpp",
+        "source_sha256": "b152c4dbc6e5f4dbc1f972aef66f099df32b041ecb419770e5751d56e23eaccc",
+        "object": "func_8069D850.o",
+        "object_size": 23565,
+        "object_sha256": "bf67889df4b934545502ef768d4d469a002028a265839ccf48c147f3cef9a60c",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069D898",
+        "source": "func_8069D898.cpp",
+        "source_sha256": "1276b8814d55eb49d7cd0f884351c5c37db6ef730b85f2ee2605b915ad5047d9",
+        "object": "func_8069D898.o",
+        "object_size": 86861,
+        "object_sha256": "81ccd593e836f1a4e67010ee01b9b7f8ed2fdbddf9573b2cc086940836554156",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069DBC4",
+        "source": "func_8069DBC4.cpp",
+        "source_sha256": "bd263ea34bb3da25a9776f86eb80415c1ec20e6383900a1c0c378c40618cddc1",
+        "object": "func_8069DBC4.o",
+        "object_size": 55727,
+        "object_sha256": "db01498f590a15151079c8c2544dc1cf6f860470e1723cf0f8c546867a0a379b",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069DD54",
+        "source": "func_8069DD54.cpp",
+        "source_sha256": "2953de4dbb19bdc03a2c1c21de1d7b0754c6fe23470e92633446d0f42a1d32cb",
+        "object": "func_8069DD54.o",
+        "object_size": 1258,
+        "object_sha256": "fa6fd4b3f439a764a6e4cf912ae30c00f1bac18ad9a16a6c5c5fe5b15cf94b47",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069DD8C",
+        "source": "func_8069DD8C.cpp",
+        "source_sha256": "9e977876ee1b45d0f0149fa589448bced3c5180784d89a40ab59457ba52dbbe8",
+        "object": "func_8069DD8C.o",
+        "object_size": 68716,
+        "object_sha256": "ac5091010625bfdc00f47c4b02a22b8d2ca01a766953e6c6fbfdc76f5d9f7991",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069E0E8",
+        "source": "func_8069E0E8.cpp",
+        "source_sha256": "991c9ac5e9933e562f9be27d01f3b527690252f7a93f9d439acde13f3539413e",
+        "object": "func_8069E0E8.o",
+        "object_size": 26559,
+        "object_sha256": "dc86fdad9d73cdb4c372d7de5dd101b22bd696a3c2746f78a6e43a4015e38ef0",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069E2D8",
+        "source": "func_8069E2D8.cpp",
+        "source_sha256": "34777553404a9d1fe9f3941180efa98359f8e08501799df965e918901fe07cfd",
+        "object": "func_8069E2D8.o",
+        "object_size": 61578,
+        "object_sha256": "36f80dc2228dcb02313e88a4f804e5dcec3b7d9e7a3bdc39b073b3e91f6017ce",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069E558",
+        "source": "func_8069E558.cpp",
+        "source_sha256": "b9ce691c257b62e6ae5536c68d48053afe4964b66bb6a0c840b640b437e39d74",
+        "object": "func_8069E558.o",
+        "object_size": 66433,
+        "object_sha256": "54043a36e40f519cacd6294f5d114843e5095c765a69677c6694ef09dc9771b4",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069EC18",
+        "source": "func_8069EC18.cpp",
+        "source_sha256": "fd1e8c127732c6bbacceb1e7fa2087cad8f626992577aedffb5b3b70d243aac0",
+        "object": "func_8069EC18.o",
+        "object_size": 71735,
+        "object_sha256": "b79f7b7fd53a8b632bdd74d830033e263a87b9a2318d6d924c001a89691c21ff",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x8069F580",
+        "source": "func_8069F580.cpp",
+        "source_sha256": "9d110435f36bee278170d16899aa38aad91a8c9d0b4c1efa871c00b11aacfe58",
+        "object": "func_8069F580.o",
+        "object_size": 76056,
+        "object_sha256": "dcf3f192e0d0484d5cd9c4a2eb6177a26706efbb1ceabe392ed596756ba99a35",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A01D0",
+        "source": "func_806A01D0.cpp",
+        "source_sha256": "2c57a0740a5550d1544dd959cf959f3d7fa960c3ffd2dc595c616db0e7fa744d",
+        "object": "func_806A01D0.o",
+        "object_size": 98987,
+        "object_sha256": "368c621363fd83df48b6741781a176df6f00e9cd1e44c2cf07e37a88e5813799",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A0BF0",
+        "source": "func_806A0BF0.cpp",
+        "source_sha256": "2863007a8d1b4572b9e64d13fcc56bdbd678cb4b33372934cb0967920db71884",
+        "object": "func_806A0BF0.o",
+        "object_size": 26559,
+        "object_sha256": "1f0a3e8d5ce9bd0ecbb4b20534163eba8fc095ed865e753c9db1d3fac21f0730",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A0DE0",
+        "source": "func_806A0DE0.cpp",
+        "source_sha256": "924c9a41fc6650d435c68515980d40d552b4b598218686c6b77806561bb9f872",
+        "object": "func_806A0DE0.o",
+        "object_size": 79796,
+        "object_sha256": "acffe74b8a112810553ac2eed13186602bce45442dfd4cd1f8c9097d68c53c48",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A11EC",
+        "source": "func_806A11EC.cpp",
+        "source_sha256": "9b8e23a3a36b619af4296834ee2916d2bfa6aa73f40aaec87c976e653484b317",
+        "object": "func_806A11EC.o",
+        "object_size": 284091,
+        "object_sha256": "f219177512533684a531593ac3e672a8b15c26734abb6bbf885f0e060b0f331e",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A2E7C",
+        "source": "func_806A2E7C.cpp",
+        "source_sha256": "7b18fcb95307ee1cd68f366b997aaf9d1026394d7fa28222741effd698a50f19",
+        "object": "func_806A2E7C.o",
+        "object_size": 16798,
+        "object_sha256": "ab69204fa2bd7cc50d82eee3fd2157ed4586ec8643fb587827e15130a75ed452",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A2EC0",
+        "source": "func_806A2EC0.cpp",
+        "source_sha256": "52426a871b6c49c1b3836c576c9b43c56b19747bfa9c557a8b9317ec7e85247c",
+        "object": "func_806A2EC0.o",
+        "object_size": 60340,
+        "object_sha256": "2ce980a051058a7d32be8214811ea15f0d721dccd8f07a1292d593ec5b6040b9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A3304",
+        "source": "func_806A3304.cpp",
+        "source_sha256": "00e1e08a0ab6d8aa5a21c8e221854856e0846dcc6c9cedddb2f7ce41a350e734",
+        "object": "func_806A3304.o",
+        "object_size": 58995,
+        "object_sha256": "3bb0d29a01b0a0a04f3a1892486eca157170abb3abce63a7324b6a19d3772db7",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A36E4",
+        "source": "func_806A36E4.cpp",
+        "source_sha256": "0a49134a04d8e60deb6baa719103c9f0734e6eddbd8d1944d752f247ade8d4e1",
+        "object": "func_806A36E4.o",
+        "object_size": 78919,
+        "object_sha256": "4b4acdf7d951206f622bb4d4fc554355d0b0559ab30ba4eef230d71ddf9fe440",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A3DF0",
+        "source": "func_806A3DF0.cpp",
+        "source_sha256": "5485862f29416e9b4e23b7a75f9ee9b1561250401dc27b824da26ba8ca461985",
+        "object": "func_806A3DF0.o",
+        "object_size": 21254,
+        "object_sha256": "b5997e6a48dadd26a80b3e53f9d340cf9a2e3f80b68e70fc2b98e6b76edf5533",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A3ED0",
+        "source": "func_806A3ED0.cpp",
+        "source_sha256": "d5105e0fad8526a5e755bbe2f6ae3b45537beff53b4b0be01ce809c060ec034f",
+        "object": "func_806A3ED0.o",
+        "object_size": 39881,
+        "object_sha256": "0f876ad6547775a5c630e038f4648fd5f022f5a4ff102a45c64d5e6ccbba30bd",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A3F90",
+        "source": "func_806A3F90.cpp",
+        "source_sha256": "7c3469b7b675b9fbd0a8c7da34d4a6612b8e742bc55d77328e2a9442c552e3e0",
+        "object": "func_806A3F90.o",
+        "object_size": 28906,
+        "object_sha256": "d6b42360708e85cd2b66b9a681ed9c6ac2c7fb467abc8d3c762dfda573a1aaee",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A4014",
+        "source": "func_806A4014.cpp",
+        "source_sha256": "f17856bf76070aaa5a0b3d8f66ca1ad342db8fb1bb61f3803b0fa09f99d22a0c",
+        "object": "func_806A4014.o",
+        "object_size": 28906,
+        "object_sha256": "6b27cb3efe6918ef0a50c23467f91db1efe66df8071d8c16b3f5a0fb165a78c5",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A4098",
+        "source": "func_806A4098.cpp",
+        "source_sha256": "24a24c2e22bc02c306c67589e896a72a27be5428d79a874c2a84992aa06b24e0",
+        "object": "func_806A4098.o",
+        "object_size": 16551,
+        "object_sha256": "b896249624725ecf75f92de95d97c58077b717464e52dafeb4c1febaaedfd104",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A40E4",
+        "source": "func_806A40E4.cpp",
+        "source_sha256": "4ea164a3dfb8c6f103545d32f45d9c09614a969718feba9151559d35ecbf564e",
+        "object": "func_806A40E4.o",
+        "object_size": 16551,
+        "object_sha256": "64c3e90b75edbdbe25b30ac6634b279bd5c48c81a272a90e650dc52de9a10b2f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A4130",
+        "source": "func_806A4130.cpp",
+        "source_sha256": "22b0764d0464757818c6c45e0ca63ad1ff244e4186e8ccbddfb84c5f8d40e1ca",
+        "object": "func_806A4130.o",
+        "object_size": 16658,
+        "object_sha256": "a25b1f86224390ca3e227825a44c9cd3748cb4fe16b6407f5bbea6e383ad793a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A4180",
+        "source": "func_806A4180.cpp",
+        "source_sha256": "f77ed337e0b946af76834bcc10cb6f05868f70734514b9a05eb7ebd7bd2ca300",
+        "object": "func_806A4180.o",
+        "object_size": 126929,
+        "object_sha256": "0a9938de487bd097bbe432738569922bde098efd5b5bd7813312d4a90ca73f2d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A4950",
+        "source": "func_806A4950.cpp",
+        "source_sha256": "9be43067c44ef680a23005ad82ca0a4a4d4b5a615a0ee35504c25daf8a552f78",
+        "object": "func_806A4950.o",
+        "object_size": 39525,
+        "object_sha256": "04d46972b149dccdb8685f6ffc2ce0a5ea62c06772944455f7b4f6edcf89e5dc",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A49F0",
+        "source": "func_806A49F0.cpp",
+        "source_sha256": "7e36c8398fad28fb3bf382486fd01e6e5c1382908ae28ed7161551bcfc5ac0a1",
+        "object": "func_806A49F0.o",
+        "object_size": 164889,
+        "object_sha256": "3e79826b61e2d2f03cadfddb0c230f3106f781c67e32a1b37bbc3e217a4a6ef9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A54A8",
+        "source": "func_806A54A8.cpp",
+        "source_sha256": "203b7d4d0d58e5cb5c31e9c6efe30623d582e1c9ac0a733b6b3d17ebb1292f72",
+        "object": "func_806A54A8.o",
+        "object_size": 36179,
+        "object_sha256": "02eac3811cb01b31dadd0d229e82d74cde84faf327a3cf1929499faee0922920",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5544",
+        "source": "func_806A5544.cpp",
+        "source_sha256": "2707bf0cff92f84b237f17956d87962f2ed85add0b95b5e20e48a72cd9b42101",
+        "object": "func_806A5544.o",
+        "object_size": 40276,
+        "object_sha256": "da8a4dd660d8caac1063a7cf6c985e63795374b9390a208ee2c1d97e9302a54a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A55F4",
+        "source": "func_806A55F4.cpp",
+        "source_sha256": "0e267178f4359f4f6b1ff88b8fcd8ea215719a22740e92a40538da1d06db6fa9",
+        "object": "func_806A55F4.o",
+        "object_size": 40343,
+        "object_sha256": "81c3d977ff792bbc54fb1b362f7daee775d621a66b37cdb4a10fcc2570b5f087",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A56AC",
+        "source": "func_806A56AC.cpp",
+        "source_sha256": "a54c8d2b6408588ed37c059e5fccfcb77cdb2c7483b525a9a272e11fb1d542df",
+        "object": "func_806A56AC.o",
+        "object_size": 40381,
+        "object_sha256": "9b0d336c9dac61bdc5de45c2bdd543b0661d37a5fdd0a39988f95f2a2365e74a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5774",
+        "source": "func_806A5774.cpp",
+        "source_sha256": "f7bba72322021189b77f25a3538fc42c234bdcc899bf8913417465d37e18e526",
+        "object": "func_806A5774.o",
+        "object_size": 40668,
+        "object_sha256": "bc2d78587f2a918d1822e055ff55dd78834ee812a896d42c48af7f8e5bbb8640",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5918",
+        "source": "func_806A5918.cpp",
+        "source_sha256": "63544bfbe80b8a3a6c734af38450e0b336ac40f9fbcbd17344be12f5a44aedb2",
+        "object": "func_806A5918.o",
+        "object_size": 26559,
+        "object_sha256": "771b34d805deac98448c07b096d68fb62a8bdab6631fae49d712af5869badf58",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5B08",
+        "source": "func_806A5B08.cpp",
+        "source_sha256": "12e8fb2d4a0f3de59d898fbdf2195fa7051a7a810084a06246d72818a6c517b2",
+        "object": "func_806A5B08.o",
+        "object_size": 44980,
+        "object_sha256": "85010ec056671ad876f95f0901ef902b76b6f14f819796c969b4f3a0cf3a4c6a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5C9C",
+        "source": "func_806A5C9C.cpp",
+        "source_sha256": "dfd7008384882d870f903e26f02a437327bf02a613c07e1e732f70904bfe205a",
+        "object": "func_806A5C9C.o",
+        "object_size": 44305,
+        "object_sha256": "61dd0279ba385c5a50c88cb655fb30aa85d57e7c05b59718833e2776da8eb684",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5DF0",
+        "source": "func_806A5DF0.cpp",
+        "source_sha256": "17a5b962f0b139a42047ce9bc539e4e2ae33e8bb5327a2f52eac7e8d1496fbac",
+        "object": "func_806A5DF0.o",
+        "object_size": 1261,
+        "object_sha256": "af6cda5441b0448dce1e8a82b239635cb5c1682cc562c24029e610c03441dfb2",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5E20",
+        "source": "func_806A5E20.cpp",
+        "source_sha256": "a2c22b5730974e7d2d9c63956bba9d62dc0187e1aef795b737f255fc3ca1d827",
+        "object": "func_806A5E20.o",
+        "object_size": 698,
+        "object_sha256": "d4e5b192f835739f667d999c0e38ce057b251b2fa9595bacad2625ba3ce28ecf",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5E28",
+        "source": "func_806A5E28.cpp",
+        "source_sha256": "deeb4479a5571b59edd2c3ff9cdee38e1e77c21e7d109bcdf2f349a726c239a8",
+        "object": "func_806A5E28.o",
+        "object_size": 686,
+        "object_sha256": "a1ea1ff8d16ff6e2feec5cae10ed9a19b94d3d911c7ce60223c5a04338e45a61",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5E30",
+        "source": "func_806A5E30.cpp",
+        "source_sha256": "3c11fbdeb11e84c482da1e61f7929302a6a5a7021663ca4080647064de9250a7",
+        "object": "func_806A5E30.o",
+        "object_size": 15960,
+        "object_sha256": "9239e3932964150f76a5dac9238e36dae2cfcadc911e914e6b3b56d30eb881eb",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5E38",
+        "source": "func_806A5E38.cpp",
+        "source_sha256": "52e70c73874c561777cde4d4b849550eeaa90409fef89dd0a0f4a515f9f63f4b",
+        "object": "func_806A5E38.o",
+        "object_size": 15960,
+        "object_sha256": "0a73a7c6157cb017da4364164443eabb8dd6e4d53026c031fb84e629245933b8",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5E40",
+        "source": "func_806A5E40.cpp",
+        "source_sha256": "138154081cf143f14f958e89dc6a2f43f23a52ef7dee658d0c64bdc56f29ba07",
+        "object": "func_806A5E40.o",
+        "object_size": 15960,
+        "object_sha256": "1461e641f50c1ad6ea727cea0744389bd35e9d1e0569e006076fff73673b8cc3",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5E48",
+        "source": "func_806A5E48.cpp",
+        "source_sha256": "4d32fc0ab2b3aa1fa20e2687d49c6b501acce4de8867f626faf00abacb9a8ab5",
+        "object": "func_806A5E48.o",
+        "object_size": 39352,
+        "object_sha256": "ef20478def0a020ba13bd0db11a1c121454a5430abef9d49a5de91d6b3b03b35",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5ED0",
+        "source": "func_806A5ED0.cpp",
+        "source_sha256": "3be379376f6371621b9ab1f287a67eaa0d1edfae33b5f6524046b3f1000f1c4c",
+        "object": "func_806A5ED0.o",
+        "object_size": 39278,
+        "object_sha256": "e4239e011922a6ff6b6070d7e1daad169ce5c1ec95d1d23a9c45338a542de8f1",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5F50",
+        "source": "func_806A5F50.cpp",
+        "source_sha256": "b8c8d2c90c86d69a8f4d2dc5825aaaa6372bd852b6088ec2218ca428e506593e",
+        "object": "func_806A5F50.o",
+        "object_size": 39329,
+        "object_sha256": "09b56674ab564c1f12844d7e17c57f7de71a2b2ae43ad12f809d272b6295be9a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5FE0",
+        "source": "func_806A5FE0.cpp",
+        "source_sha256": "8e543e3a5fca0ff9f9f40a3e70c2ba46d9b40172b654908fc7a17b2aca1d7ed2",
+        "object": "func_806A5FE0.o",
+        "object_size": 15960,
+        "object_sha256": "1809c9796709bebf6a5e2fa79b68ca4529db3baa5e550e4de8945f9f8075de54",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A5FE8",
+        "source": "func_806A5FE8.cpp",
+        "source_sha256": "14381bfd8290c0d70517d274815eb40aa78eca0aeff1c1d25399ab39656be999",
+        "object": "func_806A5FE8.o",
+        "object_size": 74898,
+        "object_sha256": "f9dc7be45d2586a811d9da01c614a2cf48737a2afa7237971e34f0595c8beec1",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A6314",
+        "source": "func_806A6314.cpp",
+        "source_sha256": "bd29b50ce63491635310ea15d1a8896088578ac321034ccebd134416589be013",
+        "object": "func_806A6314.o",
+        "object_size": 23979,
+        "object_sha256": "5b5f056d82c779fd194490bd36345feaa67c2b2e3be6bfb17af1da8bad4c1135",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A63A0",
+        "source": "func_806A63A0.cpp",
+        "source_sha256": "eee358dd4abadd63d00e1e0ed977b2097e77d1269345fa889d7d60ec059f2ca6",
+        "object": "func_806A63A0.o",
+        "object_size": 16449,
+        "object_sha256": "62c31994366609a9b7228b240775bf594b2b182fb82dad1471a3dea1da44ee2f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A63E0",
+        "source": "func_806A63E0.cpp",
+        "source_sha256": "fbb70843fe76bbebfff879363ef5c681e0fec3672f206e38b2f9dd95901277be",
+        "object": "func_806A63E0.o",
+        "object_size": 20448,
+        "object_sha256": "3c6c3160242121afe302cabaa041c936845d00fde08f25ef4625452784d97347",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A644C",
+        "source": "func_806A644C.cpp",
+        "source_sha256": "253e44f6485ae6f0a2f8605ec524e89542b9e8d115cbfdefd9920f83807c1681",
+        "object": "func_806A644C.o",
+        "object_size": 27634,
+        "object_sha256": "24c96d3e8c9daac94c4d8a0a60049b95e44d38fcdb370b0cd3cf4974ad6f0616",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A64CC",
+        "source": "func_806A64CC.cpp",
+        "source_sha256": "9e086485b7cc55785e8a81189054c589eae0833ece03cd7d722b007154c463a0",
+        "object": "func_806A64CC.o",
+        "object_size": 54428,
+        "object_sha256": "8d16e8d0c1ec8b79d98eb46f2ca7dad01c95cf046b92264778f746931e7f63e3",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A65D0",
+        "source": "func_806A65D0.cpp",
+        "source_sha256": "6cdbe5fec9c9074b2c4fb16efe185ca6d2ecfcca7e99a493aeef504e31d8f050",
+        "object": "func_806A65D0.o",
+        "object_size": 696,
+        "object_sha256": "2e549eed735790fb49e025ff367c7fcf382ede68c3bbf5e9ea917a979260b47f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A65E0",
+        "source": "func_806A65E0.cpp",
+        "source_sha256": "849cc614a269b29fd6ae6979a037fd327e860bbde5eae7803a2a76d2726008ee",
+        "object": "func_806A65E0.o",
+        "object_size": 701,
+        "object_sha256": "342e334d55fb3dd550123c4af8d31dde8a2caa57e757a9437714c305368e605a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A65F4",
+        "source": "func_806A65F4.cpp",
+        "source_sha256": "a1188f811b100c9b5ca121a0ec236de16d40c659956109d7707e3da3bbada88c",
+        "object": "func_806A65F4.o",
+        "object_size": 50570,
+        "object_sha256": "5fdaf23125b3c826a999a1f25e3375de8d5ce14bfe4e5424fdaa718b6f7162b9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A685C",
+        "source": "func_806A685C.cpp",
+        "source_sha256": "5c4bc9af35648b95d5442b7080547736dd04d3b17c99c41ef1fa6ca60f954785",
+        "object": "func_806A685C.o",
+        "object_size": 47833,
+        "object_sha256": "9eb42a8b24ab7afec596b3d2cc0bfae6c60b8dfc36719baa1278cd31efc0f42c",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A6974",
+        "source": "func_806A6974.cpp",
+        "source_sha256": "28a2f0187c089578d0f124dadb13c0dcad31c746b013891f71a6736b1db58d18",
+        "object": "func_806A6974.o",
+        "object_size": 43303,
+        "object_sha256": "1e0dad2a4a6a5ad3dd7f319604e42cb514fec169703d1593841e869ecd58c2b5",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A6A1C",
+        "source": "func_806A6A1C.cpp",
+        "source_sha256": "0e0b24a2eae5f303e04286dbe380601c6a5aa506a007e561315e9e8e93b98c1d",
+        "object": "func_806A6A1C.o",
+        "object_size": 26922,
+        "object_sha256": "613a66733f384de249636da77a51dcbe52d1370f68b8a149fe843a2d0edc57d3",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A7224",
+        "source": "func_806A7224.cpp",
+        "source_sha256": "21c06457dc7eb32eff70304d53846461cb356da489fb62719d68e2d591a2d978",
+        "object": "func_806A7224.o",
+        "object_size": 24114,
+        "object_sha256": "ff5910eb765fc3cde178e7f562c5384660b6b330aff5656e8597c9dc1af67589",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A72A0",
+        "source": "func_806A72A0.cpp",
+        "source_sha256": "f84a788f6c579484ab3b68d0e6dc2cf7115cfbf3008c6f1900487a7a543ee0e5",
+        "object": "func_806A72A0.o",
+        "object_size": 35737,
+        "object_sha256": "8c736098c0c6a4c3b2737067255cb157064dc25fcee6af14745d0a91ad8738a9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A7368",
+        "source": "func_806A7368.cpp",
+        "source_sha256": "7c172b7253f8f0d6d8d93cd9107892f0e97a9e9804e7c7242049102028e6e553",
+        "object": "func_806A7368.o",
+        "object_size": 38697,
+        "object_sha256": "2a844dea748c097737ba56b9123b3072220148bed602bbbc435d78be77ac54da",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A77FC",
+        "source": "func_806A77FC.cpp",
+        "source_sha256": "4581a93f7e88502a135c799955663c094428753b37106861434aa08b41b9232b",
+        "object": "func_806A77FC.o",
+        "object_size": 31363,
+        "object_sha256": "4889f64cc62f6f8bf8fff830b583212f5bf4b1c995766532f6b8a2575724436a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A78B4",
+        "source": "func_806A78B4.cpp",
+        "source_sha256": "94f42b7ce538a259e37fc2cfcc30d9e7b634d1006809d051b265d10c858d0448",
+        "object": "func_806A78B4.o",
+        "object_size": 20254,
+        "object_sha256": "c035fbc4e458a024c164ca57eb87228a895dbb0240a0f7b3d17f91e687b2d505",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A7948",
+        "source": "func_806A7948.cpp",
+        "source_sha256": "ec2d26e9f644462064a4a2b16eafe8019bdeafb5d399519cbf4bfcd76bec0ee8",
+        "object": "func_806A7948.o",
+        "object_size": 1094,
+        "object_sha256": "6a12652e0828f06ad288e3eff5dd02a7e1a896d12e13ff91a6d8c13a7c83c36f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A795C",
+        "source": "func_806A795C.cpp",
+        "source_sha256": "211d541b6348e0c7803d20e536d193c5cc16f147d5485cd4b625b85c4b8f8422",
+        "object": "func_806A795C.o",
+        "object_size": 2854,
+        "object_sha256": "7b8ce8e14c04c9cb63d705a7b9a33e3117bebfe4947df12ccae1913372c25da8",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A79DC",
+        "source": "func_806A79DC.cpp",
+        "source_sha256": "66dcc5ebccd103b6e34c33f7882cc149c14c27b4ad2c26cba4331da201a7b53e",
+        "object": "func_806A79DC.o",
+        "object_size": 16380,
+        "object_sha256": "29d64c7bd0f94cf45b6fabf858b5aafb2c04fa0e97184a17fa761db05b1093b2",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A7A04",
+        "source": "func_806A7A04.cpp",
+        "source_sha256": "16a2add65675962268e30cdb9f2cbd4ff13d944ec6c32aa03126b63377a6b3b1",
+        "object": "func_806A7A04.o",
+        "object_size": 16538,
+        "object_sha256": "cdf3d5f8dd0678a337d6dd70951cc56dfdacc9b94395becf81fda0c2fce33bbf",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A7A5C",
+        "source": "func_806A7A5C.cpp",
+        "source_sha256": "390b73a182aecff4553aceb922de1c7f94659966e2ce1ec76b10acf9100acfa5",
+        "object": "func_806A7A5C.o",
+        "object_size": 15953,
+        "object_sha256": "75530f3cf1f42e83e21af0291306dfb7fc8ffc5179f9e650dfa592a29ea0b86d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A7A60",
+        "source": "func_806A7A60.cpp",
+        "source_sha256": "e1c4a8fb2bd82dc5c00c2df83bf3a4bbbb886a5898d89023e2cfd8ebeebfe0d2",
+        "object": "func_806A7A60.o",
+        "object_size": 20061,
+        "object_sha256": "57231577901c8d14f955225dd0a47da9040bbc3cdade99fdb13c8288f2f27064",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A7AC0",
+        "source": "func_806A7AC0.cpp",
+        "source_sha256": "299daa825952031de39e5706334e456833349bfab17a62b18eddf6fe02ef4efe",
+        "object": "func_806A7AC0.o",
+        "object_size": 27523,
+        "object_sha256": "08f35bb4a768f0bd3285ddd71de856794b3e6cad1a70ab32cfb52d096814fd9e",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A7AD0",
+        "source": "func_806A7AD0.cpp",
+        "source_sha256": "55f2f647bba1ba55b193358889bd740430191572b58a283abb94bc6c62232052",
+        "object": "func_806A7AD0.o",
+        "object_size": 28562,
+        "object_sha256": "ff4e17c62a9b9d9c0630f7d2f8a77ed10f39e9011e941ffe5c85c6d5eb3ea7d1",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A7B0C",
+        "source": "func_806A7B0C.cpp",
+        "source_sha256": "1b4adb0ce7c5489513b11d68fec459484d340f685c36b100e2ec83256f5e6e1c",
+        "object": "func_806A7B0C.o",
+        "object_size": 89799,
+        "object_sha256": "a7e207faedd1ceaf48aa67e59d6ec09c77c2bbaff0548e7c56a51e93c95d71b1",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A7EEC",
+        "source": "func_806A7EEC.cpp",
+        "source_sha256": "937cc015f1fdd58daf1d29e0ebb5f2cbab5f23821dfd7caced348450d8a16da3",
+        "object": "func_806A7EEC.o",
+        "object_size": 47019,
+        "object_sha256": "4dab0c12bba7184a9f07ffe7d8b40dae80dba4587c3f3bce4a57bc20880a397b",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8054",
+        "source": "func_806A8054.cpp",
+        "source_sha256": "597360c7e3eb8cfcba522a24c855491350c1ce5ef8529baf02c383543251596f",
+        "object": "func_806A8054.o",
+        "object_size": 16740,
+        "object_sha256": "81dfe170795d11f7f6d59f85e4bf898fc40257d26da87f5dcacee1c2a577fdca",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A80E0",
+        "source": "func_806A80E0.cpp",
+        "source_sha256": "297d6969f69c5b10db3006149e13169bb149e3abb0757f5f1dd61389bce260a0",
+        "object": "func_806A80E0.o",
+        "object_size": 20290,
+        "object_sha256": "9945ab2b48a80de226024915c8ea7af4229b10e12a55f64e618f475ff78e14c4",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8164",
+        "source": "func_806A8164.cpp",
+        "source_sha256": "caab89466dff04c528cd33d8e35e00fa1ec47c92616041d086b204c8860e442e",
+        "object": "func_806A8164.o",
+        "object_size": 20434,
+        "object_sha256": "79dad3f9cb156c7b57d3750bba2adf13f364a680f324411474a4884ab23d4e0a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8210",
+        "source": "func_806A8210.cpp",
+        "source_sha256": "ef1343890dd70170b7a3312edafd84d4c5450424c25402b655abc10d093fd08d",
+        "object": "func_806A8210.o",
+        "object_size": 16497,
+        "object_sha256": "a494dd353d3b7021e41c0e36d10ab025d12d994931cc92c2a46f99ac27d7019b",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8234",
+        "source": "func_806A8234.cpp",
+        "source_sha256": "3eec8f1b0f09201f588630847c853a353bc81dea574a9d38bd88b5c372b7dafe",
+        "object": "func_806A8234.o",
+        "object_size": 55989,
+        "object_sha256": "bb0e1b9499d1ecf35644518d0720c709e91204672ac7436b5c69d536885463b0",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8384",
+        "source": "func_806A8384.cpp",
+        "source_sha256": "92f7f32ce8560e67db59a8efc09756c80fc585eff7013c8934920bf1495254b9",
+        "object": "func_806A8384.o",
+        "object_size": 55414,
+        "object_sha256": "cd1cd5735f56fa084ee91f70251652e44b3479953cd370b7a72c539d0cdc04df",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A84C4",
+        "source": "func_806A84C4.cpp",
+        "source_sha256": "a78bf108a907a25687fdaa4a57457d2308895778334665915f18c2e036c48d28",
+        "object": "func_806A84C4.o",
+        "object_size": 68689,
+        "object_sha256": "b199c8cf99c653414d1980059b4c754bac325827d4f4f5693373d8015c9339a9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8714",
+        "source": "func_806A8714.cpp",
+        "source_sha256": "4ef26ca40226af9a9a5f88a88580410022233fd174248688b8581b26ab9f2d47",
+        "object": "func_806A8714.o",
+        "object_size": 73403,
+        "object_sha256": "bc985b289283046a52969434e8b5f1d340839e22214c91e8f2b7be124a6f51d8",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8AAC",
+        "source": "func_806A8AAC.cpp",
+        "source_sha256": "2a3af6a16c2255c7fb8513091376a6a7f5d8f26b98d1e0a378028a6f9c2eba20",
+        "object": "func_806A8AAC.o",
+        "object_size": 55938,
+        "object_sha256": "719090e0242c6f1af0f6b49edd3ddddb8ced9752109e2674bd815b615ee86098",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8C68",
+        "source": "func_806A8C68.cpp",
+        "source_sha256": "446ea5bd5269ee23317b55bd8253fa2e4495c025d2f5f1470ec3b85919b30b7e",
+        "object": "func_806A8C68.o",
+        "object_size": 16383,
+        "object_sha256": "905fcd34c9e26ef3d25b38466c66360060c35e8c453e39d5318a9dfe7ccf8ebf",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8CC0",
+        "source": "func_806A8CC0.cpp",
+        "source_sha256": "84108ce9a07ebf0c7336d60e62e2dfd9aa7aa1804b6425e7eefb88005c2aaae1",
+        "object": "func_806A8CC0.o",
+        "object_size": 743,
+        "object_sha256": "e9a7aa685d86ed42f5417af084caef0b7de69017c9f665a67cdd6bd54af80e8c",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8CEC",
+        "source": "func_806A8CEC.cpp",
+        "source_sha256": "abe39aca918de5297042948ae763037f3b1924cde1fd9595fa6d633461a45ed0",
+        "object": "func_806A8CEC.o",
+        "object_size": 81266,
+        "object_sha256": "07e12ef6cbf24ad6380488f15f0cfa57c0dd8b8f5e28e56d3a17bdd53c5f669d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A8FC4",
+        "source": "func_806A8FC4.cpp",
+        "source_sha256": "2d049fd294763a59aae2e2feb7915546bd7200d29758e593904b7f54326dcc94",
+        "object": "func_806A8FC4.o",
+        "object_size": 16652,
+        "object_sha256": "342cedb839a6eae812e183b475657575f398d60de2303f5ddba86ff5ef3ef080",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9038",
+        "source": "func_806A9038.cpp",
+        "source_sha256": "7df629c9e810542c152ff39f85ce869231d7b49db092b62ddd32b1f4adf50b16",
+        "object": "func_806A9038.o",
+        "object_size": 62255,
+        "object_sha256": "9f6196e1964717b430cfaffbdbb63c6ad0540029f92432bc01bb81040db6f573",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A92A0",
+        "source": "func_806A92A0.cpp",
+        "source_sha256": "638e42fe673ff563a0eb0373a731b0af33ed4deb94f1156e29e401f2386b86c0",
+        "object": "func_806A92A0.o",
+        "object_size": 1423,
+        "object_sha256": "91ba9b78cea9abbfaedd7e3fa872c6103f804838760ca5a2cc278db8b57604fc",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A92A8",
+        "source": "func_806A92A8.cpp",
+        "source_sha256": "432ac0335a0973c53c558bb7d0a77aa4849337bbb99bff96ddda360424e70f81",
+        "object": "func_806A92A8.o",
+        "object_size": 39482,
+        "object_sha256": "e1c7cf7936b7e88e86b1881bdd456990202eff62b763cef93bbe36aa63cbfb9d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A93A8",
+        "source": "func_806A93A8.cpp",
+        "source_sha256": "bcfa879ba9bcf45f81e23d66410071f47ce73c837d17c134e76a481aaa3d0508",
+        "object": "func_806A93A8.o",
+        "object_size": 29119,
+        "object_sha256": "1820d2240af01550125b2a97d2755a4114fe0df73d6bb295a5b729a9e7c47079",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A942C",
+        "source": "func_806A942C.cpp",
+        "source_sha256": "ccbb146c76efabbae83484b988c4ccc8647f58c64bbe7b6512f33858edb10e3a",
+        "object": "func_806A942C.o",
+        "object_size": 32469,
+        "object_sha256": "b0ed81cfc672572274a4f4fba59f28dba748979f3abbd5d158a84d9aa6372a35",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A94EC",
+        "source": "func_806A94EC.cpp",
+        "source_sha256": "6c4a3165eeb3131ae4c1f00d387842947c7680fec5b9fcca1b556e9aca7e0e9b",
+        "object": "func_806A94EC.o",
+        "object_size": 698,
+        "object_sha256": "bfc2a8e1f8f2ea26322f519d9ddd35152e00358ab7fec10e3221db0ab37eb7cb",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A94FC",
+        "source": "func_806A94FC.cpp",
+        "source_sha256": "935731ec29bad15e27d22fe59815dbb284c7107c2884c654253de099b3a88e74",
+        "object": "func_806A94FC.o",
+        "object_size": 1218,
+        "object_sha256": "2b623a902621ceb88b64be36fd1e7f53f5e87b292b23cf61a388c873f09d58ef",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9508",
+        "source": "func_806A9508.cpp",
+        "source_sha256": "d3938d0c3607650fd20959f2112539bf71ca2dbe787a88d06825e23a39b59bf7",
+        "object": "func_806A9508.o",
+        "object_size": 668,
+        "object_sha256": "005cbe53f5152e1f028e8a0b002efd32e8d1424613d267e0efb69077acf582e6",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9510",
+        "source": "func_806A9510.cpp",
+        "source_sha256": "089adeeb364243d407536c3e8a2daa4ec1595bf8b51acdf074ac474329131f9c",
+        "object": "func_806A9510.o",
+        "object_size": 668,
+        "object_sha256": "41381dd7bb12aa75a2c6b165e574e4d6662882de6f0c814cc016ca62c7d20328",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A951C",
+        "source": "func_806A951C.cpp",
+        "source_sha256": "b78307862879ce53c37cec68317477abee40f39cee4a4bd2c977090f2ab85015",
+        "object": "func_806A951C.o",
+        "object_size": 668,
+        "object_sha256": "7a480bbb2220fbce318a6c4da8df2966155eff4278e6f63291fc63b39adf7ed2",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9524",
+        "source": "func_806A9524.cpp",
+        "source_sha256": "6caa6c52c744c8e7cccc1680e99dcc4c7da4cda9fb023462f985c6aa430bf72d",
+        "object": "func_806A9524.o",
+        "object_size": 28525,
+        "object_sha256": "870704cbacbf8974d59968b25a502a7c43cd4cca7b76e2f9d5c9580c2ce8e92e",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9580",
+        "source": "func_806A9580.cpp",
+        "source_sha256": "7bfa778f46b4f112ff6d0bef3e65cdeb31d86d731140c5a32b522b61a7842805",
+        "object": "func_806A9580.o",
+        "object_size": 668,
+        "object_sha256": "8316d089a0bedb953ef779b8ed848f5c8a94474fedac590fc76097555336af2c",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9588",
+        "source": "func_806A9588.cpp",
+        "source_sha256": "d6ff2f3f66887993304b954143f57001c9f575b2d3e30f56d736584ecea1118f",
+        "object": "func_806A9588.o",
+        "object_size": 668,
+        "object_sha256": "1732bba7d4bc6656fb7fa938f4bee51c022650ab8b18cdfb0eaf2fbf998d0e6f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9590",
+        "source": "func_806A9590.cpp",
+        "source_sha256": "a51ac5f69758b8e2369c233a4808ba1afa4268b9b3f3e966978f2236f930628b",
+        "object": "func_806A9590.o",
+        "object_size": 28417,
+        "object_sha256": "2a0ad8ee60e7da94a0080384f0c4bb57f0f6f0701a745f6ec7b5d6e40a4bf38f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A95C4",
+        "source": "func_806A95C4.cpp",
+        "source_sha256": "bd2bcba052ccf4b838bf8b40238f56187885d00509ba5f92001c79640fba6c60",
+        "object": "func_806A95C4.o",
+        "object_size": 27545,
+        "object_sha256": "8bb8f75487ef1bb023a90fe782e6cb51c1e2a4a1c8953f261b462e287cd8031e",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A95DC",
+        "source": "func_806A95DC.cpp",
+        "source_sha256": "271bf50d999239cd3db56bf6307c8f9fa70e508271c36b070b24fe25bdada964",
+        "object": "func_806A95DC.o",
+        "object_size": 27521,
+        "object_sha256": "53cdfe89460456c72465dc7e696793426adb7fd57724574d7556c6ed43e448e5",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A95EC",
+        "source": "func_806A95EC.cpp",
+        "source_sha256": "73c3b7bfff7adc4e4d59e9c79131beb8c7b53504123db2d5c6973bcd5c029456",
+        "object": "func_806A95EC.o",
+        "object_size": 27546,
+        "object_sha256": "db5758c71af1b2a40f6254ea4178800628fd190ca344f2a73dae3a892e53cbc2",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9608",
+        "source": "func_806A9608.cpp",
+        "source_sha256": "83424af9a0a2cf9bf51b0fca545b769fd91b49a6817808ee95e669125bcaa961",
+        "object": "func_806A9608.o",
+        "object_size": 697,
+        "object_sha256": "b173dfbcbe189b0298a7d948225b4c4d9639258e8a94fef215d0127013f5498e",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9618",
+        "source": "func_806A9618.cpp",
+        "source_sha256": "0d0f961a02833e17c7e66724100c078609ae8a74cf54cecb5ece4efa4aa83072",
+        "object": "func_806A9618.o",
+        "object_size": 1029,
+        "object_sha256": "c30a58ca3a70780bd813a482fb30a80ff58514a83d904b0d534506b02d2f3bf2",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9620",
+        "source": "func_806A9620.cpp",
+        "source_sha256": "8651db56fbfc3c92b25197d7c46f80c066843369554e67de8ca114a5679a3e9c",
+        "object": "func_806A9620.o",
+        "object_size": 677,
+        "object_sha256": "2caf0ac799e6b3455995c4b0addc245c581966bf4961fe9d2ee179f81cbbaad3",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A962C",
+        "source": "func_806A962C.cpp",
+        "source_sha256": "4bb89c217aec53611a48e12634046708353e2daeb852edb0bbc9f1709dbad032",
+        "object": "func_806A962C.o",
+        "object_size": 999,
+        "object_sha256": "372e848d7ea26000bf6d4ea43264c8649078724c6830794d768ce6d79f83a9ea",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9638",
+        "source": "func_806A9638.cpp",
+        "source_sha256": "af1bce7fb0ca3876562c9e54cf951b95417c0b38a5011379cfd08f379256272e",
+        "object": "func_806A9638.o",
+        "object_size": 20326,
+        "object_sha256": "a229134220ab25130bba84f584593adb6d466d0d594bee3418d417268276d0a0",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A96AC",
+        "source": "func_806A96AC.cpp",
+        "source_sha256": "2ecb6e79fabd83c73fc8a55d428a98f096656fac950f089cdc727f72c758d805",
+        "object": "func_806A96AC.o",
+        "object_size": 999,
+        "object_sha256": "8bbc93f3411dae95d9371a686714943c10e8260d797d0fb493c35a76a3f9f1bf",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A96B8",
+        "source": "func_806A96B8.cpp",
+        "source_sha256": "cbb3dfcb3daa24979eed40a11e84b8e8d85ba375089e858e918e1ef8a9fe7904",
+        "object": "func_806A96B8.o",
+        "object_size": 20326,
+        "object_sha256": "65617eb9ad7158eb33a4d59e396409405c372f58c2fa5b0d0927ff59c65b7278",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A972C",
+        "source": "func_806A972C.cpp",
+        "source_sha256": "6b51b9546b354fd275543d2010994a8be0c083ac9c3c3d0e692327cb7a64ac3d",
+        "object": "func_806A972C.o",
+        "object_size": 999,
+        "object_sha256": "382d8cb0a9caa04104834151cb68d894a24baf7dd4189283db12d027e0f7e12b",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9738",
+        "source": "func_806A9738.cpp",
+        "source_sha256": "40211c100a27f56b4f4a096015915444f4193f2d8b938dacd3b1d40471c3b7ea",
+        "object": "func_806A9738.o",
+        "object_size": 20326,
+        "object_sha256": "ae0f95dc1154eeaf00d684f3cf5dff658a32758a04e3d4b47538e13f0f9f852f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A97AC",
+        "source": "func_806A97AC.cpp",
+        "source_sha256": "e1cd23f1e6ed05c611f96ba38643481b48950cad8488c170c5ffe9cfdee2a037",
+        "object": "func_806A97AC.o",
+        "object_size": 999,
+        "object_sha256": "eb792d26b052e61d8a1fa84644a423e44d5a1cd04b4963244c4718ab8e4490b4",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A97B8",
+        "source": "func_806A97B8.cpp",
+        "source_sha256": "ad7147c10642a9cb07056f753acb94943e15bdbe850bbd9473807453b639e8ef",
+        "object": "func_806A97B8.o",
+        "object_size": 20326,
+        "object_sha256": "75e5745a6cc3a18408b9fee7c97da91e94e5392f6cb3385e37c65e92e4b7fc41",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A982C",
+        "source": "func_806A982C.cpp",
+        "source_sha256": "d92b3c93316cda0b5c79ed3e9a281fb8183561125304d10b90b298c97bc41084",
+        "object": "func_806A982C.o",
+        "object_size": 999,
+        "object_sha256": "e116d34a6c5b591b3f56038b3c8e86b772c5a869fbf7b3743fe5974418e042f1",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9838",
+        "source": "func_806A9838.cpp",
+        "source_sha256": "f6a74fddd00589764d8d1c318470e645bb3596bcee0b5d0d07df6937f77b89eb",
+        "object": "func_806A9838.o",
+        "object_size": 20326,
+        "object_sha256": "1e75491e67f3f08eb042ffa6c625a5ab06af3fed7e03e73738cf054aa3727954",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A98AC",
+        "source": "func_806A98AC.cpp",
+        "source_sha256": "bf27d8a523399778d87bcd7660da4630450814ddaae3d9da9b48e89ed673730e",
+        "object": "func_806A98AC.o",
+        "object_size": 16759,
+        "object_sha256": "1f07e7e634cda2d9863333f337cd3d8b187481eccde4433acc287e3a1d5ed1d9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9924",
+        "source": "func_806A9924.cpp",
+        "source_sha256": "84d31b0c2ca01c756cd0f8192d9677ddf8b45f3ee09b94e6bff061f76fa37bb8",
+        "object": "func_806A9924.o",
+        "object_size": 16759,
+        "object_sha256": "929574711c6358ff7c66a9fe2a320aa87322f6e446144704af661a8802f6be1f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A999C",
+        "source": "func_806A999C.cpp",
+        "source_sha256": "9c53352a1693c6a32686148423419eed5e60e63bc9a21a43eb09259b39173a00",
+        "object": "func_806A999C.o",
+        "object_size": 28576,
+        "object_sha256": "791c6be639a48a33d75520616cbe9bee95c257cdcd65899e9e75482a027dcfe8",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9A74",
+        "source": "func_806A9A74.cpp",
+        "source_sha256": "3af6d370b803a362f39e65aaaf7004f19dbef1c0d5c908cbb92b0148fbacf4a6",
+        "object": "func_806A9A74.o",
+        "object_size": 25376,
+        "object_sha256": "8f49853454f1873549207ec0bf5b4484be38e390f326a5b7dd61f9b6dbeaef88",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9B3C",
+        "source": "func_806A9B3C.cpp",
+        "source_sha256": "ea431d42c7efe0338bdac634e1acba8b046c1522dcda26c936ea69fd7e2fdcaf",
+        "object": "func_806A9B3C.o",
+        "object_size": 20552,
+        "object_sha256": "c2e2f104cd33822bef75e3b1ef844cdd431ef5ae68c369a742fe9e90edb70fba",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9BD8",
+        "source": "func_806A9BD8.cpp",
+        "source_sha256": "8a6eab5cd8cb53ce89c4ef4781326fe465566d2f6c3f9d08f0af85a23877a80c",
+        "object": "func_806A9BD8.o",
+        "object_size": 28576,
+        "object_sha256": "fa190c651748222ec540bb2716b8628a91ac70f180d45046ec2f39c91b3915ea",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9CB0",
+        "source": "func_806A9CB0.cpp",
+        "source_sha256": "7686295ac6481e04e55ca98263c802c3409d09ff888ec83f479b083e57c569c5",
+        "object": "func_806A9CB0.o",
+        "object_size": 20552,
+        "object_sha256": "cbad6b561d30f1ea73063247a5f290d28961a3c1e0d642dd8d28a507c7759cd9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9D4C",
+        "source": "func_806A9D4C.cpp",
+        "source_sha256": "1d9c75c2f6fff1a810382ec481fe17076aa1f9285e6bc6853ef82161dcf9c89c",
+        "object": "func_806A9D4C.o",
+        "object_size": 16818,
+        "object_sha256": "ee4001d6b677419480aa0773bea61ba2366fabfb3e897973c88dc2f08baceb83",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9DC0",
+        "source": "func_806A9DC0.cpp",
+        "source_sha256": "2c13c3af0b7f3841ce5df2d5e35624eb3f4a990373163e9a232fda50673ab248",
+        "object": "func_806A9DC0.o",
+        "object_size": 16818,
+        "object_sha256": "9d2b4ab19d62cc72d40539caf5784c28f9367d0ee8b1194ae817909f64f5b576",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9E34",
+        "source": "func_806A9E34.cpp",
+        "source_sha256": "ffe55d3570585f7200067c3b1c0b7009dfd4d0af8d450f159725595d0e91360f",
+        "object": "func_806A9E34.o",
+        "object_size": 16818,
+        "object_sha256": "0b8bf5819fdcdb2c02d6b3e172326dc20845f2b7730710b54d695b96b8fde629",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9EA8",
+        "source": "func_806A9EA8.cpp",
+        "source_sha256": "2ca7a4a046f92713f9bc7776450cc73325195fc10e8676d2d15c85272019100f",
+        "object": "func_806A9EA8.o",
+        "object_size": 16818,
+        "object_sha256": "3b634cc140bc945c19330bf536a618350fecfb1188c3686cdf22073b44dd5588",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9F1C",
+        "source": "func_806A9F1C.cpp",
+        "source_sha256": "4f759b5e88e17f2c1d14934939727182a542d0879a7ac3e30e6fbba278d19f84",
+        "object": "func_806A9F1C.o",
+        "object_size": 16818,
+        "object_sha256": "fe38045b697588936f36ae1c418c33a34638735cd762f254f139891e2a89d20f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806A9F90",
+        "source": "func_806A9F90.cpp",
+        "source_sha256": "9c22048be5717c635e7243266d2e8c18c04df9ee0671a342869cd444109f09bc",
+        "object": "func_806A9F90.o",
+        "object_size": 1216,
+        "object_sha256": "7f540cd8dd223d15258a22cc82dda5efcb31a6740ebdaa47f4ab0f9dff50bebc",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AA014",
+        "source": "func_806AA014.cpp",
+        "source_sha256": "39e43acde875b7735cbf6179422e59de26a5ef5902a9fea5895217bf4dbf824a",
+        "object": "func_806AA014.o",
+        "object_size": 1136,
+        "object_sha256": "aa46d2fa7eb13808ef5b5bd6ec42c59bb98e8adb7e2f39eca2b4c065e4e052bb",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AA038",
+        "source": "func_806AA038.cpp",
+        "source_sha256": "c3fb9906ed8596d7a506948cd0be4becf5b1fd3a38b59ef31120fc0cf6623354",
+        "object": "func_806AA038.o",
+        "object_size": 15953,
+        "object_sha256": "284dc7a41cfaf4dacf9d7d7c39781e1ca13926bd26725bdd25a104bae4083d75",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AA1F4",
+        "source": "func_806AA1F4.cpp",
+        "source_sha256": "e42855dd63ef449013eb2501d2fcd8d028919dc50d4b49f4619149142064126e",
+        "object": "func_806AA1F4.o",
+        "object_size": 20183,
+        "object_sha256": "43ff0ae1089a64f06c779418bfbdff7a2965f2953b9b356506ac390234596fbf",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AA254",
+        "source": "func_806AA254.cpp",
+        "source_sha256": "43c998b21a5af26379106fe2f1d530c96b46cec8d0e51f9c6741f64d4f926438",
+        "object": "func_806AA254.o",
+        "object_size": 46017,
+        "object_sha256": "d64f9ec473b09092f68fd3fdf5629d7bc6fe836f3e9468434d380e8c1685f00a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AA450",
+        "source": "func_806AA450.cpp",
+        "source_sha256": "cefac7b4cacd01968e1fc8c4d8682f5d96b25bbe1f43f5bb5c308cf5f51009e2",
+        "object": "func_806AA450.o",
+        "object_size": 61648,
+        "object_sha256": "3a7fd345a354bb302aa7a7a1d60ba41c44329603c6719f48f6507f5c424a6612",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AA910",
+        "source": "func_806AA910.cpp",
+        "source_sha256": "41b6117c49f3930a469a497befc0b09225a5eee809801c92d2ccf25a56e2a8a9",
+        "object": "func_806AA910.o",
+        "object_size": 26559,
+        "object_sha256": "d5a8dd8b9fd4cd04c8b4e4aeee221d53667f64f1d3d17e4346e09fe3f03e535a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AAB00",
+        "source": "func_806AAB00.cpp",
+        "source_sha256": "c27850be5d1f3c8efe51f253adfba5f3732d26f91f2b839002747c55759f9708",
+        "object": "func_806AAB00.o",
+        "object_size": 1568,
+        "object_sha256": "2504cb8dede6ff958863176cd3bc6ad34174c2fa39ee607c40fda1ff68550280",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AAB48",
+        "source": "func_806AAB48.cpp",
+        "source_sha256": "54174c7261310ec16e9d43045fd46d1bdbb18e2323c61cfe8e0c6130715f2abc",
+        "object": "func_806AAB48.o",
+        "object_size": 17037,
+        "object_sha256": "ea40f2b1342cf49d03c4164f17b19c588858bf757e492dafaeea9324b3fb81c6",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AAC84",
+        "source": "func_806AAC84.cpp",
+        "source_sha256": "2a51e7c8250fb21ccb1969ff4915d9a462a79ef15ac37df375fdeb885dbf60f4",
+        "object": "func_806AAC84.o",
+        "object_size": 20829,
+        "object_sha256": "7723f061807ad45376688f8ad4bf9a8854290a3ba088e60eb4d7d37ef1a79342",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AAD34",
+        "source": "func_806AAD34.cpp",
+        "source_sha256": "da21f6febc90fa7d5db3178c12accb34724fe1c77ac0e5609acdb9304a1db711",
+        "object": "func_806AAD34.o",
+        "object_size": 1091,
+        "object_sha256": "840d8ad1b2cb0e886f9676ab07a2ac0d6a65ed5d8bf74fb83f28b1975604480b",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AAD58",
+        "source": "func_806AAD58.cpp",
+        "source_sha256": "1334fce5547dd33fd9fe017e2acb8f5cdc925f482d8d4b4b2b2acf5872c5e484",
+        "object": "func_806AAD58.o",
+        "object_size": 16614,
+        "object_sha256": "c667603a422d31567a99586a5a33848b70492d29cd36e1c3bf2c3c8947d0de6d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AADFC",
+        "source": "func_806AADFC.cpp",
+        "source_sha256": "8ee6c5aa716e12555a176d36dae79f45bcbac57c3816abea6092eeff76f6131e",
+        "object": "func_806AADFC.o",
+        "object_size": 32885,
+        "object_sha256": "4d6803e0d37c095e0e19d8e9e7f40585ba838a14486f7fdda9691846376d4e51",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AAE5C",
+        "source": "func_806AAE5C.cpp",
+        "source_sha256": "30fc264643d6f4d3200b691c66e00ef067407adc9ddb5619002ffe43ba7be0cb",
+        "object": "func_806AAE5C.o",
+        "object_size": 18288,
+        "object_sha256": "468b7d99a66e2f9e66434bad344d73c2d956a163ae4c3244c11e1bb6186f169f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AB0D8",
+        "source": "func_806AB0D8.cpp",
+        "source_sha256": "8e0399b84444aeffd83a06c75db42781c6998da3f20913e6f59e06fa39366d7b",
+        "object": "func_806AB0D8.o",
+        "object_size": 18180,
+        "object_sha256": "17a5453ad44fc38dbded72d779ff90dd803492f3c58069475d3ff224b5b952c5",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AB354",
+        "source": "func_806AB354.cpp",
+        "source_sha256": "1852579dec1663b36a8692ce43684acfb2dcede5b10174fca9f7edceca47f8f1",
+        "object": "func_806AB354.o",
+        "object_size": 16300,
+        "object_sha256": "4fbd4b6d42ef82a62d60fa69aae49e5f289bee4a24de492b5fa15e54d72db438",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AB370",
+        "source": "func_806AB370.cpp",
+        "source_sha256": "42386222a4d4b5c5b4321e0e1c2826b928c5e36b010fb07c17ab7a5f829e8e65",
+        "object": "func_806AB370.o",
+        "object_size": 16300,
+        "object_sha256": "e0735d22112ee8de1b3bdeed582beffb8e778c7301c7776d380659d367126b70",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AB38C",
+        "source": "func_806AB38C.cpp",
+        "source_sha256": "20acdd7df7f66e7329f1ed5c00502c8f7d35ea40263c8ab237480dbc581d7b9c",
+        "object": "func_806AB38C.o",
+        "object_size": 16365,
+        "object_sha256": "aff99d82d98a7df94c8caa5fc6d2f011df7016ab4b6a138443cf008f05c8c32a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AB3BC",
+        "source": "func_806AB3BC.cpp",
+        "source_sha256": "f3adba5462b5cd9ee2322a024bc855dd8440aa2f4be8f4e2238c44d042ff1787",
+        "object": "func_806AB3BC.o",
+        "object_size": 16300,
+        "object_sha256": "cba17df6bcd05c356db62320f9b4e84f965bb9d00393a03ddf9c219ab8bfde07",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AB53C",
+        "source": "func_806AB53C.cpp",
+        "source_sha256": "83fa0a80c631bbcf57e2ea0a1411edb24bc32adf2c6972db4bd0f243307d2c93",
+        "object": "func_806AB53C.o",
+        "object_size": 32533,
+        "object_sha256": "87a921a222bfa4d30fc029f0007568615cd745b83fb4408a4c72cf210bbb1fd8",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AB6A0",
+        "source": "func_806AB6A0.cpp",
+        "source_sha256": "468a0e28f1540280973b50de6b560966d22bf8ae0fd9888a75ac14e61fb463d5",
+        "object": "func_806AB6A0.o",
+        "object_size": 17039,
+        "object_sha256": "6d612c4cefd65041f88798779eed2186f318ad86616d0e05de68d661b7771274",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AB76C",
+        "source": "func_806AB76C.cpp",
+        "source_sha256": "e530a014932a4bfbfcbebd4e45ad874b1b8b04fd2467745fabeeae79d8ec27df",
+        "object": "func_806AB76C.o",
+        "object_size": 21369,
+        "object_sha256": "bd0a2a00b49390a0760526ff241ff3e615fb18fcd4813143c1eef55bb450d91e",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AB8BC",
+        "source": "func_806AB8BC.cpp",
+        "source_sha256": "429f4b35dfb69c24ffe2675cb60f1c5253cf4f248861b9dc43c86ecb012a8f41",
+        "object": "func_806AB8BC.o",
+        "object_size": 106987,
+        "object_sha256": "d82a0552f8f00c6b033f143cc9ecb8d1fe0cf6fafe7a32a692fcabbf594f94bf",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ABF70",
+        "source": "func_806ABF70.cpp",
+        "source_sha256": "17e7293f1766e239e1e85d6d801110a3af37167bd129390bda4768f06917dfed",
+        "object": "func_806ABF70.o",
+        "object_size": 2940,
+        "object_sha256": "1c9f979b3177475b7fc8970c3b08bb1e208a7946f032bbe2e4b5c275a0936020",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AC128",
+        "source": "func_806AC128.cpp",
+        "source_sha256": "396e126ee0c0b352973830cf70d33e29ade204a2dcffac66ba249eb36112077c",
+        "object": "func_806AC128.o",
+        "object_size": 41313,
+        "object_sha256": "99afb26c570d9c9cc41b39d2a0f1eb0adc2b2c0198b197969d223021195b3fca",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AC32C",
+        "source": "func_806AC32C.cpp",
+        "source_sha256": "71be3b082a6c716d2e7b5ef344a61b522a5988a87df5971f482899d01b249fb0",
+        "object": "func_806AC32C.o",
+        "object_size": 697,
+        "object_sha256": "283e61caf77cb473b040cb2b084aea65ad767801c1bc4953df1ada816b7532a3",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AC33C",
+        "source": "func_806AC33C.cpp",
+        "source_sha256": "83b79608a948190859835c6e9421569fa3e8ee3ec7b49693c826ac7deb61c3a1",
+        "object": "func_806AC33C.o",
+        "object_size": 78686,
+        "object_sha256": "c5aae7c3f15f7bf0a1b1e110fdbc305685c2cd74d77a772ac5a86d04314bb1ca",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AC92C",
+        "source": "func_806AC92C.cpp",
+        "source_sha256": "f3cc8a9d65db1dd3b750341fe17c4481b5a43ee6c343ed2b07409c68c621d6ba",
+        "object": "func_806AC92C.o",
+        "object_size": 26559,
+        "object_sha256": "6197dcba98ae90a4456a1ff327927f45f6e720594fbce5dbc2933bcebe9038e7",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACB1C",
+        "source": "func_806ACB1C.cpp",
+        "source_sha256": "3877b0a72121de9b283851aa332689518d8b6a2548f5fb53757b8a6264db0def",
+        "object": "func_806ACB1C.o",
+        "object_size": 26559,
+        "object_sha256": "28b46dd6eb81a3dc982ec8f14fa693f2642ddb5cf71b6baa18d4bb302b70b830",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACD0C",
+        "source": "func_806ACD0C.cpp",
+        "source_sha256": "bef97be653ff3fe31a9a07abe90b859a5b65c1faa77a1eeb03ffa611e7afe282",
+        "object": "func_806ACD0C.o",
+        "object_size": 15953,
+        "object_sha256": "7d4ad3609d81dfabb9d7ca96b5a6cfcfbf5813bb473509796e1cca869a48a80a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACD10",
+        "source": "func_806ACD10.cpp",
+        "source_sha256": "09628ca7c1e1f4f60a1cf23369ed6a78d2ac6daf0df4434b8fff1b005d6f0452",
+        "object": "func_806ACD10.o",
+        "object_size": 47063,
+        "object_sha256": "a85fdbb77eec0591eeaf31be0f54279418a1575a35c5eca3920a0b3c2aa1b62f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACE14",
+        "source": "func_806ACE14.cpp",
+        "source_sha256": "f8b5321e1fdae0a4c1691df1beb05400cd877ea366910c884b26f5823597ee91",
+        "object": "func_806ACE14.o",
+        "object_size": 29035,
+        "object_sha256": "2cfbba29c241eeadafef64d127dad07ea695feba488f49859e4925e47e071c53",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACE9C",
+        "source": "func_806ACE9C.cpp",
+        "source_sha256": "4f591f5befa8a535cce4315e45888d8c5937d9bd86659e5025ef9cd78a8813e0",
+        "object": "func_806ACE9C.o",
+        "object_size": 685,
+        "object_sha256": "84cd15d37fb0d18cbdda0c98be658cb64c9495e241954346f198aa9a0aa3b55e",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACEA4",
+        "source": "func_806ACEA4.cpp",
+        "source_sha256": "5b0bde615f0e92a943f8a30c5eb476e7722c74b98ddf6ba687f0d911abc94197",
+        "object": "func_806ACEA4.o",
+        "object_size": 694,
+        "object_sha256": "2c0bb231ac3af20d91ab35ea5a9f7b9accdd255ccd0d1b6d265e0c9992f73640",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACEB0",
+        "source": "func_806ACEB0.cpp",
+        "source_sha256": "dccb060a2957ea9bfb477c23b1eca04e8a9e40b412ce63d0627cd7460b52d000",
+        "object": "func_806ACEB0.o",
+        "object_size": 27560,
+        "object_sha256": "ac8efd0eea6c46993fdb65c26b8ee45c64c435768abde2a0eade8777a7d7de53",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACEC8",
+        "source": "func_806ACEC8.cpp",
+        "source_sha256": "0fe3866cf90ea9a8174f683ad8522f452741874f364d5ef21fade7d02daebf3a",
+        "object": "func_806ACEC8.o",
+        "object_size": 661,
+        "object_sha256": "28eaeb254326d6bae4435ecc359b1b04bb27d0a94757c1c1c23344248616c4ca",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACECC",
+        "source": "func_806ACECC.cpp",
+        "source_sha256": "30a57ecd89b1fcb84a7495c0257c30bcbdfe60d9e950b6e54e5ed1457784dd57",
+        "object": "func_806ACECC.o",
+        "object_size": 661,
+        "object_sha256": "c1afba832b452d61923babf8ccef6c3b05f7b8a6322a8a4dc3972ca5e9f64a0f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACED0",
+        "source": "func_806ACED0.cpp",
+        "source_sha256": "5b3153166d34c39bee93555e8b5d1ee70ebfb333705baef4008de1355399a21e",
+        "object": "func_806ACED0.o",
+        "object_size": 668,
+        "object_sha256": "efedc7f807c94eca82fea3884729469c021ed2bac6f12fbf5a3ca96cf1bd61e8",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACED8",
+        "source": "func_806ACED8.cpp",
+        "source_sha256": "4178266ae6bc62b10e7ea9f0f8bf4723e6bfb5fcaea687bd46561bb16bf1607a",
+        "object": "func_806ACED8.o",
+        "object_size": 27521,
+        "object_sha256": "4ff1e1c7b6b15147b4de2f615c27c9078162ab109ed965367f338cf4b184463d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACEE8",
+        "source": "func_806ACEE8.cpp",
+        "source_sha256": "b0ecabc706e1322cfa3cd1ec33b7727d01c51ba17ae3bb79e8384fff6968494a",
+        "object": "func_806ACEE8.o",
+        "object_size": 668,
+        "object_sha256": "596ec3ed77a9ac98f936a3f2d93f5029d1288db7c01dceebf233512dfa6ab2bc",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACEF0",
+        "source": "func_806ACEF0.cpp",
+        "source_sha256": "c49de9147eabf35c848d09a37d8065d627de8c47d9bfbbb3ce01a340fa3f19a7",
+        "object": "func_806ACEF0.o",
+        "object_size": 15953,
+        "object_sha256": "5bf5dfeb10b405c12559af395d64f7190df3b1e8c5880ecdf1361b368b6c1c95",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACEF4",
+        "source": "func_806ACEF4.cpp",
+        "source_sha256": "c0112aafdb1759c0aa2f421946f08576d642a6f9911a80b65226985352ba38e9",
+        "object": "func_806ACEF4.o",
+        "object_size": 999,
+        "object_sha256": "2ba4c1875fd28f3b0e5cea690e2cb1f0ff124a3ef94735262c63f1b6c423146a",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACF00",
+        "source": "func_806ACF00.cpp",
+        "source_sha256": "2d6622d9df0edb2a7b49dc39fc938c10c973018dd9a221552b8316f6cb44450a",
+        "object": "func_806ACF00.o",
+        "object_size": 20326,
+        "object_sha256": "109057a44ab3638b6b6bad24bb758d2a80b6996de9f292cba443acbc665cac3f",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACF74",
+        "source": "func_806ACF74.cpp",
+        "source_sha256": "a050bd1ef453dda5d165e09306513696681e1b337a8a062c0274a6876d482cae",
+        "object": "func_806ACF74.o",
+        "object_size": 999,
+        "object_sha256": "91cd8c2e766c514175be40a0696dbfc93c4c6ff0fa3d68269a68ccdc03341637",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACF80",
+        "source": "func_806ACF80.cpp",
+        "source_sha256": "825baecd774c2cb692dff04e822e2f90abce2a2f45bc9cc21b0ffbfe588e282d",
+        "object": "func_806ACF80.o",
+        "object_size": 20326,
+        "object_sha256": "e685e72efc8eb3f8823d1ac0985361c6d6d8a9c020a0916d22a30cf2496c3ab5",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806ACFF4",
+        "source": "func_806ACFF4.cpp",
+        "source_sha256": "eb8410d623f0fbed9fb59fe59a6ae58e732b2712f62ce28d79edc10e2cde8b47",
+        "object": "func_806ACFF4.o",
+        "object_size": 999,
+        "object_sha256": "6989a542dbf36113c11c3d8ad22442ad89c1fc7b0d2ebbd7c78eb9227963caff",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD000",
+        "source": "func_806AD000.cpp",
+        "source_sha256": "da21a03ce5aa715c3fd6ee711ef85ee9eed3b6357a1ae4dc7d18217f9133781c",
+        "object": "func_806AD000.o",
+        "object_size": 20326,
+        "object_sha256": "d17127ff8e26cee4db6fa98c9f5d02a88033560ecbc5df8040f1919cda361138",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD074",
+        "source": "func_806AD074.cpp",
+        "source_sha256": "86fadf56d19d0ffd2bc1b264e532dfded872e62d657ca734cfe009b667a6188a",
+        "object": "func_806AD074.o",
+        "object_size": 32650,
+        "object_sha256": "8e1f856340b89f17e10333210624275844c6958fb26d752c6261d3798e64921d",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD0D8",
+        "source": "func_806AD0D8.cpp",
+        "source_sha256": "efec74d0a917b54d0813ca9b5f81d7236957df6c4bae465e4980bcbad0eac629",
+        "object": "func_806AD0D8.o",
+        "object_size": 32650,
+        "object_sha256": "6e946203582fb77789e362a8463d6d91bcc87c4159e3662a83bffcf963efcb47",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD13C",
+        "source": "func_806AD13C.cpp",
+        "source_sha256": "cba3d0188fcfb11e94487959cb1c92ce3c4b9ab60080bf79d7a8ee8f73edd479",
+        "object": "func_806AD13C.o",
+        "object_size": 16818,
+        "object_sha256": "be88c941d4399650f2b99014e89a925741f80622eb7d74d856032895059260bb",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD1B0",
+        "source": "func_806AD1B0.cpp",
+        "source_sha256": "a587e00c807adadae5ac0420d628f3dcc4c3c75c5454deb6b931b468e066706a",
+        "object": "func_806AD1B0.o",
+        "object_size": 16818,
+        "object_sha256": "b0967314a3cc20c7896a63cb5a9485af10070038120493936c40c7e7b96d6ded",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD224",
+        "source": "func_806AD224.cpp",
+        "source_sha256": "7faed08cb0353b3f074fe1cf3332e4b8f08203050c9a506072debc5245a1d11b",
+        "object": "func_806AD224.o",
+        "object_size": 16818,
+        "object_sha256": "c74c2b7386863da27e3c00c75a4237c019e472a80eed5ae6cc459ad55a6852f9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD298",
+        "source": "func_806AD298.cpp",
+        "source_sha256": "5f76a9c62ed6b3d1c278b9a3ff2b84b2af57d7be8b638c85f3dbe6bd3d613851",
+        "object": "func_806AD298.o",
+        "object_size": 944,
+        "object_sha256": "b7a6ba7ad0f261f2fcb0ab3301d3eb8d673b59c17cd60f1a129b4b27ee7eb5a9",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD554",
+        "source": "func_806AD554.cpp",
+        "source_sha256": "126d4f8fb95ec5ba9dc3a90aef65bdec7d12df8284da7190d657a21c2e398956",
+        "object": "func_806AD554.o",
+        "object_size": 944,
+        "object_sha256": "94196c1602214ddd60bc155d9e822f99dd2353a9a48dece5f9744d41822150fe",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD5B8",
+        "source": "func_806AD5B8.cpp",
+        "source_sha256": "c37620fb69d947f5aee5321bc3e7b07375e217dc7608d7360b325ccc8006c91a",
+        "object": "func_806AD5B8.o",
+        "object_size": 19810,
+        "object_sha256": "93c1091b545c703e9c69d189306addc9763e3295bf9abb4a18758c84f5883191",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD6C8",
+        "source": "func_806AD6C8.cpp",
+        "source_sha256": "772f3761575ef4065cec32dabcc00c3a8c754ded7101657775d608ca727ee5c6",
+        "object": "func_806AD6C8.o",
+        "object_size": 944,
+        "object_sha256": "141e403f45ba327f5a81f164c8e70453a25fa391cc22fe8e552e3936aed52436",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      },
+      {
+        "address": "0x806AD72C",
+        "source": "func_806AD72C.cpp",
+        "source_sha256": "74a3e9ddf5ab1f6c4c489f547a084d9ca8aae2610edf2cafb23604503b08226a",
+        "object": "func_806AD72C.o",
+        "object_size": 28660,
+        "object_sha256": "d7228560d105c5f9ed9103931c4a9c177ab6f9adcce7c6ab0787754f1b75c057",
+        "format": "COFF-x86-64",
+        "machine": "AMD64"
+      }
+    ]
+  },
+  "limitations": [
+    "The 101 ADDR32 targets are address-taken code candidates; metadata interior-to-other detection excludes two, but does not prove all remaining function boundaries against an independent RSO disassembler.",
+    "Only one RSO module is covered by this test; runtime module loading and unloading are not implemented.",
+    "Translated code and x64 object compilation do not prove semantic equivalence, callback ABI, script reachability, or on-screen output.",
+    "The synthetic REL and generated sources/objects remain under ignored recomp/.tools; source RSO and ISO were not modified.",
+    "No game executable was linked or run; no first screen was presented."
+  ]
+}

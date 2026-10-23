@@ -1,0 +1,29 @@
+{
+  "revision": "RM3E01_00",
+  "rso_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+  "synthetic_rel_sha256": "3b8fdfd6b8badd8cb38aa964580e690ded2d68df21ae1a1933d90a6c3cf14ed4",
+  "relocated_image_sha256": "302998f8025dbb16849bc1d57f673696b80cadf7a43110c69251fd1e49bfbfcd",
+  "base_address": "0x80690000",
+  "relocations_checked": 3421,
+  "rel24_out_of_range": false,
+  "rel24_checked": 2032,
+  "relocation_type_counts": {
+    "6": 505,
+    "4": 536,
+    "10": 2032,
+    "1": 348
+  },
+  "comparison_basis": "Independent PPC relocation expressions transcribed from Ghidra decompile of RM3E01_00 RSOLink apply helper 0x805414F4; image produced by WiiCompiled Translator.Core RelFile.BuildImage.",
+  "frontend_prolog_constructor_pointer_table": {
+    "address": "0x806AD7C0",
+    "values": [
+      "0x806A9F90",
+      "0x806AD298",
+      "0x806AD554",
+      "0x806AD6C8",
+      "0x00000000"
+    ],
+    "interpretation": "Four relocated module addresses followed by a null terminator; observed by reading the REL image returned by RelFile.BuildImage."
+  },
+  "scope": "Checks relocation fields only; does not prove function boundaries, callback order, host ABI, RSO runtime loading, or screen execution."
+}

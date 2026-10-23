@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-20",
+  "revision": "RM3E01_00",
+  "purpose": "Advance Prime startup through its Bluetooth OH1 device open and identify the first IOS ioctlv contract without fabricating a remote or HCI reply.",
+  "build": {
+    "command": "cmake --build recomp/build/RM3E01_00_runtime_link_probe --target WiiCompiled.exe --parallel 4",
+    "result": "PASS",
+    "executable": "recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe",
+    "sha256": "1aefef1e59bc8cb1cc9a021140b2a35a8ca17984628f6859f1010a3ddb167874",
+    "dol": "decomp/orig/RM3E01_00/sys/main.dol",
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "runtime": {
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792545633_pid13360/console.log",
+    "log_sha256": "461467b6edd33bb0fcc00429c3d95f0ac0b1dcec7c5ba5d7f77e10d276c9207c",
+    "duration_seconds": 20,
+    "process_alive_at_harness_stop": true,
+    "fatal_error": false,
+    "screen_observed": false,
+    "observations": [
+      "Prime's four OSYieldThread waits at 0x803C41DC..0x803C41E8 now return as VI retraces advance. The Prime scheduler is deferred only while nested inside the IOS interrupt callback, allowing the guest idle loop to consume its ready queue.",
+      "Startup enters 0x80539320 (BTA_Init) and reaches 0x8050D4A0. The previous unknown-device error for /dev/usb/oh1/57e/305 is gone after adding a virtual OH1 fd; no remote connection or controller result is fabricated.",
+      "The guest then submits IOS IOCTLV command 2 with two input vectors and one 604-byte output vector. Captured input vectors are [81] and [02 5C]. The provisional OH1 handler currently returns -101 for this unsupported request, so Bluetooth startup and the first screen remain incomplete."
+    ],
+    "next": "Establish the exact command-2 USB control-transfer layout and response semantics from the RM3E01_00 guest code and an independently implemented no-remote OH1 service. Then service the request and trace the next guest operation; do not return fabricated HCI success data."
+  },
+  "validation": {
+    "runtime_build": "PASS",
+    "ctest": "PASS 9/9",
+    "runtime_log_hash_checked": true,
+    "exe_hash_checked": true,
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "artifacts": {
+    "nand_isfs_cpp_sha256": "f2e32c6bbacda83e86b88129905231699d35ba70072a9807fa3ab0432f9a11cd",
+    "os_interrupt_cpp_sha256": "0595ddac246a331853d931d353c335cde7c14b72a51ebaed2d547de8e46129c9",
+    "scheduler_shard_sha256": "8b817ca429c9cd2094eb9b7b813519625cab3941aed186ad5aec7d9a1da5aeea",
+    "startup_trace_shards": {
+      "shard_a2d715df9e1746e53b49d31c.cpp": "2e6e5f4db5622d8a80a9d088d080418200015b548817673034ee6cda212102d9",
+      "shard_09a887d17e4e8d7551478cab.cpp": "c81791a82411d8bd40656735a7b3a77b513fd4fac6d250aca0630c0ac89329cc",
+      "shard_b55832f7f7ff5ab0d0af6402.cpp": "79c3b45093c77968afd3c05f7873571a61680638ab46c1fd391c8b5566ce6b85"
+    }
+  },
+  "invariants": {
+    "matching_dol_modified": false,
+    "baseline_decomp_modified": false,
+    "iso_path": "Metroid Prime 3 - Corruption (USA).iso",
+    "iso_size": 4699979776,
+    "iso_read_only": true,
+    "guest_hci_state_forced": false,
+    "screen_claimed": false
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "active_hle_audit": "recomp\\checkpoints\\20261020_prime_profile_hle_overlap.json",
+  "active_hle_audit_sha256": "cbc96533a77eb44814a629f5c71f39bdbe18c34b41a49bc407af5fd9e84abb30",
+  "active_hle_addresses": 569,
+  "scan_scope": "Aligned big-endian 32-bit words in all loaded DOL text and data sections.",
+  "loaded_section_counts": {
+    "text": 2,
+    "data": 8
+  },
+  "addresses_with_literal_word_hits": 2,
+  "occurrence_count": 2,
+  "hit_occurrences_by_section_kind": {
+    "text": 2
+  },
+  "hits": [
+    {
+      "address": "0x80173AA8",
+      "occurrences": [
+        {
+          "section_kind": "text",
+          "section_index": 1,
+          "dol_file_offset": "0x1459B8",
+          "guest_location": "0x8014A098"
+        }
+      ]
+    },
+    {
+      "address": "0x801A00E0",
+      "occurrences": [
+        {
+          "section_kind": "text",
+          "section_index": 1,
+          "dol_file_offset": "0x435958",
+          "guest_location": "0x8043A038"
+        }
+      ]
+    }
+  ],
+  "interpretation": "No aligned data-section word would directly identify an HLE address as a stored function pointer. Text-section matches may be instruction encodings or immediates and need disassembly; this scan does not detect split immediates, computed pointers, REL/RSO references, or dynamic callbacks."
+}

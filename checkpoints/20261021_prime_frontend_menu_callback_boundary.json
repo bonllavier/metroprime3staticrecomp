@@ -1,0 +1,33 @@
+{
+  "result": "PASS observed original FrontEnd indirect callback boundary",
+  "executable_sha256": "7b7b17059419b3d894e14981dc32e270df3a25a2a73aa28ca6cf3da5fea14a63",
+  "object": "0x80adf180",
+  "vtable": "0x80b16a80",
+  "vtable_data_offset": "0x240",
+  "virtual_slot": "0x0C",
+  "runtime_target": "0x80b01070",
+  "nominal_target": "0x80699750",
+  "original_entry_word": "9421ff80",
+  "caller_lr": "0x800E0884",
+  "keyboard_exercise_requested": false,
+  "a_press_events": 2,
+  "scope": "Missing original method at a verified local relocated vtable entry; no evidence that the pointer is a guest memory stomp.",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792614020_pid8580\\runtime_probe.json",
+      "sha256": "1c92311d8a05565ef53712c8050acf3ba30b2c7e6e1d7ff92804c0740a3bc5fd"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792614020_pid8580\\console.log",
+      "sha256": "b87dc72ed8499f76a4f0c9a4204239899f8f335ac53613bf6d110054eb1b56ab"
+    },
+    {
+      "path": "recomp\\.tools\\disc-extraction-rm3e01\\files\\RSO\\Rev2 Production\\RSO_ScriptGUIScreenFrontEndUI.rso",
+      "sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792614020_pid8580\\mem1.bin",
+      "sha256": "3a2e1b3a62a5e90dd5be0ec7b59c7cb3d7185845f5f703fa4fffc11278137804"
+    }
+  ]
+}

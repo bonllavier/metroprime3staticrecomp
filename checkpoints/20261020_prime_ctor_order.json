@@ -1,0 +1,54 @@
+{
+  "created_utc": "2026-10-20T07:41:13.672547+00:00",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "runtime_source_commit": "4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+  "guest_startup_evidence": {
+    "__start": "0x80006320",
+    "ordered_calls": [
+      "OSInit @ 0x804DE05C",
+      "__init_user @ 0x804E9BDC"
+    ],
+    "__init_user_calls": "__init_cpp @ 0x804E9BFC",
+    "__init_cpp_behavior": "walks the DOL _ctors pointer array and invokes each entry until a null pointer",
+    "_ctors_address": "0x80575680",
+    "_ctors_bytes": 2240,
+    "_ctors_sha256": "4d202e96444328dcec10d3126d2da863c76c25a05d1dd7d08762a015cd0ab38b",
+    "nonzero_entries_before_terminator": 554,
+    "first_entry": "0x80305754",
+    "terminator_index": 554,
+    "evidence_sources": [
+      "Ghidra decompilation of __start, __init_user and __init_cpp",
+      "DOL-backed generated _ctors.bin"
+    ],
+    "ctor_table_audit_checkpoint": "checkpoints/20261020_prime_ctor_table_audit.json",
+    "ctor_table_audit_tool": "tools/audit_ctor_table.py",
+    "ctor_entries_unique": 554,
+    "ctor_entries_matching_function_map": 554,
+    "ctor_entries_missing_from_function_map": 0,
+    "ctor_table_accepted": true
+  },
+  "change": {
+    "cmake_option": "MKW_GAME_PROFILE_RM3E01_00",
+    "behavior": "Skips WiiCompiled pre-entry loops over Mario Kart DOL and StaticR constructor ranges; RM3E01_00 guest startup invokes its own .ctors in the observed OSInit then __init_user order.",
+    "files": [
+      "third_party/WiiCompiled/runtime/CMakeLists.txt",
+      "third_party/WiiCompiled/runtime/cmake/PublicProducts.cmake",
+      "third_party/WiiCompiled/runtime/src/system_bridge.cpp"
+    ],
+    "patch": "patches/wiicompiled_rm3e01_ctor_order.patch",
+    "patch_sha256": "6417247a134ec28e5a5539dbe3234078d7bd06944906bb3ea27e92aa3724c956",
+    "reverse_apply_check": "passed"
+  },
+  "validation": {
+    "cmake_configure_profile_on": "passed",
+    "runtime_target": "mkw_runtime_common",
+    "runtime_build_exit_code": 0,
+    "runtime_compile_object_sha256": "85c0fec0e5f73c85514318729d3367edb4f87dbb82394f647e1a39e65c41de42",
+    "compile_definition_scoped_to_runtime_object_target": true
+  },
+  "limitations": [
+    "The WiiCompiled.exe product still fails the strict link on four duplicate HLE symbols; see 20261020_full_runtime_link_probe.json.",
+    "No guest entry was executed and no game screen was rendered."
+  ]
+}

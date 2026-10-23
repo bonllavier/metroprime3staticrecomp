@@ -1,0 +1,30 @@
+{
+  "result": "PASS visually reviewed original save-storage dialog after A",
+  "revision": "RM3E01_00",
+  "executable_sha256": "b266a0238f29795db641ba9101a3e989a72f7d4299cb0d5f80222f593853bf94",
+  "observation_seconds": 110,
+  "dialog_visible_at_seconds": 105,
+  "visible_message": "There is not enough available space in Wii system memory. Create 1 block of free space...",
+  "visible_choices": [
+    "Continue Without Saving",
+    "Return to the Wii Menu Screen"
+  ],
+  "main_menu_verified": false,
+  "gameplay_verified": false,
+  "storage_accuracy_verified": false,
+  "scope": "Original game UI after controlled A, no fatal and seven PPC input samples verified. Inherited IOS GETUSAGE responds success without results; full ISO/GPU verifier pending.",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792617615_pid16404\\runtime_probe.json",
+      "sha256": "70cf884cdaac0c14f26b7acc83ada27d772e9ca9af0ac5dbdf8a148604b062cf"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\window_pid16404_105s.png",
+      "sha256": "a04d53bbbac89670f9357edfe688e0eedb1cbf004b13447e31ba4740643117e6"
+    },
+    {
+      "path": "recomp\\checkpoints\\20261021_prime_save_dialog_keyboard_input.json",
+      "sha256": "8decee4ce0746d4a0725c13c58e3e9d6b862986a70edcb8caaa2ffefa287526f"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "result": "PASS input negative fixtures",
+  "checks": [
+    {
+      "fixture": "wrong_button_edges",
+      "result": "rejected",
+      "reason": "Button edge differs from held state"
+    },
+    {
+      "fixture": "missing_pointing",
+      "result": "rejected",
+      "reason": "No mouse pointing sample"
+    },
+    {
+      "fixture": "invalid_accelerometer",
+      "result": "rejected",
+      "reason": ""
+    }
+  ],
+  "original_sha256": "005464fbc874db3117d8dd6132fdb7afc48d7dfaf72947a0615185a68d02c29b",
+  "tool_sha256": "7913c697e4b2aedcd36f1461ecd5c2852f947761d912513687ad6a82615ea5c7",
+  "original_artifact_unchanged": true
+}

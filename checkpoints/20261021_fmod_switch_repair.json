@@ -1,0 +1,55 @@
+{
+  "revision": "RM3E01_00",
+  "entry": "0x80420444",
+  "role": "Observed FMOD initialization path; complete audio behavior remains unverified.",
+  "failure_log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792561516_pid16296/console.log",
+  "missing_case": "0x80420580",
+  "jump_table": "0x8059f1d0",
+  "table_targets": [
+    "0x804205a8",
+    "0x80420558",
+    "0x80420560",
+    "0x80420568",
+    "0x80420570",
+    "0x80420578",
+    "0x80420580",
+    "0x80420588",
+    "0x80420598",
+    "0x80420590",
+    "0x804205a0"
+  ],
+  "old_emitted_cases": [
+    "0x804205a8"
+  ],
+  "new_emitted_cases": [
+    "0x804205a8",
+    "0x80420558",
+    "0x80420560",
+    "0x80420568",
+    "0x80420570",
+    "0x80420578",
+    "0x80420580",
+    "0x80420588",
+    "0x80420598",
+    "0x80420590",
+    "0x804205a0"
+  ],
+  "raw_source_sha256": "479ca4f9e47d8a1833661af5f0c294022d5689ecc1880aa2660cea6403fe769e",
+  "repaired_source_sha256": "34a244e18f5fd2c33ac7c60c631e9619297fe23f63676c83d8e675f4847c38ba",
+  "cause": "The byte-offset register r3 was reused after an earlier zero comparison. Bound discovery must follow its x4 producer to selector r7 and the actual unsigned upper bound 10.",
+  "tests": {
+    "translator_passed": 693,
+    "translator_failed": 0,
+    "rso_transform_passed": 3,
+    "rso_transform_failed": 0
+  },
+  "runtime_progress_checkpoint": "recomp/checkpoints/20261021_prime_frontend_resource_boot.json",
+  "source_hashes": {
+    "recomp/tools/RsoRuntimeTranslator/DolFunctionRepair.cs": "cdca7d1d02be58edf7eb41b235887519896447658b7a8722f3567b3fff36f6cc",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/Disassembly/JumpTableDetector.cs": "04414455e63f2b57c068fd43f68e6474ff49c3d607da0cd5fa6d69fd8be5b1de",
+    "recomp/third_party/WiiCompiled/translator/tests/Translator.Tests/JumpTableDetectorTests.cs": "4d5f6ca333659dbf097ee2d326690589c6ce935b7e32a0e6d339def492224783",
+    "recomp/tools/prepare_prime_runtime_hooks.py": "6f57a0129c2c08d0e87efbf96004aa4f604a71560eee16bcdc1ac2cda1fe0cbd"
+  },
+  "raw_dol_unchanged": true,
+  "screen_verified": false
+}

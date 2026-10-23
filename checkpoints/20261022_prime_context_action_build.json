@@ -1,0 +1,10 @@
+{
+  "result": "PASS full runtime build exit 0; 34 non-overlapping functions and 300 independent relocated fields verified",
+  "module": "ScriptContextSensitiveAction",
+  "total_functions": 790,
+  "partial_modules": 9,
+  "exe_sha256": "b373747a75365f830600ef995356c6dee61b12e27be8f6beef29385e511cc068",
+  "live_audit": "20261022_prime_context_action_live_relocations.json",
+  "imports": "20261022_prime_context_action_import_contract.json",
+  "thirty_minute_gameplay_verified": false
+}

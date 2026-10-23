@@ -1,0 +1,65 @@
+{
+  "revision": "RM3E01_00",
+  "created_utc": "2026-10-21T11:33:20.402335+00:00",
+  "status": "original_safety_screen_visible_font_pass_unresolved",
+  "executable_sha256": "3baea0260c1db96785f228e72e01c25b9f8e3b6c33bdbe7480439dd19700354b",
+  "game_title_screen_verified": false,
+  "normal_boot": {
+    "seconds": 55,
+    "iso_reads": 211,
+    "gpu_validation": true,
+    "fifo_resets": 0
+  },
+  "diagnostic_scope": {
+    "first_gpu_vertex_transform_max_abs_error": 4.754496776837591e-08,
+    "first_isolated_glyph_nonblack_pixels": 47,
+    "first_isolated_glyph_bounds": [
+      176,
+      208,
+      182,
+      218
+    ],
+    "complete_font_input_audit": {
+      "quads": 50,
+      "zero_vertex_flush_strips": 49
+    },
+    "negative_checks": [
+      "corrupted GPU position rejected",
+      "empty raster rejected"
+    ]
+  },
+  "known_limits": [
+    "Isolated compute/raster diagnostics are not original game output.",
+    "Normal font rendering still corrupt or black; independent uniform bindings did not solve it.",
+    "Degenerate direct triangle culling preserves state but does not prove full renderer fidelity.",
+    "Audio, control input, performance and ISO-only final packaging remain incomplete."
+  ],
+  "matching_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "evidence": [
+    {
+      "path": "recomp/checkpoints/20261021_prime_font_degenerate_triangles_boot.json",
+      "sha256": "fdad15e33bac2f57ce3cad1bfdf679596d56cb7dc267f7b34695c106fb386c31"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_gpu_first_glyph_current_build.json",
+      "sha256": "325d8ca74ae8fe4cb5c9e903c8aae31324e3dadeeacc43b44c84c4f8991f6a29"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_gpu_diagnostic_negative_checks.json",
+      "sha256": "aa5d78d99fc53bde37e31a5c7a20c670bf843b24b13b37da673294250ae97675"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_full_font_gpu_input_pass.json",
+      "sha256": "d0c4e1b76f6ec5608ef339363ad4306badd138cf4514968d7dbe65508a997d42"
+    }
+  ],
+  "source_hashes": {
+    "recomp/tools/verify_prime_gpu_glyph_diagnostic.py": "ca4a7bc9d6d3676ffb0fdccd5b4bc915a5298a748c802772f7b2de8bd868c02f",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gfx/common.cpp": "72ef46318496ee2bd54d18666dd199f2e6633f1aa8aaad2ce88156a0ef6f65e1",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/aurora.cpp": "e21a4cc80e1a31182261e3f0c7b0c228f901622f2c3ecc96b60dade22d295458",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/pipeline.cpp": "01128d01deab8245f7e6bc0ab83a998c1c7524ac1a0d67e6f3b28ae805ec290f",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_fifo.cpp": "6051f397a87674f975549d4e395b90d47c426adc1de5d0303edda75aba78c7e1",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/gx_fifo_storage.h": "462255463bf04b30781328d310ba52a06e4c1c66cb3c0f46e4e4a32dc164d52d",
+    "recomp/third_party/WiiCompiled/runtime/tests/gx_fifo_storage_tests.cpp": "ad7feeb9decd35e9ebbba5cc881d752d1136a18ecb1f773256014d5c93c7f524"
+  }
+}

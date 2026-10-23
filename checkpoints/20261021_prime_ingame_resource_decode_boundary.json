@@ -1,0 +1,29 @@
+{
+  "result": "FAIL bounded runtime after Mii/menu progress, resource decode boundary",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792622724_pid10920\\runtime_probe.json",
+  "active": "0x803BA3FC",
+  "caller": "0x803BC55C",
+  "fault": "write 0x98000000",
+  "stream_record_address": "0x80B43A64",
+  "stream_record_words": [
+    "0x6f602",
+    "0x180",
+    "0x7212aad",
+    "0x0",
+    "0x90d9b080",
+    "0x180",
+    "0x1",
+    "0x1",
+    "0x808fa960",
+    "0x1"
+  ],
+  "observations": [
+    "stream offset 0x6F602 exceeds resident input length 0x180",
+    "input at current cursor is zero-filled",
+    "decode output cursor exceeds mapped MEM2"
+  ],
+  "hypothesis": "Earlier stream parsing or decode did not respect resident input boundary; 0x020C0E5D at input start is not established as a chunk header. Root cause unproven.",
+  "no_patch_applied": true,
+  "save_reload_verified": false,
+  "log_sha256": "662831a18a5092872f6afa0f59302cfae9ee6f9450d9f53577dfec1c21b306f9"
+}

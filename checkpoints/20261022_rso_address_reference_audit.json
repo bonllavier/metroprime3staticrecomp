@@ -1,0 +1,76 @@
+{
+  "scope": "Relocation-backed HA/LO text-address references; absence does not prove all indirect calls covered. Missing targets require review, may be labels.",
+  "modules": [
+    {
+      "module": "Friendly",
+      "functions": 158,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "GunTurret",
+      "functions": 125,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "MapScreenWebInterface",
+      "functions": 258,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "rhbm",
+      "functions": 196,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "ScriptAchievement",
+      "functions": 23,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "ScriptContextActionButtonPressing",
+      "functions": 35,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "ScriptContextSensitiveAction",
+      "functions": 35,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "ScriptContextSensitiveActivator",
+      "functions": 26,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "ScriptGrapplePoint",
+      "functions": 51,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "ScriptGUIScreenFrontEndUI",
+      "functions": 249,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "ScriptMultiModelActor",
+      "functions": 47,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "ScriptWorldTeleporter",
+      "functions": 50,
+      "untranslated_text_address_targets": []
+    },
+    {
+      "module": "Tweaks",
+      "functions": 298,
+      "untranslated_text_address_targets": []
+    }
+  ],
+  "map_data_pointer_audit": {
+    "constructor_destructor_and_data_code_refs": 104,
+    "excluded_reviewed_switch_entries": 34,
+    "missing_callable_targets": 0,
+    "functions": 258
+  }
+}

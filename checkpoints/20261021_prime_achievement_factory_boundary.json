@@ -1,0 +1,15 @@
+{
+  "result": "PASS ScriptAchievement factory missing translation boundary, not a local switch",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792632878_pid14804\\runtime_probe.json",
+  "global_pointer": "0x8067c32c",
+  "live_function_table": "0x80c3e200",
+  "runtime_target": "0x80c3c17c",
+  "text_offset": "0xE44",
+  "HA_LO_reference_fields": [
+    2,
+    10
+  ],
+  "DOL_tailcall": "0x801DEC1C",
+  "prolog_execution_confirmed": true,
+  "overall_runtime_pass": false
+}

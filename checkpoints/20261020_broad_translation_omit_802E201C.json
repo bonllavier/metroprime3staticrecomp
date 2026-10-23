@@ -1,0 +1,18 @@
+{
+  "input_map": "functions.txt",
+  "input_sha256": "42c1c9c1654dd9cd7bffaa67d424ba6ca2a120f77c80d536c4a099ca6abc0586",
+  "experimental_map": "functions_without_802E201C.txt",
+  "experimental_sha256": "bc030786cf4061114ff5f5e6a1c19d28ea138a6f5a21c0eb957a3daea7fceec1",
+  "entries_original": 21667,
+  "entries_retained": 21666,
+  "omitted_boundary": "0x802E201C",
+  "reason": "isolated diagnostic for WiiCompiled state-free ABI emitter failure; output is not complete title coverage",
+  "attempt_command": "translate-recursive 0x80006320 --project recomp/config/RM3E01_00/project_without_802E201C.yml --threads 8",
+  "result": "failed at same emitter invariant; no output accepted",
+  "reached_function_starts": 3637,
+  "speculative_starts_from_map": 18075,
+  "state_free_functions_reported": 476,
+  "failure_address": "0x802E201C",
+  "failure_message": "State-free ABI at 0x802E201C retained CpuContext access: InvokeDirectCpu<0x802E2000u>(ctx)",
+  "diagnostic": "Removing the function-map entry does not avoid it: the call-graph walk reaches this address independently. Do not claim the omitted map resolved the blocker."
+}

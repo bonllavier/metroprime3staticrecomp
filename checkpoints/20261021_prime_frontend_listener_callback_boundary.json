@@ -1,0 +1,79 @@
+{
+  "result": "PASS repeated missing original listener callback boundary with complete memory dump",
+  "revision": "RM3E01_00",
+  "executable_sha256": "51e43c306172e736492c46c07eb4c6c9ac34916b4147a3d416cdd471719cad97",
+  "runtime_target": "0x80b14164",
+  "nominal_target": "0x806ac844",
+  "text_offset": "0x15be4",
+  "listener_node": "0x808dbde0",
+  "node_words": [
+    "0x80adf2dc",
+    "0x80adf2dc",
+    "0x808dbdd0",
+    "0x80b14164",
+    "0x80a53700",
+    "0x0",
+    "0xffffffff",
+    "0x80b12678"
+  ],
+  "caller_lr": "0x80B0B990",
+  "note": "Caller advances r30 to next node before dispatch; current node is recovered from r4 payload minus 20, not post-advance r30.",
+  "original_entry_bytes_match": 24,
+  "installer_internal_relocations": [
+    {
+      "source_file_offset": 88726,
+      "source_section": 1,
+      "source_section_offset": 88438,
+      "field_width": 2,
+      "type": 6,
+      "index": 1,
+      "target_offset": 89060
+    },
+    {
+      "source_file_offset": 88734,
+      "source_section": 1,
+      "source_section_offset": 88446,
+      "field_width": 2,
+      "type": 4,
+      "index": 1,
+      "target_offset": 89060
+    },
+    {
+      "source_file_offset": 89014,
+      "source_section": 1,
+      "source_section_offset": 88726,
+      "field_width": 2,
+      "type": 6,
+      "index": 1,
+      "target_offset": 89060
+    },
+    {
+      "source_file_offset": 89022,
+      "source_section": 1,
+      "source_section_offset": 88734,
+      "field_width": 2,
+      "type": 4,
+      "index": 1,
+      "target_offset": 89060
+    }
+  ],
+  "scope": "Expected failure, not successful menu execution. Callback pointer and source preimage validated before adding translation root.",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792616411_pid15836\\runtime_probe.json",
+      "sha256": "8be513d4b9378d503dafff734f65df799efb25abbc57ffd615904cc45dbc89ac"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792616411_pid15836\\console.log",
+      "sha256": "eada23a2c7107d6cc1111a43488451012dd0083a111b4ea2ab2e7b6a50b8930f"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792616411_pid15836\\crash_missing_target.txt",
+      "sha256": "e8679212428f8ed686641499a65b6e34a7fc824e0b01d70a6967d29c1f8ca228"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792616411_pid15836\\mem1.bin",
+      "sha256": "c391fb6e6a247a20f99993b03e5d38c8591982c23fd6a1ba51e84cc77643a5ca"
+    }
+  ]
+}

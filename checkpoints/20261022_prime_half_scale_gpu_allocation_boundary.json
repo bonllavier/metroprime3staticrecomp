@@ -1,0 +1,26 @@
+{
+  "result": "FAIL renderer allocation after original half-scale copies executed",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792646070_pid14448\\runtime_probe.json",
+  "probe_sha256": "c5e3c7ebf024801d033656f8e5de33e734eb89385b94ed1c54afbf434c287501",
+  "executable_sha256": "ed80b4d0baff76d4c574eab3a4b0b4c679496028418feca99ef62bf9312e542a",
+  "half_scale_modes_observed": [
+    "640x360 -> 320x180 RGBA8 230400 bytes",
+    "640x448 -> 320x224 RGB565 143360 bytes"
+  ],
+  "failure": "D3D12 CreateHeap while creating GX Static Texture; device removed reason S_OK",
+  "visual_observation": "Blue rectangle instead of a verified in-game scene",
+  "visual_artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\window_pid14448_75s.png",
+      "sha256": "4137c5ee60ee5cda23b38b3f970d04264c8bd3a600eee8f9bccd94eb0bbc0ca6"
+    }
+  ],
+  "resolution_multiplier": 1,
+  "window_size": [
+    1920,
+    1027
+  ],
+  "memory_failure_root_cause_verified": false,
+  "gameplay_verified": false,
+  "next": "Bounded allocation observer; inspect texture dimensions and cache counts without altering allocation behavior"
+}

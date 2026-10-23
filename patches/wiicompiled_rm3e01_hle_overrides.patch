@@ -1,0 +1,179 @@
+diff --git a/runtime/src/hle/audio/audio.cpp b/runtime/src/hle/audio/audio.cpp
+index 1be5008..7a7969d 100644
+--- a/runtime/src/hle/audio/audio.cpp
++++ b/runtime/src/hle/audio/audio.cpp
+@@ -309,7 +309,9 @@ extern "C" uint32_t AIGetDSPSampleRate_8012409c()
+     // SDK AIGetDSPSampleRate returns AIDFR^1: 0 for 32 kHz, 1 for 48 kHz.
+     return (g_ai.sampleRate == 48000u) ? 1u : 0u;
+ }
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ PPC_NATIVE_OVERRIDE(8012409C, AIGetDSPSampleRate_8012409c, uint32_t, (), ());
++#endif
+ 
+ extern "C" void DSPSendMailToDSP_8015d430(uint32_t mail)
+ {
+diff --git a/runtime/src/hle/audio/ax_effects.cpp b/runtime/src/hle/audio/ax_effects.cpp
+index a30a4ac..b14b561 100644
+--- a/runtime/src/hle/audio/ax_effects.cpp
++++ b/runtime/src/hle/audio/ax_effects.cpp
+@@ -10,7 +10,9 @@
+ #include <cstring>
+ 
+ 
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ extern "C" void func_8012B830(CpuContext* ctx);
++#endif
+ 
+ #if defined(__clang__)
+ // PowerPC uses discrete fmuls/fadds; a fused multiply-add would change sample rounding.
+@@ -334,6 +336,7 @@ void Render(uint32_t stateAddr, Frame& frame) {
+ } // namespace ReverbStd
+ } // namespace
+ 
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ extern "C" void AXFXReverbStdExpCallback_8012b830(CpuContext* ctx) {
+     if (!ctx) {
+         return;
+@@ -373,3 +376,4 @@ extern "C" void AXFXReverbStdExpCallback_8012b830(CpuContext* ctx) {
+ 
+ REGISTER_NATIVE_FUNCTION_AS(0x8012B830, AXFXReverbStdExpCallback_8012b830,
+                             "AXFXReverbStdExpCallback_8012b830");
++#endif
+diff --git a/runtime/src/hle/gx/gx_fatal_stubs.cpp b/runtime/src/hle/gx/gx_fatal_stubs.cpp
+index 42ca4e5..ee5fc93 100644
+--- a/runtime/src/hle/gx/gx_fatal_stubs.cpp
++++ b/runtime/src/hle/gx/gx_fatal_stubs.cpp
+@@ -113,7 +113,11 @@ GX_FATAL_STUB(8016dec8, "GX__SetVtxAttrFmtv_caseD_d_8016dec8") PPC_NATIVE_OVERRI
+ GX_FATAL_STUB(8016dee0, "GX__SetVtxAttrFmtv_caseD_e_8016dee0") PPC_NATIVE_OVERRIDE_VOID(8016dee0, gx_stub_8016dee0, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(8016def8, "GX__SetVtxAttrFmtv_caseD_f_8016def8") PPC_NATIVE_OVERRIDE_VOID(8016def8, gx_stub_8016def8, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(8016df10, "GX__SetVtxAttrFmtv_caseD_10_8016df10") PPC_NATIVE_OVERRIDE_VOID(8016df10, gx_stub_8016df10, (CpuContext* ctx), (ctx));
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ GX_FATAL_STUB(8016df28, "GX__SetVtxAttrFmtv_caseD_11_8016df28") PPC_NATIVE_OVERRIDE_VOID(8016df28, gx_stub_8016df28, (CpuContext* ctx), (ctx));
++#else
++GX_FATAL_STUB(8016df28, "GX__SetVtxAttrFmtv_caseD_11_8016df28")
++#endif
+ GX_FATAL_STUB(8016df48, "GX__SetVtxAttrFmtv_caseD_12_8016df48") PPC_NATIVE_OVERRIDE_VOID(8016df48, gx_stub_8016df48, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(8016df60, "GX__SetVtxAttrFmtv_caseD_13_8016df60") PPC_NATIVE_OVERRIDE_VOID(8016df60, gx_stub_8016df60, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(8016df78, "GX__SetVtxAttrFmtv_caseD_14_8016df78") PPC_NATIVE_OVERRIDE_VOID(8016df78, gx_stub_8016df78, (CpuContext* ctx), (ctx));
+@@ -136,11 +140,19 @@ GX_FATAL_STUB(8016e278, "GX__GetVtxAttrFmt_caseD_14_8016e278") PPC_NATIVE_OVERRI
+ GX_FATAL_STUB(8016e2a0, "GX__GetVtxAttrFmt_caseD_15_8016e2a0") PPC_NATIVE_OVERRIDE_VOID(8016e2a0, gx_stub_8016e2a0, (CpuContext* ctx), (ctx));
+ // moved to gx_vertex.cpp: GX__GetVtxAttrFmtv_8016e2b8
+ GX_FATAL_STUB(8016e3a4, "GX__SetTexCoordGen2_switch_8016e3a4") PPC_NATIVE_OVERRIDE_VOID(8016e3a4, gx_stub_8016e3a4, (CpuContext* ctx), (ctx));
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ GX_FATAL_STUB(8016e3a8, "GX__SetTexCoordGen2_caseD_0_8016e3a8") PPC_NATIVE_OVERRIDE_VOID(8016e3a8, gx_stub_8016e3a8, (CpuContext* ctx), (ctx));
++#else
++GX_FATAL_STUB(8016e3a8, "GX__SetTexCoordGen2_caseD_0_8016e3a8")
++#endif
+ GX_FATAL_STUB(8016e3b4, "GX__SetTexCoordGen2_caseD_1_8016e3b4") PPC_NATIVE_OVERRIDE_VOID(8016e3b4, gx_stub_8016e3b4, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(8016e3c0, "GX__SetTexCoordGen2_caseD_2_8016e3c0") PPC_NATIVE_OVERRIDE_VOID(8016e3c0, gx_stub_8016e3c0, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(8016e3cc, "GX__SetTexCoordGen2_caseD_3_8016e3cc") PPC_NATIVE_OVERRIDE_VOID(8016e3cc, gx_stub_8016e3cc, (CpuContext* ctx), (ctx));
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ GX_FATAL_STUB(8016e3d8, "GX__SetTexCoordGen2_caseD_13_8016e3d8") PPC_NATIVE_OVERRIDE_VOID(8016e3d8, gx_stub_8016e3d8, (CpuContext* ctx), (ctx));
++#else
++GX_FATAL_STUB(8016e3d8, "GX__SetTexCoordGen2_caseD_13_8016e3d8")
++#endif
+ GX_FATAL_STUB(8016e3e0, "GX__SetTexCoordGen2_caseD_14_8016e3e0") PPC_NATIVE_OVERRIDE_VOID(8016e3e0, gx_stub_8016e3e0, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(8016e3e8, "GX__SetTexCoordGen2_caseD_4_8016e3e8") PPC_NATIVE_OVERRIDE_VOID(8016e3e8, gx_stub_8016e3e8, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(8016e3f0, "GX__SetTexCoordGen2_caseD_5_8016e3f0") PPC_NATIVE_OVERRIDE_VOID(8016e3f0, gx_stub_8016e3f0, (CpuContext* ctx), (ctx));
+@@ -197,7 +209,11 @@ GX_FATAL_STUB(801738cc, "GX__SetGPMetric_caseD_e_801738cc") PPC_NATIVE_OVERRIDE_
+ GX_FATAL_STUB(801738e8, "GX__SetGPMetric_caseD_f_801738e8") PPC_NATIVE_OVERRIDE_VOID(801738e8, gx_stub_801738e8, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(80173904, "GX__SetGPMetric_caseD_10_80173904") PPC_NATIVE_OVERRIDE_VOID(80173904, gx_stub_80173904, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(80173920, "GX__SetGPMetric_caseD_11_80173920") PPC_NATIVE_OVERRIDE_VOID(80173920, gx_stub_80173920, (CpuContext* ctx), (ctx));
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ GX_FATAL_STUB(8017393c, "GX__SetGPMetric_caseD_12_8017393c") PPC_NATIVE_OVERRIDE_VOID(8017393c, gx_stub_8017393c, (CpuContext* ctx), (ctx));
++#else
++GX_FATAL_STUB(8017393c, "GX__SetGPMetric_caseD_12_8017393c")
++#endif
+ GX_FATAL_STUB(80173958, "GX__SetGPMetric_caseD_13_80173958") PPC_NATIVE_OVERRIDE_VOID(80173958, gx_stub_80173958, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(80173974, "GX__SetGPMetric_caseD_14_80173974") PPC_NATIVE_OVERRIDE_VOID(80173974, gx_stub_80173974, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(80173990, "GX__SetGPMetric_caseD_15_80173990") PPC_NATIVE_OVERRIDE_VOID(80173990, gx_stub_80173990, (CpuContext* ctx), (ctx));
+@@ -207,7 +223,11 @@ GX_FATAL_STUB(801739e4, "GX__SetGPMetric_caseD_18_801739e4") PPC_NATIVE_OVERRIDE
+ GX_FATAL_STUB(80173a00, "GX__SetGPMetric_caseD_19_80173a00") PPC_NATIVE_OVERRIDE_VOID(80173a00, gx_stub_80173a00, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(80173a1c, "GX__SetGPMetric_caseD_1a_80173a1c") PPC_NATIVE_OVERRIDE_VOID(80173a1c, gx_stub_80173a1c, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(80173a38, "GX__SetGPMetric_caseD_1b_80173a38") PPC_NATIVE_OVERRIDE_VOID(80173a38, gx_stub_80173a38, (CpuContext* ctx), (ctx));
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ GX_FATAL_STUB(80173a54, "GX__SetGPMetric_caseD_1c_80173a54") PPC_NATIVE_OVERRIDE_VOID(80173a54, gx_stub_80173a54, (CpuContext* ctx), (ctx));
++#else
++GX_FATAL_STUB(80173a54, "GX__SetGPMetric_caseD_1c_80173a54")
++#endif
+ GX_FATAL_STUB(80173a70, "GX__SetGPMetric_caseD_1d_80173a70") PPC_NATIVE_OVERRIDE_VOID(80173a70, gx_stub_80173a70, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(80173a8c, "GX__SetGPMetric_caseD_1e_80173a8c") PPC_NATIVE_OVERRIDE_VOID(80173a8c, gx_stub_80173a8c, (CpuContext* ctx), (ctx));
+ GX_FATAL_STUB(80173aa8, "GX__SetGPMetric_caseD_1f_80173aa8") PPC_NATIVE_OVERRIDE_VOID(80173aa8, gx_stub_80173aa8, (CpuContext* ctx), (ctx));
+diff --git a/runtime/src/hle/net/network_config.cpp b/runtime/src/hle/net/network_config.cpp
+index 78802c0..51680ba 100644
+--- a/runtime/src/hle/net/network_config.cpp
++++ b/runtime/src/hle/net/network_config.cpp
+@@ -5,6 +5,7 @@
+ 
+ namespace NetworkHle {
+ 
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ extern "C" void func_801D8D30(CpuContext* ctx);
+ extern "C" void func_801D9E94(CpuContext* ctx);
+ 
+@@ -64,6 +65,7 @@ extern "C" void NHTTPStartup_Reentrant_HLE_801d8d30(CpuContext* ctx) {
+ }
+ 
+ REGISTER_NATIVE_FUNCTION_AS(0x801D8D30, NHTTPStartup_Reentrant_HLE_801d8d30, "NHTTPStartup_Reentrant_HLE_801d8d30");
++#endif
+ 
+ static void WriteNcdConfig(uint32_t addr, uint32_t len) {
+     if (!addr || len == 0) {
+diff --git a/runtime/src/hle/os/os_init.cpp b/runtime/src/hle/os/os_init.cpp
+index 08472a8..aad30bc 100644
+--- a/runtime/src/hle/os/os_init.cpp
++++ b/runtime/src/hle/os/os_init.cpp
+@@ -18,6 +18,7 @@
+ #include "runtime_log.h"
+ #include "system_bridge.h"
+ 
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ extern "C" void func_801A961C(CpuContext* ctx);
+ extern "C" void func_8055531C(CpuContext* ctx);
+ 
+@@ -34,6 +35,7 @@ extern "C" void StaticRProlog_RecompModInit_8055531c(CpuContext* ctx) {
+ }
+ 
+ REGISTER_NATIVE_FUNCTION_AS(0x8055531C, StaticRProlog_RecompModInit_8055531c, "StaticRProlog_RecompModInit_8055531c");
++#endif
+ 
+ namespace {
+ std::string ReadGuestCStringLimited(uint32_t address, size_t limit = 4096) {
+diff --git a/runtime/src/hle/os/os_interrupt.cpp b/runtime/src/hle/os/os_interrupt.cpp
+index 29bc4c1..ab4b658 100644
+--- a/runtime/src/hle/os/os_interrupt.cpp
++++ b/runtime/src/hle/os/os_interrupt.cpp
+@@ -236,7 +236,9 @@ extern "C" uint32_t SetInterruptMask_801a66e0(uint32_t mask, uint32_t enable)
+ PPC_NATIVE_OVERRIDE(801A65AC, OS__DisableInterrupts_801a65ac, int32_t, (), ());
+ PPC_NATIVE_OVERRIDE(801A65C0, OS__EnableInterrupts_801a65c0, int32_t, (), ());
+ PPC_NATIVE_OVERRIDE(801A65D4, OS__RestoreInterrupts_801a65d4, int32_t, (int32_t level), (level));
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ PPC_NATIVE_OVERRIDE(801A661C, OS____InterruptInit_801a661c, uint32_t, (uint32_t r3, uint32_t r4, uint32_t r5, uint32_t r6, uint32_t r7, uint32_t r8), (r3, r4, r5, r6, r7, r8));
++#endif
+ PPC_NATIVE_OVERRIDE(801A66E0, SetInterruptMask_801a66e0, uint32_t, (uint32_t mask, uint32_t enable), (mask, enable));
+ PPC_NATIVE_OVERRIDE(801A00E0, OS__ExceptionInit_801a00e0, uint32_t, (uint32_t r3, uint32_t r4, uint32_t r5, uint32_t r6, uint32_t r7, uint32_t r8, uint32_t r20), (r3, r4, r5, r6, r7, r8, r20));
+ PPC_NATIVE_OVERRIDE(80168FA0, EXIInit_80168fa0, uint32_t, (), ());
+@@ -444,7 +446,9 @@ extern "C" uint32_t OSSetPowerCallback_801ab75c(CpuContext* ctx)
+ PPC_NATIVE_OVERRIDE(801AB75C, OSSetPowerCallback_801ab75c, uint32_t, (CpuContext* ctx), (ctx));
+ 
+ PPC_NATIVE_OVERRIDE(80167F68, EXIImm_80167f68, uint32_t, (uint32_t channel, uint32_t buffer, uint32_t length, uint32_t type, uint32_t callback), (channel, buffer, length, type, callback));
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ PPC_NATIVE_OVERRIDE(80168288, EXIDma_80168288, uint32_t, (uint32_t channel, uint32_t buffer, uint32_t length, uint32_t type, uint32_t callback), (channel, buffer, length, type, callback));
++#endif
+ PPC_NATIVE_OVERRIDE(80168380, EXISync_80168380, uint32_t, (uint32_t channel), (channel));
+ PPC_NATIVE_OVERRIDE(80169260, EXIUnlock_80169260, uint32_t, (uint32_t channel), (channel));
+ 
+diff --git a/runtime/src/hle/os/os_scheduler.cpp b/runtime/src/hle/os/os_scheduler.cpp
+index c6bbd00..9a69f03 100644
+--- a/runtime/src/hle/os/os_scheduler.cpp
++++ b/runtime/src/hle/os/os_scheduler.cpp
+@@ -461,7 +461,9 @@ void OS_HLE_WakeupThreadNoReschedule(CpuContext* ctx, uint32_t waitQueue)
+     cpu->gpr[3] = savedR3;
+ }
+ 
++#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+ PPC_NATIVE_OVERRIDE_VOID(801AAAA4, OSWakeupThread_HLE_801aaaa4, (CpuContext* ctx), (ctx));
++#endif
+ 
+ extern "C" void OSSleepThread_HLE_801aa9b8(CpuContext* ctx);
+ 

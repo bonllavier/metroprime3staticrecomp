@@ -1,0 +1,12 @@
+{
+  "result": "PASS full runtime build with two three-table function repairs; runtime pending",
+  "executable_sha256": "306f99e266ea6d7c72e0d8c5b32cf0b221241a1fac589809544ad8a969538f6f",
+  "entries": [
+    "0x80423190",
+    "0x80423EF8"
+  ],
+  "overlay_manifest_sha256": "a497465c943919e0b7444b3cb193c333da0bdb96efdd4eeea632a01241bb4a5d",
+  "boundary": "20261021_prime_audio_pair_switch_boundary.json",
+  "unsupported_instructions": 0,
+  "total_partial_RSO_functions": 633
+}

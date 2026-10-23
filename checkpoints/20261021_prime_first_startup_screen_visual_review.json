@@ -1,0 +1,90 @@
+{
+  "revision": "RM3E01_00",
+  "created_utc": "2026-10-21T06:43:44.737063+00:00",
+  "status": "first_original_startup_safety_screen_verified_title_pending",
+  "runtime_checkpoint": "recomp/checkpoints/20261021_prime_persistent_efb_boot.json",
+  "runtime_checkpoint_sha256": "79332ddd05595770501586c3fc7177fcbb474400ca7a2d0f0b64d7a6d4fe379f",
+  "first_original_startup_screen_visually_verified": true,
+  "screen": "Original Wii Remote wrist strap safety screen rendered by translated guest GX commands",
+  "metroid_title_screen_verified": false,
+  "full_game_fidelity_verified": false,
+  "visual_review": "Inspected GPU readback and actual Windows client image. Texture-only diagnostic is not counted as a game screen.",
+  "cause": "Guest draws after display copy. Host begin_frame cleared persistent EFB before the next copy. Prime now loads EFB across host frame boundaries; only the initial frame and original GX commands clear it.",
+  "stable_repeat": {
+    "pid": 6448,
+    "seconds": 55,
+    "verified_iso_reads": 213,
+    "gpu_validation": true,
+    "no_fifo_reset": true,
+    "all_four_rso_callbacks": true
+  },
+  "diagnostic_trace_run": {
+    "pid": 17892,
+    "seconds": 55,
+    "one_fifo_abort_with_114_pending_bytes": true,
+    "accepted_as_stable": false
+  },
+  "limitations": [
+    "Later image at 40 seconds contains corrupted geometry; title screen not reached/verified.",
+    "No Wiimote hardware, input progression, audio or performance fidelity proof.",
+    "Private FST/inventory extraction remains a research dependency."
+  ],
+  "artifacts": [
+    {
+      "path": "recomp/.tools/prime_gpu_frame60.bmp",
+      "role": "before_fix_gpu_present_black",
+      "bytes": 1146934,
+      "sha256": "4f0bd61e8b127ddf82410b9824fdab65a9f284770f6f90fe561263c4bb1c086c",
+      "private_game_asset": true
+    },
+    {
+      "path": "recomp/.tools/prime_gpu_texture_frame60.bmp",
+      "role": "diagnostic_texture_only_not_game_screen",
+      "bytes": 1228854,
+      "sha256": "0f53d73c7c11ca66dd6333859b319ea935db759296926cc0a19b825d8345fd89",
+      "private_game_asset": true
+    },
+    {
+      "path": "recomp/.tools/prime_gpu_efb_frame60.bmp",
+      "role": "before_fix_efb_snapshot_black",
+      "bytes": 1146934,
+      "sha256": "4f0bd61e8b127ddf82410b9824fdab65a9f284770f6f90fe561263c4bb1c086c",
+      "private_game_asset": true
+    },
+    {
+      "path": "recomp/.tools/prime_gpu_strap_buffers.bin",
+      "role": "before_fix_gpu_vertex_uniform_index_readback",
+      "bytes": 13312,
+      "sha256": "bd82fe045d784c5029633bbdae3a9fc8938ed1ce2b695f9e3a3d1f285fee44f8",
+      "private_game_asset": true
+    },
+    {
+      "path": "recomp/.tools/prime_gpu_strap_exact_frame.bmp",
+      "role": "before_fix_frame22_black",
+      "bytes": 1146934,
+      "sha256": "e43c67b53699aab35a0ed7db353fe24ed83129b460eb18159b853a13133a8702",
+      "private_game_asset": true
+    },
+    {
+      "path": "recomp/.tools/prime_gpu_strap_persistent_efb.bmp",
+      "role": "after_fix_original_gx_draw_gpu_present_frame22",
+      "bytes": 1146934,
+      "sha256": "00a36074e005a54f66a74b1cc8e2f8a528a208bdabe6d2d8b35ca0ad37b2e0dc",
+      "private_game_asset": true
+    },
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid6448_15s.png",
+      "role": "after_fix_windows_client_startup_safety",
+      "bytes": 163453,
+      "sha256": "1e89de9c0e536af0ce0f952da9bbe5d83374e29c88bba442d695487ac74d5fe3",
+      "private_game_asset": true
+    },
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid6448_40s.png",
+      "role": "later_rendering_corruption_unresolved",
+      "bytes": 38511,
+      "sha256": "7ab45c02c7201a53c63dea7eba3acdb513a73c262544ff71ded1fe8100e29730",
+      "private_game_asset": true
+    }
+  ]
+}

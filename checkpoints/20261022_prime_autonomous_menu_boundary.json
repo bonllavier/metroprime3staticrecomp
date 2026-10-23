@@ -1,0 +1,75 @@
+{
+  "revision": "RM3E01_00",
+  "pid": 2744,
+  "exe_sha256": "12896330d39a4a3111c3b594730dc35cbd7bb77914883a25f5e809bfd36a8303",
+  "result": "Autonomous menu navigation PASS; real gameplay duration NOT reached; stopped at missing GrapplePoint prolog",
+  "verified_screens": [
+    "Game Select",
+    "WC24 notice 109042",
+    "Main Menu",
+    "Normal difficulty",
+    "Life-support introduction"
+  ],
+  "receipts": [
+    {
+      "receipt": "recomp\\.tools\\prime_pid2744_A1.json",
+      "sequence": "639282455972449914",
+      "accepted": true,
+      "sha256": "c01cf27ea4696983989c4771f2cb7ae03be13caf72f46cd1d845e3dd0d5f2700"
+    },
+    {
+      "receipt": "recomp\\.tools\\prime_pid2744_hover.json",
+      "sequence": "639282456485024249",
+      "accepted": true,
+      "sha256": "f4851bf732a584c6c12c5d9a929d21851f015d53f7b96c4759218efac53f01f7"
+    },
+    {
+      "receipt": "recomp\\.tools\\prime_pid2744_normal.json",
+      "sequence": "639282457299297058",
+      "accepted": true,
+      "sha256": "2c9eba597948629314dc95c798842b32070671ea62f9912a9d5588f5c427165d"
+    },
+    {
+      "receipt": "recomp\\.tools\\prime_pid2744_normal_hover.json",
+      "sequence": "639282457277196174",
+      "accepted": true,
+      "sha256": "b68d15e6c095640ec25925e25b58fa8021fce7ab618b99b8aff810b69e85a486"
+    },
+    {
+      "receipt": "recomp\\.tools\\prime_pid2744_play.json",
+      "sequence": "639282457012209426",
+      "accepted": true,
+      "sha256": "10ffa4d517eb4fdfbf9d92c48f30a98ea85142f4e727d4dccee4757587c114aa"
+    },
+    {
+      "receipt": "recomp\\.tools\\prime_pid2744_play_hover.json",
+      "sequence": "639282456989624354",
+      "accepted": true,
+      "sha256": "1f0bbd17d8a9fbaa669535cc85dc9c465efa45f57aee3cc41f8b7ae678139e84"
+    },
+    {
+      "receipt": "recomp\\.tools\\prime_pid2744_slot.json",
+      "sequence": "639282456227516263",
+      "accepted": true,
+      "sha256": "18e909548547a1f2f0389942302249592e252de84bb6545967b79b0df35bf203"
+    },
+    {
+      "receipt": "recomp\\.tools\\prime_pid2744_slot2.json",
+      "sequence": "639282456516244413",
+      "accepted": true,
+      "sha256": "052d26784b4d42c0556d09fcfd20c5a94be951b1be333f863dabc2f6733dc5b0"
+    },
+    {
+      "receipt": "recomp\\.tools\\prime_pid2744_warning.json",
+      "sequence": "639282456724166907",
+      "accepted": true,
+      "sha256": "fa2c7bcff41be6a41e06c8d7661919a897eaab8a22474e2db905c8b577f7f54d"
+    }
+  ],
+  "all_commands_accepted": true,
+  "context_module_bind_verified": true,
+  "missing_target": "0x80fb0250",
+  "grapple_live_audit": "20261022_prime_grapple_live_relocations.json",
+  "thirty_minute_real_scenario_verified": false,
+  "future_module_live_audit": "MultiModelActor section metadata differs before its linker turn: not yet linked, no accepted relocation audit. Do not treat read buffer as linked module."
+}

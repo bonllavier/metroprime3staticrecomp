@@ -1,0 +1,43 @@
+{
+  "created_utc": "2026-10-20T08:02:00Z",
+  "revision": "RM3E01_00",
+  "evidence": {
+    "disc_image_checkpoint": "checkpoints/20261020_supplied_disc_audit.json",
+    "disc_header_ascii": "RM3E01\u0000\u0000",
+    "game_code_word": "0x524D3345",
+    "game_code_ascii": "RM3E",
+    "disc_id_tail_word": "0x30310000",
+    "tail_ascii": "01\u0000\u0000",
+    "identity_scope": "The standard raw Wii disc header validates game ID RM3E01, disc 0, revision 0, and magic. The encrypted partition main.dol has not been compared.",
+    "disc_number": 0,
+    "revision": 0,
+    "wii_disc_magic": "5d1c9ea3"
+  },
+  "change": {
+    "file": "third_party/WiiCompiled/runtime/src/system_bridge.cpp",
+    "profile_guard": "MKW_GAME_PROFILE_RM3E01_00",
+    "prime_values": {
+      "0x80000000": "0x524D3345",
+      "0x80000004": "0x30310000",
+      "0x80003180": "0x524D3345",
+      "0x80003194": "0x524D3345"
+    },
+    "non_prime_behavior": "The existing Mario Kart RMCP values remain under the non-Prime branch.",
+    "patch": "patches/wiicompiled_rm3e01_lowmem_id.patch",
+    "patch_sha256": "91418efcb7ff864cf8207c616aca37f3f598ee813e633f8bf54eff3a687557fd"
+  },
+  "validation": {
+    "mkw_runtime_common_profile_build": "passed",
+    "strict_product_link": "failed only on the same three unresolved WiiCompiled/Mario Kart scheduler and alarm helper references: func_801A0620, func_801AADE0, func_801A1ED8",
+    "iso_modified": false,
+    "decomp_tree_modified": false,
+    "patch_forward_check_against_reference_checkout": "passed",
+    "patch_reverse_check_against_vendor_checkout": "passed",
+    "translator_tests": "685 passed, 0 failed",
+    "runtime_platform_tests": "9 passed, 0 failed (PATH includes pinned LLVM-MinGW runtime DLL directory)"
+  },
+  "limitations": [
+    "The values are derived from the disc header, not from observing the guest boot writing low memory.",
+    "The direct ISO reader and first-screen execution remain unimplemented."
+  ]
+}

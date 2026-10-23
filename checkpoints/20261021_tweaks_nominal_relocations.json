@@ -1,0 +1,27 @@
+{
+  "revision": "RM3E01_00",
+  "rso_sha256": "f195aa36d03fb34a5a11821fa1533d52343d0be1d02e59a9e2a24e8791125a09",
+  "synthetic_rel_sha256": "c4951be364206f7cfde832bad35ffc752f29d1912169c655d62ee202a2588a8c",
+  "relocated_image_sha256": "444d4e2584a310c1bebba1034cf551110a9fdcc2bdea34223138ddee54b360fa",
+  "base_address": "0x80690000",
+  "relocations_checked": 5273,
+  "rel24_out_of_range": false,
+  "rel24_checked": 2993,
+  "relocation_type_counts": {
+    "10": 2993,
+    "6": 836,
+    "4": 1442,
+    "1": 2
+  },
+  "comparison_basis": "Independent PPC relocation expressions transcribed from Ghidra decompile of RM3E01_00 RSOLink apply helper 0x805414F4; image produced by WiiCompiled Translator.Core RelFile.BuildImage.",
+  "constructor_pointer_table": {
+    "address": "0x806B68A0",
+    "values": [
+      "0x8069A710",
+      "0x806B6798",
+      "0x00000000"
+    ],
+    "interpretation": "Section 2 relocated text pointers followed by a verified null terminator; not a callback execution claim."
+  },
+  "scope": "Checks relocation fields only; does not prove function boundaries, callback order, host ABI, RSO runtime loading, or screen execution."
+}

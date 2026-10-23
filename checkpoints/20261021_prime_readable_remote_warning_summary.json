@@ -1,0 +1,70 @@
+{
+  "revision": "RM3E01_00",
+  "executable_sha256": "82088d65098c1264f3199c97204316bb8a2420110e9e1d64237b38515b6b0f33",
+  "status": "original_remote_disconnected_warning_readable",
+  "game_title_screen_verified": false,
+  "fixes": [
+    "Prime burst producer preserves zero bytes while CP reads are stopped.",
+    "Texture resolution memo honors no_cache, so original font palette switches resolve independently."
+  ],
+  "normal_boot": {
+    "seconds": 55,
+    "iso_reads_verified": 214,
+    "gpu_validation": true,
+    "fifo_resets": 0,
+    "original_rso_modules": 4
+  },
+  "raster": {
+    "compared_pixels": 286720,
+    "exact_pixel_matches": 286537,
+    "max_channel_error": 1,
+    "quads": 50,
+    "original_palettes": 4,
+    "negative_old_palette_rejected": true,
+    "negative_black_frame_rejected": true
+  },
+  "visual_review": {
+    "window": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid20112_25s.png",
+    "text": "Communications with the Wii Remote have been interrupted.",
+    "rendered_by_original_guest": true
+  },
+  "next_step": "Implement and verify the Prime-specific native input boundary: map real host input into verified WPAD/KPAD layouts and callbacks without forcing title state.",
+  "limits": [
+    "No paired Wiimote or keyboard/mouse Prime input bridge yet.",
+    "No title screen verified.",
+    "Audio, gameplay performance, complete console fidelity and ISO-only packaging remain incomplete."
+  ],
+  "evidence": [
+    {
+      "path": "recomp/checkpoints/20261021_prime_readable_remote_warning_boot.json",
+      "sha256": "a6cc7e6f970c053a349d2fc86c54e0a4bd72db8a6f8caba830275ace17517d6b"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_font_pixel_reference.json",
+      "sha256": "2663486b9008eaa2b2118c651da3fc794a0f2686f9b25992aa7f62efc309252b"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_font_pixel_reference_negative.json",
+      "sha256": "83ba55f76537c2379add965e9365e233bdafe5fd88193868bc9a1799230a365b"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_fifo_burst_order_summary.json",
+      "sha256": "435d180c24109efe150a2256b5cb414ee25a4524b4a83ab0bff768714a5ef9d0"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_readable_remote_warning_full_sources.json",
+      "sha256": "043e20f1f75dc13fccf660c21dc0a08e4332ec78f796995db9dba31026a92de4"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_input_boundary_research.json",
+      "sha256": "6fbf94c06e4d86facb565c718f801cba41418bff5757f208ead4ef664b40b58f"
+    }
+  ],
+  "source_hashes": {
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/gx.cpp": "f9520d92758eeddc157ba4096b0233cd3531659f4152dcc758bb2c9d45b0f195",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_fifo.cpp": "95e3acb75e27a785114ed81bb8c6021ea4aa157a6d8542e3cb8d9bc814b65bae",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_fifo_burst.h": "284eeca54ddf9606d70998c725b82472eb4ee657dc028f51f4f42146eb81961b",
+    "recomp/tools/verify_prime_font_raster.py": "942698c57089388a0ce54cdae4fba0ba47d045fc79b2495985175b49ee99c491"
+  },
+  "matching_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+}

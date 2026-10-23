@@ -1,0 +1,150 @@
+{
+  "revision": "RM3E01_00",
+  "result": "PASS original-font GPU diagnostic",
+  "game_screen_verified": false,
+  "diagnostic_only": true,
+  "executable_sha256": "dc1de689e7b17518cce3763af8095e62889ecd87a8efafa8104168ad27b32070",
+  "frame": 1275,
+  "gpu_transform_max_abs_error": 4.754496776837591e-08,
+  "vertices": [
+    {
+      "index": 0,
+      "input": [
+        174.0,
+        0.0,
+        206.0,
+        0.5625,
+        0.4749999940395355
+      ],
+      "expected_clip": [
+        -0.45651040858899555,
+        0.08072921498773658,
+        0.5,
+        1.0
+      ],
+      "gpu_clip": [
+        -0.45651042461395264,
+        0.08072921633720398,
+        0.5,
+        1.0
+      ],
+      "gpu_uv": [
+        0.5625,
+        0.4749999940395355
+      ]
+    },
+    {
+      "index": 1,
+      "input": [
+        174.0,
+        0.0,
+        217.0,
+        0.5625,
+        0.612500011920929
+      ],
+      "expected_clip": [
+        -0.45651040858899555,
+        0.03162206993533337,
+        0.5,
+        1.0
+      ],
+      "gpu_clip": [
+        -0.45651042461395264,
+        0.0316220223903656,
+        0.5,
+        1.0
+      ],
+      "gpu_uv": [
+        0.5625,
+        0.612500011920929
+      ]
+    },
+    {
+      "index": 2,
+      "input": [
+        182.0,
+        0.0,
+        206.0,
+        0.6875,
+        0.4749999940395355
+      ],
+      "expected_clip": [
+        -0.4315104082164665,
+        0.08072921498773658,
+        0.5,
+        1.0
+      ],
+      "gpu_clip": [
+        -0.43151038885116577,
+        0.08072921633720398,
+        0.5,
+        1.0
+      ],
+      "gpu_uv": [
+        0.6875,
+        0.4749999940395355
+      ]
+    },
+    {
+      "index": 3,
+      "input": [
+        182.0,
+        0.0,
+        217.0,
+        0.6875,
+        0.612500011920929
+      ],
+      "expected_clip": [
+        -0.4315104082164665,
+        0.03162206993533337,
+        0.5,
+        1.0
+      ],
+      "gpu_clip": [
+        -0.43151038885116577,
+        0.0316220223903656,
+        0.5,
+        1.0
+      ],
+      "gpu_uv": [
+        0.6875,
+        0.612500011920929
+      ]
+    }
+  ],
+  "single_glyph_raster_bounds_checked": true,
+  "nonblack_pixels": 47,
+  "pixel_bounds": [
+    176,
+    208,
+    182,
+    218
+  ],
+  "artifacts": [
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "21004e6172fc6677221e4774f873f80e684ffd9be850b4adc453104faa83dcc2"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "74b97297f87580e18cd575e94900f6d82bd68b66477b286ef1e1372196176c75"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "d304a42e2d42824ab42d9ae3ca0a0116b88119266f6dc41088e32e0de18252fd"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "1876f188172c9642fbd571e99ce96bfae5c5714a576c3a53a2751e867c55721b"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "d0d5a27ef4b5c6e9a739ccabc07e141985405e8ae638a778d9baf444eb70e256"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "ae443ad94a670ef20f882873c1b20c61df90326c1ec7eafc60584832cb11550e"
+    }
+  ],
+  "scope": "Original font vertex shader evaluated against captured GPU input. Isolated raster is diagnostic, not game output."
+}

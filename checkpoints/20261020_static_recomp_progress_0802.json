@@ -1,0 +1,47 @@
+{
+  "created_utc": "2026-10-20T08:02:00Z",
+  "goal": "Present the first real Metroid Prime 3 screen on Windows through the isolated static recompilation path.",
+  "revision": "RM3E01_00",
+  "disc": {
+    "checkpoint": "checkpoints/20261020_supplied_disc_audit.json",
+    "disc_id": "RM3E01",
+    "disc_number": 0,
+    "revision": 0,
+    "wii_disc_magic": "5d1c9ea3",
+    "size_bytes": 4699979776,
+    "sha256": "3621e6522f99e8c6755353530f2d571489b805bee85c054a96ac52c7e32ee71e",
+    "read_only_attribute": true,
+    "content_modified": false,
+    "partition_dol_compared": false
+  },
+  "verified_work": {
+    "full_translation": "accepted; 21712 translated entries, 0 unsupported instructions, 0 invalid SSA functions, all source bytes verified",
+    "prime_hle_profile": "569 fixed registrations active, zero exact starts in RM3E01 function map",
+    "runtime_profile_build": "mkw_runtime_common built successfully with MKW_GAME_PROFILE_RM3E01_00=ON",
+    "translator_tests": "685 passed, 0 failed",
+    "runtime_platform_tests": "9 passed, 0 failed",
+    "low_memory_identity": "Prime profile now seeds RM3E / 01\\0\\0 and app-code mirrors RM3E; Mario Kart values retained outside profile",
+    "low_memory_patch": "patches/wiicompiled_rm3e01_lowmem_id.patch; forward and reverse dry-run checks passed"
+  },
+  "strict_link": {
+    "target": "WiiCompiled.exe",
+    "status": "failed",
+    "executable_created": false,
+    "unresolved_symbols": [
+      "func_801A0620",
+      "func_801AADE0",
+      "func_801A1ED8"
+    ],
+    "evidence": "All three are WiiCompiled/Mario Kart helpers whose fixed addresses fall inside unrelated RM3E01 Prime code; no stub or trampoline was added."
+  },
+  "screen_execution": {
+    "guest_entry_called": false,
+    "screen_presented": false
+  },
+  "remaining_gates": [
+    "Replace or scope out Mario Kart scheduler/alarm behavior using a Prime-validated OS/timing implementation; do not bind the three interior addresses.",
+    "Read the encrypted ISO partition and verify its main.dol equals the pinned target.",
+    "Connect a direct ISO/FST/RSO reader to the Prime DVD service ABI.",
+    "Link and exercise the guest entry under a runtime that preserves Prime startup behavior."
+  ]
+}

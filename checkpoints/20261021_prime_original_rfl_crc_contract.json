@@ -1,0 +1,85 @@
+{
+  "result": "PASS original RFL CRC body: valid header accepted, changed identity rejected",
+  "entry": "0x8054AE9C",
+  "runs": [
+    {
+      "name": "empty",
+      "bytes": 0,
+      "actual_crc": 0,
+      "expected_crc": 0,
+      "alarm_calls": 1
+    },
+    {
+      "name": "length_1",
+      "bytes": 1,
+      "actual_crc": 11,
+      "expected_crc": 11,
+      "alarm_calls": 1
+    },
+    {
+      "name": "length_74",
+      "bytes": 74,
+      "actual_crc": 23539,
+      "expected_crc": 23539,
+      "alarm_calls": 1
+    },
+    {
+      "name": "length_5119",
+      "bytes": 5119,
+      "actual_crc": 13705,
+      "expected_crc": 13705,
+      "alarm_calls": 1
+    },
+    {
+      "name": "length_5120",
+      "bytes": 5120,
+      "actual_crc": 61200,
+      "expected_crc": 61200,
+      "alarm_calls": 1
+    },
+    {
+      "name": "length_5121",
+      "bytes": 5121,
+      "actual_crc": 7370,
+      "expected_crc": 7370,
+      "alarm_calls": 2
+    },
+    {
+      "name": "valid_header",
+      "bytes": 127456,
+      "actual_crc": 0,
+      "expected_crc": 0,
+      "alarm_calls": 25
+    },
+    {
+      "name": "corrupt_identity",
+      "bytes": 127456,
+      "actual_crc": 54274,
+      "expected_crc": 54274,
+      "alarm_calls": 25
+    }
+  ],
+  "scope": "Actual generated CRC routine; abstract bounded RAM and alarm scheduling only. Does not replace any game routine or prove save reload.",
+  "artifacts": [
+    {
+      "path": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_8054AE9C.cpp",
+      "sha256": "88b050605b51552df6934ccb296842ae2c087f62dc9295aa8629d9d9dfd0a732"
+    },
+    {
+      "path": "recomp\\.tools\\rfl-crc-contract\\guest_abi\\guest_abi.h",
+      "sha256": "f820279eaca216039f0d25f93e1c4c2a365a151b3ee3c8ecebfc971cefd178b4"
+    },
+    {
+      "path": "recomp\\.tools\\rfl-crc-contract\\driver.cpp",
+      "sha256": "bce4a20af77f1895a2352fb7742966322aa4db0b37baff50af98bf4f3ccd0ae0"
+    },
+    {
+      "path": "recomp\\.tools\\rfl-crc-contract\\rfl_crc_contract.exe",
+      "sha256": "6bb4212b6a760808b19b545d21cd200f8d7e6cb71ffb8973d33393163171783a"
+    },
+    {
+      "path": "recomp\\tools\\verify_prime_original_rfl_crc.py",
+      "sha256": "9b1109d490049f5708ce6f079d9f2661694a410c211f633a34e2411d81880841"
+    }
+  ]
+}

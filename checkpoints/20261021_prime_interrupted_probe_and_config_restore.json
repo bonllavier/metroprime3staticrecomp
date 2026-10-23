@@ -1,0 +1,9 @@
+{
+  "result": "Restored valid existing research configuration after observed all-NUL contents",
+  "corrupt_bytes": 441,
+  "corrupt_sha256": "501a40db31d9bbd6a6ca04043dbb001ee0f0679e3b4b03e4c579f5abfa470514",
+  "backup": "recomp\\.tools\\config_toml_nul_20261021.bin",
+  "restored_sha256": "7559dda156c297ab71a0eb190e9502ee8d32400a712a1acd0c497e8c7d31a4da",
+  "original_iso_unchanged": true,
+  "partial_probe": "base_1792614494_pid12360 has no final report and is not counted as a completed test"
+}

@@ -1,0 +1,21 @@
+{
+  "game": "Metroid Prime 3: Corruption",
+  "revision": "RM3E01_00",
+  "input_sha1": "3e81f9b09dfb1e7c02e22b9c6c48a4a1390224b2",
+  "input_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "translator_commit": "4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+  "project": "config/RM3E01_00/project_full_conservative.yml",
+  "function_map_sha256": "42c1c9c1654dd9cd7bffaa67d424ba6ca2a120f77c80d536c4a099ca6abc0586",
+  "function_map_entries": 21667,
+  "translated_entries": 21712,
+  "unique_translated_entry_points": 21712,
+  "function_map_entries_missing_from_translation": [],
+  "duplicate_translation_entries": 0,
+  "source_bytes_verified": 186830887,
+  "source_verification_failures": [],
+  "unsupported_instruction_count": 0,
+  "invalid_ssa_function_count": 0,
+  "interior_to_other_translation_count": 47,
+  "state_free_abi_enabled": false,
+  "accepted": true
+}

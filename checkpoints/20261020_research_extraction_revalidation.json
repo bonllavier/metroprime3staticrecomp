@@ -1,0 +1,17 @@
+{
+  "revision": "RM3E01_00",
+  "iso_sha256_from_pinned_checkpoint": "3621e6522f99e8c6755353530f2d571489b805bee85c054a96ac52c7e32ee71e",
+  "iso_size_bytes": 4699979776,
+  "iso_read_only_attribute": true,
+  "extraction_path": "recomp/.tools/disc-extraction-rm3e01",
+  "extraction_is_ignored": true,
+  "extracted_main_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "pinned_main_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "main_dol_byte_for_byte_match": true,
+  "fst_size_bytes": 7248,
+  "fst_entry_count": 235,
+  "frontend_rso_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+  "frontend_rso_matches_translation_checkpoint": true,
+  "product_requires_extraction": false,
+  "screen_presented": false
+}

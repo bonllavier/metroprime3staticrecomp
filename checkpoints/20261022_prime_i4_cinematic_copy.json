@@ -1,0 +1,30 @@
+{
+  "result": "PASS exact rejected BP snapshot decoding test and runtime build; in-game retest pending",
+  "prior_pid": 9008,
+  "trigger": "0x10a03",
+  "pe": "0x1",
+  "source_wh": "0x3fcff",
+  "stride_word": "0x10",
+  "format": "GX_TF_I4",
+  "source": [
+    256,
+    256
+  ],
+  "destination": [
+    128,
+    128
+  ],
+  "half_scale": true,
+  "clear": true,
+  "tile": [
+    8,
+    8,
+    32
+  ],
+  "destination_bytes": 8192,
+  "implementation": "Adapter accepts format 0 with GX I4 tile/stride sizes and passes it to existing Aurora I4 quantized intensity copy converter",
+  "tests": "Original snapshot, 1x1 tile rounding and invalid doubled stride PASS alongside existing BP tests",
+  "exe_sha256": "e534cdb9f129ab06883d5cecb06bb58ed9d34b1346c95e3b8d9e4e7be4437e97",
+  "fidelity_scope": "Historical initial test only; format interpretation superseded, not a fidelity PASS.",
+  "superseded_format_interpretation": "Original bit15=0 implies GX_CTF_R4 0x20, not I4. Initial adapter accepted shape but selected intensity incorrectly. Corrected in next build; see channel-copy checkpoint."
+}

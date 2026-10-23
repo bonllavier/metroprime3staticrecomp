@@ -1,0 +1,101 @@
+{
+  "revision": "RM3E01_00",
+  "game_screen_verified": false,
+  "build": {
+    "exe_sha256": "da46b5737dac015b8f47cf66e3d196c09b713ba0f4962c3227f858d0b84fd4db",
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "runtime": {
+    "revision": "RM3E01_00",
+    "started_utc": "2026-10-21T02:33:51.1772214Z",
+    "pid": 12264,
+    "observation_seconds": 8,
+    "alive_at_deadline": true,
+    "stopped_by_harness": true,
+    "executable_sha256": "da46b5737dac015b8f47cf66e3d196c09b713ba0f4962c3227f858d0b84fd4db",
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792550031_pid12264/console.log",
+    "log_sha256": "4e7ceffdbc3b52bd4c4cef6bdce7770957bc077037860fbe20738e7d72475464",
+    "failure_logged": true,
+    "first_game_screen_verified": false,
+    "note": "Being alive and creating a graphics window do not prove game execution or a rendered screen.",
+    "probe": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792550031_pid12264/runtime_probe.json"
+  },
+  "verified_resource_reads": [
+    {
+      "path": "/rhbm/homeBtnIcon.tpl",
+      "offset": 0,
+      "size": 6336,
+      "destination": "0x1025f2e0",
+      "read_sha256": "099f23b6866bd2334bd012520bbd4e63946257abd543340883e660f4eca2b2e6",
+      "file_sha256": "099f23b6866bd2334bd012520bbd4e63946257abd543340883e660f4eca2b2e6",
+      "fnv1a64": "4a9109fe0c8a5ba7"
+    }
+  ],
+  "runtime_overlay_manifest": {
+    "path": "recomp/generated/RM3E01_00_conservative/runtime_hooks/manifest.json",
+    "sha256": "2cec1cd2e8d518d7ef3357de25a98c8cd0c87885b9857967af0c66e411ebd728"
+  },
+  "hci_commands_observed": [
+    [
+      "0C03",
+      "0"
+    ],
+    [
+      "1005",
+      "0"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C13",
+      "248"
+    ],
+    [
+      "0C0A",
+      "1"
+    ],
+    [
+      "0C33",
+      "7"
+    ],
+    [
+      "1001",
+      "0"
+    ]
+  ],
+  "decrementer_delivered": true,
+  "unsupported_oh1_transfer_observed": true,
+  "source_hashes": {
+    "recomp/tools/prepare_prime_runtime_hooks.py": "786867ceda86d9a1d71fb4bfe62c0b60a8d41c2b8f725d640db257f4c5625bba",
+    "recomp/tools/build_prime_runtime.ps1": "c467fd1455b11c6553a1ffcd972c8e8c828593f4a73ebd11c2683c89e917624f",
+    "recomp/tools/probe_prime_runtime.ps1": "76a1037dfc22656522687f3236e75539b7332564cd6eef421ff6915e287b4ec3",
+    "recomp/tools/verify_prime_runtime_boot_probe.py": "ebfcdf0a7d4b3d1c2c1637f9f8a851c965d2ffbe714101db3c1a5d8905b067ba",
+    "recomp/third_party/WiiCompiled/runtime/src/memory.cpp": "3f14741375d2225afdec873314217b4f0e8e93c755a2a51d92d6cb20dcaaebfb",
+    "recomp/third_party/WiiCompiled/runtime/src/guest_flat_memory.cpp": "ae67d4079f173a87b3d8ff646990dfcdc3e2b7655330863c10f9a2fc98d7ea2d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/storage/nand_isfs.cpp": "57d568d5e3bb17bdc793825e265aab5ea0bdf8668f3643fda89c2dc6ca2021b8",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/storage/dvd.cpp": "22d9b3260af7e183b862fa61844dc9119b88b893784129824a01beedd087a769",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp": "e40371a2ce57b5084b022b4ccbd43875d55526260b656718cc5870b290cfc259",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_internal.h": "5fcb835a82b78c2e6801fb3848ac4e94b061f788c41568e2304f8aecdbbd0a9d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp": "8320bd32de531820338d4c338e1eeaafad12d29c9fd2b35eb4981def1a6aa5cc"
+  },
+  "invariants": {
+    "matching_dol_exact": true,
+    "iso_size": 4699979776,
+    "iso_read_only": true
+  },
+  "references": [
+    "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/Core/IOS/IOS.cpp",
+    "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/Core/IOS/DI/DI.cpp",
+    "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/Core/HW/DVD/DVDInterface.cpp",
+    "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/Core/IOS/USB/Bluetooth/BTEmu.cpp"
+  ],
+  "limitations": [
+    "No game screen is verified.",
+    "Research DVD backend uses extracted files, not a direct ISO reader.",
+    "Controller has no paired remotes or ACL connections; HCI support is incomplete.",
+    "Cross-thread rfi host-stack transfer and full graphics equivalence remain unverified.",
+    "Runtime test-suite results are separate evidence; this verifier covers the recorded boot path only."
+  ]
+}

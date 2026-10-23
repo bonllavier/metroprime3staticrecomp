@@ -1,0 +1,18 @@
+{
+  "result": "Observed original game created its initial storage files after correct ES/FS responses",
+  "files": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\NAND\\title\\00010000\\524d3345\\data\\banner.bin",
+      "private_backup": "recomp\\.tools\\prime_initial_save_after_pid18308\\banner.bin",
+      "bytes": 61600,
+      "sha256": "d3e24f0ea66d1c69dbf1fc3a1e6cc88d3a468c8a71f4ebf9e6cf694686a2498f"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\NAND\\title\\00010000\\524d3345\\data\\save.bin",
+      "private_backup": "recomp\\.tools\\prime_initial_save_after_pid18308\\save.bin",
+      "bytes": 65536,
+      "sha256": "6daf7feeaf017076e817a84c3fdf6cfee26ab20eb48aec4fd541835af05b1bb2"
+    }
+  ],
+  "scope": "Private runtime output, not published or copied from the ISO. Files were backed up byte-for-byte before another game run. No proof yet of save format correctness, successful reload, or playable save-slot selection. The earlier empty-directory counters cannot be compared with this later changed directory without temporal evidence."
+}

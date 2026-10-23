@@ -1,0 +1,88 @@
+{
+  "repo": "koopthekoopa/RFL",
+  "commit": "db7c33ae2989b6103a07e666f2f2f9bbd1d2f926",
+  "license": "No repository-wide license found; reference only, no implementation copied",
+  "scope": "Format research; default bytes must be read from own pinned RM3E01_00 DOL",
+  "files": [
+    {
+      "path": "recomp/.tools/rfl-reference/README.md",
+      "sha256": "ef747ae825fb5a974d93812fa5eae5c86cc7868615fe75dc75310d9490e33244"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/RFL_Database.h",
+      "sha256": "514bf37648e5de166ba4d15df8a941a617d1b28f9e9c8eb3bc5a51fe24066b96"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/RFL_DataUtility.h",
+      "sha256": "c6becf34b5c32cabdd70f99ad1bcdaddb6eb101d3a915d8ad2253d218bd720e1"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/RFL_DefaultDatabase.h",
+      "sha256": "b7c569ae70bfdc4663e695015348ba17ef531e0be79848930f2de747f595d981"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/RFL_MiddleDatabase.h",
+      "sha256": "2b7ae1867b96f93e6f599ed4335672d0d40b915081f674b944072d3b7a61e67f"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/RFL_Types.h",
+      "sha256": "658489bc7fb8adb67d098d4bb2d05cc32ac956bc7468e2bd88398262c8b7cd93"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/src/RFL_Database.c",
+      "sha256": "80734e4fa4fa2a5bbf6adf4dc4258220149999106777ac40628ecff6990afcd8"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/src/RFL_DataUtility.c",
+      "sha256": "16674a2cc04e2bb4da33612e4a51744ad19d5971726440d336fd2f94f370d934"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/src/RFL_DefaultDatabase.c",
+      "sha256": "a7d744547eeb41181926f2363318d01b739277f61d21420c938462fd1e281836"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/src/RFL_Format.c",
+      "sha256": "053504e3f48d5efbcea5649762f4651fcb1a936b366031fe8c19d700c2ff02f3"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/src/RFL_HiddenDatabase.c",
+      "sha256": "766f0d692874cfe78b3b965d84461dc48c2d2e0a02929e7e77c8e8418f894236"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/src/RFL_MiddleDatabase.c",
+      "sha256": "7517a94cf4e463c733195e456d9b9db45720eda63221b2e770d3612c692e4265"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/tools/ar/LICENSE",
+      "sha256": "a61aadb10f8a0c7cd03f14d10ee9c1e4be77cf7909c552883537d3c60fa08526"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/internal/RFLi_Database.h",
+      "sha256": "5358c6bf33548e3d33782f9290ec190dd0ca7cf060964e3f74a09eaaaae16192"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/internal/RFLi_DataUtility.h",
+      "sha256": "02ab2cb0f9d91e6fd0807e6db876aa4b20b496e24b8356bcd9a252d846e32f7a"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/internal/RFLi_DefaultDatabase.h",
+      "sha256": "7ebe456f013cc399a8812059f9238b2c1c87b1f521e1b189acc8816a3d7261e5"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/internal/RFLi_Format.h",
+      "sha256": "0d504d408be5b809b0c6be1cda22e944bdbeafa447b4e18570acde50986aac46"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/internal/RFLi_HiddenDatabase.h",
+      "sha256": "69938fde50ad8a4373b155c60438821ef317a6a9bd6e5afd900aa0b36fbef334"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/internal/RFLi_MiddleDatabase.h",
+      "sha256": "028ea89b2a092107962989d0e2ec6ea7618ec4b4046f0a1b2a97d3650a81a77f"
+    },
+    {
+      "path": "recomp/.tools/rfl-reference/include/internal/RFLi_Types.h",
+      "sha256": "5f5b91a7dc870b72578603baa7708832fb9eccd291a6412ebaab7f8ada463935"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "result": "PASS causal evidence: SDK source path empty before correct one-byte copy",
+  "revision": "RM3E01_00",
+  "observations": [
+    "Original initialization calls ESP_GetDataDir via ES ioctlv 29, which is rejected by inherited runtime",
+    "Original GETUSAGE entry receives the zero-initialized global at 0x8060FFE0",
+    "Original bounded strlen returns zero and original memcpy correctly copies one zero byte",
+    "No slash is lost from a valid source; trailing tit bytes were stale destination memory"
+  ],
+  "scope": "Identifies missing ES service and stale destination, not a bad copy. ES service and Prime title category are being validated in a new run.",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792618923_pid6420\\console.log",
+      "sha256": "e934fc1c88aa4344a92fb073c6325ee6462d8cbeb144b4a975aede59fcd8e3f5"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792618923_pid6420\\runtime_probe.json",
+      "sha256": "648b9b2a3997fa116d2f284b753cf63f6d9be4559c6ab3183f126f629ee97b58"
+    },
+    {
+      "path": "recomp\\checkpoints\\20261021_prime_nand_trace_original_body.json",
+      "sha256": "c03e019dca768509f6115b0f068a761b41d70f2d68f3151fe5aab0d2fb46fb90"
+    },
+    {
+      "path": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_8050983C.cpp",
+      "sha256": "88b71a3f5aab0d0f87106009305769d91e5085b563db14e0710fbd10da692c84"
+    },
+    {
+      "path": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_80508DD4.cpp",
+      "sha256": "d22dd41409b7923ff4ec5618925c79788125c5772a478908faf4ccd100bcb1b2"
+    }
+  ]
+}

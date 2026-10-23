@@ -1,0 +1,10 @@
+{
+  "status": "rejected_superseded",
+  "revision": "RM3E01_00",
+  "wrong_target": "0x804B9E94",
+  "correct_target": "0x804B9E9C",
+  "correct_symbol": "InitMetroTRK",
+  "cause": "0x804C0000 - 24932 was calculated incorrectly in the superseded trial. The correct result is 0x804B9E9C, already present in the canonical function map.",
+  "use_for_startup_progress": false,
+  "details_checkpoint": "20261020_interior_entry_trial_rejected.json"
+}

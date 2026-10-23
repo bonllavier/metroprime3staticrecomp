@@ -1,0 +1,54 @@
+{
+  "result": "Context and GrapplePoint runtime binding PASS; stopped at next untranslated original MultiModelActor prolog",
+  "exe_sha256": "e58cbb7752f4d7b5122b838d6d9d4b573c815441219581a8280e99ef5ee2e336",
+  "pid": 16760,
+  "next_target": "0x80fc9afc",
+  "caller_lr": "0x8019f8cc",
+  "grapple_bind": true,
+  "latest_present_samples": [
+    {
+      "presents": "11374",
+      "window_samples": "57",
+      "fps": "56.4583",
+      "effective_fps": "56.4583",
+      "average_ms": "17.7122",
+      "p95_ms": "23.7641"
+    },
+    {
+      "presents": "11484",
+      "window_samples": "10",
+      "fps": "9.29487",
+      "effective_fps": "9.29487",
+      "average_ms": "107.586",
+      "p95_ms": "113.731"
+    },
+    {
+      "presents": "11555",
+      "window_samples": "14",
+      "fps": "14.7414",
+      "effective_fps": "14.7414",
+      "average_ms": "67.8363",
+      "p95_ms": "82.2835"
+    },
+    {
+      "presents": "11621",
+      "window_samples": "12",
+      "fps": "12.5216",
+      "effective_fps": "12.5216",
+      "average_ms": "79.8623",
+      "p95_ms": "99.7754"
+    },
+    {
+      "presents": "11674",
+      "window_samples": "11",
+      "fps": "11.3249",
+      "effective_fps": "11.3249",
+      "average_ms": "88.3011",
+      "p95_ms": "97.9414"
+    }
+  ],
+  "scene_capture": "recomp/.tools/prime_pid16760_scene_loading.png",
+  "scene_scope": "Original 3D scene geometry visible with graphics defects; no controlled player movement verified",
+  "real_gameplay_thirty_minutes_verified": false,
+  "performance_scope": "GPU validation enabled and extensive diagnostic logging; last scene/cinematic samples 9-15 presented FPS, no isolated bottleneck yet"
+}

@@ -1,0 +1,81 @@
+{
+  "revision": "RM3E01_00",
+  "result": "PASS build, nominal relocations, entry coverage, optimized import contract and native tests; playable-scene retest pending",
+  "failure": {
+    "pid": 5756,
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792692218_pid5756/console.log",
+    "target": "0x811D725C",
+    "caller_lr": "0x8019F8CC",
+    "module": "Friendly",
+    "runtime_base": "0x811CD920",
+    "text_file_offset": "0x120",
+    "prolog_text_offset": "0x981C",
+    "address_equation_verified": true,
+    "callsite_review": "Original DOL 0x8019F7B8 calls the loader-stored prolog at module+0x24 after linking; Ghidra verified."
+  },
+  "new_modules": {
+    "Friendly": {
+      "functions": 158,
+      "original_sha256": "88b498761ff3aecfde46df79c7d1d85e2bc9973c8d74ca9fd0cd983a5c6ec435",
+      "relocations": 1451,
+      "translation_manifest_sha256": "49a72e5acfbaf281fc925704ba81c29a060489e1e165cea0226da429d47bdc68",
+      "independent_relocation_report": "recomp\\.tools\\rso-runtime\\Friendly\\nominal_relocations.json"
+    },
+    "GunTurret": {
+      "functions": 125,
+      "original_sha256": "961f2790d74c57344ceb420fd26dd4ed827e6e43f7116fc163a45681e8925f8d",
+      "relocations": 1245,
+      "translation_manifest_sha256": "731ab99e1471567181a70cf7b028cd4c01b236b4757fb4075ee98e88a8caae79",
+      "independent_relocation_report": "recomp\\.tools\\rso-runtime\\GunTurret\\nominal_relocations.json"
+    }
+  },
+  "total_partial_modules": 12,
+  "total_translated_functions": 1293,
+  "exe_sha256": "ae4fa08677b480170e22b15b230e7d1dc1945d1e7cf64a2fba3e8ffb302aac8b",
+  "new_run": {
+    "pid": 20496,
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792693379_pid20496/console.log",
+    "input": "manual only",
+    "title_present_fps": 60.0,
+    "gameplay_fps_verified": false,
+    "new_modules_live_bind_verified": false
+  },
+  "tests": [
+    "full build script exit 0",
+    "incremental final build exit 0",
+    "relocated stb self-test: four signed-offset cases, one-byte store and neighboring-byte/register preservation",
+    "12-module materialized code entry coverage PASS, missing=[]",
+    "optimized import/readiness contract PASS including legacy negative control",
+    "native BP, snapshot ownership and concurrent trace budget CTest 3/3 PASS",
+    "sampling tool validated against sleeping native fixture"
+  ],
+  "performance": {
+    "old_run_log_lines": 190738,
+    "old_run_log_bytes": 10226997,
+    "old_repetitive_lines": 159110,
+    "new_repetitive_limit": 512,
+    "verbose_override": "WII_COMPILED_PRIME_VERBOSE_TRACE=1",
+    "palette_optimization": "Skip shader-info scan and extra barrier only when no indexed BP textures exist. Native raw draw still publishes dirty state and drains. Both BP banks tested.",
+    "instrumentation": "Opt-in inclusive CPU wall durations: BP apply, raw texture bind, palette scan, raw draw submission, color copy and ISO reads; not GPU timer queries. Counts aggregate between KPAD reports.",
+    "sampling": "Native RIP samples and per-thread CPU deltas, no input or guest-state edits; short suspensions perturb timing.",
+    "sampling_artifact": "recomp/.tools/prime_pid20496_startup_performance.json",
+    "fps_improvement_claimed": false
+  },
+  "limits": [
+    "New module relocation equality does not prove high-level recovery, full virtual coverage or runtime stability.",
+    "Friendly switch table sources data+0x428..0x467 are intra-body labels, excluded from callable roots; both original dispatchers checked.",
+    "Graphics defects and 30-minute gameplay validation remain outstanding.",
+    "ISO read-only and original DOL SHA256 checked; matching sources unchanged."
+  ],
+  "source_hashes": {
+    "recomp/tools/RsoRuntimeTranslator/RelocatedInstructions.cs": "4f08f8b4c2c0a017862509eb8321847f0cdae374e4dce11e6351ac54ebea0218",
+    "recomp/tools/RsoRuntimeTranslator/RelocatedInstructionsTests.cs": "727c16b0f9e439e8ef43e93e05e4e56bf7b66ea3e6a8a06a3d13c1aeb0976940",
+    "recomp/tools/prepare_prime_rso_translation.py": "35102c5ebb9e999ba7f245b89a297ce8d48c8f537887aa92d9d4017feb2c031e",
+    "recomp/config/RM3E01_00/rso_scene_indirect_roots.json": "791e84b3bb138cfabb9e7a47c9cbe3248f4eff9b76d1875314f8c0d23fcd6bc3",
+    "recomp/config/RM3E01_00/rso_address_taken_roots.json": "f5455d50ae3620caf02db2f7c2275751e83407167c16839d2da4d8e7c660c144",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_trace_budget.h": "b33dd279f2efd0713bf5710e6b29d037e93b00659f5f9f79d7b26775d8d201e9",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_performance.h": "d234599ea5332b437891a1f4e87ed487307e27cffbedd424754f0cff5bf93d0c",
+    "recomp/tools/sample_prime_performance.py": "8db160657afba2856a04bec04d3fae9d86a843cb79abb0a424a303218a77a864",
+    "recomp/tools/capture_prime_hang.py": "c5f1042dcfe871bbb1fb4a798e18c050b79faa11f21896c64ded4432a8a37793"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "accepted": true,
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "target": "0x8012E594",
+  "instruction": {
+    "bytes": "40800070",
+    "mnemonic": "bge 0x8012E604",
+    "verified_from_dol": true
+  },
+  "prime_containing_function": {
+    "name": "PursuePlayer__10CPatternedFR13CStateManager9EStateMsgff",
+    "start": "0x8012E3EC",
+    "end_exclusive": "0x8012E63C",
+    "offset": "+0x1A8",
+    "exact_function_entry": false
+  },
+  "wiicompiled_registration": {
+    "source": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_init.cpp",
+    "sha256": "6553f5f5b3946f7b4f52e1721198bc7b3961890423568dfed146aea078625d97",
+    "registered_address": "0x8012E594",
+    "registration_found": true,
+    "decrementer_exceptions_simulated": false
+  },
+  "ghidra_observation": {
+    "program_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "xrefs_to_target": 0,
+    "dynamic_reachability_proven": false,
+    "note": "Ghidra disassembly identifies the instruction and containing function; no incoming references were returned."
+  },
+  "interpretation": "This is an interior-address binding collision, not a verified Prime decrementer entry. It does not prove runtime invocation or interception of sequential execution."
+}

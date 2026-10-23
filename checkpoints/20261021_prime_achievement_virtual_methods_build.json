@@ -1,0 +1,16 @@
+{
+  "result": "PASS full runtime build and optimized import-context contract; new virtual-method runtime verification pending",
+  "module_functions": {
+    "rhbm": 19,
+    "Tweaks": 298,
+    "ScriptGUIScreenFrontEndUI": 249,
+    "ScriptWorldTeleporter": 45,
+    "ScriptAchievement": 22
+  },
+  "total_functions": 633,
+  "ScriptAchievement_relocations": 213,
+  "executable_sha256": "47f7590c2ce57eaf9bbf7d5db9f12aed16b757290410bbdd94abdfca4b29cc3e",
+  "source_manifest_sha256": "d27e3a53bd44781d688a9f73c303cf2d04ae90066c8910a4e2f64e20ada5a223",
+  "context_contract": "20261021_prime_rso_context_achievement_methods_contract.json",
+  "boundary": "20261021_prime_achievement_virtual_boundary.json"
+}

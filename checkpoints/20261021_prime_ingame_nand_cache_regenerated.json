@@ -1,0 +1,9 @@
+{
+  "result": "PASS original game regenerated full InGameNAND cache, byte-identical to own disc extraction",
+  "cache": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\NAND\\tmp\\26226D27.pak",
+  "original": "recomp\\.tools\\disc-extraction-rm3e01\\files\\InGameNAND.pak",
+  "size": 335872,
+  "sha256": "ddb07ae8c46c3d948ac109203588c531d6145ea1e69e4d0393e42a79a86940c4",
+  "probe_in_progress": "base_1792632176_pid17432",
+  "runtime_pass": false
+}

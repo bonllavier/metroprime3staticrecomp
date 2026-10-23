@@ -1,0 +1,17 @@
+{
+  "result": "PASS PowerShell parse and negative storage preflight",
+  "negative_command": "powershell -NoProfile -ExecutionPolicy Bypass -File recomp/tools/probe_prime_runtime.ps1 -MinimumFreeMegabytes 16384 -Seconds 1",
+  "negative_exit_code": 1,
+  "negative_observed_error": "Insufficient free space for probe evidence: G: has 7619256320 bytes; requires 16384 MiB. No game process started.",
+  "changes": "Default 1024 MiB headroom before process startup, nonempty screenshot validation, separate capture_errors, atomic progress/final JSON replacement. Positive runtime exercise pending.",
+  "artifacts": [
+    {
+      "path": "recomp/tools/probe_prime_runtime.ps1",
+      "sha256": "cd46c84df0e18f2c78740b57a2ace8245dfd38c3c5cca2053e193bfb202210fc"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_popup_callbacks_modeoff_boot.json",
+      "sha256": "45741b31a5966912d642c2d7b02e0cd5e377702e175b5a6662f8d5ed41414107"
+    }
+  ]
+}

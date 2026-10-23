@@ -1,0 +1,95 @@
+{
+  "result": "FAIL direct IDCT truncation comparison",
+  "planes": {
+    "y": {
+      "truncate": {
+        "samples": 286720,
+        "exact": 279630,
+        "maximum": 1,
+        "mean": 0.024727957589285716,
+        "over_one": 0
+      },
+      "nearest": {
+        "samples": 286720,
+        "exact": 153495,
+        "maximum": 2,
+        "mean": 0.4648228236607143,
+        "over_one": 49
+      },
+      "signed_truncate_histogram": {
+        "-1": 3613,
+        "0": 279630,
+        "1": 3477
+      }
+    },
+    "u": {
+      "truncate": {
+        "samples": 71680,
+        "exact": 69847,
+        "maximum": 1,
+        "mean": 0.025571986607142858,
+        "over_one": 0
+      },
+      "nearest": {
+        "samples": 71680,
+        "exact": 40274,
+        "maximum": 2,
+        "mean": 0.4382114955357143,
+        "over_one": 5
+      },
+      "signed_truncate_histogram": {
+        "-1": 919,
+        "0": 69847,
+        "1": 914
+      }
+    },
+    "v": {
+      "truncate": {
+        "samples": 71680,
+        "exact": 69325,
+        "maximum": 2,
+        "mean": 0.032882254464285714,
+        "over_one": 2
+      },
+      "nearest": {
+        "samples": 71680,
+        "exact": 37602,
+        "maximum": 2,
+        "mean": 0.47659040178571427,
+        "over_one": 84
+      },
+      "signed_truncate_histogram": {
+        "-2": 1,
+        "-1": 1181,
+        "0": 69325,
+        "1": 1172,
+        "2": 1
+      }
+    }
+  },
+  "entropy_bits_consumed": 272597,
+  "reference": "https://www.w3.org/Graphics/JPEG/itu-t81.pdf",
+  "scope": "Independent Huffman/dequantization/direct double-IDCT mathematics. Truncation policy matches the runtime PSQ integer store; this does not prove equality with Wii hardware. FFmpeg comparison remains a separate result.",
+  "artifacts": [
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "135c7545198e0810e424938a390087b7f71b484ea2205443f6a4497b45b5965a"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "f052fe016a58f6106bca6cc47fbdec56a02ebf097293608458d8cf2dc37ba635"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "9080da87416242482e147111d95c39fdddaefe96237c77b47d5c35a580cad59e"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "a63ecd974b206a679c3bebf08a9bfbd1773ac173005e16fe03dafa48feb1e153"
+    },
+    {
+      "path": "${LOCAL_PATH}",
+      "sha256": "61038b7bc04819e9a9dd4c811b28eaab7b6e0c22cb593789a44b1cb5d01afa16"
+    }
+  ]
+}

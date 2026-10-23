@@ -1,0 +1,44 @@
+{
+  "default_multimedia_endpoint": "{0.0.0.00000000}.{116484da-f0b2-4e30-bb33-3b043c11c374}",
+  "endpoints": [
+    {
+      "endpoint": "{0.0.0.00000000}.{116484da-f0b2-4e30-bb33-3b043c11c374}",
+      "default_multimedia_endpoint": true,
+      "volume": 0.8199999928474426,
+      "muted": false,
+      "peak_max": 0.40484270453453064
+    },
+    {
+      "endpoint": "{0.0.0.00000000}.{3075ba85-0857-4ef5-8e99-84e044a112b0}",
+      "default_multimedia_endpoint": false,
+      "volume": 0.6300000548362732,
+      "muted": false,
+      "peak_max": 0.0
+    },
+    {
+      "endpoint": "{0.0.0.00000000}.{9838f307-ad3b-4069-9396-2451e008c87b}",
+      "default_multimedia_endpoint": false,
+      "volume": 1.0,
+      "muted": false,
+      "peak_max": 0.0
+    },
+    {
+      "endpoint": "{0.0.0.00000000}.{df855755-c4a9-4983-aaa6-6109e627df78}",
+      "default_multimedia_endpoint": false,
+      "volume": 1.0,
+      "muted": false,
+      "peak_max": 0.0
+    }
+  ],
+  "sessions": [
+    {
+      "pid": 5484,
+      "state": 1,
+      "endpoint": "{0.0.0.00000000}.{116484da-f0b2-4e30-bb33-3b043c11c374}",
+      "default_multimedia_endpoint": true,
+      "peak_max": 0.40484270453453064,
+      "volume": 1.0,
+      "muted": false
+    }
+  ]
+}

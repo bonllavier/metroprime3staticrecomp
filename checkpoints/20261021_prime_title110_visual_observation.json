@@ -1,0 +1,42 @@
+{
+  "result": "PASS bounded 110-second survival and visually reviewed original title",
+  "revision": "RM3E01_00",
+  "executable_sha256": "51e43c306172e736492c46c07eb4c6c9ac34916b4147a3d416cdd471719cad97",
+  "observation_seconds": 110,
+  "original_title_visible_seconds": [
+    65,
+    70
+  ],
+  "later_images": "90/105 seconds show the original intro sequence; no menu interaction established. A at 75 seconds was after the observed movie transition.",
+  "menu_verified": false,
+  "gameplay_verified": false,
+  "audio_verified": false,
+  "hardware_pixel_parity_verified": false,
+  "iso_verification": "Separate full verification pending: 20261021_prime_title75_callbacks_boot.json",
+  "artifacts": [
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792615712_pid1348/runtime_probe.json",
+      "sha256": "2d67e66a5bfa6a39535780c255e4b485e41a1c6e9bedc285fd0bb1d5b35a0237"
+    },
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid1348_65s.png",
+      "sha256": "ff84fb3839de261a77cb249b3566ad5742128c7beb05b41b5a3d488ea143f2da"
+    },
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid1348_70s.png",
+      "sha256": "5cee948a6b0f5b8698eda448cc1cbc4954fd7c43c286b1ee89aa572db32d1ebe"
+    },
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid1348_90s.png",
+      "sha256": "2d2bce08195e8addba8526e8441f825c722cd84b8cbd8ef2f2a328bc71bbf134"
+    },
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid1348_105s.png",
+      "sha256": "726e1347caaa6bf42225e9b4680134b8f19c5985e4b374de921b68abbdea56f7"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_title75_keyboard_input.json",
+      "sha256": "73440643d1a08ef05ea390cd948f0d0284e87dfefb6a9ef6394e8282edfe04ba"
+    }
+  ]
+}

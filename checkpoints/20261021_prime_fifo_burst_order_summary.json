@@ -1,0 +1,45 @@
+{
+  "revision": "RM3E01_00",
+  "executable_sha256": "07c1b3eb40a8d3d7a58aa313683dcbc0f9cbbf74958a8380b0ee03e64bbb5a13",
+  "status": "elongated_font_triangles_fixed_text_fidelity_still_pending",
+  "game_title_screen_verified": false,
+  "cause": "Prime burst fast path scanned command-looking prefixes without consulting CP-retained bytes. A zero Y coordinate at the beginning of a translated 16-byte burst was discarded as GX NOP while scalar writes were queued behind a CP breakpoint.",
+  "correction": "Prime bursts now use the ordered scalar producer for every byte, including zeroes, blocked CP queues, reentrant consumers and display-list recording. Other game profiles retain their previous fast path.",
+  "evidence": [
+    {
+      "path": "recomp/checkpoints/20261021_prime_fifo_burst_order_boot.json",
+      "sha256": "3c9071781e9d3d8621f429c45b9ac2ea9ca203b7043136c5e2f8deb8a95feba4"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_fifo_burst_font_input.json",
+      "sha256": "1ac12bb4a3ab8ddb2f49e68a23aa7e62bea96a8152f56a1fd48edcc72e9ca6ef"
+    },
+    {
+      "path": "recomp/checkpoints/20261021_prime_fifo_burst_font_negative_checks.json",
+      "sha256": "4b9312aead07692772c36ed664734ce9500d95152e0a012693a9560ab43c6328"
+    }
+  ],
+  "source_hashes": {
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_fifo_burst.h": "284eeca54ddf9606d70998c725b82472eb4ee657dc028f51f4f42146eb81961b",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_fifo.cpp": "ea7382202088b7e5aaefffbd266eb4869217572d95408d14b8af43a2008d28e8",
+    "recomp/third_party/WiiCompiled/runtime/tests/gx_fifo_storage_tests.cpp": "f19a0a9039d116734a8cfeb5f1f1da8e03efd8dba4907bf700e9049c9e2bb5f7",
+    "recomp/tools/verify_prime_gpu_font_input.py": "849d89411083a31ad08f7595bee37bf389d6bd38e9820a69534c053d4667c4e3"
+  },
+  "tests": {
+    "native_fifo_contract": "PASS mkw_gx_fifo_storage_tests via CTest",
+    "normal_boot_seconds": 55,
+    "iso_reads_verified": 219,
+    "original_font_quads_later_frame_verified": 50,
+    "negative_fixtures_rejected": 2
+  },
+  "visual_review": {
+    "normal_window": "UserData/Logs/window_pid19684_25s.png",
+    "result": "No tall white triangles; text now stays in its intended screen region but glyph pixels remain damaged."
+  },
+  "earlier_diagnostic_limits": [
+    "Fragment atomic coverage is optional and cumulative across frames; not a per-frame coverage oracle.",
+    "Vertex-stage writable storage was rejected by WebGPU validation. Current diagnostic uses fragment storage atomics instead.",
+    "Earlier first-frame-only input checks did not establish correctness of subsequent frames."
+  ],
+  "next_step": "Compare font texture/palette bytes and sampled pixels after the FIFO transport fix; title and native controls remain unverified."
+}

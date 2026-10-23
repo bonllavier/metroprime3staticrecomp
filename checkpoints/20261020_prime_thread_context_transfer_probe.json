@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-20",
+  "revision": "RM3E01_00",
+  "purpose": "Trace the Prime scheduler transition after an IOS interrupt wakes the main guest thread during a retrace wait.",
+  "build": {
+    "command": "cmake --build recomp/build/RM3E01_00_runtime_link_probe --target WiiCompiled.exe --parallel 4",
+    "result": "PASS",
+    "executable": "recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe",
+    "sha256": "6d4b2aa13ba19db719dbe15601a017271028f7fea990d6755a29ed6b836d5c9f",
+    "dol": "decomp/orig/RM3E01_00/sys/main.dol",
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "instrumentation": [
+    {
+      "file": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp",
+      "sha256": "68fbf58225bdd88d822b383741d75bdda5c8afb7f626af9c0a274585b9278d9f",
+      "change": "Diagnostic-only [prime-ipc-context-switch] trace records guest running/current context and interrupted/callback LR and r1 when Prime's IPC handler changes the selected thread. No register file is copied back."
+    },
+    {
+      "file": "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp",
+      "sha256": "88d5c903f9d38dbb52639316d78a59c1702c9fc7ece42629fadd551180fd4455",
+      "change": "Diagnostic-only [prime-vi-switch] trace checks whether the Prime VI handler itself changes the running thread."
+    },
+    {
+      "file": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_70795d80da5f526108c7e76e.cpp",
+      "sha256": "f26faed113b2d927fff450e440a2a270e3711d18c8cb79061ec3690f20fa6b25",
+      "change": "Existing bounded wait/scheduler/context diagnostics include wait caller LR and OSContext values."
+    },
+    {
+      "file": "recomp/generated/RM3E01_00_conservative/build_shards/base_common/shard_a2d715df9e1746e53b49d31c.cpp",
+      "sha256": "0272897f9c9d8114c3415028e63b195a408c277d1b25b59386d5255e1ae85880",
+      "change": "Existing bounded IPC handler and ioctlv traces."
+    }
+  ],
+  "runtime": {
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792544910_pid14572/console.log",
+    "log_sha256": "848010df1e712a37e37aea9ffb553356ca3e6bf6cb15cb71d813ea099088c316",
+    "duration_seconds": 14,
+    "process_alive_at_harness_stop": true,
+    "fatal_error": false,
+    "visual_capture": "No capture was taken in this run; no real game screen is confirmed.",
+    "observations": [
+      "The seventh logged guest yield is at caller LR 0x803C41DC, with wait counter 2; no matching reschedule-return trace appears.",
+      "The Prime scheduler moves from running context 0 to 0x8060B418 while processing the IOS interrupt.",
+      "At that transition the interrupted callback began with LR 0x804E6D08 and r1 0x80699DA0, but the callback returned with LR 0 and r1 0x8069A0B0, the interrupt stack.",
+      "The process continues advancing VI retraces, but the game-thread wait has no recorded return."
+    ],
+    "failed_trial": "A temporary runtime experiment copied the callback CpuContext back after the thread-pointer change. It did not resume the wait and left the callback register file at LR=0/r1=0x8069A0B0; that state mutation was removed from the final build."
+  },
+  "validation": {
+    "ctest": "PASS 9/9",
+    "runtime_build": "PASS",
+    "log_hash_checked": true
+  },
+  "invariants": {
+    "matching_dol_modified": false,
+    "baseline_decomp_modified": false,
+    "iso_size": 4699979776,
+    "iso_read_only": true,
+    "guest_state_forced": false,
+    "screen_claimed": false
+  },
+  "interpretation": "The wake queue and global scheduler state advance, but the static translated guest stack does not resume at a verified continuation. The callback context is not a valid replacement CPU register file after its generated callers return, so copying it back is rejected. This is evidence of an interrupt/thread context-transfer problem; it does not identify the complete fix.",
+  "next": "Trace where Prime's saved OSContext and callback CpuContext diverge through 0x804E6BD4/0x804E01C4 and the outer translated call boundary. Implement a resumable guest context transfer only after its continuation and register ownership are established; then rerun the runtime and confirm a real frame."
+}

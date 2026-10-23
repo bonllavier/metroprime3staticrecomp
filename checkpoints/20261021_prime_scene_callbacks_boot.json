@@ -1,0 +1,3038 @@
+{
+  "revision": "RM3E01_00",
+  "game_screen_verified": false,
+  "outcome": "bounded_boot_progress",
+  "missing_guest_target": null,
+  "rso_boundary": {
+    "module": "RSO_rhbm.rso",
+    "role": "Wii HOME infrastructure, not Metroid title screen",
+    "original_sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+    "cached_load_base": "0x9015e880",
+    "prolog_section": 1,
+    "prolog_section_offset": 64976,
+    "section_file_offset": 288,
+    "prolog_target": "0x9016e770",
+    "translation_registered": true,
+    "missing_section_offset": null,
+    "missing_export_names": [],
+    "verified_constructor_and_prolog_returns": [
+      {
+        "nominal": "0x80698c34",
+        "runtime": "0x9015eff4",
+        "sp": "80699e80",
+        "lr": "9016e704"
+      },
+      {
+        "nominal": "0x8069cd44",
+        "runtime": "0x90163104",
+        "sp": "80699e80",
+        "lr": "9016e704"
+      },
+      {
+        "nominal": "0x8069d890",
+        "runtime": "0x90163c50",
+        "sp": "80699e80",
+        "lr": "9016e704"
+      },
+      {
+        "nominal": "0x8069e990",
+        "runtime": "0x90164d50",
+        "sp": "80699e80",
+        "lr": "9016e704"
+      },
+      {
+        "nominal": "0x8069fa24",
+        "runtime": "0x90165de4",
+        "sp": "80699e80",
+        "lr": "9016e704"
+      },
+      {
+        "nominal": "0x806a2af8",
+        "runtime": "0x90168eb8",
+        "sp": "80699e80",
+        "lr": "9016e704"
+      },
+      {
+        "nominal": "0x806a83b0",
+        "runtime": "0x9016e770",
+        "sp": "80699e90",
+        "lr": "8019f8cc"
+      },
+      {
+        "nominal": "0x806a7350",
+        "runtime": "0x9016d710",
+        "sp": "80699ec0",
+        "lr": "800cd398"
+      },
+      {
+        "nominal": "0x806a7348",
+        "runtime": "0x9016d708",
+        "sp": "80699ec0",
+        "lr": "800cd354"
+      }
+    ],
+    "tweaks_execution": {
+      "name": "RSO_Tweaks.rso",
+      "sha256": "f195aa36d03fb34a5a11821fa1533d52343d0be1d02e59a9e2a24e8791125a09",
+      "load_base": "0x809db6e0",
+      "prolog": "0x809db7e8",
+      "prolog_returned": true,
+      "missing_text_offset": null,
+      "verified_constructor_and_prolog_returns": [
+        {
+          "nominal": "0x8069a710",
+          "runtime": "0x809db8f8",
+          "sp": "80699e40",
+          "lr": "809f7a08"
+        },
+        {
+          "nominal": "0x806b6798",
+          "runtime": "0x809f7980",
+          "sp": "80699e40",
+          "lr": "809f7a08"
+        },
+        {
+          "nominal": "0x8069a600",
+          "runtime": "0x809db7e8",
+          "sp": "80699e60",
+          "lr": "8019f8cc"
+        }
+      ]
+    },
+    "frontend_execution": {
+      "module": "RSO_ScriptGUIScreenFrontEndUI.rso",
+      "sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+      "load_base": "0x80aef520",
+      "prolog": "0x80b05f98",
+      "prolog_returned": true,
+      "missing_text_offset": null,
+      "verified_constructor_and_prolog_returns": [
+        {
+          "nominal": "0x806a9f90",
+          "runtime": "0x80b02970",
+          "sp": "8069a050",
+          "lr": "80b06130",
+          "return_r3": "80b10000"
+        },
+        {
+          "nominal": "0x806ad298",
+          "runtime": "0x80b05c78",
+          "sp": "8069a050",
+          "lr": "80b06130",
+          "return_r3": "80b10000"
+        },
+        {
+          "nominal": "0x806ad554",
+          "runtime": "0x80b05f34",
+          "sp": "8069a050",
+          "lr": "80b06130",
+          "return_r3": "80b10000"
+        },
+        {
+          "nominal": "0x806ad6c8",
+          "runtime": "0x80b060a8",
+          "sp": "8069a050",
+          "lr": "80b06130",
+          "return_r3": "80b10000"
+        },
+        {
+          "nominal": "0x806ad5b8",
+          "runtime": "0x80b05f98",
+          "sp": "8069a070",
+          "lr": "8019f8cc",
+          "return_r3": "80b12d60"
+        },
+        {
+          "nominal": "0x806ad3bc",
+          "runtime": "0x80b05d9c",
+          "sp": "806996b0",
+          "lr": "8022ab80",
+          "return_r3": "80a447c0"
+        },
+        {
+          "nominal": "0x806ac33c",
+          "runtime": "0x80b04d1c",
+          "sp": "80699700",
+          "lr": "8027e3cc",
+          "return_r3": "58435254"
+        }
+      ]
+    },
+    "world_execution": {
+      "name": "RSO_ScriptWorldTeleporter.rso",
+      "sha256": "f9f419e45635483df42018ff494be2f209f81ee57b040a343b82a617f2bdb652",
+      "load_base": "0x80ad4320",
+      "prolog": "0x80ad8f48",
+      "missing_text_offset": null,
+      "prolog_returned": true,
+      "verified_constructor_and_prolog_returns": [
+        {
+          "nominal": "0x806960ec",
+          "runtime": "0x80ad8ee4",
+          "sp": "8069a050",
+          "lr": "80ad90e0"
+        },
+        {
+          "nominal": "0x80696260",
+          "runtime": "0x80ad9058",
+          "sp": "8069a050",
+          "lr": "80ad90e0"
+        },
+        {
+          "nominal": "0x80696150",
+          "runtime": "0x80ad8f48",
+          "sp": "8069a070",
+          "lr": "8019f8cc"
+        },
+        {
+          "nominal": "0x80693fc8",
+          "runtime": "0x80ad6dc0",
+          "sp": "806996b0",
+          "lr": "8022ab80"
+        },
+        {
+          "nominal": "0x8069214c",
+          "runtime": "0x80ad4f44",
+          "sp": "80699700",
+          "lr": "8027e3cc"
+        }
+      ]
+    }
+  },
+  "verified_nand_cache": {
+    "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/NAND/tmp/7F826CCE.pak",
+    "size": 332672,
+    "sha256": "78799b1d4161a35362a6e5c9f89157c8ba1616e1c2ead91b4357f846c6524ca6",
+    "original_path": "recomp/.tools/disc-extraction-rm3e01/files/MiscData.pak",
+    "exact_original_bytes": true
+  },
+  "iso_partition_reads_verified": true,
+  "nod_provenance": {
+    "commit": "6a54b418e541ce5eeb364399116afd6e47b817bb",
+    "library_sha256": "dde0fd4608305f9c4fd0d358808fcf7b09a5863eb06070334ed6725cadb61279",
+    "header_sha256": "8fa7751dfa1868b3e26fbf01d218a25de216617e2b04caf8c1c6eaf1ac141580"
+  },
+  "blocked_mmio": null,
+  "host_thread_starts": [
+    [
+      "8098da28",
+      "8042fec4",
+      "804e70bc",
+      "8098da18"
+    ],
+    [
+      "8099f748",
+      "8042fec4",
+      "804e70bc",
+      "8099f738"
+    ]
+  ],
+  "host_thread_switches": [
+    [
+      "8060b418",
+      "8098da28"
+    ],
+    [
+      "8098da28",
+      "8060b418"
+    ],
+    [
+      "8060b418",
+      "8099f748"
+    ],
+    [
+      "8099f748",
+      "8060b418"
+    ]
+  ],
+  "dsp_upload": null,
+  "build": {
+    "exe_sha256": "3830f013ae496260966041133a6ee871e49b65a798a727dfb9fb1b22c5f23a73",
+    "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "runtime": {
+    "revision": "RM3E01_00",
+    "started_utc": "2026-10-21T02:02:22.0279297Z",
+    "pid": 20372,
+    "observation_seconds": 55,
+    "alive_at_deadline": true,
+    "stopped_by_harness": true,
+    "process_exit_code": -1,
+    "fatal_dialogs_suppressed": true,
+    "executable_sha256": "3830f013ae496260966041133a6ee871e49b65a798a727dfb9fb1b22c5f23a73",
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792548142_pid20372/console.log",
+    "log_sha256": "1fff31a12ef5f0486ed52f69ad7f01461ec89ce964f8bed7cc5facd0561820d2",
+    "failure_logged": false,
+    "first_game_screen_verified": false,
+    "note": "Being alive and creating a graphics window do not prove game execution or a rendered screen.",
+    "probe": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792548142_pid20372/runtime_probe.json"
+  },
+  "verified_resource_reads": [
+    {
+      "path": "/rhbm/homeBtnIcon.tpl",
+      "offset": 0,
+      "size": 6336,
+      "partition_offset": 7814148,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1025f2e0",
+      "read_sha256": "099f23b6866bd2334bd012520bbd4e63946257abd543340883e660f4eca2b2e6",
+      "file_sha256": "099f23b6866bd2334bd012520bbd4e63946257abd543340883e660f4eca2b2e6",
+      "fnv1a64": "4a9109fe0c8a5ba7"
+    },
+    {
+      "path": "/RSO/Rev2 Production/selfile.sel",
+      "offset": 0,
+      "size": 171360,
+      "partition_offset": 930226860,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x9a20e0",
+      "read_sha256": "de2f452040a2a82c250e23ac528c377b0962df69855ffd7cf915bd065a662a49",
+      "file_sha256": "de2f452040a2a82c250e23ac528c377b0962df69855ffd7cf915bd065a662a49",
+      "fnv1a64": "5ab0e049c65fbd6c"
+    },
+    {
+      "path": "/Standard.ntwk",
+      "offset": 0,
+      "size": 63584,
+      "partition_offset": 635419340,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x9cbe60",
+      "read_sha256": "b4e64a835078a54b2fac45e3e88c38c9e0f4e525f446b1033fd0fd220694dd93",
+      "file_sha256": "b4e64a835078a54b2fac45e3e88c38c9e0f4e525f446b1033fd0fd220694dd93",
+      "fnv1a64": "6b7a8740df4875f9"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 0,
+      "size": 64,
+      "partition_offset": 4270134688,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10260d20",
+      "read_sha256": "b1d918f6d0d1866f61250d0e49ca87cfde2ea0fb165d80574e5449a0ac55247a",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "70dd509e390241a4"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 64,
+      "size": 64,
+      "partition_offset": 4270134752,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10260d20",
+      "read_sha256": "e121480004c6bbe76afc6e3819d6a5306fbf1c970a01786ce63105c76c7e6f1a",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "7df063c6f3ffd9fc"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 128,
+      "size": 2624,
+      "partition_offset": 4270134816,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10260da0",
+      "read_sha256": "5226e41e9caaf423d0eb4a7463b19144f2df81ba645d9751a1bb3d4f5b2db545",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "c9e2ac93f8e0cdb1"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 2752,
+      "size": 4928,
+      "partition_offset": 4270137440,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102621c0",
+      "read_sha256": "b36130d4a1a7d1ce76469e2ab965d7dfbbe3b04b624fe50d9af6d8e930b226f0",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "0538835ae50feb97"
+    },
+    {
+      "path": "/Worlds.txt",
+      "offset": 0,
+      "size": 480,
+      "partition_offset": 4236010604,
+      "original_eof_alignment_bytes": 12,
+      "guest_dma_readback_verified": true,
+      "destination": "0x95e680",
+      "read_sha256": "f60eb9ff1a4f45820ad980eb33e362a5bd372f1556b0c0f7967644566d724e1a",
+      "file_sha256": "4a10528edb934a029c2bb8217468ce2b5af1f81baff4bba5cc7baa6816b3693c",
+      "fnv1a64": "86d6b84353d22789"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 352704,
+      "size": 27456,
+      "partition_offset": 4270487392,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102b53a0",
+      "read_sha256": "d9aa21971dbdf3bb4d24f98851dff098d36f8d0cbf611873b26424b939431a51",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "4756a432083f6c81"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 220672,
+      "size": 27520,
+      "partition_offset": 4270355360,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102bbf00",
+      "read_sha256": "be845ff637afbf7c36c076ed192231fc5f8d89cfe6fa5faab70754892dd72fa7",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "1547b234d3533285"
+    },
+    {
+      "path": "/MiscData.pak",
+      "offset": 0,
+      "size": 32,
+      "partition_offset": 632057804,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x95e960",
+      "read_sha256": "40cb2d13aca821814e7f68df6b1710dc3bf31cb1882a07097b9982f0c12627ec",
+      "file_sha256": "78799b1d4161a35362a6e5c9f89157c8ba1616e1c2ead91b4357f846c6524ca6",
+      "fnv1a64": "888f4221a9117915"
+    },
+    {
+      "path": "/RSO/Rev2 Production/RSO_rhbm.rso",
+      "offset": 0,
+      "size": 127648,
+      "partition_offset": 927317452,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1015e880",
+      "read_sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+      "file_sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+      "fnv1a64": "84dc47179b1a2ef3"
+    },
+    {
+      "path": "/rhbm/homeBtn_ENG.arc",
+      "offset": 0,
+      "size": 344800,
+      "partition_offset": 7820484,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1017db20",
+      "read_sha256": "a07095250b0957e8f9bdaf84f9202f8b7b3152ea906cc4602768bf24b7e32001",
+      "file_sha256": "a07095250b0957e8f9bdaf84f9202f8b7b3152ea906cc4602768bf24b7e32001",
+      "fnv1a64": "2fcb416375a9afc3"
+    },
+    {
+      "path": "/rhbm/SpeakerSe.arc",
+      "offset": 0,
+      "size": 59424,
+      "partition_offset": 10209708,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x101d1e00",
+      "read_sha256": "8d276735f7c0309b0695066d1bba89ef16e98c17209f7e090a4b0231804d276f",
+      "file_sha256": "8d276735f7c0309b0695066d1bba89ef16e98c17209f7e090a4b0231804d276f",
+      "fnv1a64": "74192d4b59efb3e2"
+    },
+    {
+      "path": "/rhbm/HomeButtonSe.arc",
+      "offset": 0,
+      "size": 320416,
+      "partition_offset": 9889316,
+      "original_eof_alignment_bytes": 27,
+      "guest_dma_readback_verified": true,
+      "destination": "0x101e0620",
+      "read_sha256": "4cb337fff20fe7d74ab696b541f356ee59eaeee73324b8721699212293a02681",
+      "file_sha256": "3620cebec5beedcf7058e5692cf185b585135e8d1365a822ce1ebe71f835d105",
+      "fnv1a64": "5e7e1f281d12bb16"
+    },
+    {
+      "path": "/InGameNAND.pak",
+      "offset": 0,
+      "size": 32,
+      "partition_offset": 605216012,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x95efe0",
+      "read_sha256": "5d4d710008f224b72947ecb86cc9e8639ba6d03f758d8f4f45a21efba0daa7e5",
+      "file_sha256": "ddb07ae8c46c3d948ac109203588c531d6145ea1e69e4d0393e42a79a86940c4",
+      "fnv1a64": "93a419f56744c188"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 0,
+      "size": 32,
+      "partition_offset": 4263962816,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10265160",
+      "read_sha256": "9109f8e3b5fbcd01acf610875b8ba707863bcf458c69c764fc476ff43b087f77",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "573e3106f0529f04"
+    },
+    {
+      "path": "/RSO/Rev2 Production/RSO_Tweaks.rso",
+      "offset": 0,
+      "size": 184832,
+      "partition_offset": 930010860,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x9db6e0",
+      "read_sha256": "f195aa36d03fb34a5a11821fa1533d52343d0be1d02e59a9e2a24e8791125a09",
+      "file_sha256": "f195aa36d03fb34a5a11821fa1533d52343d0be1d02e59a9e2a24e8791125a09",
+      "fnv1a64": "b78bb02e0fa726ea"
+    },
+    {
+      "path": "/GuiNAND.pak",
+      "offset": 0,
+      "size": 32,
+      "partition_offset": 604048204,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x95f3e0",
+      "read_sha256": "a23277a91802984e6be107b9d487bddad09cff261194daa26b9dcb81167cd8a3",
+      "file_sha256": "31301162dbf4d8d9523c10f7bc70a9115e17ea1a2b16ffa154b741cca9fa1d6c",
+      "fnv1a64": "d6c7e8e3b8bdd7bb"
+    },
+    {
+      "path": "/InGameDVD.pak",
+      "offset": 0,
+      "size": 64,
+      "partition_offset": 934831756,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10265d80",
+      "read_sha256": "fba8bec70c402de6cdaf20b0dc3c7afa04247e852e2ac9d900afee922236947a",
+      "file_sha256": "be411ac9341b7a1662b6f276ecaa5e3adaaec3cfefe1e0bd2378cc200babeb4d",
+      "fnv1a64": "1f7cfa109c211a9c"
+    },
+    {
+      "path": "/InGameDVD.pak",
+      "offset": 64,
+      "size": 64,
+      "partition_offset": 934831820,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10265d80",
+      "read_sha256": "f68111e989baf352b161cd9a179b7a8714c10cc171aa810bc0ed4467db43ebf2",
+      "file_sha256": "be411ac9341b7a1662b6f276ecaa5e3adaaec3cfefe1e0bd2378cc200babeb4d",
+      "fnv1a64": "e0a9a7bb0b493160"
+    },
+    {
+      "path": "/InGameDVD.pak",
+      "offset": 128,
+      "size": 1280,
+      "partition_offset": 934831884,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10265e00",
+      "read_sha256": "6ddd2c03e2f38708f5b614d318f12650f5120807b21084897d24c7b6ce9eefc4",
+      "file_sha256": "be411ac9341b7a1662b6f276ecaa5e3adaaec3cfefe1e0bd2378cc200babeb4d",
+      "fnv1a64": "a66f0d6479fa086a"
+    },
+    {
+      "path": "/InGameDVD.pak",
+      "offset": 1408,
+      "size": 6208,
+      "partition_offset": 934833164,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10269820",
+      "read_sha256": "622fade01108e9c8d98d1bd287014b34ffd0f851787b6298e9544b3d47df5116",
+      "file_sha256": "be411ac9341b7a1662b6f276ecaa5e3adaaec3cfefe1e0bd2378cc200babeb4d",
+      "fnv1a64": "23c54db746c24dd6"
+    },
+    {
+      "path": "/GuiDVD.pak",
+      "offset": 0,
+      "size": 64,
+      "partition_offset": 936957516,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1026f420",
+      "read_sha256": "934f52daf2088b2a87f20563c4408f52d108c60d4d23f2bdd71277cc744bb031",
+      "file_sha256": "8bc72153e1d32313a033f3a1a62d45832eec7c915bcf311b26025260e7a614cd",
+      "fnv1a64": "008ad040866439c4"
+    },
+    {
+      "path": "/GuiDVD.pak",
+      "offset": 64,
+      "size": 64,
+      "partition_offset": 936957580,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1026f420",
+      "read_sha256": "c4ed2df2885f7bd19b11819ddece2cd3b946e550b82dafdcbb99864202a60e7b",
+      "file_sha256": "8bc72153e1d32313a033f3a1a62d45832eec7c915bcf311b26025260e7a614cd",
+      "fnv1a64": "2ef8585d88dac886"
+    },
+    {
+      "path": "/GuiDVD.pak",
+      "offset": 128,
+      "size": 2368,
+      "partition_offset": 936957644,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1026f4a0",
+      "read_sha256": "42fef64ded9db3d69cce05e01ddb21d016899de79bbb96d7ae16d8a43414604b",
+      "file_sha256": "8bc72153e1d32313a033f3a1a62d45832eec7c915bcf311b26025260e7a614cd",
+      "fnv1a64": "5d2c48d03223812f"
+    },
+    {
+      "path": "/GuiDVD.pak",
+      "offset": 2496,
+      "size": 5888,
+      "partition_offset": 936960012,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10272ca0",
+      "read_sha256": "0ff2f89a24ac39f80cf3c641d27aec4fa304732c57c0247c22dc635c77b9df22",
+      "file_sha256": "8bc72153e1d32313a033f3a1a62d45832eec7c915bcf311b26025260e7a614cd",
+      "fnv1a64": "484322b3aa6f5320"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 0,
+      "size": 64,
+      "partition_offset": 930398220,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10272ca0",
+      "read_sha256": "49e21e4140bbf83dd6235764a9086256a0f34ef86736085140eb4c81693bae43",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "94f9a5529840da68"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 64,
+      "size": 64,
+      "partition_offset": 930398284,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10272ca0",
+      "read_sha256": "fe3442df1bc1af2778be61864644ed33fbb1263168680a4b399dd2cf95ea425d",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "7977cde9caecc206"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 128,
+      "size": 7872,
+      "partition_offset": 930398348,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10272d20",
+      "read_sha256": "e2eba2bc04650684c30b7b79ff68e7e381c13b43777ba357726fd27db74f84ed",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "a02d6e36c61722b5"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 8000,
+      "size": 10944,
+      "partition_offset": 930406220,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10278400",
+      "read_sha256": "0ca962cbcd0b9e4e7fe4277e117e909dd883af2e3d503a64dbed4a710b22d2e8",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "c6c503796df533ba"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 0,
+      "size": 64,
+      "partition_offset": 4236011072,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10278400",
+      "read_sha256": "f195bd126cc86dad297ce1c06034057d798c858ad800526a96a88771648833b9",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "baa9531fcce2edb7"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 64,
+      "size": 64,
+      "partition_offset": 4236011136,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10278400",
+      "read_sha256": "5af47ccfba5a42f04a33c686eae028647237a751c771fbb79ac1f6c1d9dbe5e8",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "f207ee933ed73428"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 128,
+      "size": 2048,
+      "partition_offset": 4236011200,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10278480",
+      "read_sha256": "55b459b35c15af71671665ff4115c138778588dc7cc793712f03d7c9243b97dd",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "3cd4d25035097039"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 2176,
+      "size": 11008,
+      "partition_offset": 4236013248,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1027cd80",
+      "read_sha256": "515d13687895a2394768cd506416e73cf83503faba5c4ee9e8a996c468ed4355",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "1566cd74266e5b30"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 32,
+      "size": 1792,
+      "partition_offset": 4263962848,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1027cd80",
+      "read_sha256": "c0b522ee3148208f3a975cc5fb37b025de119a3dd562ee6949a6f49560ef31b4",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "6fdc5a57ba008ad0"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 1824,
+      "size": 23328,
+      "partition_offset": 4263964640,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102b53a0",
+      "read_sha256": "0357324b68bc3faec4bae84d4a933a7a989185573061a0120de72ffdfc209388",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "040d8d32f0b594d7"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 25152,
+      "size": 135904,
+      "partition_offset": 4263987968,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1030dae0",
+      "read_sha256": "41ad877a1badf66c58c0ab605b0e1d717fb6f8e0c5d9fadd670278b0761c4d3d",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "0a479f9d5543c9f2"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 161056,
+      "size": 139488,
+      "partition_offset": 4264123872,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1032ede0",
+      "read_sha256": "3e647761bc04ae227dce5ff5087ee7b43ff04e0c87ea2a756266735faea211c3",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "04b1a09f4f610f65"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 300544,
+      "size": 132928,
+      "partition_offset": 4264263360,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10350ee0",
+      "read_sha256": "9c5aea002e6c1b0656d5bf8d385b6068735646220e2f14bd4453fc4fc31f7bb2",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "5514107602c4baf3"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 433472,
+      "size": 132512,
+      "partition_offset": 4264396288,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10371640",
+      "read_sha256": "01e5d0e9250edcd3f9d12ef81d56ca75d300e73999c8125d4d50a36cdbcf8e24",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "978632116e752d8b"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 565984,
+      "size": 139264,
+      "partition_offset": 4264528800,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10391c00",
+      "read_sha256": "71f2b485ff06456841f440dc3db706d2853500a9a69ed7d3718eb45b65e10746",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "5cbbdf517bfc42c3"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 705248,
+      "size": 152288,
+      "partition_offset": 4264668064,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x103b3c20",
+      "read_sha256": "ae799792e7a61d387d9b469bd9226eca605a6a6d3bb980adf13ca5961e5b0846",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "afa87bea7860f015"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 857536,
+      "size": 142912,
+      "partition_offset": 4264820352,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x103d8f20",
+      "read_sha256": "362b6d2ed2ddc345ebb16cdec0f0c9d54fce6a26e90145d50570425f6bf81648",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "9dfc5242a02d63db"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 1000448,
+      "size": 139488,
+      "partition_offset": 4264963264,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x103fbd80",
+      "read_sha256": "3e647761bc04ae227dce5ff5087ee7b43ff04e0c87ea2a756266735faea211c3",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "04b1a09f4f610f65"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 1139936,
+      "size": 150624,
+      "partition_offset": 4265102752,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1041de80",
+      "read_sha256": "6960c2cddf7702f3bca2a513077bb5625e2289fbcf46a2f60e080c43cae47278",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "311b31784a6cc784"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 1290560,
+      "size": 140512,
+      "partition_offset": 4265253376,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10442b00",
+      "read_sha256": "ff98503fee6a48c748981b1af1b3a86f235267fd49e9656b3e32ed58c7386744",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "a1c3e9c0439e1066"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 1431072,
+      "size": 145024,
+      "partition_offset": 4265393888,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10465000",
+      "read_sha256": "99f7068df3117b908aa5af0bd495fb9c8e3f498eb7029db9a0589a970b23ff01",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "e9558cf3f187149a"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 1576096,
+      "size": 144768,
+      "partition_offset": 4265538912,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x104886a0",
+      "read_sha256": "0eb5e246fc111857cce519aaede54cd64192d66f086bf9084a645ae41a50ec87",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "0e4894417001c80e"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 1720864,
+      "size": 142944,
+      "partition_offset": 4265683680,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x104abc40",
+      "read_sha256": "b5680eccf861bfa003e25a831aa9915d7c5ab08ed13ff27500d898af446d6706",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "025ac22425d0c848"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 1863808,
+      "size": 144384,
+      "partition_offset": 4265826624,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x104ceac0",
+      "read_sha256": "f9d0182019dae1330135a42eab450be82833ab0b5944bfc84e678d928b086a86",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "8e37c873ce294058"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 2008192,
+      "size": 146080,
+      "partition_offset": 4265971008,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x104f1ee0",
+      "read_sha256": "e7988743302ac56351fbf136dd06c18268fafa1546957eeceabe28af4bfd67b7",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "2c8874c87b420b97"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 2154272,
+      "size": 144704,
+      "partition_offset": 4266117088,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x105159a0",
+      "read_sha256": "a35dc9d4837f0d829f43bb295a09d0f0fd898c8dcaa061e6693f1fbcfcbdef20",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "bb80163825864b95"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 2298976,
+      "size": 134368,
+      "partition_offset": 4266261792,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10538f00",
+      "read_sha256": "2403b460d88be545fadc8324b241ba96e8518a544bc59d6f6ca7a272b515298f",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "ebc8858c126f91e4"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 2433344,
+      "size": 143008,
+      "partition_offset": 4266396160,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10559c00",
+      "read_sha256": "3697ca0a7a940eec6c207fd47533216409f9b186677eb7e7ccfd463dd782d7d2",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "69a3d203a45b7158"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 2576352,
+      "size": 138464,
+      "partition_offset": 4266539168,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1057cac0",
+      "read_sha256": "28b94930b653091f4b920d71f66d0de2dda5c7d31b1c89b8cd1219eb530ce347",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "0e2bca83d6a9cedb"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 2714816,
+      "size": 146656,
+      "partition_offset": 4266677632,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1059e7c0",
+      "read_sha256": "da8828ef1f3897bfd12af7383bdadd2dc9319a27dda6348e70f9e2567f313de1",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "8ae1a78877078a51"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 2861472,
+      "size": 140480,
+      "partition_offset": 4266824288,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x105c24c0",
+      "read_sha256": "6450f478848bcd317a1d758e89092012f4e19625a1f2805385f86713cb602f4d",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "01bb5236717df25b"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 3001952,
+      "size": 140960,
+      "partition_offset": 4266964768,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x105e49a0",
+      "read_sha256": "af423cf0973fc0975980ed166f2f38b2f7ba49720bf12f4d78980bf6877bc10c",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "9a0b45b6b93c167b"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 3142912,
+      "size": 134624,
+      "partition_offset": 4267105728,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10607060",
+      "read_sha256": "6a5ed795b5f2ba98526d8cca9a605513e4032935a0c02bdfb0690ba106abf05c",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "9abc18ed55e40126"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 3277536,
+      "size": 144960,
+      "partition_offset": 4267240352,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10627e60",
+      "read_sha256": "51a813c82154273de9dfc75b53eb58a460ad2a8cae5dda165cacb4f6464c1e72",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "6074a4c49c314a66"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 3422496,
+      "size": 135872,
+      "partition_offset": 4267385312,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1064b4c0",
+      "read_sha256": "028adef817b0dec84de8cfc4ceb840aafa5265d01de7c0c6295abc5ba9ce71bd",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "866afe844fb6ea10"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 3558368,
+      "size": 138464,
+      "partition_offset": 4267521184,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1066c7a0",
+      "read_sha256": "28b94930b653091f4b920d71f66d0de2dda5c7d31b1c89b8cd1219eb530ce347",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "0e2bca83d6a9cedb"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 3696832,
+      "size": 142528,
+      "partition_offset": 4267659648,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1068e4a0",
+      "read_sha256": "9a0c696903d40763fe8b8c5b4be36f84cad66fcaaf85bba799b8977692ac7496",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "fe0539e4e6359e2c"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 3839360,
+      "size": 140576,
+      "partition_offset": 4267802176,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x106b1180",
+      "read_sha256": "69007a0685e87d5c03ad061a0ad98c39e3fc24f07937cb6664835a811a535373",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "2828f11a89720189"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 3979936,
+      "size": 137184,
+      "partition_offset": 4267942752,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x106d36c0",
+      "read_sha256": "0dd199c6b80abc8c8f2406418617cd0f2871e74c180b10bd10cba21c5425c30e",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "4ac07181b83e5b4a"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 4117120,
+      "size": 143168,
+      "partition_offset": 4268079936,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x106f4ec0",
+      "read_sha256": "9a55b578a1b2c9119cce255c4b2cdef2b812ee662ce00c701cd200412ecf2884",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "4fea3e87ebcd64c2"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 4260288,
+      "size": 137792,
+      "partition_offset": 4268223104,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10717e20",
+      "read_sha256": "ed1070b63176927a7926d7b79da6e6af5049905013ecc60dbcba13fca5f69ff3",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "6a124422aac5b408"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 4398080,
+      "size": 63808,
+      "partition_offset": 4268360896,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10739880",
+      "read_sha256": "6070b01d8e1cd28567dd5a26c7f19b3364f584deea1c6ef3f934092b6e0cbef0",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "27b3d9e2f97d2603"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 4461888,
+      "size": 132448,
+      "partition_offset": 4268424704,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x107491e0",
+      "read_sha256": "81919bce0416c26f2c135265a095d6cf209a17d3cf0d9390b0b82d564b0179f4",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "23b662240ad6e3ab"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 4594336,
+      "size": 114752,
+      "partition_offset": 4268557152,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10769760",
+      "read_sha256": "f9c7ce449fb00cfb0ade913e2f677c7640378ff082f53bdcf648bb4f76a122f6",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "ca7b0cccc02c4563"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 4709088,
+      "size": 121664,
+      "partition_offset": 4268671904,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x107857c0",
+      "read_sha256": "f3abf02eb95f39846d25f029c163e1126404dd9a82e7d947c07d4e3c0ec74365",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "d695128484c61292"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 4830752,
+      "size": 10336,
+      "partition_offset": 4268793568,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1027d480",
+      "read_sha256": "f1eb2054ecad80b4ac9d1ec1d3aacdd89b771e44341a5fde3928584ac9f64186",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "5b85793c971c5fee"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 4841088,
+      "size": 11616,
+      "partition_offset": 4268803904,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10283260",
+      "read_sha256": "c8b44c0e5546175978bccb6cc04ee05f4d2ea4f2f05afa32d2b291deb5e44647",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "32af123b691f8877"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 4852704,
+      "size": 524288,
+      "partition_offset": 4268815520,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x107a3320",
+      "read_sha256": "96ce0aaa69c490cce076d3a08b7875c3728eade4715295569425261fb71e721a",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "51c612bc9fd96877"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 5376992,
+      "size": 524288,
+      "partition_offset": 4269339808,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10823320",
+      "read_sha256": "e52377a44f72d2c85fc274351d74971824004e673f42cd61adbb48916b910105",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "1fb573a6447e6deb"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 5901280,
+      "size": 31680,
+      "partition_offset": 4269864096,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108a3320",
+      "read_sha256": "1b31b85ef942574ad3926889009e89013e0349ee7dde8ae89ffb94d9d4a63cdb",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "010303b50311f92e"
+    },
+    {
+      "path": "/precache.RMC",
+      "offset": 5932960,
+      "size": 238912,
+      "partition_offset": 4269895776,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108aaf00",
+      "read_sha256": "74d2edbbcbcf7446a5430ae403edcada4f940111971c7751196360d5617803b9",
+      "file_sha256": "64b8cfc6bda1e708b5d7b23afe9cfa74e9d91be2ffe0994552d4ead690808692",
+      "fnv1a64": "4286fa490cf84243"
+    },
+    {
+      "path": "/Worlds.pak",
+      "offset": 0,
+      "size": 32,
+      "partition_offset": 4234791340,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x962ae0",
+      "read_sha256": "e51e7d082320a9a26dcf03368f058e0725376bc33dbf14f00acb2892601aaee0",
+      "file_sha256": "09d2e05518f00a6562989c847af9af0a8bbc441193db5230236bbfb9b50a86c1",
+      "fnv1a64": "f6fcd1bb9218705f"
+    },
+    {
+      "path": "/UniverseArea.pak",
+      "offset": 0,
+      "size": 64,
+      "partition_offset": 635482924,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102888e0",
+      "read_sha256": "76388ef061904a9f1c46c8c0d6138eb3be670f695db078bdc01e7e4d3ade41d9",
+      "file_sha256": "d745ec2b8c9767a803e97dfa9f582d794af6614712d85853973ef040ce6a881a",
+      "fnv1a64": "4bead1558d30e169"
+    },
+    {
+      "path": "/UniverseArea.pak",
+      "offset": 64,
+      "size": 64,
+      "partition_offset": 635482988,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102888e0",
+      "read_sha256": "6890d7d589a7621851c19f6b67e710888171c66ae9a0125c9ca8d7a5299e0295",
+      "file_sha256": "d745ec2b8c9767a803e97dfa9f582d794af6614712d85853973ef040ce6a881a",
+      "fnv1a64": "120a7fac68b962c4"
+    },
+    {
+      "path": "/UniverseArea.pak",
+      "offset": 128,
+      "size": 64,
+      "partition_offset": 635483052,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102888e0",
+      "read_sha256": "eb9b183b0fb660e1c7ad3ec5423922dd2b44f9d79f70f0520f2464f3b5f5289a",
+      "file_sha256": "d745ec2b8c9767a803e97dfa9f582d794af6614712d85853973ef040ce6a881a",
+      "fnv1a64": "dca9eec67c555f43"
+    },
+    {
+      "path": "/UniverseArea.pak",
+      "offset": 192,
+      "size": 16320,
+      "partition_offset": 635483116,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1028ad00",
+      "read_sha256": "286e26b6f7902ec63117edb4dc2b74ad2ff7339848b0c78e8c49e3a5828d1c77",
+      "file_sha256": "d745ec2b8c9767a803e97dfa9f582d794af6614712d85853973ef040ce6a881a",
+      "fnv1a64": "992c59d8cad768a7"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27951104,
+      "size": 640,
+      "partition_offset": 4263962176,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x9638c0",
+      "read_sha256": "003c0515bf61652bb12c72b0486534abe39b9bb00daf03fdc5f9e6ded49f5ec6",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "1cdc26aaf6936bd5"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23659648,
+      "size": 320,
+      "partition_offset": 4259670720,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x963be0",
+      "read_sha256": "98f56e46bf4089c8144074f5ee1614bdbb25d599088d9bb2a1998ef871a02d1a",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "ddbe406ab6abccc7"
+    },
+    {
+      "path": "/UniverseArea.pak",
+      "offset": 15057216,
+      "size": 2624,
+      "partition_offset": 650540140,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x9f7980",
+      "read_sha256": "9e3363d8bafd410773553024b9c79d55d6beb97c70322523a60de1aeda8fc145",
+      "file_sha256": "d745ec2b8c9767a803e97dfa9f582d794af6614712d85853973ef040ce6a881a",
+      "fnv1a64": "fc181c2fd9a60937"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23659968,
+      "size": 3712,
+      "partition_offset": 4259671040,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa06820",
+      "read_sha256": "276462a4a1ea69ad1ac8d9e9292d6da364479c56967b6eca1815bfbe3d59ba84",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "b80bab0fdb872d6e"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23655744,
+      "size": 7936,
+      "partition_offset": 4259666816,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa42180",
+      "read_sha256": "5a6aa03f5af8119dbb3459d3730681612a2f3c337bc41c321ba72463c7aea0a4",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "fdd985386a423c13"
+    },
+    {
+      "path": "/UniverseArea.pak",
+      "offset": 16512,
+      "size": 7296,
+      "partition_offset": 635499436,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa440a0",
+      "read_sha256": "8ea831d484d40c1e55e0a9e2fec57d5bff7b5cc4be340f6ed5a8a9ddfa55da09",
+      "file_sha256": "d745ec2b8c9767a803e97dfa9f582d794af6614712d85853973ef040ce6a881a",
+      "fnv1a64": "e94c2f738e887057"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 113984,
+      "size": 192,
+      "partition_offset": 930512204,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa2d5c0",
+      "read_sha256": "59f3434e0f5efd7b5623c3d9f6e0fa4c08e024dda539e6e4a8430133dc2b6c7e",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "2ae2c289b0645306"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 158976,
+      "size": 5824,
+      "partition_offset": 930557196,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1028d6e0",
+      "read_sha256": "dd23a0768cc35e3c1f7bd267216009a809d11cec3e1f8d55c9f7efedfc3d75e7",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "e33f2f0d673fa3ad"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 269888,
+      "size": 14144,
+      "partition_offset": 930668108,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108f5480",
+      "read_sha256": "c72c2d5acffd237470f1d2fa34c1a601694137d72113f9ee906fe66371e5b298",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "0497c3deb8146dae"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 284032,
+      "size": 256,
+      "partition_offset": 930682252,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108f8bc0",
+      "read_sha256": "26f8ecdb8f1d0a2ffb895c0f7ff8548498958b037e9098820a2650f72002d6c8",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "5390ca82879cb12c"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 284288,
+      "size": 14144,
+      "partition_offset": 930682508,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108f8cc0",
+      "read_sha256": "1fafd369d814b539da449edad0651956afc67357a46a8c84c7299268d182e79d",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "e4f155b059665a8a"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 298432,
+      "size": 7680,
+      "partition_offset": 930696652,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fc400",
+      "read_sha256": "22bc2c53b34338e0de752412ce0ea44a24fc9092ae37ac1381e0539e21ed7307",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "741e31600cf87bd1"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 605952,
+      "size": 1280,
+      "partition_offset": 931004172,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fe200",
+      "read_sha256": "67a1d4afdd19a577974bd57ae13dd9071c279671bbc47c6578a4969db94665ca",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "a87d41dd0027e247"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 607232,
+      "size": 8896,
+      "partition_offset": 931005452,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fe700",
+      "read_sha256": "7512a80c3c5e06ef3f0af5c99413c89f445102142ccdb000a1dc9e860cf3c13c",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "939d346148764cac"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 616128,
+      "size": 2880,
+      "partition_offset": 931014348,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109009c0",
+      "read_sha256": "a401c022d6cad42264b53df59861a8a7de375c98eb68b4045c4a4cb42ad2c1f9",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "669b0c9a48055caf"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 699136,
+      "size": 1664,
+      "partition_offset": 931097356,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10901500",
+      "read_sha256": "49be783f25ba37f71f8f47815e4a74baacc23a3a097184c718b7247b533d5365",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "133c5d1662db4d36"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 18944,
+      "size": 17664,
+      "partition_offset": 930417164,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xaa6ca0",
+      "read_sha256": "6fa849a1d5841880dfcf956e48d3de847f36bdd5b29f6333e959601fcad202cf",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "45194481fe7b2ca3"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27951104,
+      "size": 640,
+      "partition_offset": 4263962176,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa337a0",
+      "read_sha256": "003c0515bf61652bb12c72b0486534abe39b9bb00daf03fdc5f9e6ded49f5ec6",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "1cdc26aaf6936bd5"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27951040,
+      "size": 704,
+      "partition_offset": 4263962112,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa33d00",
+      "read_sha256": "657b7fc777ebe842ee64fd6ca585ac525a28c374f119b4da6176369af9c88457",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "8b09f8b23872a0b5"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27950464,
+      "size": 1280,
+      "partition_offset": 4263961536,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x9d3760",
+      "read_sha256": "259c6b9d524cb36dd5bcf09c90e3656a5217cb1ec3b36eb0a90f04cdc93db3b1",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "2ae19ab4b8f8718e"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23657792,
+      "size": 96,
+      "partition_offset": 4259668864,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa34380",
+      "read_sha256": "bd4ca0f73467ebd32d79371d576f80261c77b344266cd8244d294de6c48c7829",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "12d54f0bfb2ae448"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23657888,
+      "size": 96,
+      "partition_offset": 4259668960,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa343e0",
+      "read_sha256": "3ae8ea3403fb97808138bddc71a6c52b8a78e49e8d274a4005badb8cdc28cc87",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "9bca0f541f4ed18e"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23657984,
+      "size": 96,
+      "partition_offset": 4259669056,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa34480",
+      "read_sha256": "8d8b77879f246a4cb2bef80718ce2e825edf1494d13a4adaab47015faf80df7b",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "4de6263181df15b2"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23658080,
+      "size": 128,
+      "partition_offset": 4259669152,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa34520",
+      "read_sha256": "4818eda3f6902b3991fdbd237cf328a2d356a5785481931d6aaa25915f043ec8",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "5d4ed0a8f713f55a"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23658208,
+      "size": 384,
+      "partition_offset": 4259669280,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xaa3200",
+      "read_sha256": "f24ca53169da143741b29f6ecbc33d4754f47f088754ee5463b21641b8a3f216",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "888df5fb6654f579"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23658592,
+      "size": 32,
+      "partition_offset": 4259669664,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fbb00",
+      "read_sha256": "ade54c9e089b21f9d5cdddf31f795ee983449727b178eec2905cdcf48a4d0696",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "0f2dbd7d437011d2"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23658656,
+      "size": 32,
+      "partition_offset": 4259669728,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fbb20",
+      "read_sha256": "a0a007622d4dfcdc5ec984e958ec75c0bd5938c858620afa4b6909d58a0f321a",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "1f946a5861cba1dc"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23658688,
+      "size": 320,
+      "partition_offset": 4259669760,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa349a0",
+      "read_sha256": "4f9e100b498e17aafc77401bf5952c26d065f90f1ea348c9487a647a745372b7",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "5dc944d042d447fb"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23655808,
+      "size": 7872,
+      "partition_offset": 4259666880,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa439c0",
+      "read_sha256": "d42342930ac812487f3ed73abca08db9278b94f6a08e678272d32808a5bd4a85",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "c5136a7100150682"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23655936,
+      "size": 7744,
+      "partition_offset": 4259667008,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa439c0",
+      "read_sha256": "5411e12acb7df845a7b02aeefba3cdf6fbfd9618d54dfbd65c17dae57e4ae0df",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "6493822ebf4e1abb"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23656000,
+      "size": 7680,
+      "partition_offset": 4259667072,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fbbc0",
+      "read_sha256": "f69695cf54c6e1e2bff838baaeb9efaf0777ce47a2575e4560fa964b9b2851e4",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "fe0fe0e0b7d93067"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23662464,
+      "size": 96,
+      "partition_offset": 4259673536,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa34f40",
+      "read_sha256": "bd4ca0f73467ebd32d79371d576f80261c77b344266cd8244d294de6c48c7829",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "12d54f0bfb2ae448"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23662560,
+      "size": 96,
+      "partition_offset": 4259673632,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa34fa0",
+      "read_sha256": "3ae8ea3403fb97808138bddc71a6c52b8a78e49e8d274a4005badb8cdc28cc87",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "9bca0f541f4ed18e"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23662656,
+      "size": 96,
+      "partition_offset": 4259673728,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa35040",
+      "read_sha256": "8d8b77879f246a4cb2bef80718ce2e825edf1494d13a4adaab47015faf80df7b",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "4de6263181df15b2"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23662752,
+      "size": 128,
+      "partition_offset": 4259673824,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa350e0",
+      "read_sha256": "4818eda3f6902b3991fdbd237cf328a2d356a5785481931d6aaa25915f043ec8",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "5d4ed0a8f713f55a"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23662880,
+      "size": 384,
+      "partition_offset": 4259673952,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xaa37c0",
+      "read_sha256": "34dabca746e60cf5f52a7ddacc5f97d953145bf317d1ae407b20886de1b20769",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "5acff53537f3abe5"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23663264,
+      "size": 32,
+      "partition_offset": 4259674336,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fbb00",
+      "read_sha256": "ade54c9e089b21f9d5cdddf31f795ee983449727b178eec2905cdcf48a4d0696",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "0f2dbd7d437011d2"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23663328,
+      "size": 32,
+      "partition_offset": 4259674400,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fbbc0",
+      "read_sha256": "a0a007622d4dfcdc5ec984e958ec75c0bd5938c858620afa4b6909d58a0f321a",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "1f946a5861cba1dc"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23663360,
+      "size": 320,
+      "partition_offset": 4259674432,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa355a0",
+      "read_sha256": "63ec09acdb6812e750024f27455475e35ac295805f262e654ed6b86fc4f935f5",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "cb379e4e4d9ea66a"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23660032,
+      "size": 3648,
+      "partition_offset": 4259671104,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa439c0",
+      "read_sha256": "cc7664322443ac33675da2b8d17531c2134b8cb9f36a3ea2f6d6de84ea6c4f4c",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "c5b9e07534df29b5"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23660160,
+      "size": 3520,
+      "partition_offset": 4259671232,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa439c0",
+      "read_sha256": "ce508f28f05992cf36bc1206d6e6a2bccadd2c00acdb0198b78cb4e146e49356",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "94905611da577af0"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23660224,
+      "size": 3456,
+      "partition_offset": 4259671296,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fbc60",
+      "read_sha256": "66b9c18415733129a8c2ddbe43f9f2414f9a2d1f36145bb79ee58dc45c4c86e0",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "4eb3824f9626ca34"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27936640,
+      "size": 96,
+      "partition_offset": 4263947712,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa35b40",
+      "read_sha256": "bd4ca0f73467ebd32d79371d576f80261c77b344266cd8244d294de6c48c7829",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "12d54f0bfb2ae448"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27936736,
+      "size": 96,
+      "partition_offset": 4263947808,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa35ba0",
+      "read_sha256": "4a0057b218f738b7b24325212a726bdd9dab84511f105e14cd288ee68976badd",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "22fd66b5a4cecf38"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27936832,
+      "size": 96,
+      "partition_offset": 4263947904,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa35c40",
+      "read_sha256": "0e5bf088096a481b32bab749b57f4e342938e3e33525aa1c7b44e2dc8e5ab73e",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "4f2f0ba26e357e86"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27936928,
+      "size": 128,
+      "partition_offset": 4263948000,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa35ce0",
+      "read_sha256": "4818eda3f6902b3991fdbd237cf328a2d356a5785481931d6aaa25915f043ec8",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "5d4ed0a8f713f55a"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27937056,
+      "size": 960,
+      "partition_offset": 4263948128,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa43d40",
+      "read_sha256": "fb7a11033aa45c5ef3bdcf69aa4d156ba0af5ff70eff63f80ae458cfdf0ba2b5",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "a91cb1cf93efee8e"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27938016,
+      "size": 11520,
+      "partition_offset": 4263949088,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1093d040",
+      "read_sha256": "1e5b699f20254c5b70a56351e96c62e3e9a1d407952c2995fa58bae6aa0e4d43",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "1201f9c2cde31acf"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27949568,
+      "size": 32,
+      "partition_offset": 4263960640,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fbb00",
+      "read_sha256": "a0a007622d4dfcdc5ec984e958ec75c0bd5938c858620afa4b6909d58a0f321a",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "1f946a5861cba1dc"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27949600,
+      "size": 256,
+      "partition_offset": 4263960672,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa36120",
+      "read_sha256": "2e6d4ee9fed5485d15c69469983272f94d0feaba9ea1e114284b6f079de4abef",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "064454b5f5dba156"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27936448,
+      "size": 192,
+      "partition_offset": 4263947520,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xa36500",
+      "read_sha256": "150b14c2bed2f8e9633a639bb30e4f561131b6b65dacb50ce62cfc1fa23682b1",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "7ef904d0ac597598"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23663680,
+      "size": 55680,
+      "partition_offset": 4259674752,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1093fd60",
+      "read_sha256": "e1dc34f8341c8e2fd3182623a85b7c3aaf686bdfc65f8cdd69edda8657822dde",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "55c2f231b3c17482"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23719360,
+      "size": 35840,
+      "partition_offset": 4259730432,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1093fd60",
+      "read_sha256": "e959abc272b7b944f27419f4a77ab215bb87e062dddc22cb9c8215def8c6ced6",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "04902e8988132ffb"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23755200,
+      "size": 35712,
+      "partition_offset": 4259766272,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1096eb20",
+      "read_sha256": "0601f553a517f3f5319279eb2fde18ad2c0a336074c567b2fb14d651c30d461e",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "663481a4bc3905a1"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23790912,
+      "size": 448,
+      "partition_offset": 4259801984,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x108fbce0",
+      "read_sha256": "f18664c4ddf5982c7ea32d5044549263d957a8e015713ab02e6903c46c68cce2",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "616bb7bdf6df6696"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23791360,
+      "size": 14976,
+      "partition_offset": 4259802432,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1090be80",
+      "read_sha256": "4c8803e755e511d559e9000aa0a8d187c1fdcc64787ddb7a9097babe69190c55",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "6fbab9b2a6f4b269"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23806336,
+      "size": 6080,
+      "partition_offset": 4259817408,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1090f900",
+      "read_sha256": "f723fe8ee6468d5db74751a0fe6f5a4ffb4b66d2d689e025636a4f768d4201a8",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "160ce37d15b38ba2"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23811456,
+      "size": 960,
+      "partition_offset": 4259822528,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1090f900",
+      "read_sha256": "21e8de1c705c7e47366f04b21f3a0e79589ec0b71e2ed936a8468f4335c97caa",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "6f1ac247dff78caf"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23812160,
+      "size": 256,
+      "partition_offset": 4259823232,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1090f900",
+      "read_sha256": "baa86da03f60e8cf666f66229922b46d9e0309a620622942231faf3fd14f77a2",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "dd650b79bb7db439"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23812416,
+      "size": 35392,
+      "partition_offset": 4259823488,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1096eb20",
+      "read_sha256": "57423156b1e5b9300e899d93a43d14ed8e7e482da66bd742c542ba4136d82e5c",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "e55f186a98046c98"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23847808,
+      "size": 35392,
+      "partition_offset": 4259858880,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1096eb20",
+      "read_sha256": "4a81840cc65b31279b10ac08a06f442065f55c8fc7ed0b4a08242132b2cae461",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "3016824d0365e6e1"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23883200,
+      "size": 448,
+      "partition_offset": 4259894272,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1090f900",
+      "read_sha256": "3964794a42775e5d8dc38357760adde5bc26fb81dfbde867b7ea2ba35ee6b9de",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "6d29b334c72fdde0"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23883648,
+      "size": 36736,
+      "partition_offset": 4259894720,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109925a0",
+      "read_sha256": "6ccc53501503bdfe2fe0ad1535eeb91730e9245b525729b0743b8552f1d68325",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "7bceff913f0fe583"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23920384,
+      "size": 36736,
+      "partition_offset": 4259931456,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1099b540",
+      "read_sha256": "472a792d7e1ddeb00905ca8d701f33b5526e5d7b34438821a246fcd85200019c",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "d0af17583723e623"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23957120,
+      "size": 3392,
+      "partition_offset": 4259968192,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109104c0",
+      "read_sha256": "3a279f63b03a70be62ac8860dc685b4001e2e307d8a0d88493a7032f625ee12a",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "9fe7e2cdbe58c470"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23957568,
+      "size": 2944,
+      "partition_offset": 4259968640,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109104c0",
+      "read_sha256": "a4141beb8d622d922bf498a0eef0c858460308ef09ffe52d3c496e6bb3db868b",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "23ee77ea353ffcea"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23960512,
+      "size": 12928,
+      "partition_offset": 4259971584,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10913580",
+      "read_sha256": "c4bd9a9ca5341c4cf97c8361859b12b5fa9727c773978b530344305b121d45fd",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "1af1cb53c6e78c23"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23973440,
+      "size": 1600,
+      "partition_offset": 4259984512,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109104c0",
+      "read_sha256": "de8743c8188492dd6e260047a9dcf36a3d7eba32501ff7463937b40a161f41dd",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "eed4cf27b32923d6"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 23975040,
+      "size": 30720,
+      "partition_offset": 4259986112,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102baee0",
+      "read_sha256": "e2f2f66e300539a30abd46ad3dcee747de5bcf2a6e6e7a871d5829627add8869",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "674f28aa13a23b9c"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24005760,
+      "size": 30464,
+      "partition_offset": 4260016832,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102baee0",
+      "read_sha256": "a901eea9cfe61857b7a5d3dff8abcd1be1ab2745e0683e83e0a3934d8dcd3f3b",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "88b25371e7b0153a"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24036224,
+      "size": 6272,
+      "partition_offset": 4260047296,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10910f60",
+      "read_sha256": "841fab2c529ce301e1a4a2f9cf5c5c03b0d97e0f10806a54f81711816dacff04",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "839217c4975fd02a"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24042240,
+      "size": 256,
+      "partition_offset": 4260053312,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10910f60",
+      "read_sha256": "5135b2cd6fa1a82a15e45d2606648ea114ed7ec9b61d716a915dc359ac179175",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "69dfcd6bfa41bca5"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24042496,
+      "size": 36416,
+      "partition_offset": 4260053568,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109b6420",
+      "read_sha256": "a2cd2b3a5610ee287b8552e5d3dde9e870e485626396f5a307457d7c3d3db9ed",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "2c3d399f56cdab8b"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24078912,
+      "size": 36416,
+      "partition_offset": 4260089984,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109b6420",
+      "read_sha256": "4b9a93d84d77d5dd0ee14457b291e9ce56ef2d721a23cd723adc3312251667c7",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "93f456eb5b370100"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24115328,
+      "size": 8064,
+      "partition_offset": 4260126400,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109172c0",
+      "read_sha256": "883f57609e83465bb4e366bb99ce7d81d7bb08dd175ac3666bdc6cc84d3056ea",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "e9aa6fda7018f896"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24115776,
+      "size": 7616,
+      "partition_offset": 4260126848,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109172c0",
+      "read_sha256": "c80bb3e1867dc57718c41b345b9b626aca33ab93e347b622e62655ce2c990f9a",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "0e108adb90f2811e"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24123392,
+      "size": 15296,
+      "partition_offset": 4260134464,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10919080",
+      "read_sha256": "0c62adbad6df770612d4c35797ce1842d11c4f8eef1d74efadaae612886b7a06",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "1844640a3dbb0d4b"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24138688,
+      "size": 5824,
+      "partition_offset": 4260149760,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109172c0",
+      "read_sha256": "ca7fe02b9afe14829764d5402f3d04b9c2fdce52f036df76fcbe051b44d311b9",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "2a1c827688085738"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24138944,
+      "size": 5568,
+      "partition_offset": 4260150016,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109172c0",
+      "read_sha256": "e3af7674fac14e124ae07e37e9b2eb41385af53698ca4dd5a24577e140bd391b",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "0f4963eaf3e99e30"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24140032,
+      "size": 4480,
+      "partition_offset": 4260151104,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109172c0",
+      "read_sha256": "74d4d291bfcbd648ebe385370680cb3a73e0963a8b8f6837a8b3c2833243c973",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "8f33ba1eeb5b6f34"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24140288,
+      "size": 4224,
+      "partition_offset": 4260151360,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109172c0",
+      "read_sha256": "1960de8f967720a1c82058d64ec3bd4eb0eccb2f25191a4fccdfb6da4d923b7e",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "9d5586a9a8888c1e"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24144512,
+      "size": 26176,
+      "partition_offset": 4260155584,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x102baee0",
+      "read_sha256": "a18dfc53eb57750b731b10b7704a82179d6300ea8fd30d70218dc06f1879be29",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "b6755bdb10439aaa"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24170688,
+      "size": 24704,
+      "partition_offset": 4260181760,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x1096eb20",
+      "read_sha256": "b0eecca94cf831eca541232d0e493288102d344518ac45244d9acb721bee2b86",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "fe6927d0fc7c9777"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24195392,
+      "size": 8384,
+      "partition_offset": 4260206464,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10919c40",
+      "read_sha256": "100d0fb18b5a5b30188a8db2de72b2a6384e037fad35a43422f7c3323af6def9",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "e992f2dd28372597"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24195840,
+      "size": 7936,
+      "partition_offset": 4260206912,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10919c40",
+      "read_sha256": "a4f66bb466813c62da8132af434b748cc16e4926048bcc66bd20da225c2bdf8b",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "a142786f64148432"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24203520,
+      "size": 256,
+      "partition_offset": 4260214592,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10919c40",
+      "read_sha256": "e1f4a28e8a9a63cec93ea3ae8b8c209c48518259971aa864d35f6852a05a3b02",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "5e99854d7bf74a6a"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24203776,
+      "size": 27648,
+      "partition_offset": 4260214848,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109b6420",
+      "read_sha256": "1ca172362613f77a16663a4c953f49e0226a61e166bd3cbb6e233693cdd64a10",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "ea61ac3eccfd6f41"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24231424,
+      "size": 27520,
+      "partition_offset": 4260242496,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109d11c0",
+      "read_sha256": "83ab029c41d024f3553ea09853f5d46deff2a94512df57a9c4cbf69e3b2b38d9",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "6c67ad9553df1892"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24258944,
+      "size": 704,
+      "partition_offset": 4260270016,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10919c40",
+      "read_sha256": "76e2194e016b4acc10009c75f415cece6ef81e084a409aaefed3b006c1c3c93b",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "a9bb53711f6798cd"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24259392,
+      "size": 256,
+      "partition_offset": 4260270464,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10919c40",
+      "read_sha256": "5d45309577a2d2280a2c91feab7c32da6fa3d3baa9a5c98551b8cbf0d159f65f",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "4871c893d7b6fb92"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24259648,
+      "size": 130816,
+      "partition_offset": 4260270720,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109d7d60",
+      "read_sha256": "0054a6c3e7a70bf609ad54a425004a3f99f420a9d75630cfac47c6479216fb12",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "edb81c713fe2f586"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24390464,
+      "size": 18752,
+      "partition_offset": 4260401536,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xad4320",
+      "read_sha256": "0aa74e8c66f3e12f7cd151719bbfaf5deab6c2a11a91c71235dc87e399434c4b",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "0d6192c8a68cd75f"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24409216,
+      "size": 2752,
+      "partition_offset": 4260420288,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10919c80",
+      "read_sha256": "1daf504c60e3a7f98b884f3e48acfb1a2e516c9eea391180852b3643bd18383c",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "95f37e106ff05aa8"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24411968,
+      "size": 116480,
+      "partition_offset": 4260423040,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109d7d60",
+      "read_sha256": "5c3da1532d98f11ffe227ac276e30c005a820dfe1edb7e8f15fed53cc136ddd2",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "ab9dc15933fbe823"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24528448,
+      "size": 116480,
+      "partition_offset": 4260539520,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109f4480",
+      "read_sha256": "da3d093d4befe33fd22da4a13862a3bdbf3f25427cb3fecc72825990b3d332b5",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "ba4f685bb0480b93"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24644928,
+      "size": 448,
+      "partition_offset": 4260656000,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10919c80",
+      "read_sha256": "6b4968324dc316fc7c18703d05b78717afa318506fbe6c0e67cbbfac18eab4b8",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "ebc3ad3a58a3912a"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24645376,
+      "size": 12096,
+      "partition_offset": 4260656448,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109244a0",
+      "read_sha256": "aa015d2f45c610e10ffb7a13ea2d96c3f97d0c062166fef23e5ddebcd0de8e86",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "6621e7cd60329437"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24657472,
+      "size": 12224,
+      "partition_offset": 4260668544,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109273e0",
+      "read_sha256": "ec2de54f88b02af2277f3aa2b767a567a03c09eb91da05233be040a675a762bb",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "f9575e0f8a31f3c4"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24669696,
+      "size": 12032,
+      "partition_offset": 4260680768,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109273e0",
+      "read_sha256": "627bfc9ee1c82aae9cff5ad90de6d3dcf1dcbbad3203d4611a4c7f214345f61f",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "458f9949816ce69d"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24681728,
+      "size": 11968,
+      "partition_offset": 4260692800,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x109273e0",
+      "read_sha256": "b3e0bfc85c2f8c6c9b4e92eb316707de56026ebe7d5c4ea6c6ca0a762381837c",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "29a16d3bd0aedd5d"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24693696,
+      "size": 704,
+      "partition_offset": 4260704768,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10930220",
+      "read_sha256": "d1a6fe3af6fb74e0ec057afe8689ac918a2f5d297a263cf8047bee12e1d5d79f",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "3030ed4a69c7667a"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24694400,
+      "size": 40576,
+      "partition_offset": 4260705472,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10a10ba0",
+      "read_sha256": "05910081bcf8ce8c42b79a0e21073ed8e211515b13acaba98ea4040bfde414a7",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "ac880da891c8eace"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24734976,
+      "size": 40384,
+      "partition_offset": 4260746048,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10a1aa40",
+      "read_sha256": "902a12fa24ecc55f26f1e20245284288fa32700d6c9733757d87a737bfcdb024",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "10a5450ae6409449"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24775360,
+      "size": 448,
+      "partition_offset": 4260786432,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10930220",
+      "read_sha256": "ef6cae379dbea18af22d70f25c35f4e33e8c33c3ef0266444302e217e49d6664",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "4b38b849c110e7fe"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 24775808,
+      "size": 524288,
+      "partition_offset": 4260786880,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10a6fc80",
+      "read_sha256": "9e837c74647eb55f9f2e6a3211323996ba3dd544bc2c4a121f7ab0885088e1f3",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "59139f67d984db69"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 25300096,
+      "size": 524288,
+      "partition_offset": 4261311168,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10aefc80",
+      "read_sha256": "58e48ac381aeb5349f1251284fd407f6a9c267ba36bac1f095246dafd2605a2e",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "ba9e2e444851e9b6"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 25824384,
+      "size": 524288,
+      "partition_offset": 4261835456,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10b6fc80",
+      "read_sha256": "665222e7ab2e86903e05f5c024d663899c2e166b5b1e5282676a1aede459881b",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "01993981666329e4"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 26348672,
+      "size": 7232,
+      "partition_offset": 4262359744,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10befc80",
+      "read_sha256": "d25f24f915cc6097038e1d547fe699c1ccf9c39f76bfc9153b08f253ebe67c08",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "9e4ab76f54ad2a5d"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 26355904,
+      "size": 524288,
+      "partition_offset": 4262366976,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10bf18e0",
+      "read_sha256": "d34827112b29516c881015c2911f367ec33bf881844a086bc19ce3b01c813c58",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "736c164bd245ccb0"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 26880192,
+      "size": 524288,
+      "partition_offset": 4262891264,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10c718e0",
+      "read_sha256": "d33c0222fae5dcd81af16945b33f3c81f3f62b43d046dc18f2ae11288766df3a",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "750467bce3f6436d"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27404480,
+      "size": 524288,
+      "partition_offset": 4263415552,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10cf18e0",
+      "read_sha256": "102454596c70796cc3b94acd2f31a4b0de4ee398245952050f0e19a7c05c306c",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "a41a246f47b7a23c"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27928768,
+      "size": 7232,
+      "partition_offset": 4263939840,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10d718e0",
+      "read_sha256": "3707df2dd3279bad43c493b2c839d2735bfe176589d5f869975ad3f479f0e573",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "824ee1eee2692b4c"
+    },
+    {
+      "path": "/FrontEnd.pak",
+      "offset": 27936000,
+      "size": 640,
+      "partition_offset": 4263947072,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10930220",
+      "read_sha256": "35feaf15d835f7a6f60c2454b5c8724a2f2e6b2f946a1516776dd2e9032e2b02",
+      "file_sha256": "561ebd29e5371ff3b8a8f672725af35eb3a94bd1603c53b1c8d0b5bb5cbaaab1",
+      "fnv1a64": "bcd65716249cdcbd"
+    },
+    {
+      "path": "/RSO/Rev2 Production/RSO_ScriptGUIScreenFrontEndUI.rso",
+      "offset": 0,
+      "size": 164896,
+      "partition_offset": 928059628,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xaef520",
+      "read_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+      "file_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+      "fnv1a64": "fd80a35fb4707d3b"
+    },
+    {
+      "path": "/RSO/Rev2 Production/RSO_ScriptWorldTeleporter.rso",
+      "offset": 0,
+      "size": 34912,
+      "partition_offset": 928406988,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xad4320",
+      "read_sha256": "f9f419e45635483df42018ff494be2f209f81ee57b040a343b82a617f2bdb652",
+      "file_sha256": "f9f419e45635483df42018ff494be2f209f81ee57b040a343b82a617f2bdb652",
+      "fnv1a64": "9f5744131c28d5a7"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 263552,
+      "size": 6336,
+      "partition_offset": 930661772,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10dd2020",
+      "read_sha256": "dc93856c2d17297b68dce0a759d2309e8fe7c0629fd378dd30406b3aa3116d94",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "48a57704b171542c"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 554048,
+      "size": 256,
+      "partition_offset": 930952268,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10dd38e0",
+      "read_sha256": "5b4d1e393977c9f4ae29890fb130fe3840651cba6b46f49b11fea0384f87ce21",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "39ea501bbcac70f4"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 547200,
+      "size": 7104,
+      "partition_offset": 930945420,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10dd39e0",
+      "read_sha256": "3663118586ce8ec4ab4150dda87b2a07b18631a5e59b66cd00052df946b53651",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "71268a8e35c00266"
+    },
+    {
+      "path": "/InGameAudio.pak",
+      "offset": 650752,
+      "size": 256,
+      "partition_offset": 931048972,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0x10dd55a0",
+      "read_sha256": "fb7a6ad3639a3609db5be30af61df6b3cc99e8c51d579d2005a1f9ce3e5a5623",
+      "file_sha256": "b5e6931d0947e24a46a2bab184a032ceee502186d085b259f5efa23304acd1f6",
+      "fnv1a64": "72e951cdf570edc5"
+    },
+    {
+      "path": "/InGameDVD.pak",
+      "offset": 1694272,
+      "size": 3648,
+      "partition_offset": 936526028,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xacfd00",
+      "read_sha256": "534f71171d9bb137be4cec4e6a6b38f3e0b3d12c58ed95f6ec468d273d6f490a",
+      "file_sha256": "be411ac9341b7a1662b6f276ecaa5e3adaaec3cfefe1e0bd2378cc200babeb4d",
+      "fnv1a64": "2cc8fb93a712d527"
+    },
+    {
+      "path": "/NoARAM.pak",
+      "offset": 4261056,
+      "size": 2752,
+      "partition_offset": 4274395744,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xad0b60",
+      "read_sha256": "8a064cfbc071d4cab2a73b0b3610a2d4e1f3aaccf79ff37a59509b8aa563ed6b",
+      "file_sha256": "3d02f7587bb21e099e1731a9fddf696153fb7fe1ac2cf47943b2c810c1264849",
+      "fnv1a64": "988ec2ef7a6d4ba5"
+    },
+    {
+      "path": "/GuiDVD.pak",
+      "offset": 2149376,
+      "size": 1088,
+      "partition_offset": 939106892,
+      "original_eof_alignment_bytes": 0,
+      "guest_dma_readback_verified": true,
+      "destination": "0xad1640",
+      "read_sha256": "5d06fdffea27e11da6ec6124fb5afb21e07d93041f855a782bd4b2765bbf7664",
+      "file_sha256": "8bc72153e1d32313a033f3a1a62d45832eec7c915bcf311b26025260e7a614cd",
+      "fnv1a64": "1854efcdb74a9694"
+    }
+  ],
+  "runtime_overlay_manifest": {
+    "path": "recomp/generated/RM3E01_00_conservative/runtime_hooks/manifest.json",
+    "sha256": "d83336fab41c9c163b1ed9e80c071f8b63ddfdfbf2ea82cc64195b3c47863933"
+  },
+  "hci_commands_observed": [
+    [
+      "0C03",
+      "0"
+    ],
+    [
+      "1005",
+      "0"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C13",
+      "248"
+    ],
+    [
+      "0C0A",
+      "1"
+    ],
+    [
+      "0C33",
+      "7"
+    ],
+    [
+      "1001",
+      "0"
+    ],
+    [
+      "1009",
+      "0"
+    ],
+    [
+      "1003",
+      "0"
+    ],
+    [
+      "0C45",
+      "1"
+    ],
+    [
+      "0C47",
+      "1"
+    ],
+    [
+      "0C43",
+      "1"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C18",
+      "2"
+    ],
+    [
+      "0C0D",
+      "7"
+    ],
+    [
+      "FC4F",
+      "1"
+    ],
+    [
+      "FC4C",
+      "184"
+    ],
+    [
+      "FC4F",
+      "92"
+    ],
+    [
+      "0C03",
+      "0"
+    ],
+    [
+      "1005",
+      "0"
+    ],
+    [
+      "0C24",
+      "3"
+    ],
+    [
+      "0C13",
+      "248"
+    ],
+    [
+      "0C0A",
+      "1"
+    ],
+    [
+      "0C33",
+      "7"
+    ],
+    [
+      "1001",
+      "0"
+    ],
+    [
+      "1009",
+      "0"
+    ],
+    [
+      "1003",
+      "0"
+    ],
+    [
+      "0C45",
+      "1"
+    ],
+    [
+      "0C47",
+      "1"
+    ]
+  ],
+  "verified_hci_wire_events": [
+    {
+      "opcode": "0x0C03",
+      "packet": "0e0401030c00"
+    },
+    {
+      "opcode": "0x1005",
+      "packet": "0e0b010510005301000a000000"
+    },
+    {
+      "opcode": "0x0C24",
+      "packet": "0e0401240c00"
+    },
+    {
+      "opcode": "0x0C13",
+      "packet": "0e0401130c00"
+    },
+    {
+      "opcode": "0x0C0A",
+      "packet": "0e04010a0c00"
+    },
+    {
+      "opcode": "0x0C33",
+      "packet": "0e0401330c00"
+    },
+    {
+      "opcode": "0x1001",
+      "packet": "0e0c0101100003a740030f000e43"
+    },
+    {
+      "opcode": "0x1009",
+      "packet": "0e0a01091000010000000002"
+    },
+    {
+      "opcode": "0x1003",
+      "packet": "0e0c01031000ffff8dfe9bf90080"
+    },
+    {
+      "opcode": "0x0C45",
+      "packet": "0e0401450c00"
+    },
+    {
+      "opcode": "0x0C47",
+      "packet": "0e0401470c00"
+    },
+    {
+      "opcode": "0x0C43",
+      "packet": "0e0401430c00"
+    },
+    {
+      "opcode": "0x0C24",
+      "packet": "0e0401240c00"
+    },
+    {
+      "opcode": "0x0C18",
+      "packet": "0e0401180c00"
+    },
+    {
+      "opcode": "0x0C0D",
+      "packet": "0e08010d0c0000000000"
+    },
+    {
+      "opcode": "0xFC4F",
+      "packet": "0e04014ffc00"
+    },
+    {
+      "opcode": "0xFC4C",
+      "packet": "0e04014cfc00"
+    },
+    {
+      "opcode": "0xFC4F",
+      "packet": "0e04014ffc00"
+    },
+    {
+      "opcode": "0x0C03",
+      "packet": "0e0401030c00"
+    },
+    {
+      "opcode": "0x1005",
+      "packet": "0e0b010510005301000a000000"
+    },
+    {
+      "opcode": "0x0C24",
+      "packet": "0e0401240c00"
+    },
+    {
+      "opcode": "0x0C13",
+      "packet": "0e0401130c00"
+    },
+    {
+      "opcode": "0x0C0A",
+      "packet": "0e04010a0c00"
+    },
+    {
+      "opcode": "0x0C33",
+      "packet": "0e0401330c00"
+    },
+    {
+      "opcode": "0x1001",
+      "packet": "0e0c0101100003a740030f000e43"
+    },
+    {
+      "opcode": "0x1009",
+      "packet": "0e0a01091000010000000002"
+    },
+    {
+      "opcode": "0x1003",
+      "packet": "0e0c01031000ffff8dfe9bf90080"
+    },
+    {
+      "opcode": "0x0C45",
+      "packet": "0e0401450c00"
+    },
+    {
+      "opcode": "0x0C47",
+      "packet": "0e0401470c00"
+    }
+  ],
+  "decrementer_delivered": true,
+  "unsupported_oh1_transfer_observed": false,
+  "source_hashes": {
+    "recomp/tools/prepare_prime_runtime_hooks.py": "6f57a0129c2c08d0e87efbf96004aa4f604a71560eee16bcdc1ac2cda1fe0cbd",
+    "recomp/tools/build_prime_runtime.ps1": "08a76b42433426bb6f4afbd8d0f960af06b3df749b813fe0a83ce76fa7f2a0d2",
+    "recomp/tools/probe_prime_runtime.ps1": "e6e7ae972f0c1d73342550f3f3be516f2dcf4e312388f074315c0670a6d4f56a",
+    "recomp/tools/verify_prime_runtime_boot_probe.py": "603f58bada89ff08aa286fa40b15040150ba5bace384516e615a4449f1ce624d",
+    "recomp/third_party/WiiCompiled/runtime/src/memory.cpp": "ef56c9a5104c9cb3c3850f83afcfea7f256641af0c78ef2ae86f42a734a394e2",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_ai_registers.h": "94e7428684d0518c148dd8a942a6ebd9f94d91ca37cb801da79731f60597009f",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_dsp_boot_registers.h": "c34c46c48203033b7d8c0beadd32f32dc1d7a6fa49906205828ec0be71854ea2",
+    "recomp/tools/prime_ai_registers_tests.cpp": "5da04e4026d2ecc9706ee759aff12e216a52050c0446addae69f763ffbde596d",
+    "recomp/tools/prime_dsp_boot_registers_tests.cpp": "e0cbc8acb60970311d7ccdb98899f7d79e51efcf7438ca4f377c28e8a7cd0b2d",
+    "recomp/tools/prime_host_continuations_tests.cpp": "4d0c58c1fba7c9099f1056a14709b52dd59e1fedd1bcbc3197ed9d09df13b717",
+    "recomp/tools/prime_rso_relocations_tests.cpp": "8d624a20e5229062319f10c75077c54d40f0fca50670a4c8f3219bbaf8945de3",
+    "recomp/tools/prepare_prime_rso_translation.py": "2b6d4e08da145b5445c08e2df74aab436665054cbf6d2d116f5a9730e972d09b",
+    "recomp/tools/emit_prime_rso_registry.py": "137057b0bccd7465c2222f41296e9b4c62dd767c1dcf2505443fa6560ee9320e",
+    "recomp/tools/RsoRuntimeTranslator/Program.cs": "86c5a0fd7b868f19d296f99c7ac06644214679ec5d888f99bc7816cf2f8c5b6e",
+    "recomp/tools/RsoRuntimeTranslator/RelocatedInstructions.cs": "8a6b441bf6de62a08a875b91f7888e27f129de3eb2d284964d373499b28b69cb",
+    "recomp/tools/RsoRuntimeTranslator/DolFunctionRepair.cs": "cdca7d1d02be58edf7eb41b235887519896447658b7a8722f3567b3fff36f6cc",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/Disassembly/JumpTableDetector.cs": "04414455e63f2b57c068fd43f68e6474ff49c3d607da0cd5fa6d69fd8be5b1de",
+    "recomp/third_party/WiiCompiled/runtime/src/prime_rso_runtime.cpp": "d7b1888c1bf4a49ae9adbf0642ead31fe35130f8c355d3af6bf6682dc9acb038",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_rso_runtime.h": "f1cb07b145b35dc2a1933d10324df1f4c64731b9d4bfc4719d2bab3e8554e106",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_rso_relocations.h": "f7d3668a4a69bba02f007496287042048abcb9c3ec04c1bc4c10528ecf735536",
+    "recomp/third_party/WiiCompiled/runtime/include/guest_abi/dispatch.h": "7d8824f5e9ab47e417f75009ecbd4a94c56fe3ae4d9104df5c72df6566ebe1c5",
+    "recomp/third_party/WiiCompiled/runtime/include/hle/prime_host_continuations.h": "a6a350700838f8847d872694f6d728d623cdc522a5d57637d6a72e5bfb7ecce6",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_context.cpp": "b1578d5c1af94f2d91282fabfe6dbedf1a58b97da8fa96438e870c70f5af044d",
+    "recomp/third_party/WiiCompiled/runtime/src/main.cpp": "7d082ce18105ddafdb0c42a83a3eeec9fe8d2d4cb1d55fd3b8431b0ee157ec95",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_dsp.h": "23d99f9e8d6d5afd2434637e2ace72a03042db4010813fc561f819898ccf411d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_mix.cpp": "b2f9db50ad01e9273e3c268d1af9420711d361aac3df2ee708458c683947805f",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/audio/ax_internal.h": "b4cbc0fa80dca0ed1a054707a57f8e19394a3f79124cdea1a81d3d4bfe9cc346",
+    "recomp/third_party/WiiCompiled/runtime/include/runtime_config.h": "d49b089808256233aa7e26738b0aff3bf73ea0789b6bce2ab2074b0ce8fe3c72",
+    "recomp/third_party/WiiCompiled/runtime/cmake/PublicProducts.cmake": "e553b070aba5f9dc3641eb6c8c67b80cfe91344fb8f998554334f4cd4e624f75",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_fifo.cpp": "2bc20e6e070783ec2bd83c66c744d8f4dd40b52f77ae33febae720fc4e0cf38a",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/dolphin/gx/GXVert.cpp": "f5cb7bcad6e45c498442a7d62a99cd127592e266adf154c12cdd1f16b2d71222",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/fifo.hpp": "1b38444ae26816bbfb06e12e64aa12d6d990ad58a6ecdb8056e72e83dce0111a",
+    "recomp/tools/nod_partition_range_probe.cpp": "120d5e252cd73471138636eea613a1cd993643929f0d74fbceaa25715d13d0b6",
+    "recomp/tools/test_prime_runtime_contracts.ps1": "158a87a1df3ec0619a392e453409693256e007976365db27d15cc7b44c5f7916",
+    "recomp/third_party/WiiCompiled/runtime/tests/runtime_config_tests.cpp": "cfdeebb510fc0e19430bd102ed02710b5969c7689f33e1b22e91c8407e5c9944",
+    "recomp/third_party/WiiCompiled/runtime/src/guest_flat_memory.cpp": "ae67d4079f173a87b3d8ff646990dfcdc3e2b7655330863c10f9a2fc98d7ea2d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/storage/nand_isfs.cpp": "a849d5f1f02831b3f012d5af8590508555d486fad6f87a1214f8f32d33f699e5",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/storage/dvd.cpp": "6c03ea41c287e206b15305fa52a92a532f5a1c43bed9c10cf23366f3a1ba2fac",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_interrupt.cpp": "e793d842df52d72a2262f2fa12cd9788c7d7f812fd9c88bc57e3ced3c18c1661",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_internal.h": "5fcb835a82b78c2e6801fb3848ac4e94b061f788c41568e2304f8aecdbbd0a9d",
+    "recomp/third_party/WiiCompiled/runtime/src/hle/vi.cpp": "8320bd32de531820338d4c338e1eeaafad12d29c9fd2b35eb4981def1a6aa5cc",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/Build/TranslatedBuildShardEmitter.cs": "a72790fba2ff8cb8df6d4243dff2a94215aa13b045e4e4e5a6a4d3f5fd175d0b",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Core/RuntimeNativeIndex.cs": "5d799cd172c1917bd250af1bc97e216575c2ecdd7e743ad9b8342b17c8ebc98a",
+    "recomp/third_party/WiiCompiled/translator/src/Translator.Cli/Program.cs": "d4bf0654140bc9eeca8dd27955e63d433c7967d511a45c3e62a1d1c7e47ff615"
+  },
+  "invariants": {
+    "matching_dol_exact": true,
+    "iso_size": 4699979776,
+    "iso_read_only": true
+  },
+  "reference_provenance": {
+    "path": "recomp/checkpoints/20261020_prime_runtime_reference_provenance.json",
+    "sha256": "69b6a3eeb46fa1cbea66caccdccbdbe1a98c7dc8714abc03c2dcb2c0d2136b79",
+    "commit": "cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b"
+  },
+  "limitations": [
+    "No game screen is verified.",
+    "ISO data reads are connected, but FST publication/startup still requires the private research extraction.",
+    "DSP task execution, AI/DSP interrupt dispatch and audio output remain unverified.",
+    "Controller has no paired remotes or ACL connections; HCI support is incomplete.",
+    "Host continuation transport is experimental; thread cancellation/reuse, general preemption, complete FPU contexts and graphics equivalence remain unverified.",
+    "Runtime test-suite results are separate evidence; this verifier covers the recorded boot path only."
+  ]
+}

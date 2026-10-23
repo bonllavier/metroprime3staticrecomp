@@ -1,0 +1,12 @@
+{
+  "result": "PASS ScriptAchievement startup translation build and independent relocation checks; runtime pending",
+  "module": "ScriptAchievement",
+  "functions": 10,
+  "relocations_checked": 213,
+  "original_sha256": "795ca322e9b177e4bb929d7cf810309a22520b6399b95adbfa4366cfe389b73f",
+  "synthetic_rel_sha256": "f630a17c0febd4eb861733754828760836092726652202e0e47e21783279fee0",
+  "unsupported_instructions": 0,
+  "scope": "Prolog/epilog/unresolved, constructor roots and direct-call closure only; not complete module recovery",
+  "executable_sha256": "8d4bd5f7fe749748337ceaf93ebf09c64a918b110c4cc80feba28bfb7d83cf23",
+  "runtime_status": "Latest 100s probe had no fatal but did not bind ScriptAchievement; module execution remains unverified"
+}

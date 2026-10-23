@@ -1,0 +1,19 @@
+{
+  "result": "PASS original three cleanup-listener tables and missing leaf boundary",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792622464_pid4776\\runtime_probe.json",
+  "target": "0x80B2C914",
+  "nominal_target": "0x806ACFF4",
+  "text_offset": "0x16394",
+  "live_section_table": "0x80b164b8",
+  "live_text_section": "0x80b16580",
+  "live_data_section": "0x80b2e840",
+  "table_offsets": [
+    "0x518",
+    "0x528",
+    "0x538"
+  ],
+  "table_bytes_verified": 48,
+  "prefix_bytes_verified": 24,
+  "rejected_attempt": "Applying the text relocation delta to synthetic REL data failed by 0x40 bytes of different padding. Final check reads each original live RSO section pointer independently.",
+  "scope": "Original script-movie cleanup dispatch; no skipped callbacks, overall runtime still fails until translations registered"
+}

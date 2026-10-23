@@ -1,0 +1,206 @@
+{
+  "result": "PASS original table coverage for two complete translation candidates; runtime pending",
+  "failed_probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792634857_pid1892\\runtime_probe.json",
+  "failed_target": "0x8042328C",
+  "failed_selector": 6,
+  "runtime_reached_previous_repaired_function_call": "0x8042D0C8",
+  "function_count": 2,
+  "original_table_entries": 64,
+  "unique_cases_per_function": 31,
+  "unsupported_instructions": 0,
+  "functions": [
+    {
+      "entry": "0x80423190",
+      "original_size": 3424,
+      "original_sha256": "d8ca21b17d22db0dad540b63d49b14052f2be0eee3fdca29fb94cb3d2fc48f0d",
+      "translated_ppc_instructions": 856,
+      "tables": [
+        {
+          "original_table_address": "0x8059F34C",
+          "original_table_entries": [
+            2151822004,
+            2151821924,
+            2151821932,
+            2151821940,
+            2151821948,
+            2151821956,
+            2151821964,
+            2151821972,
+            2151821988,
+            2151821980,
+            2151821996
+          ],
+          "original_table_cases": [
+            2151821924,
+            2151821932,
+            2151821940,
+            2151821948,
+            2151821956,
+            2151821964,
+            2151821972,
+            2151821980,
+            2151821988,
+            2151821996,
+            2151822004
+          ],
+          "original_bytes_sha256": "6c78e4d9454b950c72963ae117df95332bb0c212229fe893bf37b8a8ab248bcc"
+        },
+        {
+          "original_table_address": "0x8059F324",
+          "original_table_entries": [
+            2151825036,
+            2151822304,
+            2151822720,
+            2151823188,
+            2151823360,
+            2151823360,
+            2151822716,
+            2151823828,
+            2151824312,
+            2151824624
+          ],
+          "original_table_cases": [
+            2151822304,
+            2151822716,
+            2151822720,
+            2151823188,
+            2151823360,
+            2151823828,
+            2151824312,
+            2151824624,
+            2151825036
+          ],
+          "original_bytes_sha256": "af6d8f49bbe2e2dead9b8559c9f8c86fb15ec080cc6a8cda5c78d5bdc6234e8f"
+        },
+        {
+          "original_table_address": "0x8059F2F8",
+          "original_table_entries": [
+            2151824436,
+            2151824356,
+            2151824364,
+            2151824372,
+            2151824380,
+            2151824388,
+            2151824396,
+            2151824404,
+            2151824420,
+            2151824412,
+            2151824428
+          ],
+          "original_table_cases": [
+            2151824356,
+            2151824364,
+            2151824372,
+            2151824380,
+            2151824388,
+            2151824396,
+            2151824404,
+            2151824412,
+            2151824420,
+            2151824428,
+            2151824436
+          ],
+          "original_bytes_sha256": "927112da2d90ba4ceb04d48a0b84c6e14adcd90e3e35d843478cff45b96599fa"
+        }
+      ],
+      "candidate_sha256": "c5ef54ce4b77e190bde6a8564f6f7d1e4f819e77179daf6bf4f13ea10a1c0d57"
+    },
+    {
+      "entry": "0x80423ef8",
+      "original_size": 3604,
+      "original_sha256": "77dd6c9ce6a7737d57f140ef62a135ebde507113b49c4547304c8f6fe24ba366",
+      "translated_ppc_instructions": 901,
+      "tables": [
+        {
+          "original_table_address": "0x8059F3CC",
+          "original_table_entries": [
+            2151825360,
+            2151825280,
+            2151825288,
+            2151825296,
+            2151825304,
+            2151825312,
+            2151825320,
+            2151825328,
+            2151825344,
+            2151825336,
+            2151825352
+          ],
+          "original_table_cases": [
+            2151825280,
+            2151825288,
+            2151825296,
+            2151825304,
+            2151825312,
+            2151825320,
+            2151825328,
+            2151825336,
+            2151825344,
+            2151825352,
+            2151825360
+          ],
+          "original_bytes_sha256": "4d6dc811821d2daa7d6e58cc66cea519e5a529566ac5f29075d398f8bc107274"
+        },
+        {
+          "original_table_address": "0x8059F3A4",
+          "original_table_entries": [
+            2151828644,
+            2151825656,
+            2151826068,
+            2151826532,
+            2151826984,
+            2151826984,
+            2151826064,
+            2151827448,
+            2151827928,
+            2151828236
+          ],
+          "original_table_cases": [
+            2151825656,
+            2151826064,
+            2151826068,
+            2151826532,
+            2151826984,
+            2151827448,
+            2151827928,
+            2151828236,
+            2151828644
+          ],
+          "original_bytes_sha256": "632af35adfee2317c7e86526fd7313b4a8c8e6817614715ee9e65282d3e17df6"
+        },
+        {
+          "original_table_address": "0x8059F378",
+          "original_table_entries": [
+            2151828048,
+            2151827968,
+            2151827976,
+            2151827984,
+            2151827992,
+            2151828000,
+            2151828008,
+            2151828016,
+            2151828032,
+            2151828024,
+            2151828040
+          ],
+          "original_table_cases": [
+            2151827968,
+            2151827976,
+            2151827984,
+            2151827992,
+            2151828000,
+            2151828008,
+            2151828016,
+            2151828024,
+            2151828032,
+            2151828040,
+            2151828048
+          ],
+          "original_bytes_sha256": "eab1d2d9402ad2847019faa51c88e619fcc32bde9cc0e1475f0a88482945f13b"
+        }
+      ],
+      "candidate_sha256": "51cb3a4a8fecde80041e7ed313705de0073caa7c940978d64a37d3bf3296df6b"
+    }
+  ],
+  "scope": "Second function reviewed proactively from same three-table pattern; runtime execution of it not yet proved. No complete audio fidelity claim."
+}

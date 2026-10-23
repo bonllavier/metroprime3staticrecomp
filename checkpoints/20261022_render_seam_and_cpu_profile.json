@@ -1,0 +1,438 @@
+{
+  "revision": "RM3E01_00",
+  "running_pid": 16184,
+  "baseline_sha256": "184321f81dcc24e44d77d0c6a20cc2547abb530aaf05145e2bf6c7a0d1c5b582",
+  "baseline_scene_fps": "13.9..18.6",
+  "profile": "recomp/.tools/current_perf_16184.json",
+  "finding": "Main producer CPU bound; DSP control poll slow path appears repeatedly. Renderer worker predominantly idle.",
+  "candidate_sha256": "fc377597dc82686425746fc2ae36624d9ec9b50424ae76114ce0db9bbfc1a043",
+  "candidate_change": "Direct DSP control poll preserves mutex and init-clear timer; avoids generic MMIO decoding and steady-clock query outside init.",
+  "validation": "Build PASS;21/21 tests PASS; promoted after user authorized save/restart, comparable scene measurement pending",
+  "graphics": "Center seam on both ship and world confirmed by user images; copy trace includes full-screen, half-scale and partial regions. Cause unresolved, no graphic patch accepted.",
+  "manual_input": "No injected controls",
+  "candidate_live_qa": {
+    "pid": 5292,
+    "scene": "Samus looking at ship; user positioned manually",
+    "window_client": "1016x634",
+    "log_intervals_fps": [
+      20.0666,
+      22.2937
+    ],
+    "screenshot_fps": 17.7,
+    "screenshot": "recomp/.tools/seam_5292.png",
+    "limits": "Different window dimensions and view from earlier screenshots; no controlled improvement percentage. Seam unresolved."
+  },
+  "followup_profile": {
+    "path": "recomp/.tools/perf_ship_5292.json",
+    "samples_per_thread": 160,
+    "main_tid": 16856,
+    "findings": [
+      "Repeated vertex interpretation and texture resolution",
+      "XXH3 texture hashes appear in active CPU samples",
+      "Pipeline diagnostic getenv calls executed on cache misses"
+    ]
+  },
+  "next_candidate": {
+    "sha256": "2eb8dc7fd83c48dbe081870c3eb7c512b6ecba1ffa68496832619ccea9df052d",
+    "change": "Cache invariant shader-dump and texture-allocation diagnostic flags instead of querying environment in draw paths",
+    "build": "PASS",
+    "promoted": false,
+    "limitations": "No measured FPS gain; center seam unresolved"
+  },
+  "gpu_capture_diagnostic": {
+    "source": "aurora-main/lib/aurora.cpp",
+    "mechanism": "Opt-in WII_COMPILED_GPU_CAPTURE_MARKER; one-shot marker consumed at GPU encode, BMP at marker+.bmp",
+    "limits": "Not enabled in current process; no gameplay automation; no graphic fix claimed",
+    "validated": "PID144 captured 640x448 BMP via opt-in marker; no error"
+  },
+  "next_candidate_live": {
+    "pid": 144,
+    "sha256": "fc5ae1401c0eea53ef431af46d0ccb01ef3d5e2400d06b0223bb1309d4b62543",
+    "manual_scene_ready": "awaiting user",
+    "gpu_capture": "recomp/.tools/scene_gpu_capture.request.bmp"
+  },
+  "graphics_checks": {
+    "indirect_matrix_exponent": "5-bit decode checked against Dolphin BPMemory.h IND_MTXC; matches, no patch",
+    "reference": "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/VideoCommon/BPMemory.h",
+    "live_capture": "PID144 at Main Menu, GPU output captured; manual gameplay scene pending",
+    "next_action": "Capture ship EFB directly, compare to window and instrument per-pass geometry only if seam exists before presentation"
+  },
+  "ship_gpu_capture": {
+    "path": "recomp/.tools/ship_gpu_144.bmp",
+    "size": "640x448",
+    "result": "Center seam visible in direct GPU output; Windows presentation excluded as sole cause"
+  },
+  "raw_cache_mru_change": {
+    "finding": "Find searched oldest first despite promoting hits to back; 262 entries and >100000 lookups/5s observed",
+    "change": "Search from MRU end, preserve full byte comparisons and LRU eviction",
+    "tests": "snapshot mutation/metadata/replacement/bounds/ownership PASS",
+    "runtime_improvement": "Await matched ship scene; do not infer improvement from menu FPS",
+    "complexity_test": "262 resident entries, 1000 repeated newest lookups: exactly1000 key comparisons; byte mutation still rejected. Focused executable PASS.",
+    "candidate_sha256": "f2fc393c88abfe44b59c50a2330ec8cbcc00ea6fb7fc75be6573dd2de26c518d",
+    "promoted": true
+  },
+  "capture_buffers_enabled": "Existing bounded ALSO_BUFFERS path enabled alongside marker in new instance",
+  "mru_capture_validation": {
+    "pid": 12220,
+    "gpu_image": "recomp/.tools/ship_mru_capture.request.bmp",
+    "buffers_bytes": 13312,
+    "scene": "Manual gameplay facing ship, user confirmed",
+    "fps_comparison": "No controlled baseline percentage; low FPS remains",
+    "fps_intervals": [
+      24.0484,
+      26.4315,
+      26.8766,
+      18.8878,
+      26.7372
+    ]
+  },
+  "exact_source_comparison": {
+    "candidate_sha256": "95f50d5c2aa75f95b8368b907626d52a991e5eb8ee98251ac1440dcbd21c8130",
+    "pid": 13752,
+    "profile": "recomp/.tools/perf_ship_mru_registers.json",
+    "finding": "37 of 160 main-thread samples in CRT memcmp range; 32 samples have 131072 or 174752 bytes in r8. Raw stack candidates indicate resolve_sampled_textures. Registers sampled mid-function, not guaranteed original arguments.",
+    "implementation": "SSE2 equality in 64-byte groups, every source byte still compared; no generation shortcuts",
+    "focused_benchmark_ms": {
+      "131072_CRT": 134.037,
+      "131072_equal64": 110.646,
+      "174752_CRT": 186.529,
+      "174752_equal64": 159.741
+    },
+    "benchmark_limit": "Repeated resident source blocks; not whole game speedup",
+    "tests": "21/21 PASS; all single-byte mutations across 32 alignments and lengths 0..259 rejected",
+    "live_fps_intervals": [
+      20.368,
+      26.5246,
+      25.3752,
+      26.8929,
+      19.97
+    ]
+  },
+  "frame_geometry_capture": {
+    "prefix": "recomp/.tools/ship_geometry_capture.request.geometry",
+    "vertices_bytes": 1657936,
+    "uniform_bytes": 417024,
+    "indices_bytes": 175194,
+    "passes": 8,
+    "finding": "Viewport origin consistently (2,2), copy/scissor origin (0,0); native Aurora producer and decoder both use bias340, original raw GX uses342",
+    "source_reference": "https://github.com/devkitPro/libogc/blob/master/libogc/gx.c",
+    "correction": "Use342 in native encoder and raw XF decoder, preserving roundtrip and correcting raw original coordinates. Build pending final status; live seam not yet verified.",
+    "tests": "Raw XF values662/566 map to0/0 for640x448, scratch origin758 maps384 for64; native encode inverse verified;21/21PASS"
+  },
+  "viewport_bias_fix": {
+    "sha256": "a69c32d32e9f27e0407e18197966a244745a1d5c5bdf68608c500b640878fa58",
+    "pid": 3452,
+    "build": "PASS",
+    "tests": "21/21 PASS",
+    "geometry_prefix": "recomp/.tools/ship_viewport342_capture.request.geometry",
+    "gpu_image": "recomp/.tools/ship_viewport342_capture.request.bmp",
+    "live_result": "All captured full viewports now0,0,640,448; scratch0,384,64,64; user confirms center separation no longer visible while moving camera",
+    "performance_fps_intervals": [
+      24.609,
+      24.4713,
+      24.0169,
+      22.9885
+    ],
+    "remaining": "Low gameplay FPS unresolved; main producer CPU profile ongoing",
+    "profile": "recomp/.tools/perf_ship_viewport342.json"
+  },
+  "producer_profile": {
+    "sha256": "4ba262bb29cccfcbc2b7bd2d7590ff80cce7c0d3ceb5ff573d3743a4d32bb174",
+    "pid": 5328,
+    "method": "Pseudorandom1/64 calls, per-thread inclusive estimates, 5-second reporting; costs are estimates, not exact accounting. Startup/compilation excluded from stable FPS claims.",
+    "steady_intervals_ms": {
+      "draw": [
+        961.841,
+        962.796,
+        991.505,
+        893.232,
+        918.82
+      ],
+      "textures": [
+        998.05,
+        854.27,
+        864.638,
+        817.096,
+        819.11
+      ],
+      "static_texture": [
+        826.293,
+        821.745,
+        857.577,
+        780.351,
+        834.833
+      ],
+      "bind_groups": [
+        54.187,
+        54.29,
+        55.861,
+        49.948,
+        53.443
+      ],
+      "uniform": [
+        20.421,
+        30.925,
+        20.782,
+        29.783,
+        20.369
+      ]
+    },
+    "duplicate_binding_experiment": "No duplicates measured in scene. Removed candidate local memo; no improvement claim.",
+    "finding": "Most timed draw producer cost is raw texture validation. Substantial main-thread time remains outside draw assembly, including display-list vertex expansion."
+  },
+  "vertex_copy_candidate": {
+    "sha256": "60be54eae4c4d2779b28ab876030878289057f0d3f7be2a8557372947f76a8ac",
+    "change": "Constant-width byte copies for GX attributes; use same GetPointerFast as public memory API once before generic fallback, avoid Contains+GetPointer duplicate calls on RAM",
+    "benchmark_ms_before": 143.415,
+    "benchmark_ms_after": 109.59,
+    "benchmark_scope": "400 expansions of8192 vertices, three indexed attrs12/12/8 bytes; outputs identical, not whole-game FPS",
+    "tests": "21/21PASS; component-copy equality and untouched tails sizes0..64 alignments0..15",
+    "build": "PASS",
+    "promoted": true,
+    "pid": 7144,
+    "manual_scene_confirmed": true,
+    "gpu_capture": "recomp/.tools/ship_vertex_copy.request.bmp",
+    "fps_intervals": [
+      24.2277,
+      17.2644,
+      23.5503,
+      25.8433
+    ],
+    "limits": "Camera differs from baseline; no whole-game improvement percentage. Low FPS remains unresolved."
+  },
+  "pending_followup": [
+    "Measure CPU time outside draw assembly, including packed-DL expansion/publication and translated guest work",
+    "Keep verified342viewport fix; user confirms seam absent",
+    "No more source-cache reuse without a complete memory visibility contract"
+  ],
+  "release_c_optimization": {
+    "finding": "CMAKE_C_FLAGS_RELEASE empty; xxhash command has no-O and EXE accumulator contains unoptimized stack spills. All C dependencies affected despite Release config.",
+    "fix": "Configure CMAKE_C_FLAGS_RELEASE=-O3 -DNDEBUG; build_prime_runtime.ps1 persists setting, build_prime_candidate.py rejects missing optimization",
+    "scope": "151C compile edges now optimized; no FP fast-math flag added; translated PPC FP options unchanged",
+    "verification": {
+      "hash_rows": 18320,
+      "coverage": "XXH32/64/XXH3-64/128, offsets0..15, small/boundary lengths, seeds0/1/FEDCBA9876543210; extra lengths65535/65536/131072/174752/1048576",
+      "sha256": "313f751f89f2ceb7e64373a661596e889c634ca1d3915bfb34c5a1f1a78e4842",
+      "identical": true,
+      "benchmark": "100000seededXXH3calls of2768bytes",
+      "before_ms": 224.873,
+      "after_ms": 17.2297,
+      "same_checksum": 4564543282276432061
+    },
+    "build": "127/127PASS",
+    "live_fps": {
+      "intervals": [
+        16.5522,
+        31.0994,
+        32.6389,
+        18.9634,
+        17.3249,
+        15.7673
+      ],
+      "limit": "Changing view and load, not controlled A/B; slowness persists",
+      "profile": "recomp/.tools/perf_c_release_10600.json",
+      "finding": "XXH3 no longer among top sampled symbols. Main thread4671.875ms vs render worker187.5ms in bounded sampling window; CPU producer remains bottleneck.",
+      "zlib_validation": "80 interop cases passed both directions against Python zlib; lengths0..131072, random/zero sources, levels0/1/6/9"
+    },
+    "candidate_sha256": "bb681213c9b2c761fed5a5ee4615d4e2a1ddbfbdd666b2db6e9a2e2626141179",
+    "pid": 10600,
+    "promoted": true,
+    "platform_tests": "21/21PASS",
+    "verification_source_sha256": "5a201a7330ed369dd3a7c0be97980fb374abfade7da4945dec18aa502a5b8f43"
+  },
+  "vertex_division_followup": {
+    "finding": "Disassembly at14012E32D divides attribute bytes by group count inside each indexed vertex;6+main-thread samples immediatelyafterDIV",
+    "change": "Bypassdivision foronegroup; NBT3stilldividesforthreegroups",
+    "benchmark_ms": {
+      "reference_CRT": 124.141,
+      "fixed_copy_and_no_common_division": 73.0065
+    },
+    "verification": "Mixed8/16bit indices,NBT3,IEEEpayloads,bounds andfixedcopiesPASS",
+    "scope": "Isolated expansion, not whole-game FPS",
+    "build": "PASS",
+    "span_change": "Per-draw full encoded index-domain contiguousRAM proof; each vertex uses checked offset within that span, fallback retains prior validated reads. No cross-draw data memo or stale pointer source bytes.",
+    "span_tests": "Byte-equivalent mapped output, zero per-index callback reads when covered; source mutation observed next expansion; short-span fallback4reads;21/21PASS",
+    "span_benchmark_ms": {
+      "reference": 135.68,
+      "fixed": 75.339
+    },
+    "limits": "Span-only benefit not isolated; no FPS claim",
+    "sha256": "e6f022660057417e82c53509a5fe9516a7c5a660e8603e896a36e147bfaca7a7",
+    "promoted": true,
+    "manual_qa": "pending current game scene",
+    "live_qa_e6f02266": {
+      "pid": 12352,
+      "user_scene": "stationary inhangar, screenshot ship partial at right",
+      "fps": [
+        20.3948,
+        15.7095,
+        19.958,
+        15.7423
+      ],
+      "profile": "recomp/.tools/perf_vertex_span_12352.json",
+      "finding": "42/240mainCPU samplesinOnDraw; many per-index page-table fallback reads remain. Full-domain span often crosses1MiBfastpage, so fast-onlyproof fails.",
+      "next": "Single fullregion membership proof permits contiguous crosspage span; fallback remainsforinvaliddomain."
+    }
+  },
+  "vertex_region_span_candidate": {
+    "sha256": "b82a4b952c863a5f1918a1a7604cee1fb8de09f00550849ecb9a6007128b504f",
+    "pid": 9128,
+    "build": "PASS",
+    "tests": "21/21PASS",
+    "change": "UseContains/GetPointeronceperattributeforwholevalidencodedindexdomainwhenfast1MiBpagetableproofmisses. Per-indexfallbackretainedforinvalidregionrange.",
+    "live_result": "Gameplay responsive, slowness persists",
+    "fps_intervals": [
+      20.079,
+      17.0813,
+      20.458,
+      18.8047
+    ],
+    "profile": "recomp/.tools/perf_region_span_9128.json",
+    "main_thread": 17816,
+    "profile_main_cpu_ms": 4656.25,
+    "limits": "Different camera from oldbaselines, no controlled improvementclaim; exact-source comparisons remain42/240RIPsamples, packedDL30/240."
+  },
+  "raw_texture_invalidation_followup": {
+    "reference": "https://github.com/devkitPro/libogc/blob/master/libogc/gx.c",
+    "finding": "GXInvalidateTexAll emitsBP66=001000/001100; regionalinvalidationalsoBP66. Decoderhadnoexplicitcase.",
+    "change": "HandleBP66asinvalidationcommand, donotsuppressrepeatedsamevalue; invalidateallnative-derivedbindingsconservatively; rawfullbytevalidationunchanged. Boundedtracefirst8then1024commandinterval.",
+    "candidate_sha256": "0734205ed1f29a1339d7584c0142c79845e11779a02a54724daa381c44c69dea",
+    "build": "PASS",
+    "promoted": false,
+    "limits": "No performancegainclaimed. Needmeasureinvalidationfrequencyandcompletevisibilitycontractbeforeusingepochs toskiprawbytechecks. CurrentPID9128keptopen.",
+    "promoted_with": "c2173050"
+  },
+  "texture_avx_candidate": {
+    "sha256": "c21730507e48334ef4440127d4e678f3b98832fdc466dc86758c747c5620a7c4",
+    "build": "PASS",
+    "promoted": true,
+    "change": "AVX2exactbyteequality128bytegroups, CPU+OSfeatureprobe, SSE2fallback; BP66invalidationandboundedtraceincluded",
+    "tests": "21/21PASS;4096singlebytepositions rejected;32alignments/0..259tails;noaccessguardpage0..512byteends;SSE2anddispatchedcomparison",
+    "microbenchmark_ms": {
+      "131072_SSE2": 101.703,
+      "131072_dispatch": 70.5799,
+      "174752_SSE2": 143.353,
+      "174752_dispatch": 141.819
+    },
+    "limits": "Microbenchmarkvariablebyspan;nooverallFPSclaim;manualgameplaypending",
+    "pid": 13740
+  },
+  "local_dl_layout_candidate": {
+    "sha256": "bcad155f06bcae8818f1043ba86837d376ed1b61eb05ca51b615be280254ef17",
+    "build": "PASS",
+    "tests": "21/21PASS",
+    "change": "Reuse scratch attributes/span proof only when existing per-visitor publication proof permits consecutive same-format draw; all non-draw commands/nesting invalidate. Every newvisitor rebuilds; sourcebytesalwaysreadagain.",
+    "promoted": false,
+    "limits": "Pending currentAVXgameplayQA; no additionalrestartorFPSclaim."
+  },
+  "palette_merge_candidate": {
+    "sha256": "1ee99c94747401285b031f5cb4e0553bc741ea8d3b7120d279c10e91340bcaa4",
+    "build": "PASS",
+    "promoted": true,
+    "finding": "GXBindRawTexturePalette set stateDirty unconditionally each draw, defeating merge even when TMEM source/meta/generation identical.",
+    "change": "Onlydirtywhendata/format/count/generation/no_cache/slotchanged. PrimeTlutMemory::Loaddoesmemcpyandincrementsgenerationoneveryload. Bytevalidationunchangedfornonmergeddraws. IncludeslocalDLlayoutplanreuse.",
+    "tests": "21/21PASS",
+    "live_fps": "Gameplay verified 2026-10-23, stationary hangar: recent windows 16.07..20.86 FPS; earlier windows22..26. No controlled speed improvement claim.",
+    "pid": 19344
+  },
+  "dsp_poll_audit": {
+    "result": "No additionalDSPchange",
+    "reason": "Controlmutations occur underDSPmutex acrossDMA,mailbox,initandAID; atomicmirrorrequirescompletepublicationproof. ExistingprofileDSPpollcostsmallrelativeGPUproducer. Preserveworkingaudioinstead ofspeculativechange."
+  },
+  "manual_scene_validation_wait": {
+    "status": "resolved_by_user_20261023",
+    "observed": "Stationary hangar gameplay captured and profiled",
+    "goal_completion": false
+  },
+  "palette_barrier_candidate_20261023": {
+    "sha256": "f5ab00cd8227b3186efb8e28dc3f0db986a5023d460f274259091b2bb49201d4",
+    "pid": 252,
+    "promoted": true,
+    "build": "PASS",
+    "tests": "21/21 PASS after rebuilding affected targets",
+    "baseline_profile": "recomp/.tools/perf_palette_merge_19344.json",
+    "baseline_main_thread": 18520,
+    "baseline_main_cpu_ms": 4671.875,
+    "baseline_samples": {
+      "total": 240,
+      "exact_texture_comparison": 32,
+      "packed_display_list_draw": 24,
+      "bind_draw_palettes": 8,
+      "ipc_poll": 8,
+      "external_unsymbolized": 55
+    },
+    "change": "Skip repeated palette-mask query/drain only for consecutive same-format packed DL draws under per-visitor publication proof. Every non-draw command and nested list invalidates. All source bytes still freshly copied. Replace scalar TLUT validity walk with full-span zero memchr.",
+    "tests_detail": "257 missing-byte positions rejected until loaded; existing source mutation/bounds tests pass. Rebuilt FIFO test exposed stale expectation for already-published mouse release; corrected test to require no extra click, matching existing input behavior. Input implementation unchanged.",
+    "limits": "Micro/CPU evidence only. Candidate gameplay FPS and image equivalence pending manual load; center seam remains previously verified fixed.",
+    "live_validation": {
+      "profile": "recomp/.tools/perf_palette_barrier_252.json",
+      "main_tid": 15500,
+      "main_cpu_ms": 4656.25,
+      "fps_recent": [
+        16.772,
+        20.5144
+      ],
+      "image": "recomp/.tools/ship_palette_barrier.request.bmp",
+      "result": "Gameplay renders with center seam absent. No clear overall FPS improvement. Exact source comparison39/240 main samples, packed expansion24/240; palette binder no longer among top15 symbols. Camera differs slightly, not controlled AB."
+    }
+  },
+  "tlut_validity_microbenchmark_20261023": {
+    "iterations": 20000,
+    "scalar_ms": [
+      0.868,
+      7.593,
+      415.317
+    ],
+    "memchr_ms": [
+      0.432,
+      2.995,
+      208.781
+    ],
+    "bytes": [
+      32,
+      512,
+      32768
+    ],
+    "limits": "Synthetic full-validity scan; not game FPS."
+  },
+  "strided_vertex_expansion_20261023": {
+    "change": "For groups1 and full 8/16-bit index domain mapped and PPC-address bounds proven, expand one attribute across all vertices; exact interleaved destination bytes. Other layouts use existing bounds-checked callback path. No vertex cache. Avoid pointer formation beyond last vertex allocation.",
+    "tests": "21/21 PASS; expanded differential test32rounds x129vertices mixed8/16/direct, max indices, fresh mutations; focused test rerun after pointer arithmetic review.",
+    "benchmark": {
+      "old_mapped_binary_ms": 94.1074,
+      "strided_ms": 22.1863,
+      "work": "400x8192 vertices,12/12/8 bytes; output equality with original reference confirmed",
+      "limits": "Separate synthetic runs; no live FPS claim."
+    },
+    "live": "Awaiting manual save load; preserves seam correction, audio and controls.",
+    "sha256": "462be9c29c4717c1a0248a29a4535005da5af3d5bef37d87de69961ea97fd258",
+    "pid": 9984,
+    "build": "PASS",
+    "promoted": true,
+    "live_validation": {
+      "profile": "recomp/.tools/perf_strided_vertex_9984.json",
+      "main_tid": 19100,
+      "main_cpu_ms": 4703.125,
+      "fps_observed": 15.9081,
+      "image": "recomp/.tools/ship_strided_vertex.request.bmp",
+      "result": "Gameplay and seam correction retained. Main samples35/240 exact texture equality,22/240 packed draw; disassembly confirms strided loop used. No measured overall speed fix; views not pixel-identical AB."
+    }
+  },
+  "constant_copy_width_trial_20261023": {
+    "change": "Dispatch4/6/8/12-byte mapped component widths once per attribute instead of per vertex; generic other widths retained.",
+    "test": "Expanded differential test PASS; all resulting bytes equal.",
+    "alternating_microbench_ms": {
+      "strided": [
+        22.5685,
+        20.6962,
+        26.4825
+      ],
+      "constant_width": [
+        20.8642,
+        20.0985,
+        24.7404
+      ]
+    },
+    "limits": "Small isolated gain, pending candidate build; do not restart working PID9984 for this alone. FPS issue remains open."
+  }
+}

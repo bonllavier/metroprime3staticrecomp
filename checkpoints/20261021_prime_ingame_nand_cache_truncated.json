@@ -1,0 +1,15 @@
+{
+  "result": "PASS truncated research NAND cache identified and preserved; regeneration pending",
+  "cache": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\NAND\\tmp\\26226D27.pak",
+  "backup": "recomp\\.tools\\26226D27.pak.truncated_20261021",
+  "original": "recomp\\.tools\\disc-extraction-rm3e01\\files\\InGameNAND.pak",
+  "cache_bytes": 131072,
+  "original_bytes": 335872,
+  "cache_sha256": "da4246fe865915eb578432338a209e3c412561eea3574fc55c21537e9ff51f6e",
+  "original_sha256": "ddb07ae8c46c3d948ac109203588c531d6145ea1e69e4d0393e42a79a86940c4",
+  "exact_original_prefix": true,
+  "other_cache_files_checked": 5,
+  "other_cache_files_exact": 5,
+  "root_cause_of_truncation": "unproven; earlier disk-full incident is historical context, not causal proof",
+  "action": "Preserved damaged cache privately and removed only that derived cache entry so original game can recreate it. ISO and saves unchanged."
+}

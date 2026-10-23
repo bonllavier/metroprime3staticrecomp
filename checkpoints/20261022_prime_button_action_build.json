@@ -1,0 +1,10 @@
+{
+  "result": "PASS full runtime build exit 0; 33 non-overlapping module functions, 253 independent relocations verified",
+  "module": "ScriptContextActionButtonPressing",
+  "total_functions": 823,
+  "partial_modules": 10,
+  "exe_sha256": "14fad3cbd9e2bb82b4dec4f36efebbbec7e36151f1b927147dd6e2210ea61af9",
+  "live_audit": "20261022_prime_button_action_live_relocations.json",
+  "imports": "20261022_prime_button_action_import_contract.json",
+  "thirty_minute_gameplay_verified": false
+}

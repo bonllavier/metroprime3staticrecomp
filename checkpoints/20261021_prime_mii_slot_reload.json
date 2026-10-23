@@ -1,0 +1,33 @@
+{
+  "result": "PASS original Mii slot creation persisted across a second process and selected slot reached Main Menu",
+  "creation_probe": "base_1792633534_pid8496",
+  "reload_probe": "base_1792634066_pid4504",
+  "save_unchanged_before_and_after_reload": true,
+  "save_sha256": "ed2998db6b84c685568e70c39249ec764e741c8c4a01f23179dafecc9e10537b",
+  "database_sha256": "278a56a0c229c683d0a44c2f22cc06ae54dd49188c3a827b3a1150353465f5dd",
+  "create_id": "89917cbd904d2813",
+  "slot_number": 3,
+  "observed_sequence": [
+    "New Game -> Mii Select -> deletion warning -> Game Start",
+    "second process: three Game Start slots -> select third -> WC24 warning -> Main Menu -> difficulty selection"
+  ],
+  "artifacts": [
+    {
+      "path": "recomp\\.tools\\prime_pid4504_reload_menu.png",
+      "sha256": "187f08a8044ca61466d727e998f0c39262721231bf322ba77b93931ded64cd1c"
+    },
+    {
+      "path": "recomp\\.tools\\prime_pid4504_reloaded_third_select.png",
+      "sha256": "a7c7c2d0fc4b256396f067775b3c3fa1cfeb0f344af28839ab7e011e7ee3447d"
+    },
+    {
+      "path": "recomp\\.tools\\prime_pid4504_wc24_ack.png",
+      "sha256": "184322bfb703f77643e0e235d163a6766c0b22fc3130ad02704de7b4cf9c423c"
+    },
+    {
+      "path": "recomp\\.tools\\prime_pid4504_play_game.png",
+      "sha256": "23ca7e518e4cc4867fc10d23f720a02a90615efb850342272d08b62834e38103"
+    }
+  ],
+  "scope": "Persistence and original menu acceptance of local Mii association only; no gameplay progress saved or reloaded yet. Portrait fidelity remains unverified."
+}

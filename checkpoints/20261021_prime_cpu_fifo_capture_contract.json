@@ -1,0 +1,37 @@
+{
+  "reference": "https://github.com/dolphin-emu/dolphin/blob/cf5cb7ef81c3e8e7af5c9d566334219ffda9f68b/Source/Core/Core/HW/GPFifo.cpp",
+  "sha256": "46c6c34a8548626d755d3e4a877e87bf9ceb5d20b7c49c6101375ce3719dca3a",
+  "license": "GPL-2.0-or-later, reference only, no source copied",
+  "observed_contract": "32-byte BE gather bursts write physical PI CPU FIFO RAM and advance/wrap pointer; native GPU submission remains separate",
+  "native_test": "PASS 1/1 after correcting SDK wrap bit 29; mixed writes, 32-byte boundary, pointer switching, wrap, bounds, upper MEM2 bit 26 intact",
+  "limitations": "Original Mii drawing now reaches further; original popup listener still missing in pid2356. No complete runtime pass.",
+  "sources": [
+    {
+      "path": "recomp\\third_party\\WiiCompiled\\runtime\\include\\hle\\prime_cpu_fifo_capture.h",
+      "sha256": "b2999cff45b1b5b51d078ad0f5e8b3f9d9abb69e4c59c8950e430af326fbd440"
+    },
+    {
+      "path": "recomp\\third_party\\WiiCompiled\\runtime\\tests\\prime_cpu_fifo_capture_tests.cpp",
+      "sha256": "4766523d805eda734671aec7a17ef1b5ae6626e23cc0dfb7d1d94cce6dbb541e"
+    },
+    {
+      "path": "recomp\\third_party\\WiiCompiled\\runtime\\src\\memory.cpp",
+      "sha256": "4bf487e01d96543c7514c269dd1c7615bb1ab36c80f4ad963eaa46df085ecc3b"
+    },
+    {
+      "path": "recomp\\third_party\\WiiCompiled\\runtime\\src\\hle\\gx\\gx_fifo.cpp",
+      "sha256": "856d8dc9f34a5d107300c902fd5699f4b09982d230cea3ce3cd1ed2d133e5e82"
+    }
+  ],
+  "scope": "CPU gather path commits all scalar/float/burst stores to RAM in 32-byte blocks, preserves partial bytes across PI changes, and forwards only linked bursts to GP. Runtime verification pending.",
+  "hardware_reference_files": [
+    {
+      "path": "recomp\\.tools\\dolphin-fs-reference\\GPFifo.cpp",
+      "sha256": "46c6c34a8548626d755d3e4a877e87bf9ceb5d20b7c49c6101375ce3719dca3a"
+    },
+    {
+      "path": "recomp\\.tools\\dolphin-fs-reference\\ProcessorInterface.cpp",
+      "sha256": "217b5bf0b96f197f8712f478e394a41d7c09da952843d8189e9737a57b705261"
+    }
+  ]
+}

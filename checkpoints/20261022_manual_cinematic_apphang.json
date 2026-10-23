@@ -1,0 +1,76 @@
+{
+  "result": "Confirmed Windows AppHangB1 during manual initial cinematic; cause not yet identified",
+  "pid": 20476,
+  "log_sha256": "5d413e9ee3a01280b1a0bbde289d25d59db7b6eb316bab28ae6e5a1da70fff6f",
+  "windows_report_id": "943b837b-55bf-4994-b7a6-5124301c8b14",
+  "windows_event": "Application 1002 and 1001 AppHangB1",
+  "log_fatal_present": false,
+  "linked_modules": [
+    {
+      "name": "rhbm",
+      "relocations": 4238,
+      "functions": 19,
+      "hashes_verified": true
+    },
+    {
+      "name": "Tweaks",
+      "relocations": 5273,
+      "functions": 298,
+      "hashes_verified": true
+    },
+    {
+      "name": "ScriptGUIScreenFrontEndUI",
+      "relocations": 3421,
+      "functions": 249,
+      "hashes_verified": true
+    },
+    {
+      "name": "ScriptWorldTeleporter",
+      "relocations": 668,
+      "functions": 45,
+      "hashes_verified": true
+    },
+    {
+      "name": "ScriptAchievement",
+      "relocations": 213,
+      "functions": 22,
+      "hashes_verified": true
+    },
+    {
+      "name": "ScriptContextSensitiveActivator",
+      "relocations": 199,
+      "functions": 26,
+      "hashes_verified": true
+    },
+    {
+      "name": "ScriptGrapplePoint",
+      "relocations": 417,
+      "functions": 50,
+      "hashes_verified": true
+    },
+    {
+      "name": "ScriptMultiModelActor",
+      "relocations": 488,
+      "functions": 47,
+      "hashes_verified": true
+    },
+    {
+      "name": "ScriptContextSensitiveAction",
+      "relocations": 300,
+      "functions": 34,
+      "hashes_verified": true
+    },
+    {
+      "name": "ScriptContextActionButtonPressing",
+      "relocations": 253,
+      "functions": 33,
+      "hashes_verified": true
+    }
+  ],
+  "last_video_path": "/Video/FrontEnd/Diff_Settings_To_Game.thp",
+  "final_log_activity": "IOS network/WiiConnect24 IPC; proximity does not prove it caused the hang",
+  "process_no_longer_live": true,
+  "next_step": "Capture native live thread contexts and raw stacks while user reproduces manually; tool tested against private sleeping process fixture",
+  "diagnostic_tool": "recomp/tools/capture_prime_hang.py",
+  "thirty_minute_gameplay_verified": false
+}

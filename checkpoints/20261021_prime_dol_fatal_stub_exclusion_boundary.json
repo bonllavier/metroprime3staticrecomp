@@ -1,0 +1,14 @@
+{
+  "result": "PASS DOL function exclusion boundary identified; overall runtime failed",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792634066_pid4504\\runtime_probe.json",
+  "executable_sha256": "47f7590c2ce57eaf9bbf7d5db9f12aed16b757290410bbdd94abdfca4b29cc3e",
+  "Achievement_virtual_method_execution_confirmed": true,
+  "target": "0x8017393C",
+  "caller_lr": "0x8017245C",
+  "original_function_bytes": 280,
+  "original_function_sha256": "172e411dd76f24b297efc6ad2ac2f2fd09dab8a180b75c12d5c8dafb2dc00cf8",
+  "live_function_bytes_identical": true,
+  "cause": "GX_FATAL_STUB in Prime #else branch remained an exclusion in the native index despite having no runtime registration",
+  "correction_scope": "Remove five unregistered Prime fatal-stub declarations, preserving Mario Kart branches and admitting original translated bodies",
+  "gameplay_verified": false
+}

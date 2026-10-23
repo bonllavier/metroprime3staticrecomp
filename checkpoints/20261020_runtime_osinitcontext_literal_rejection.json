@@ -1,0 +1,66 @@
+{
+  "created_utc": "2026-10-20T09:12:00Z",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "runtime_source": {
+    "path": "recomp/third_party/WiiCompiled/runtime/src/hle/os/os_thread.cpp",
+    "sha256": "0BFB4E93423E09CEBB203F74F164DF4AC26CAAB6E502439704482F6ED5600CCF",
+    "line": 314,
+    "expression": "InvokeIndirectCpu(0x801A20BCu, cpu); // OSInitContext"
+  },
+  "target": "0x801A20BC",
+  "ghidra": {
+    "program_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "containing_function": "fn_801A1DE0",
+    "function_range_exclusive_end": "0x801A2904",
+    "offset_from_function_start": "0x2DC",
+    "function_instruction_count": 713,
+    "instruction_index": 183,
+    "xrefs_to_target": 0,
+    "instructions": [
+      {
+        "address": "0x801A20B8",
+        "bytes": "7CA02378",
+        "assembly": "or r0,r5,r4"
+      },
+      {
+        "address": "0x801A20BC",
+        "bytes": "9001002C",
+        "assembly": "stw r0,0x2c(r1)"
+      },
+      {
+        "address": "0x801A20C0",
+        "bytes": "80060000",
+        "assembly": "lwz r0,0x0(r6)"
+      },
+      {
+        "address": "0x801A20C4",
+        "bytes": "80660004",
+        "assembly": "lwz r3,0x4(r6)"
+      },
+      {
+        "address": "0x801A20C8",
+        "bytes": "90610044",
+        "assembly": "stw r3,0x44(r1)"
+      },
+      {
+        "address": "0x801A20CC",
+        "bytes": "90010040",
+        "assembly": "stw r0,0x40(r1)"
+      }
+    ],
+    "entry_prologue_at_function_start": "stwu r1,-0x4b40(r1); mfspr r0,LR; ..."
+  },
+  "conclusion": "0x801A20BC is an interior instruction in fn_801A1DE0, specifically a stack store in an established live function frame; it is not a verified Prime function entry or callable OSInitContext boundary. Do not dispatch it as an HLE call or alias it based on the Mario Kart label.",
+  "limitations": [
+    "No xrefs to the interior address were found in the DOL analysis.",
+    "This does not prove the runtime path executes or characterize all PPC context semantics.",
+    "Ghidra inspection is recorded as evidence; the automated literal-target inventory is separately reproducible."
+  ],
+  "reproducible_verifier": {
+    "path": "recomp/tools/verify_runtime_osinitcontext_literal_rejection.py",
+    "sha256": "a69bd1c004d2fbfb17032dccf85fa18cd460a0618c646b194e5e4a41e398bf16",
+    "dol_raw_file_offset": "0x19D9DC",
+    "dol_raw_bytes": "9001002c"
+  }
+}

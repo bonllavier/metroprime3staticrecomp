@@ -1,0 +1,21 @@
+{
+  "result": "PASS negative raster checks",
+  "tool_sha256": "942698c57089388a0ce54cdae4fba0ba47d045fc79b2495985175b49ee99c491",
+  "fixtures": [
+    {
+      "path": "recomp\\.tools\\prime_fifo_fixed_later_font.bmp",
+      "sha256": "e0b3f4c21dfeebc93caf3dbe80e5bca123bbc31d0d364e62a39830c06b7c708d",
+      "reason": "Old cached palette raster rejected",
+      "max_channel_error": 255,
+      "pixels_exceeding_one_step": 2255
+    },
+    {
+      "path": "recomp\\.tools\\prime_font_pixel_oracle.bmp",
+      "sha256": "4f0bd61e8b127ddf82410b9824fdab65a9f284770f6f90fe561263c4bb1c086c",
+      "reason": "Initial black XFB raster rejected",
+      "max_channel_error": 255,
+      "pixels_exceeding_one_step": 2534
+    }
+  ],
+  "original_artifacts_unchanged": true
+}

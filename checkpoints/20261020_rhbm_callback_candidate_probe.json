@@ -1,0 +1,161 @@
+{
+  "date": "2026-10-20",
+  "revision": "RM3E01_00",
+  "purpose": "Check whether the observed low-address callback offset 0xC690 is code inside the private RSO_rhbm module, without integrating it into the runtime.",
+  "input": {
+    "path": "recomp\\.tools\\disc-extraction-rm3e01\\files\\RSO\\Rev2 Production\\RSO_rhbm.rso",
+    "sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+    "section_1_size": "0xFE88",
+    "section_1_file_offset_in_synthetic_rel": "0x85E0",
+    "observed_offset_in_section_1": "0xC690",
+    "synthetic_probe_load_address": "0x80690000",
+    "section_1_probe_address": "0x806985E0",
+    "candidate_probe_address": "0x806A4C70",
+    "synthetic_rel_sha256": "15424c386904ed96657adb71bc252f9ebaa57a87b5a7f221d7ebd246d0fc2097"
+  },
+  "translation": {
+    "metadata_path": "recomp\\.tools\\rso-rel\\rhbm_c690_metadata.json",
+    "metadata_sha256": "5b47c42603a746d95f49aed2a4f073949577bdd675002c5b98f7fde22ad081ec",
+    "quality": {
+      "unsupportedInstructionCount": 0,
+      "invalidSsaFunctionCount": 0
+    },
+    "function_count": 6,
+    "rso_function_count": 6,
+    "candidate_entry_point": "0x806A4C70",
+    "candidate_source_bytes": 3121,
+    "candidate_interior_to_other_translation": false,
+    "candidate_direct_call_dependencies": [
+      "0x806A4224"
+    ],
+    "sources": [
+      {
+        "address": "0x806993E0",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_generated\\functions\\func_806993E0.cpp",
+        "sha256": "e4336cf0aed3ff0e39ccb16d351e778bdbdbcc52e3338aa263e8de8b84e8f5cf",
+        "source_bytes": 585
+      },
+      {
+        "address": "0x806A36B8",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_generated\\functions\\func_806A36B8.cpp",
+        "sha256": "9170ba0101049ddf85b303ca7e709b6b3b02b47e7d99d4810e322439d37d310b",
+        "source_bytes": 1270
+      },
+      {
+        "address": "0x806A421C",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_generated\\functions\\func_806A421C.cpp",
+        "sha256": "c12e9db86620e1217cac60de613482acc72be9d103648510700ea563d0018d00",
+        "source_bytes": 585
+      },
+      {
+        "address": "0x806A4224",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_generated\\functions\\func_806A4224.cpp",
+        "sha256": "d9db6b14db6b938dc84a1359c21b71623cf652df2577a91b4cbc861f80836bca",
+        "source_bytes": 2496
+      },
+      {
+        "address": "0x806A4C70",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_generated\\functions\\func_806A4C70.cpp",
+        "sha256": "4e39527bc73151dfa90e965572cb81d87aa821612bcf6931f58a9a4a6e039e71",
+        "source_bytes": 3121
+      },
+      {
+        "address": "0x806A5E88",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_generated\\functions\\func_806A5E88.cpp",
+        "sha256": "b9bbf4b991a4446c350e08ab7a4cc77e2438fb9ecece5509f14220fd1fd403e3",
+        "source_bytes": 837
+      }
+    ],
+    "compiled_objects": [
+      {
+        "address": "0x806993E0",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_objects\\func_806993E0.o",
+        "sha256": "e1f93a280729d1728fd3f29f256102ae182ebc92d65529cff84074b68d369a88",
+        "object_bytes": 990,
+        "machine": "COFF-x86-64/AMD64"
+      },
+      {
+        "address": "0x806A36B8",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_objects\\func_806A36B8.o",
+        "sha256": "c8534c4e0a4f741051b51150ae798b4db973bfcd5e85db691480357435a2b2b1",
+        "object_bytes": 1560,
+        "machine": "COFF-x86-64/AMD64"
+      },
+      {
+        "address": "0x806A421C",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_objects\\func_806A421C.o",
+        "sha256": "6929a528654f4c6644fd14a77c2a904ab9b9aa0fa794ab6a8cbe646f242d50ba",
+        "object_bytes": 990,
+        "machine": "COFF-x86-64/AMD64"
+      },
+      {
+        "address": "0x806A4224",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_objects\\func_806A4224.o",
+        "sha256": "794d68be5743bd76e6539f27674cd8efa5cdead8f14c68d44b1c9c0482e61507",
+        "object_bytes": 29135,
+        "machine": "COFF-x86-64/AMD64"
+      },
+      {
+        "address": "0x806A4C70",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_objects\\func_806A4C70.o",
+        "sha256": "5eba5f10f8edbbcd1046b9939f22f10a743b2607c766c1c9624b60632d18e6be",
+        "object_bytes": 17523,
+        "machine": "COFF-x86-64/AMD64"
+      },
+      {
+        "address": "0x806A5E88",
+        "path": "recomp\\.tools\\rso-rel\\rhbm_probe_objects\\func_806A5E88.o",
+        "sha256": "c35b077a90be0f7e0f6c8a46e48e4ee23679498f0169d736f77d6a2c5a0e0132",
+        "object_bytes": 1268,
+        "machine": "COFF-x86-64/AMD64"
+      }
+    ]
+  },
+  "runtime_trace": {
+    "build_result": "PASS",
+    "executable_path": "recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe",
+    "executable_sha256_for_original_trace": "3a8076033b12a93056d73fe44200ebf681ca6d3f10d6f98c9261910c1d8cbb56",
+    "executable_artifact_available": false,
+    "executable_note": "A later diagnostic rebuild replaced this binary. The preserved trace log is still hash-verified; the current executable is not attributed to this older run.",
+    "log_path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792541750_pid1620\\console.log",
+    "log_sha256": "8234839a1161530428683f719a06d013a1c87e070934c67b2ea6c0d0f07a1982",
+    "harness_duration_seconds": 25,
+    "process_alive_at_harness_stop": true,
+    "rso_request_entries": 5,
+    "callsite_lr_sequence": [
+      "0x800CC8CC",
+      "0x800CC8CC",
+      "0x800CC8CC",
+      "0x800CC8CC",
+      "0x800CC91C"
+    ],
+    "stack_pointer": "0x8069A070",
+    "guest_thread": "0x8060B418",
+    "preexisting_callback_value": "0x0101C690",
+    "request_state_before_dispatch": "0x00000000",
+    "fatal_error": false,
+    "callers": [
+      "0x800CC8CC: four calls from FUN_800CC804's loop",
+      "0x800CC91C: fifth call from FUN_800CC804"
+    ],
+    "input_strings_from_RM3E01_00_DOL": [
+      "RSO/Rev2 Production/RSO_rhbm.rso",
+      "rhbm/homeBtn_ENG.arc",
+      "rhbm/SpeakerSe.arc",
+      "rhbm/HomeButtonSe.arc",
+      "rhbm/homeBtnIcon.tpl"
+    ],
+    "interpretation": "Ghidra's FUN_800CC804 decompilation and the runtime callsite/argument trace identify Wii Home Button resources. The callback value is already present in the reused stack slot at function entry; the request remains state 0 at the sampled dispatch. This trace does not establish the value's original writer or the RSO load base.",
+    "last_progress": "The probe reached USB open plus three queued IOCTLV requests; no later IPC packet appeared before the harness stopped the still-running process. No game screen was rendered."
+  },
+  "conclusion": "The offset is within section 1 and translates/compiles as part of a six-function probe with no unsupported instructions or invalid SSA. This does not prove that the game loads RSO_rhbm at a section base that makes 0x0101C690 valid, that the request field is an initialized callback, or that this candidate is a semantic function boundary. Nothing was integrated into WiiCompiled.exe.",
+  "invariants": {
+    "matching_dol_modified": false,
+    "iso_modified": false,
+    "decomp_baseline_modified": false,
+    "runtime_behavior_modified": false,
+    "generated_runtime_diagnostic_instrumentation": true,
+    "private_research_extraction_only": true
+  },
+  "next": "Trace the request object's +0x28 field from the start of the stack frame through state transitions, and establish the actual RSO section load base from the loader before using any candidate callback address."
+}

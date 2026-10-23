@@ -1,0 +1,18 @@
+{
+  "result": "PASS full build exit 0; independent 488 relocations and 47 non-overlapping bodies; runtime verification pending",
+  "module": "ScriptMultiModelActor",
+  "functions": 47,
+  "instruction_count": 3122,
+  "all_bodies_disjoint": true,
+  "first_draft_rejected": "57 bodies incorrectly rooted ten data switch labels as functions; overlap gate rejected before compilation",
+  "correction": "Checked original cmp bound 9, HA/LO data+0, scaled lwzx and bctr sequence; ten labels remain in owning function. No original bytes modified.",
+  "total_functions_if_build_passes": 756,
+  "real_gameplay_thirty_minutes_verified": false,
+  "live_audit": "20261022_prime_multimodel_live_relocations.json",
+  "source_sha256": "47b3bfb7f96b1e6b0f820d9886b653a146d21f2736b4bdbf1a11149eb325c953",
+  "executable_sha256": "448e6e794956dce580ec4aa88cf0c6df56926a24523bd512104bab68cb999f54",
+  "build_stdout": "recomp/.tools/prime_multimodel_build_stdout_20261022.log",
+  "build_stderr": "recomp/.tools/prime_multimodel_build_stderr_20261022.log",
+  "optimized_import_contract": "20261022_prime_context_action_import_contract.json",
+  "audit_correction": "Initial import audit counted archived *.cpp from rejected switch-label roots. Fixed auditor to use translation.json and verify each selected source hash, matching the actual generated source list. Nine-module audit now PASS."
+}

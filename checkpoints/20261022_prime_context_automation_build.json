@@ -1,0 +1,24 @@
+{
+  "result": "PASS complete runtime build, relocated module verification, optimized import contract and native tests; autonomous game response pending",
+  "module_functions": {
+    "rhbm": 19,
+    "Tweaks": 298,
+    "ScriptGUIScreenFrontEndUI": 249,
+    "ScriptWorldTeleporter": 45,
+    "ScriptAchievement": 22,
+    "ScriptContextSensitiveActivator": 26
+  },
+  "total_functions": 659,
+  "new_module_relocations": 199,
+  "native_tests": {
+    "passed": 3,
+    "failed": 0
+  },
+  "executable_sha256": "12896330d39a4a3111c3b594730dc35cbd7bb77914883a25f5e809bfd36a8303",
+  "controller_input_scope": "Explicit env-enabled development input source, no focus required; original KPAD sample writer and game logic retained; finite holds, validation and monotonically increasing sequence",
+  "long_probe_limit_seconds": 7200,
+  "performance_observer": "Existing Aurora present timing API, logged every 5 seconds; not game simulation tick count",
+  "user_requested_real_scenario_minutes": 30,
+  "thirty_minute_real_scenario_verified": false,
+  "import_contract": "20261022_prime_context_activator_import_contract.json"
+}

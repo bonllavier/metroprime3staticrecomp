@@ -1,0 +1,18 @@
+{
+  "result": "PASS missing original virtual-method boundary identified; overall runtime failed",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792633534_pid8496\\runtime_probe.json",
+  "original_object": "0x80C25840",
+  "vtable": "0x80C3E8E4",
+  "vtable_slot": "0x18",
+  "runtime_target": "0x80C3D474",
+  "text_offset": "0x2FC",
+  "original_DOL_call": "0x8027E3C8",
+  "factory_execution_confirmed": true,
+  "relocation_audit": "20261021_prime_achievement_live_factory_relocations.json",
+  "local_table_methods": [
+    "0x23C",
+    "0x6EC",
+    "0x2FC"
+  ],
+  "imported_table_methods_preserved": 4
+}

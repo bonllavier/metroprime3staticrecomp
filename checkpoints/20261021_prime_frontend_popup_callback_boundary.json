@@ -1,0 +1,31 @@
+{
+  "result": "PASS observed popup callback boundary after original menu method returned",
+  "revision": "RM3E01_00",
+  "executable_sha256": "372eff005c42a9cd7301b412d96c3dd7bc2fdab6e3fb6e03df85f07871fce40d",
+  "original_menu_method_returned": "runtime 0x80B01070 / nominal 0x80699750",
+  "missing_runtime_target": "0x80B01E08",
+  "missing_nominal_target": "0x8069A4E8",
+  "original_callback_payload": [
+    0,
+    4294967295,
+    2159065396
+  ],
+  "caller_lr": "0x80199C9C",
+  "posted_keyboard_messages": 7,
+  "keyboard_job_state": "Completed",
+  "scope": "Failure is in the observed original callback invocation. Source records are reviewed next; no placeholder return is added.",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792615079_pid5608\\runtime_probe.json",
+      "sha256": "98ce6ebddebf09c90b954506f1f607b51deebdc65f742e6e8c61e0570504271b"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792615079_pid5608\\console.log",
+      "sha256": "cc63d608d4f080d2b1869f3d8ac940dc597a418f8671983b219420c722c5d52a"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792615079_pid5608\\mem1.bin",
+      "sha256": "77395b4258a8125e602a49f197f18c50483fbfaef8f0a66ffc8fe7ea917bdeb5"
+    }
+  ]
+}

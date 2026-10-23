@@ -1,0 +1,94 @@
+{
+  "result": "OBSERVED additional input edges; no exclusive synthetic provenance claim",
+  "probe": "base_1792634857_pid1892",
+  "capture_sha256": "72f8accb8d71b1b0b182db1e275b6a82a16e64220ca6a6360377cc06a36a33eb",
+  "samples": 128,
+  "sample_limit": 128,
+  "A_edges": [
+    {
+      "frame": 352,
+      "hold": "0x800",
+      "trigger": "0x800",
+      "release": "0x0"
+    },
+    {
+      "frame": 353,
+      "hold": "0x0",
+      "trigger": "0x0",
+      "release": "0x800"
+    },
+    {
+      "frame": 638,
+      "hold": "0x800",
+      "trigger": "0x800",
+      "release": "0x0"
+    },
+    {
+      "frame": 640,
+      "hold": "0x0",
+      "trigger": "0x0",
+      "release": "0x800"
+    },
+    {
+      "frame": 842,
+      "hold": "0x800",
+      "trigger": "0x800",
+      "release": "0x0"
+    },
+    {
+      "frame": 846,
+      "hold": "0x0",
+      "trigger": "0x0",
+      "release": "0x800"
+    },
+    {
+      "frame": 1602,
+      "hold": "0x800",
+      "trigger": "0x800",
+      "release": "0x0"
+    },
+    {
+      "frame": 1606,
+      "hold": "0x0",
+      "trigger": "0x0",
+      "release": "0x800"
+    },
+    {
+      "frame": 1654,
+      "hold": "0x800",
+      "trigger": "0x800",
+      "release": "0x0"
+    },
+    {
+      "frame": 1655,
+      "hold": "0x0",
+      "trigger": "0x0",
+      "release": "0x800"
+    },
+    {
+      "frame": 1910,
+      "hold": "0x800",
+      "trigger": "0x800",
+      "release": "0x0"
+    },
+    {
+      "frame": 1915,
+      "hold": "0x0",
+      "trigger": "0x0",
+      "release": "0x800"
+    },
+    {
+      "frame": 2411,
+      "hold": "0x800",
+      "trigger": "0x800",
+      "release": "0x0"
+    },
+    {
+      "frame": 2414,
+      "hold": "0x0",
+      "trigger": "0x0",
+      "release": "0x800"
+    }
+  ],
+  "scope": "Input comes from SDL; these samples do not distinguish human keys from posted messages. Only one A press/release was requested by this harness before the boundary."
+}

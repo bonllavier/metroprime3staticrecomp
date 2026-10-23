@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-20",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "change": "Added profile-specific VI ISR dispatch and serviced the Prime busy wait at 0x804EFC64. Disabled WiiCompiled's Mario Kart VI retrace queue wake for this profile because it uses a different guest queue layout.",
+  "verification": {
+    "build": "cmake --build recomp/build/RM3E01_00_runtime_link_probe --target WiiCompiled -j 8",
+    "build_result": "PASS",
+    "executable_sha256": "af248d36f87b0eaea5de00eb64af86756aa9a5b4b2718b312b4b8f63780385d2",
+    "runtime_log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792537270_pid4220/console.log",
+    "runtime_log_sha256": "15b4bdd2b6c7b30a01e2e0b8dc941b93f678bd592d8effd8a30897bcaf9d62ca",
+    "runtime_observation": "Initial 15-second run remained alive; Prime VI retrace count advanced from 0 to 2 and 0x804EFC64 returned. A later 30-second run passed the translated GX token wait at 0x804D2644 through a profile-specific renderer-drain HLE, returned from 0x802D4D24 and entered main's next initialization calls. It then stopped on an indirect jump to 0x0101C690.",
+    "followup_log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792537461_pid11580/console.log",
+    "followup_log_sha256": "438ce1c6f847c736047374c85cc9ca01f5d70245d367f3fa84b24a9c5fd232b5",
+    "followup_trace": {
+      "call_path": "main -> 0x803E77B0 -> 0x804C63F4 -> 0x804CA8AC -> 0x804CA558",
+      "indirect_target": "0x0101C690 (not a translated main.dol entry)",
+      "module_under_construction": "RSO/Rev2 Production/RSO_rhbm.rso",
+      "module_sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+      "static_inspection": "The crash MEM1 snapshot has all-zero bytes at physical 0x0101C690, and the pointer value 0x0101C690 occurs only once, in the stack field at 0x8069A048 (request object +0x28). This contradicts the hypothesis that this address currently contains loaded RSO code. The DOL function 0x804CA558 invokes that +0x28 field in request state 2. The corresponding stack temporary is built by 0x803E77B0 and passed through 0x804C63F4/0x804CA8AC."
+    },
+    "latest_followup": {
+      "runtime_log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792538123_pid1696/console.log",
+      "runtime_log_sha256": "F955A2D04AC0119F2338A2D08A5BA6F8ADDF20E245EF7DB6C21D948378AA92CD",
+      "executable_sha256": "8CC91F065C315E0A82C132A4B71EB2A6A4370914040E61D054C8408AC7CFBDB1",
+      "runtime_observation": "The 30-second probe passed Prime MI protected-region MMIO at 0xCC00400C and DSP audio DMA register accesses at 0xCC005030, completed resource descriptors 0 through 7, returned from GX initialization and several main initialization calls, and entered IOS/STM queue activity. No fatal/runtime memory error appears in console.log; the harness stopped the still-running process at the 30-second limit. No game image was observed.",
+      "diagnostic_caveat": "This run includes an experimental generated-shard write that zeros request temporary field +0x28 before its callback check. It let execution pass the prior invalid indirect target, but correctness is unproven; treat this as a diagnostic perturbation, not a fix. The generated shard also contains tracing and is not reproducible from canonical translator inputs yet."
+    }
+  },
+  "limits": [
+    "No first game screen was observed; this is startup progress only.",
+    "Aurora still drops SetViewport/SetScissor commands before the first active render pass.",
+    "The VI wait/ISR bridge is a runtime HLE adaptation, not recovered matching code.",
+    "The run used the private research data setup; ISO-backed resource loading remains unfinished.",
+    "Generated content-addressed shards were locally instrumented and edited; a translator regeneration may overwrite those edits.",
+    "The follow-up exposed an indirect target 0x0101C690 that is not in the main.dol translation map. The crash snapshot shows its target bytes are zero and the pointer exists only in the stack callback field; investigate the field's initialization and request-state transition before attributing it to RSO relocation. RSO modules remain unreconstructed.",
+    "The latest 30-second probe progressed beyond MI/DSP MMIO and all eight resource descriptors into IOS/STM queue activity, then was stopped by the test harness without a fatal log. It used an unverified diagnostic zeroing of request callback field +0x28, so this run does not establish correct RSO/request behavior or a screen."
+  ],
+  "next": "First remove or isolate the unverified +0x28 diagnostic perturbation; trace the request temporary and state transition with verified PPC writes and stack initialization, and make the accepted VI/GX/MMIO changes reproducible. Then investigate IOS/STM queue progress and frame submission; no screen is verified."
+}

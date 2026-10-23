@@ -1,0 +1,13 @@
+{
+  "result": "PASS bounded 40-minute process survival in title/attract mode ONLY; gameplay-duration requirement NOT satisfied",
+  "pid": 10144,
+  "exe_sha256": "14fad3cbd9e2bb82b4dec4f36efebbbec7e36151f1b927147dd6e2210ea61af9",
+  "seconds": 2400,
+  "alive_at_deadline": true,
+  "failure_logged": false,
+  "stopped_by_harness": true,
+  "source_report": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792650979_pid10144\\runtime_probe.json",
+  "thirty_minute_real_gameplay_verified": false,
+  "button_module_runtime_verified": false,
+  "next_action": "Trace original title/movie gate: accepted A inputs replayed title, no Game Select transition verified in this run."
+}

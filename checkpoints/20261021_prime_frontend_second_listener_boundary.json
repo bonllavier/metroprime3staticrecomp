@@ -1,0 +1,43 @@
+{
+  "result": "PASS observed second listener wrapper boundary and positive atomic harness completion",
+  "revision": "RM3E01_00",
+  "runtime_target": "0x80b117b8",
+  "nominal_target": "0x806ac8b8",
+  "text_offset": "0x15C58",
+  "sdk_load_base": "0x80afba40",
+  "runtime_to_nominal_delta": "0x464f00",
+  "scope": "Actual placement is derived from logged bindings and cross-checked entries, never inherited from another run. Runtime failed explicitly on a missing original wrapper; harness saved all reports without capture errors.",
+  "node_words": [
+    "0x80aee1f4",
+    "0x80aee1f4",
+    "0x808dc8b8",
+    "0x80b117b8",
+    "0x80a53700",
+    "0x0",
+    "0xffffffff",
+    "0x80b11028"
+  ],
+  "original_prefix_bytes_verified": 24,
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792617102_pid5352\\runtime_probe.json",
+      "sha256": "93b47fe3efcf7bc4199e397a7b4d3d7f1c5f3140843fb664c74a627bd5537161"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792617102_pid5352\\console.log",
+      "sha256": "6f240c618dd6126af0a5700a167e7633af7b4eba9d3b94e457636a96e4bfa885"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792617102_pid5352\\mem1.bin",
+      "sha256": "106ff3480fd7e971cc79db8eddba6e2e90d2509a3dec58802f4fdf81831b65c6"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\probe_pid5352_20261021_211142_4431.progress.json",
+      "sha256": "b905a1e97442d309e2e2defa266807bcc6aa92a9bf5d096443ccac06cb8f0540"
+    },
+    {
+      "path": "recomp\\tools\\probe_prime_runtime.ps1",
+      "sha256": "5c868434a886d31f9d20fd94092fb3be4a3b20a6251b302b9fbf5d50c84aa8b8"
+    }
+  ]
+}

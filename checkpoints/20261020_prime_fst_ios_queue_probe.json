@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-20",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "purpose": "Verify Prime guest FST publication and trace why IOS work stops after initial DVD/USB setup.",
+  "fst_validation": {
+    "source": "recomp/.tools/disc-extraction-rm3e01/sys/fst.bin",
+    "runtime_dump": "recomp/build/RM3E01_00_runtime_link_probe/fst-runtime-prime.bin",
+    "size_bytes": 7248,
+    "entry_count": 235,
+    "sha256": "bf2f1187e0791d050951057976578ee43d8320ebdc26a961ed9cbce0a8924ded",
+    "byte_equal": true,
+    "meaning": "The guest sees the original Prime FST bytes and indices. The earlier synthetic WiiCompiled FST had 241 entries and must not be used as Prime guest FST."
+  },
+  "runtime_probe": {
+    "build_command": "cmake --build recomp/build/RM3E01_00_runtime_link_probe --target WiiCompiled -j 8",
+    "build_result": "PASS",
+    "executable_sha256": "a3de0c8a35afeb9b6002552c09d5f4f0021ac726b7cac19ff9ced639ce5a74e2",
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792539778_pid14984/console.log",
+    "log_sha256": "3d065a05f14477180da67766605776f3a9b983cdbbab020c5cf681f59a4cd276",
+    "duration_seconds": 22,
+    "process_alive_at_harness_stop": true,
+    "last_guest_request": "/dev/usb/oh1/57e/305",
+    "queue_sample": {
+      "request": "0x97FC01A0",
+      "command": 1,
+      "outstanding": 0,
+      "head": 17,
+      "tail": 24,
+      "get": 1,
+      "put": 8,
+      "subsequent_commands": [
+        7,
+        7,
+        7
+      ],
+      "subsequent_ios_packets_logged": false
+    },
+    "runtime_observation": "All eight resource descriptors completed, IOS handled initial STM/NAND/network/time and DI requests, and execution progressed into /dev/usb/oh1/57e/305. The IPC queue trace then showed zero outstanding work while requests continued to enqueue; no later IOS packet was submitted. Aurora prewarmed pipelines. No fatal error appeared before the harness stopped the process, and no game screen was observed.",
+    "queue_semantics_source": "Ghidra decompilation of RM3E01_00 FUN_8050441C: after enqueue/signal, hardware submission via PPCMSG/PPCCTRL is guarded by DAT_80679C50 > 0. FUN_805041B0 is the registered IPC interrupt handler and adjusts this counter/starts the next queue item.",
+    "instrumentation": "Temporary bounded [ipc-queue-trace] at the start of the FUN_8050441C outstanding-count branch in a generated shard. It is diagnostic only and may be overwritten by translator regeneration."
+  },
+  "rejected_experiment": {
+    "change": "Called OS_HLE_DispatchPendingPrimeIpcInterrupt at the end of translated FUN_8050441C.",
+    "result": "Rejected and removed. It caused different reentrant startup behavior; /dev/di returned ISFS_ENOENT (-106), a subsequent IOS ioctl submit was unsupported, and a CD000004 MMIO write fault occurred with no current CPU context. This does not validate interrupt delivery.",
+    "failed_log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792539693_pid14060/console.log",
+    "failed_log_sha256": "b2726c4b2811d1c05247c4fe54d1f9214bce2495d53118cf4fd944cce0dcfb0c",
+    "state": "The injected call is absent from the generated shard; only queue tracing remains."
+  },
+  "limits": [
+    "The runtime still reads resources from the private research extraction; ISO-backed runtime loading is incomplete.",
+    "No first game screen is verified.",
+    "The cause of the IOS outstanding-count/worker stall is not yet proven; do not force a synthetic completion or skip USB initialization.",
+    "Generated shard instrumentation is not reproducible through translator inputs."
+  ],
+  "next": "Trace the registered IPC handler and the guest worker's wake/resume path around the first /dev/usb/oh1/57e/305 open. Determine why interrupt/queue processing stops after earlier DI requests. Keep the failed end-of-routine interrupt injection rejected; do not force responses. Once queue progress is correct, implement only the observed IOS device requests and continue to frame submission.",
+  "latest_followup": {
+    "build_command": "cmake --build recomp/build/RM3E01_00_runtime_link_probe --target WiiCompiled -j 8",
+    "build_result": "PASS",
+    "executable_sha256": "ea33bd2bbb915fbc570c1861962fb00d4a77f774103ff7e7cdfdc80423321c0e",
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792539979_pid10136/console.log",
+    "log_sha256": "8a3991dcd8a7e845a8966e0bfdf3c114cfbe26366e045508112f287ea3a05f26",
+    "duration_seconds": 22,
+    "process_alive_at_harness_stop": true,
+    "diagnostics": {
+      "ipc_handler_trace_count_before_usb_stall": 16,
+      "ipc_queue_trace_count": 27,
+      "last_handler_trace_line": 460,
+      "usb_path_line": 607,
+      "first_usb_queue_line": 615,
+      "last_queue_line": 627,
+      "fatal_count": 0,
+      "handler_after_usb_path": false,
+      "tail_state": "After the /dev/usb open request, command 1 and three command 7 requests were enqueued with outstanding=0; head remained 17 while tail advanced to 27, get=1, put=11. No subsequent IOS request packet or IPC handler trace appeared before the process was stopped."
+    },
+    "interpretation": "The registered IPC handler is invoked for earlier startup requests, including the DI clear-cover operations, but not after the queue reaches the USB initialization path. This narrows the stall to guest scheduling/IPC queue reactivation at that phase; the FST is no longer the blocker. The precise missing wake/interrupt transition is not yet identified."
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "revision": "RM3E01_00",
+  "status": "input_boundary_research_not_implemented",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "targets": [
+    {
+      "address": "0x804F66B8",
+      "symbol": "WPADProbe",
+      "size": 140,
+      "original_sha256": "389085a2cf9801a3a63ec9eb10471a2cf1fb791c859d9cc3c7123d78cd03cba7",
+      "original_first16": "9421fff07c0802a63ca0806190010014",
+      "translation": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_804F66B8.cpp",
+      "translation_sha256": "24a2ca82fcb58a939d97f4e82f928ede9614d8be612d95b5516cb14a3116ce04",
+      "observed": "WPADProbe: channel pointer table 0x8060C630, extension byte +2241, error/state +2236 and readiness +2268."
+    },
+    {
+      "address": "0x804F7014",
+      "symbol": "fn_804F7014",
+      "size": 416,
+      "original_sha256": "a7d60576c55298238a098e046c6f803cdeba36e9a5a662d8c63646670756b9e3",
+      "original_first16": "9421ffe07c0802a69001002493e1001c",
+      "translation": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_804F7014.cpp",
+      "translation_sha256": "2a6ac7fce486b6ba60dd3cfeb19c70528ce6a1bb99abf1d11ae30e451c8de1f5",
+      "observed": "Raw status reader, inferred WPADRead: selects double-buffered record and copies 42/50/54/90 bytes according to format."
+    },
+    {
+      "address": "0x804F687C",
+      "symbol": "fn_804F687C",
+      "size": 72,
+      "original_sha256": "fdb51809bfcb850f881789fb135b6ede8101db1d1fb65a08f5cccf9ec9329318",
+      "original_first16": "9421fff07c0802a69001001493e1000c",
+      "translation": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_804F687C.cpp",
+      "translation_sha256": "bcd219b5ce5e3032f31023ce719f156cdf5e812ea7873bfa63d5c6ffb85166d2",
+      "observed": "Data-format query inferred from load at control-block +2232."
+    },
+    {
+      "address": "0x804D9BAC",
+      "symbol": "fn_804D9BAC",
+      "size": 504,
+      "original_sha256": "3922372f70f36c45f379ba65ee1d860ebce61bce87f74d4133ffad6d1e5b4d24",
+      "original_first16": "9421ffe07c0802a63c80805f90010024",
+      "translation": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_804D9BAC.cpp",
+      "translation_sha256": "64ac33e6fad35c332b7c68af69ba9d101740fbec453d954b07dfaaa5c9d3024f",
+      "observed": "Producer of 16-entry raw status ring at channel base 0x805F5088+channel*1316; entry size56, cursor +270 and pending-count +271."
+    },
+    {
+      "address": "0x804D9138",
+      "symbol": "fn_804D9138",
+      "size": 1816,
+      "original_sha256": "fccac1bddb66635040638e828f15d0045010e3fd2ec0f9cb44fccdc693a16535",
+      "original_first16": "9421ff407c0802a6900100c4396100c0",
+      "translation": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_804D9138.cpp",
+      "translation_sha256": "c4e9492a1141beadc529703060b65aa8ee326b3f3979e33d6f5832e65cb4d07f",
+      "observed": "Candidate KPADRead: consumes raw ring and copies processed samples of132 bytes. SDK name inferred; not an ABI proof."
+    },
+    {
+      "address": "0x804F67AC",
+      "symbol": "WPADSetConnectCallback",
+      "size": 104,
+      "original_sha256": "b66f077ac379259b2f6968af68f9fedcec9a5607a39c7e7dd4a5f0d3a4421e4e",
+      "original_first16": "9421fff07c0802a63ca0805b90010014",
+      "translation": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_804F67AC.cpp",
+      "translation_sha256": "794e0afe602fc29aab5ebb4b588d4602b4cdec3b5ad9e34b3078dd6da2dc06b7",
+      "observed": "WPADSetConnectCallback according to symbol map; implementation must preserve previous callback return."
+    },
+    {
+      "address": "0x804F6814",
+      "symbol": "WPADSetExtensionCallback",
+      "size": 104,
+      "original_sha256": "036f010514142aaf3cd5473a63d56895b75f6dc76d63971873b4ccae89afac69",
+      "original_first16": "9421fff07c0802a63ca0805b90010014",
+      "translation": "recomp\\generated\\RM3E01_00_conservative\\functions\\func_804F6814.cpp",
+      "translation_sha256": "24671c4a6cedae49631cb1e2ae29664f3a35df287c8bdda95073c78adb328822",
+      "observed": "WPADSetExtensionCallback according to symbol map; callback behavior still requires audit."
+    }
+  ],
+  "known_missing": [
+    "Prime native bindings are intentionally absent; MKW HLE addresses are rejected by profile isolation.",
+    "Host keyboard/mouse source and physical Wiimote/Nunchuk connection require distinct transport and real state.",
+    "Processed KPAD structs cannot be assumed compatible solely from 132-byte sample size.",
+    "Callbacks, accelerometer calibration, IR/DPD, sampling and disconnect/reconnect must be verified."
+  ],
+  "required_next": "Observe original callers and choose an explicit native device boundary, preserve guest callback and sample semantics. Do not force warning/title state or return connected without a functioning input provider."
+}

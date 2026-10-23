@@ -1,0 +1,121 @@
+{
+  "created_utc": "2026-10-20T07:45:02.838026+00:00",
+  "revision": "RM3E01_00",
+  "dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "profile_compile_definition": "MKW_GAME_PROFILE_RM3E01_00=1",
+  "upstream_hle_registration_scan": {
+    "source_checkpoint": "checkpoints/20261020_prime_profile_hle_overlap.json",
+    "source_checkpoint_sha256": "cbc96533a77eb44814a629f5c71f39bdbe18c34b41a49bc407af5fd9e84abb30",
+    "profile_active_registrations": 569,
+    "function_map_overlaps": 0,
+    "interpretation": "The scanner evaluates the profile guards; indirect registrations are not covered."
+  },
+  "profile_exclusions": {
+    "nine_rm3e01_address_collisions": [
+      "0x8012409C",
+      "0x80168288",
+      "0x8016DF28",
+      "0x8016E3A8",
+      "0x8016E3D8",
+      "0x8017393C",
+      "0x80173A54",
+      "0x801A661C",
+      "0x801AAAA4"
+    ],
+    "additional_mkw_only_hooks": [
+      "NHTTPStartup_Reentrant_HLE_801d8d30",
+      "OSInitAlarm_RecompModLateInit_801a961c",
+      "StaticRProlog_RecompModInit_8055531c",
+      "AXFXReverbStdExpCallback_8012b830"
+    ],
+    "native_thread_scheduler_helper_retained": "OSWakeupThread_HLE_801aaaa4 remains available to runtime-internal scheduler callers; only the guest-address registration/wrapper is omitted so Prime guest code owns 0x801AAAA4."
+  },
+  "patch": {
+    "path": "patches/wiicompiled_rm3e01_hle_overrides.patch",
+    "sha256": "0bb5b988e481f8f0dff823c01eb915917a6478de10892222f9348e0e3257c1df",
+    "reverse_apply_check": "passed"
+  },
+  "runtime_build": {
+    "cmake_option": "MKW_GAME_PROFILE_RM3E01_00=ON",
+    "target": "mkw_runtime_common",
+    "exit_code": 0,
+    "objects_sha256": {
+      "guest_system": "74c8aa4c6c474141ff5b1a134691a318413c13679f9db45683f1c1e9568b31e4",
+      "runtime_audio": "0d80dba698d3769efd67db4c3c207755c6043529dd85b20a3d8117bb6571772a",
+      "network_ios": "fcdb94c30ff63ad528ea6855e963cbe6f2d38a4daeaf8968f5a8f884c7121927"
+    }
+  },
+  "latest_strict_product_link": {
+    "target": "WiiCompiled.exe",
+    "exit_code": 1,
+    "duplicate_symbols": [],
+    "undefined_guest_targets": [
+      "func_801A0620",
+      "func_801AADE0",
+      "func_801A1ED8"
+    ],
+    "output_executable_created": false,
+    "interpretation": "Nine overlapping native replacements are omitted in the Prime profile. NHTTP, AXFX reverb, and Mario Kart mod/StaticR hooks were also excluded. Remaining alarm/context helper references are still inside unrelated Prime 3 function bodies and have no verified callable ABI; no shims were added.",
+    "unresolved_guest_target_evidence": [
+      {
+        "symbol": "func_801A0620",
+        "address": "0x801A0620",
+        "runtime_reference_source": "runtime/src/hle/os/os_alarm.cpp",
+        "runtime_callers": [
+          "OsHleInternal::ProcessAlarmQueue",
+          "OS__SetPeriodicAlarm_801a08e0"
+        ],
+        "ghidra_containing_prime_function": {
+          "start": "0x801A0528",
+          "end_inclusive": "0x801A0647",
+          "name": "__ct__15SLdrRagDollDataFv",
+          "offset": "+0xF8"
+        }
+      },
+      {
+        "symbol": "func_801AADE0",
+        "address": "0x801AADE0",
+        "runtime_reference_source": "runtime/src/hle/os/os_alarm.cpp",
+        "runtime_callers": [
+          "OS__SetPeriodicAlarm_801a08e0"
+        ],
+        "ghidra_containing_prime_function": {
+          "start": "0x801AACD8",
+          "end_inclusive": "0x801AAE9F",
+          "name": "FUN_801aacd8",
+          "offset": "+0x108"
+        }
+      },
+      {
+        "symbol": "func_801A1ED8",
+        "address": "0x801A1ED8",
+        "runtime_reference_source": "runtime/src/hle/os/os_scheduler.cpp",
+        "runtime_callers": [
+          "SelectThread_801a9c08"
+        ],
+        "ghidra_containing_prime_function": {
+          "start": "0x801A1DE0",
+          "end_inclusive": "0x801A2903",
+          "name": "FUN_801a1de0",
+          "offset": "+0xF8"
+        }
+      }
+    ],
+    "ghidra_program_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104"
+  },
+  "no_game_execution": true,
+  "limitations": [
+    "No executable linked; no guest entry ran; no screen was rendered.",
+    "The ISO is still absent, so the guest disk path has not been implemented or tested.",
+    "Other runtime title assumptions (low memory, DVD/FST, scheduler, threading, GX, input and RSO) remain."
+  ],
+  "ghidra_and_literal_dispatch_audit": {
+    "checkpoint": "checkpoints/20261020_prime_hle_dispatch_audit.json",
+    "active_fixed_hle_registrations": 569,
+    "addresses_inside_other_prime_function_bodies": 561,
+    "addresses_without_ghidra_function_objects": 8,
+    "direct_call_or_data_xrefs_found": 0,
+    "raw_aligned_data_pointer_hits": 0,
+    "limitations": "Computed pointers, untyped data, and module/RSO callbacks are not exhaustively ruled out."
+  }
+}

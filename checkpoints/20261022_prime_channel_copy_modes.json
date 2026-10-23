@@ -1,0 +1,30 @@
+{
+  "result": "PASS native BP snapshot tests and runtime build; GPU retest pending",
+  "original_sdk_address": "0x804D3184",
+  "format_correction": "BP bit15=0 and nibble0 selects R4 0x20, not I4. Earlier intensity mapping superseded.",
+  "new_snapshot": {
+    "trigger": "0x10873",
+    "pe": 1,
+    "source_xy": "0x2b010",
+    "source_wh": "0xe447",
+    "stride": 9,
+    "format": "GX_CTF_A8 0x27",
+    "dimensions": [
+      72,
+      58
+    ],
+    "bytes": 4320
+  },
+  "existing_snapshot": {
+    "trigger": "0x10a03",
+    "format": "GX_CTF_R4 0x20",
+    "dimensions": [
+      128,
+      128
+    ],
+    "bytes": 8192
+  },
+  "backend": "Existing Aurora FragR4/FragA8 conversion; no mode silently discarded",
+  "exe_sha256": "0f82f8152d7f6311f58f3d4f0581e78cb9301c105bf5c709916d174c32ba2f7d",
+  "gameplay_stability_verified": false
+}

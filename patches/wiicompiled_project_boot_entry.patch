@@ -1,0 +1,101 @@
+diff --git a/runtime/include/system_bridge.h b/runtime/include/system_bridge.h
+index a2d4cf6..8f93293 100644
+--- a/runtime/include/system_bridge.h
++++ b/runtime/include/system_bridge.h
+@@ -10,6 +10,7 @@
+ #include <csetjmp>
+ 
+ #include "memory.h"
++#include "generated/RuntimeConfig.h"
+ 
+ // Windows' SehLogger longjmps out of a vectored exception handler, where plain setjmp/longjmp is
+ // the norm. A POSIX signal handler jumping back to here must use the sig-prefixed pair instead:
+@@ -64,10 +65,9 @@ void WriteCrashArtifacts(std::string_view reason,
+ // isa/ppc_isa_context.h - that is its standalone host seam, not a duplicate.)
+ void ShowRuntimeFatalPopup(std::string_view category, std::string_view details) noexcept;
+ 
+-// Mario Kart Wii's translated entry point. The products always boot here, so
+-// this is applied as the default while parsing the command line; there is no
+-// flag to override it.
+-inline constexpr uint32_t kDefaultEntryAddress = 0x800060A4u;
++// The translator emits the selected entry point from translation.entry_points
++// so each pinned DOL boots through its own verified startup routine.
++inline constexpr uint32_t kDefaultEntryAddress = RuntimeConfig::BOOT_ENTRY_POINT;
+ 
+ class SystemBridge {
+ public:
+diff --git a/translator/src/Translator.Core/CodeGen/RuntimeConfigGenerator.cs b/translator/src/Translator.Core/CodeGen/RuntimeConfigGenerator.cs
+index 24858f2..5fafc0d 100644
+--- a/translator/src/Translator.Core/CodeGen/RuntimeConfigGenerator.cs
++++ b/translator/src/Translator.Core/CodeGen/RuntimeConfigGenerator.cs
+@@ -19,6 +19,7 @@ public sealed class RuntimeConfigGenerator
+     public static void GenerateConfigHeader(
+         uint sda1Base,
+         uint sda2Base,
++        uint bootEntryPoint,
+         string outputPath,
+         string projectName = "PowerPC DOL")
+     {
+@@ -34,6 +35,9 @@ public sealed class RuntimeConfigGenerator
+         sb.AppendLine();
+         sb.AppendLine("namespace RuntimeConfig {");
+         sb.AppendLine();
++        sb.AppendLine("// Guest entry point from the pinned DOL header.");
++        sb.AppendLine($"constexpr uint32_t BOOT_ENTRY_POINT = 0x{bootEntryPoint:X8}u;");
++        sb.AppendLine();
+         sb.AppendLine("// PowerPC ABI Small Data Area base pointers");
+         sb.AppendLine("// These MUST be loaded into r2 and r13 before executing any translated code.");
+         sb.AppendLine();
+diff --git a/translator/tests/Translator.Tests/SdaAndGeneratorTests.cs b/translator/tests/Translator.Tests/SdaAndGeneratorTests.cs
+index 0f97360..09d7ace 100644
+--- a/translator/tests/Translator.Tests/SdaAndGeneratorTests.cs
++++ b/translator/tests/Translator.Tests/SdaAndGeneratorTests.cs
+@@ -25,9 +25,10 @@ public class SdaAndGeneratorTests
+         Directory.CreateDirectory(tempDir);
+         var output = Path.Combine(tempDir, "RuntimeConfig.generated.h");
+ 
+-        RuntimeConfigGenerator.GenerateConfigHeader(0x8038F780u, 0x8038E9C8u, output);
++        RuntimeConfigGenerator.GenerateConfigHeader(0x8038F780u, 0x8038E9C8u, 0x80006000u, output);
+         var text = File.ReadAllText(output);
+ 
++        Assert.Contains("constexpr uint32_t BOOT_ENTRY_POINT = 0x80006000u;", text);
+         Assert.Contains("constexpr uint32_t SDA1_BASE = 0x8038F780u;", text);
+         Assert.Contains("constexpr uint32_t SDA2_BASE = 0x8038E9C8u;", text);
+     }
+@@ -47,11 +48,11 @@ public class SdaAndGeneratorTests
+         Directory.CreateDirectory(tempDir);
+         var output = Path.Combine(tempDir, "RuntimeConfig.generated.h");
+ 
+-        RuntimeConfigGenerator.GenerateConfigHeader(0x8038F780u, 0x8038E9C8u, output);
++        RuntimeConfigGenerator.GenerateConfigHeader(0x8038F780u, 0x8038E9C8u, 0x80006000u, output);
+         var sentinel = new DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+         File.SetLastWriteTimeUtc(output, sentinel);
+ 
+-        RuntimeConfigGenerator.GenerateConfigHeader(0x8038F780u, 0x8038E9C8u, output);
++        RuntimeConfigGenerator.GenerateConfigHeader(0x8038F780u, 0x8038E9C8u, 0x80006000u, output);
+ 
+         Assert.Equal(sentinel, File.GetLastWriteTimeUtc(output));
+     }
+
+diff --git a/translator/src/Translator.Cli/Program.cs b/translator/src/Translator.Cli/Program.cs
+index db6ba74..bd88216 100644
+--- a/translator/src/Translator.Cli/Program.cs
++++ b/translator/src/Translator.Cli/Program.cs
+@@ -2866,7 +2867,8 @@ int RunGenerateDataInit()
+     // Generate runtime configuration header with the manifest's SDA base pointers
+     var (dataInitSda1Base, dataInitSda2Base) = loadedProject.RequireSdaBases();
+     RuntimeConfigGenerator.GenerateConfigHeader(
+-        dataInitSda1Base, dataInitSda2Base, runtimeConfigOutput, loadedProject.Identity.DisplayName);
++        dataInitSda1Base, dataInitSda2Base, dol.EntryPoint,
++        runtimeConfigOutput, loadedProject.Identity.DisplayName);
+ 
+     // Load the REL file for runtime embedding (apply relocations since runtime does not OSLink)
+     RelImage? relImage = null;
+@@ -3769,6 +3771,7 @@ ProgramImage LoadImage()
+     RuntimeConfigGenerator.GenerateConfigHeader(
+         sda1Base,
+         sda2Base,
++        dol.EntryPoint,
+         loadedProject.Output.RuntimeConfig,
+         loadedProject.Identity.DisplayName);
+     Console.WriteLine(

@@ -1,0 +1,31 @@
+{
+  "revision": "RM3E01_00",
+  "rso_sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+  "synthetic_rel_sha256": "15424c386904ed96657adb71bc252f9ebaa57a87b5a7f221d7ebd246d0fc2097",
+  "relocated_image_sha256": "dcefdb42e158d4cee42bd3f54c486c984fc9b8faa10846428f2134bcaa15968d",
+  "base_address": "0x80690000",
+  "relocations_checked": 4238,
+  "rel24_out_of_range": false,
+  "rel24_checked": 1471,
+  "relocation_type_counts": {
+    "6": 1347,
+    "4": 1347,
+    "10": 1471,
+    "1": 73
+  },
+  "comparison_basis": "Independent PPC relocation expressions transcribed from Ghidra decompile of RM3E01_00 RSOLink apply helper 0x805414F4; image produced by WiiCompiled Translator.Core RelFile.BuildImage.",
+  "constructor_pointer_table": {
+    "address": "0x806A8480",
+    "values": [
+      "0x80698C34",
+      "0x8069CD44",
+      "0x8069D890",
+      "0x8069E990",
+      "0x8069FA24",
+      "0x806A2AF8",
+      "0x00000000"
+    ],
+    "interpretation": "Section 2 relocated text pointers followed by a verified null terminator; not a callback execution claim."
+  },
+  "scope": "Checks relocation fields only; does not prove function boundaries, callback order, host ABI, RSO runtime loading, or screen execution."
+}

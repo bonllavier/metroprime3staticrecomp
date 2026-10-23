@@ -1,0 +1,43 @@
+{
+  "created_utc": "2026-10-20T07:30:35Z",
+  "revision": "RM3E01_00",
+  "input_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "upstream_wiicompiled_commit": "4c166a7eb1ddfc79b4c832e422e6bb00ec06fb4f",
+  "change": "Replace WiiCompiled's hardcoded Mario Kart guest boot address with a RuntimeConfig constant generated from the pinned DOL header entry point.",
+  "old_entry": "0x800060A4",
+  "prime3_entry": "0x80006320",
+  "prime3_entry_symbol": "__start",
+  "generated_header": {
+    "path": "generated/RM3E01_00_conservative/RuntimeConfig.h",
+    "sha256": "d945388de04134bec634a25d392ee1d6f91de626f4b8dfef7f558b4e5dab9c99",
+    "constant": "constexpr uint32_t BOOT_ENTRY_POINT = 0x80006320u"
+  },
+  "source_files": {
+    "translator/src/Translator.Core/CodeGen/RuntimeConfigGenerator.cs": "a2c68c97dabc864631b1c771d3a63bb9b1ac9e8050d83fbe954671011f8a7d5f",
+    "translator/src/Translator.Cli/Program.cs": "c67e52fe49053210663d7e2e3364a0e4cd178f3d0e716588b7608be29248254b",
+    "translator/tests/Translator.Tests/SdaAndGeneratorTests.cs": "9388f38b9a66ad5be8c4f770b32ae2fc3b20d0ee89592ffb006c5e59dd459556",
+    "runtime/include/system_bridge.h": "8470245b10b226e3d63dee30a15c3bbf9634480427587aecde3ded9e36415b04"
+  },
+  "patch": {
+    "path": "patches/wiicompiled_project_boot_entry.patch",
+    "sha256": "089fc6d2d207e0d311b0302e81968965c852a707168f4b86ec61c0158fb8e005",
+    "reverse_apply_check": "passed against the modified vendored checkout"
+  },
+  "validation": {
+    "translator_tests": {
+      "command": "recomp/.tools/dotnet/dotnet.exe test recomp/third_party/WiiCompiled/translator/Translator.sln -c Release",
+      "passed": 685,
+      "failed": 0
+    },
+    "runtime_compile": {
+      "target": "mkw_runtime_common",
+      "exit_code": 0,
+      "unity_guest_system_object_sha256": "7eb8b7999747f8ac56ce7802df3030fc07b9954a76775de6841a4c84315795c7"
+    }
+  },
+  "limitations": [
+    "WiiCompiled.exe still does not link because of the HLE duplicate guest entry points and undefined Mario Kart runtime references in 20261020_full_runtime_link_probe.json.",
+    "The new entry constant has not been used to execute __start; title-specific initialization and DOL/StaticR constructors remain unadapted.",
+    "No ISO was opened and no game screen was rendered."
+  ]
+}

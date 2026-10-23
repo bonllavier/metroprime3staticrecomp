@@ -1,0 +1,112 @@
+{
+  "result": "PASS original five-table switch boundary and candidate table coverage; overall probe failed",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792634493_pid13816\\runtime_probe.json",
+  "entry": "0x8042B530",
+  "failed_target": "0x8042C4F4",
+  "table_selector": 6,
+  "original_function_sha256": "985698600c155afefdf32ed2d147f0bdd9b7598d7a7a512c50aa33cbb437e1f2",
+  "original_function_bytes": 9848,
+  "live_original_code_identical": true,
+  "tables": [
+    {
+      "address": "0x8059f930",
+      "count": 11,
+      "unique": 11,
+      "sha256": "a5be45221dfa92f3012b938294410ee8e1a44befdb9a601c823c5ce20d45d5c6",
+      "destinations": [
+        "0x8042bcfc",
+        "0x8042bcac",
+        "0x8042bcb4",
+        "0x8042bcbc",
+        "0x8042bcc4",
+        "0x8042bccc",
+        "0x8042bcd4",
+        "0x8042bcdc",
+        "0x8042bcec",
+        "0x8042bce4",
+        "0x8042bcf4"
+      ]
+    },
+    {
+      "address": "0x8059f904",
+      "count": 11,
+      "unique": 11,
+      "sha256": "23d92109c35e94e841f4714b3fa724d807c52ac22cf3f722c83cb179034194b8",
+      "destinations": [
+        "0x8042bef0",
+        "0x8042bea0",
+        "0x8042bea8",
+        "0x8042beb0",
+        "0x8042beb8",
+        "0x8042bec0",
+        "0x8042bec8",
+        "0x8042bed0",
+        "0x8042bee0",
+        "0x8042bed8",
+        "0x8042bee8"
+      ]
+    },
+    {
+      "address": "0x8059f8d8",
+      "count": 11,
+      "unique": 11,
+      "sha256": "0d7fb73b7e328d0bf115bf152f793206f86519effc60a4bf732159c5d7bfaa2d",
+      "destinations": [
+        "0x8042c51c",
+        "0x8042c4cc",
+        "0x8042c4d4",
+        "0x8042c4dc",
+        "0x8042c4e4",
+        "0x8042c4ec",
+        "0x8042c4f4",
+        "0x8042c4fc",
+        "0x8042c50c",
+        "0x8042c504",
+        "0x8042c514"
+      ]
+    },
+    {
+      "address": "0x8059f8ac",
+      "count": 11,
+      "unique": 11,
+      "sha256": "6389aca09eb53021143e6a2db3d7be2b66616934d201ec9bda251c7d815df77b",
+      "destinations": [
+        "0x8042cc7c",
+        "0x8042cc2c",
+        "0x8042cc34",
+        "0x8042cc3c",
+        "0x8042cc44",
+        "0x8042cc4c",
+        "0x8042cc54",
+        "0x8042cc5c",
+        "0x8042cc6c",
+        "0x8042cc64",
+        "0x8042cc74"
+      ]
+    },
+    {
+      "address": "0x8059f880",
+      "count": 11,
+      "unique": 11,
+      "sha256": "9550a159c2b503c9232fc71d88f236d5d2bf07d85c9274291b8699d0aa5324f8",
+      "destinations": [
+        "0x8042cddc",
+        "0x8042cd64",
+        "0x8042cd70",
+        "0x8042cd7c",
+        "0x8042cd88",
+        "0x8042cd94",
+        "0x8042cda0",
+        "0x8042cdac",
+        "0x8042cdc4",
+        "0x8042cdb8",
+        "0x8042cdd0"
+      ]
+    }
+  ],
+  "candidate_ppc_instructions": 2457,
+  "unsupported_instructions": 0,
+  "candidate_sha256": "45480416e0d5e39ea90bd5bbf250048189e4c5da75e53934c0790fed86c9267d",
+  "overlay_assertions": "Five individual case sets equal original tables; total 55 destinations; default bounds remain original",
+  "gameplay_verified": false
+}

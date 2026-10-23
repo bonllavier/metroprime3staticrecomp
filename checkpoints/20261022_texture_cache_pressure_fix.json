@@ -1,0 +1,99 @@
+{
+  "revision": "RM3E01_00",
+  "result": "PASS candidate build and exact-byte cache tests; real-scene retest pending",
+  "observed_failure": {
+    "pid": 20496,
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792693379_pid20496/console.log",
+    "renderer": "D3D12 CreateHeap while CreateTexture GX Static Palette Texture",
+    "device_removed_reason": "S_OK",
+    "last_present_fps": 4.89466,
+    "new_modules_live_bind": {
+      "Friendly": {
+        "base": "0x811B6300",
+        "relocations": 1451,
+        "functions": 158,
+        "masked_section_hashes_verified": true
+      },
+      "GunTurret": {
+        "base": "0x811C9920",
+        "relocations": 1245,
+        "functions": 125,
+        "masked_section_hashes_verified": true
+      }
+    }
+  },
+  "profile": {
+    "artifact": "recomp/.tools/prime_pid20496_cinematic_performance.json",
+    "duration_seconds": 5.700973099999828,
+    "main_tid": 20568,
+    "samples": 220,
+    "cmpr_conversion_samples": 51,
+    "mip_check_samples": 44,
+    "main_thread_cpu_ms": 4984.375,
+    "cinematic_present_fps_before_fix": "10-11; later 4.9 before memory failure",
+    "scope": "Native RIP samples, not unwind/GPU timings. Sampling briefly suspends threads."
+  },
+  "cache_occupancy_before": {
+    "artifact": "recomp/.tools/prime_pid20496_raw_cache_occupancy.json",
+    "entry_limit": 64,
+    "entry_count": 64,
+    "source_byte_budget": 16777216,
+    "observed_source_bytes_min": 4360512,
+    "observed_source_bytes_max": 5227264,
+    "scope": "Read-only native object snapshots, inferred 72-byte original vector Entry layout, five consistent samples."
+  },
+  "changes": {
+    "raw_texture_cache": {
+      "entry_limit": 512,
+      "source_byte_budget": 16777216,
+      "validation": "Complete original source byte comparison on every reuse; unchanged metadata key.",
+      "lru": "List splice replaces moving all following entries on every hit."
+    },
+    "raw_static_palette_cache": {
+      "entry_limit": 256,
+      "source_byte_budget": 8388608,
+      "validation": "Complete indexed source AND TLUT bytes, plus texture dimensions/format/mips and TLUT format/count/pointers. Versions normalized only for this byte-validated raw key. Native object generation cache remains separate.",
+      "allocation_avoided": "Repeated palette expansion and creation of the same GX Static Palette Texture.",
+      "in_flight_ownership": "Old shared handles remain retained by submitted draws after replacement or eviction."
+    },
+    "shader_draw_policy": "Prime default and local QA config skip_unready_pipelines=false; compilation waits instead of missing geometry."
+  },
+  "tests": [
+    "CTest BP, raw snapshot and trace budget: 3/3 PASS",
+    "Snapshot working-set test: 200 sources retained under unchanged byte limit, legacy 64 cap evicts 136",
+    "Dual-span mutation, metadata mismatch, missing palette, palette-length mismatch, source mutation, combined byte budget and oversized length rejected",
+    "Replacement/eviction retains submitted handle lifetime",
+    "Candidate Ninja derivative changes EXE link edge only; original graph and running EXE preserved during build; final candidate SHA verified before promotion"
+  ],
+  "build": {
+    "parallel": 1,
+    "compiler_TEMP": "G:/gamecube_roms/metroid3_wii/recomp/.tools/compiler-temp",
+    "earlier_parallel_attempt": "Failed out of memory while game was running; not accepted as a build.",
+    "exe_sha256": "4c5258e6789a75dd63c1bb3d36147cd2d45ae7db5f0385cc2b8730f5957a2de5",
+    "candidate_sha256": "4c5258e6789a75dd63c1bb3d36147cd2d45ae7db5f0385cc2b8730f5957a2de5"
+  },
+  "new_run": {
+    "pid": 12876,
+    "log": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792694726_pid12876/console.log",
+    "initial_title_cache": "2047 lookups, 2045 hits, 2 misses; later entries=67 without eviction",
+    "manual_input_only": true,
+    "scene_fps_improvement_verified": false,
+    "memory_failure_eliminated_verified": false,
+    "thirty_minutes_gameplay_verified": false
+  },
+  "invariants": {
+    "original_dol_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "iso": "Read-only; not modified",
+    "matching": "No edits or new matching coverage claimed"
+  },
+  "source_hashes": {
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/raw_texture_snapshot_cache.hpp": "58d35c35b857b05e198d9a0bf842d53651162a7607561f442a4f695bcf4788c9",
+    "recomp/third_party/WiiCompiled/aurora-main/lib/gx/gx.cpp": "95656ca0e1423c9ccadee4df509e066727ae09e7c168ac875515f69e0b08d5e4",
+    "recomp/third_party/WiiCompiled/runtime/tests/prime_raw_texture_snapshot_tests.cpp": "84f6845297571cc3e8fd54415b0cac20a72cedaa6bb9be9b5dd5e4b60e56abbe",
+    "recomp/third_party/WiiCompiled/runtime/src/settings_overlay.cpp": "833ef5daff31dd8fd1eefb48604e3e29e7e377e204be6a048fc4dac52d48da5f",
+    "recomp/third_party/WiiCompiled/runtime/include/runtime_config.h": "24e53f4d30ce7a37b7ca79e69aea629b8c18d01706ba1d07d865bfd2ec3f7896",
+    "recomp/tools/build_prime_candidate.py": "5d82a7b7d32cb6dd094e9ba6da599e7e370eea00e334e9fd0f30b1238a74c106",
+    "recomp/tools/sample_prime_performance.py": "a2a053a2ea1c82bb8368793129f4987c221e368695b73cfb512c6e83fe28087e",
+    "recomp/tools/capture_prime_hang.py": "a1c9c072725b8a299a2cfcf60d4123bb0b85f26c897d0ea23f8bcecb4fafd151"
+  }
+}

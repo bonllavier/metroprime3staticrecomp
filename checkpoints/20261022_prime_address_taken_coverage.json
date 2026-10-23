@@ -1,0 +1,1205 @@
+{
+  "result": "PASS",
+  "revision": "RM3E01_00",
+  "modules": [
+    {
+      "module": "rhbm",
+      "functions": 196,
+      "materialized_code_references": [
+        {
+          "module": "rhbm",
+          "source": "0x8069a4d0",
+          "target": "0x806a5fc0",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069a4d4",
+          "target": "0x806a5fc0",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069a510",
+          "target": "0x806a5ff8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069a514",
+          "target": "0x806a5ff8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069a6a4",
+          "target": "0x806a5ff8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069a6a8",
+          "target": "0x806a5ff8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069a86c",
+          "target": "0x806a6030",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069a870",
+          "target": "0x806a6030",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069aa7c",
+          "target": "0x806a5f50",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069aa80",
+          "target": "0x806a5f50",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069aac8",
+          "target": "0x806a5f50",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069aacc",
+          "target": "0x806a5f50",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069ab14",
+          "target": "0x806a5f50",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069ab18",
+          "target": "0x806a5f50",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069ae34",
+          "target": "0x806a5f88",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x8069ae38",
+          "target": "0x806a5f88",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a0138",
+          "target": "0x806a6068",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a013c",
+          "target": "0x806a6068",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a01b0",
+          "target": "0x806a6090",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a01b4",
+          "target": "0x806a6090",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a0238",
+          "target": "0x806a6100",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a023c",
+          "target": "0x806a6100",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a0294",
+          "target": "0x806a0184",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a0298",
+          "target": "0x806a0184",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a02e8",
+          "target": "0x806a60c8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a02ec",
+          "target": "0x806a60c8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a0390",
+          "target": "0x806a02bc",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a0394",
+          "target": "0x806a02bc",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a03e0",
+          "target": "0x806a6100",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a03e4",
+          "target": "0x806a6100",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a04c0",
+          "target": "0x806a03b4",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a04c4",
+          "target": "0x806a03b4",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a051c",
+          "target": "0x806a6090",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a0520",
+          "target": "0x806a6090",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a05b8",
+          "target": "0x806a60c8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a05bc",
+          "target": "0x806a60c8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a3ab0",
+          "target": "0x8069a128",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a3ab4",
+          "target": "0x8069a128",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a3ab8",
+          "target": "0x8069a2f8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a3abc",
+          "target": "0x8069a2f8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a4080",
+          "target": "0x8069a2f8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a4084",
+          "target": "0x8069a2f8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a410c",
+          "target": "0x806a7658",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a4110",
+          "target": "0x806a7658",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a412c",
+          "target": "0x806a7838",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a4130",
+          "target": "0x806a7838",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a51dc",
+          "target": "0x806a5ee0",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a51e0",
+          "target": "0x806a5ee0",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a5638",
+          "target": "0x806a5f18",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a563c",
+          "target": "0x806a5f18",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a5800",
+          "target": "0x806a5ea8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a5804",
+          "target": "0x806a5ea8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a76d0",
+          "target": "0x806a7a1c",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a76d4",
+          "target": "0x806a7a1c",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a7c50",
+          "target": "0x806a7be0",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "rhbm",
+          "source": "0x806a7c54",
+          "target": "0x806a7be0",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        }
+      ]
+    },
+    {
+      "module": "Tweaks",
+      "functions": 298,
+      "materialized_code_references": [
+        {
+          "module": "Tweaks",
+          "source": "0x8069a778",
+          "target": "0x806b6014",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "Tweaks",
+          "source": "0x8069a77c",
+          "target": "0x806b6194",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "Tweaks",
+          "source": "0x8069a780",
+          "target": "0x806b65b8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "Tweaks",
+          "source": "0x8069a784",
+          "target": "0x806b6014",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "Tweaks",
+          "source": "0x8069a78c",
+          "target": "0x806b6194",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "Tweaks",
+          "source": "0x8069a790",
+          "target": "0x806b65b8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        }
+      ]
+    },
+    {
+      "module": "ScriptGUIScreenFrontEndUI",
+      "functions": 249,
+      "materialized_code_references": [
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x80698fcc",
+          "target": "0x80699440",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x80698fd4",
+          "target": "0x80699440",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069a3e0",
+          "target": "0x8069a4e8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069a3e8",
+          "target": "0x8069a4e8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069daa8",
+          "target": "0x8069a4e8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069dab0",
+          "target": "0x8069a4e8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069df24",
+          "target": "0x8069e094",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069df2c",
+          "target": "0x8069e094",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069e440",
+          "target": "0x8069a4e8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069e448",
+          "target": "0x8069a4e8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069e72c",
+          "target": "0x8069e094",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069e734",
+          "target": "0x8069e094",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069edec",
+          "target": "0x8069e094",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069edf4",
+          "target": "0x8069e094",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069f760",
+          "target": "0x8069e094",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069f768",
+          "target": "0x8069e094",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069f9d4",
+          "target": "0x8069e094",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069f9dc",
+          "target": "0x8069e094",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069faf0",
+          "target": "0x8069e094",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x8069faf8",
+          "target": "0x8069e094",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a0598",
+          "target": "0x806a0b8c",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a05a0",
+          "target": "0x806a0b8c",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a1068",
+          "target": "0x8069e094",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a1070",
+          "target": "0x8069e094",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a2508",
+          "target": "0x806a0b8c",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a2510",
+          "target": "0x806a0b8c",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a2624",
+          "target": "0x8069a4e8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a262c",
+          "target": "0x8069a4e8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a57bc",
+          "target": "0x806a58c4",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a57c4",
+          "target": "0x806a58c4",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a5b50",
+          "target": "0x8069a4e8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a5b58",
+          "target": "0x8069a4e8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a5ce8",
+          "target": "0x8069a4e8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a5cf0",
+          "target": "0x8069a4e8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a85e4",
+          "target": "0x806a0b8c",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a85ec",
+          "target": "0x806a0b8c",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a8850",
+          "target": "0x806a0b8c",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a8858",
+          "target": "0x806a0b8c",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a896c",
+          "target": "0x8069a4e8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806a8974",
+          "target": "0x8069a4e8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806aa01c",
+          "target": "0x806ad3bc",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806aa028",
+          "target": "0x806ad3bc",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806aa4e8",
+          "target": "0x806aa8ac",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806aa4f0",
+          "target": "0x806aa8ac",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806aa684",
+          "target": "0x806aa8ac",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806aa68c",
+          "target": "0x806aa8ac",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806ac4b4",
+          "target": "0x806ac8b8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806ac4bc",
+          "target": "0x806ac8b8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806ac5d4",
+          "target": "0x806ac844",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806ac5dc",
+          "target": "0x806ac844",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806ac6f4",
+          "target": "0x806ac844",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGUIScreenFrontEndUI",
+          "source": "0x806ac6fc",
+          "target": "0x806ac844",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        }
+      ]
+    },
+    {
+      "module": "ScriptWorldTeleporter",
+      "functions": 50,
+      "materialized_code_references": [
+        {
+          "module": "ScriptWorldTeleporter",
+          "source": "0x80691644",
+          "target": "0x80693fc8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptWorldTeleporter",
+          "source": "0x80691648",
+          "target": "0x806951f4",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptWorldTeleporter",
+          "source": "0x8069164c",
+          "target": "0x80693fc8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptWorldTeleporter",
+          "source": "0x80691654",
+          "target": "0x806951f4",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        }
+      ]
+    },
+    {
+      "module": "ScriptAchievement",
+      "functions": 23,
+      "materialized_code_references": [
+        {
+          "module": "ScriptAchievement",
+          "source": "0x80690800",
+          "target": "0x80691644",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptAchievement",
+          "source": "0x80690808",
+          "target": "0x80691644",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptAchievement",
+          "source": "0x80690bb8",
+          "target": "0x80690e88",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptAchievement",
+          "source": "0x80690bc0",
+          "target": "0x80690e88",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        }
+      ]
+    },
+    {
+      "module": "ScriptContextSensitiveActivator",
+      "functions": 26,
+      "materialized_code_references": [
+        {
+          "module": "ScriptContextSensitiveActivator",
+          "source": "0x806907ac",
+          "target": "0x806909b0",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextSensitiveActivator",
+          "source": "0x806907bc",
+          "target": "0x806909b0",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        }
+      ]
+    },
+    {
+      "module": "ScriptGrapplePoint",
+      "functions": 51,
+      "materialized_code_references": [
+        {
+          "module": "ScriptGrapplePoint",
+          "source": "0x80690e80",
+          "target": "0x806939f8",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGrapplePoint",
+          "source": "0x80690e9c",
+          "target": "0x806939f8",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGrapplePoint",
+          "source": "0x80692908",
+          "target": "0x80692c1c",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptGrapplePoint",
+          "source": "0x80692910",
+          "target": "0x80692c1c",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        }
+      ]
+    },
+    {
+      "module": "ScriptMultiModelActor",
+      "functions": 47,
+      "materialized_code_references": [
+        {
+          "module": "ScriptMultiModelActor",
+          "source": "0x806910a0",
+          "target": "0x80692988",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptMultiModelActor",
+          "source": "0x806910a8",
+          "target": "0x80692988",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        }
+      ]
+    },
+    {
+      "module": "ScriptContextSensitiveAction",
+      "functions": 35,
+      "materialized_code_references": [
+        {
+          "module": "ScriptContextSensitiveAction",
+          "source": "0x80690ac0",
+          "target": "0x80690d58",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextSensitiveAction",
+          "source": "0x80690ac8",
+          "target": "0x80690d58",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextSensitiveAction",
+          "source": "0x80691150",
+          "target": "0x806916d0",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextSensitiveAction",
+          "source": "0x80691158",
+          "target": "0x806916d0",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextSensitiveAction",
+          "source": "0x8069126c",
+          "target": "0x806916d0",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextSensitiveAction",
+          "source": "0x80691274",
+          "target": "0x806916d0",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        }
+      ]
+    },
+    {
+      "module": "ScriptContextActionButtonPressing",
+      "functions": 35,
+      "materialized_code_references": [
+        {
+          "module": "ScriptContextActionButtonPressing",
+          "source": "0x80690940",
+          "target": "0x80691d80",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextActionButtonPressing",
+          "source": "0x80690948",
+          "target": "0x80691d80",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextActionButtonPressing",
+          "source": "0x80690b58",
+          "target": "0x80690f70",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextActionButtonPressing",
+          "source": "0x80690b60",
+          "target": "0x80690f70",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextActionButtonPressing",
+          "source": "0x80690c80",
+          "target": "0x80690f0c",
+          "relocation_type": 6,
+          "registered_entry": true,
+          "inside_translated_body": true
+        },
+        {
+          "module": "ScriptContextActionButtonPressing",
+          "source": "0x80690c88",
+          "target": "0x80690f0c",
+          "relocation_type": 4,
+          "registered_entry": true,
+          "inside_translated_body": true
+        }
+      ]
+    }
+  ],
+  "missing": [],
+  "total_functions": 1010,
+  "scope": "Current body code-address HA/LO references only; not complete RSO recovery, full indirect-call coverage or runtime stability."
+}

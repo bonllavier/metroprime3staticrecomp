@@ -1,0 +1,13 @@
+{
+  "result": "PASS original missing switch boundary identified; failed runtime, not boot success",
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792635249_pid1268\\runtime_probe.json",
+  "failed_function": "0x80427A34",
+  "failed_target": "0x80427CA8",
+  "original_table": "0x8059F69C",
+  "selector": 6,
+  "live_table_identical": true,
+  "audit": "20261021_prime_audio_scaled_switch_audit.json",
+  "nine_function_candidate_table_count": 16,
+  "candidate_destinations": 176,
+  "scope": "Original format-dispatch tables verified; native runtime of bulk candidates pending. No complete audio implementation or fidelity claim."
+}

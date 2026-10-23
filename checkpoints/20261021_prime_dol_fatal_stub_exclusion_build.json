@@ -1,0 +1,23 @@
+{
+  "result": "PASS full runtime build, five original function bodies and registrations, native-index tests 8/8; runtime pending",
+  "restored_original_entries": [
+    "0x8016DF28",
+    "0x8016E3A8",
+    "0x8016E3D8",
+    "0x8017393C",
+    "0x80173A54"
+  ],
+  "remaining_GX_fatal_stub_Prime_entry_collisions": 0,
+  "native_index_tests": {
+    "passed": 8,
+    "failed": 0,
+    "skipped": 0
+  },
+  "executable_sha256": "75032ac35a6ddc1e374b2c84a6da761409112fd2d154c5d13eb55a1895620195",
+  "boundary": "20261021_prime_dol_fatal_stub_exclusion_boundary.json",
+  "source_hashes": {
+    "recomp/third_party/WiiCompiled/runtime/src/hle/gx/gx_fatal_stubs.cpp": "87e6b90670775a8e2d9638327008f1a738dffad37cd416d969825569bf51e1c1",
+    "recomp/third_party/WiiCompiled/translator/tests/Translator.Tests/RuntimeNativeIndexTests.cs": "af5c081e7b54396ea56e739d5bc0eb137e4335e5ec8175e2a77cf7a8eba872d6",
+    "recomp/generated/RM3E01_00_conservative/functions/func_8017393C.cpp": "eb3bbc97bfb3d17adf096202399b0a860efeab2dac68c456785a51e9d6c18837"
+  }
+}

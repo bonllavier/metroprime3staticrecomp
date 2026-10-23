@@ -1,0 +1,117 @@
+{
+  "revision": "RM3E01_00",
+  "error": "0x811AB768 caller 0x8019F8CC",
+  "module": "MapScreenWebInterface",
+  "runtime_address_check": "0x8118E1C0 + section1 file offset 0x128 + prolog 0x1D480 = 0x811AB768",
+  "functions": 247,
+  "unsupported_instructions": 0,
+  "relocations_independently_verified": 4308,
+  "rel24_verified": 2878,
+  "original_sha256": "89763875b4042e5cf2b3f230d5c7cd79e59f3edb39e4567fd5844ccc9c4f4d90",
+  "candidate_sha256": "cb1cd3e84e1beb3ca3f722194d2bdfd42ea20886ca0526d687639d90ad826515",
+  "build": "251/251 PASS",
+  "platform_tests": "21/21 PASS",
+  "status": "Promoted and launched for manual QA; failing scene not yet validated",
+  "additional_changes": [
+    "IPC empty queue avoids mutex and clock",
+    "Skip IRQ table walk without pending IPC/DSP events",
+    "Bounded EFB copy shape diagnostics for fixed center cross"
+  ],
+  "limits": [
+    "FPS improvement unmeasured in matched gameplay scene",
+    "Center cross not fixed; diagnostics only",
+    "No automated gameplay inputs"
+  ],
+  "factory_fix": {
+    "runtime_target": "0x8121E004",
+    "text_offset": "0xDC",
+    "references": [
+      [
+        34,
+        6
+      ],
+      [
+        50,
+        4
+      ]
+    ],
+    "functions": 251,
+    "candidate_sha256": "ab732a16a039bc0b3055265f61ce2d4619ece48f995fbc0b129b5f841e0d8059",
+    "build": "6/6 PASS",
+    "relocations_verified": 4308,
+    "status": "launched for manual QA"
+  },
+  "callback_fix": {
+    "runtime_target": "0x81227E6C",
+    "module_base": "0x812209A0",
+    "text_offset": "0x73A4",
+    "caller_lr": "0x803D7EB0",
+    "ha_lo_refs": [
+      [
+        29534,
+        6
+      ],
+      [
+        29542,
+        4
+      ]
+    ],
+    "functions": 252,
+    "candidate_sha256": "f10bb446ddca3c69e9b367a0c3e815165b623a4b2060bc2d45864bebecfe9621",
+    "build": "3/3 PASS",
+    "relocations_verified": 4308,
+    "status": "launched; gameplay verification pending"
+  },
+  "exit_fix": {
+    "runtime_target": "0x8123C368",
+    "caller_lr": "0x8123C328",
+    "module_base": "0x8121EBA0",
+    "text_offset": "0x1D6A0",
+    "original_destructor_array": "section3 offsets0,4 both ADDR32 to text+0x1D6A0",
+    "functions": 253,
+    "candidate_sha256": "458441eb2927b1c8ef96f856cff37539fef459859e4016ab37107b54c99d556a",
+    "build": "3/3 PASS",
+    "relocations_verified": 4308,
+    "status": "launched; map exit QA pending",
+    "user_verified_before_fix": "map opens at least partially"
+  },
+  "static_cleanup_fix": {
+    "runtime_target": "0x81235F14",
+    "caller_lr": "0x812361DC",
+    "module_base": "0x812189E0",
+    "text_offset": "0x1D40C",
+    "ha_lo_refs": [
+      [
+        119542,
+        6
+      ],
+      [
+        119550,
+        4
+      ]
+    ],
+    "functions": 254,
+    "candidate_sha256": "a4157c738ed7282fcc0afc75c88aba0e24b1993aff7080448365a7b65534683f",
+    "build": "3/3 PASS",
+    "relocations_verified": 4308,
+    "status": "launched; map exit QA pending"
+  },
+  "remaining_callbacks_fix": {
+    "runtime_target": "0x81238830",
+    "caller_lr": "0x80305634",
+    "module_base": "0x8121B2E0",
+    "text_offsets": [
+      "0xFB54",
+      "0x1C1C8",
+      "0x1C568",
+      "0x1D428"
+    ],
+    "functions": 258,
+    "candidate_sha256": "184321f81dcc24e44d77d0c6a20cc2547abb530aaf05145e2bf6c7a0d1c5b582",
+    "build": "6/6 PASS",
+    "platform_tests": "21/21 PASS",
+    "relocations_verified": 4308,
+    "audit": "20261022_rso_address_reference_audit.json",
+    "status": "launched; map close QA pending"
+  }
+}

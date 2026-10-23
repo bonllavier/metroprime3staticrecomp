@@ -1,0 +1,20 @@
+{
+  "result": "PASS original RFL accepts one profile, rejects 99 empty slots; overall runtime FAIL viewport",
+  "profile": {
+    "profile_count": 1,
+    "name": "Jugador",
+    "create_id": "89917cbd904d2813",
+    "header_crc_residue": 0,
+    "size": 767456,
+    "sha256": "278a56a0c229c683d0a44c2f22cc06ae54dd49188c3a827b3a1150353465f5dd"
+  },
+  "original_lookup_entry": "0x8054A6D8",
+  "guest_profile_address": "0x9054c3e4",
+  "guest_profile_exactly_matches_NAND": true,
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792620827_pid11156\\runtime_probe.json",
+  "log_sha256": "27dd02b03d057e316889197918550c94f5dc184f3ae2231dc04337abdead05ff",
+  "save_reload_verified": false,
+  "graphics_verified": false,
+  "failure": "WebGPU negative viewport height while generating Mii graphics",
+  "read_only_observer_original_body_preserved": true
+}

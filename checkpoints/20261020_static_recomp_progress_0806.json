@@ -1,0 +1,328 @@
+{
+  "created_utc": "2026-10-20T08:06:30Z",
+  "goal": "Present the first real Metroid Prime 3 screen on PC through the isolated static recompilation path.",
+  "revision": "RM3E01_00",
+  "disc_checkpoint": "checkpoints/20261020_iso_partition_dol_match.json",
+  "verified": {
+    "iso_header": "RM3E01 / disc 0 / revision 0",
+    "iso_partition_main_dol": "byte-for-byte identical to pinned main.dol; SHA-256 6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+    "full_translation": "accepted; 21712 translated entries; zero unsupported instructions or invalid SSA functions",
+    "translator_tests": "685 passed",
+    "runtime_platform_tests": "9 passed",
+    "runtime_profile_build": "mkw_runtime_common built with RM3E01 profile",
+    "low_memory_identity": "Prime profile seeding follows the verified disc header"
+  },
+  "strict_link": {
+    "status": "failed",
+    "missing_symbols": [
+      "func_801A0620",
+      "func_801AADE0"
+    ],
+    "executable_created": false,
+    "reason": "The profile-specific Prime OSSaveContext binding now resolves func_801A1ED8. Two alarm helpers remain from the Mario Kart HLE path; no wrong-address shims were added."
+  },
+  "screen_execution": {
+    "guest_entry_called": false,
+    "screen_presented": false
+  },
+  "next_gates": [
+    "Integrate a direct ISO partition reader into the runtime/DVD interface after resolving the pinned nod dependency’s built-in retail/debug common-key distribution constraint; compare runtime reads against the verified probe.",
+    "Replace or validate runtime literal calls into Prime function interiors (notably WiiCompiled OSInitContext at 0x801A20BC, currently inside fn_801A1DE0 +0x2DC) before starting Prime threads; audit direct-call semantics and OSContext state.",
+    "Implement the RSO integration in runtime: read FrontEndUI from the user ISO, reserve guest memory, apply verified relocations, register translated function addresses, run its 4-callback prolog, and route GSCR to table entry +4. The callback table/prolog order is statically verified; the runtime has not invoked it.",
+    "Reduce the 433 indirect sites in main direct-call closure to the calls actually reachable before first presentation; validate callback targets/ABIs and identify unresolved RSO entry/lifecycle transitions. This closure includes whole-loop/gameplay paths and is a superset, not the first-frame path.",
+    "Replace incompatible Mario Kart scheduler/alarm HLE behavior only after a Prime 3 callback and OSContext ABI is verified; current strict link still fails on three unrelated-address references.",
+    "Connect Prime resource reads to the read-only ISO and verify GX/window presentation with the real boot path.",
+    "Implement a Prime-compatible decrementer/event delivery path that preserves the guest OSContext and fibers; queue-offset correction alone is insufficient because the inherited runtime does not simulate decrementer exceptions."
+  ],
+  "latest_static_rso_audit": "checkpoints/20261020_static_rso_bridge_audit.json",
+  "latest_static_rso_audit_result": {
+    "modules_inspected": 74,
+    "imports_inspected": 17943,
+    "unresolved_main_symbols": 0,
+    "imports_to_functions_in_entry_direct_closure": 1662,
+    "imports_to_other_translated_functions": 14437,
+    "imports_to_main_data": 1844,
+    "frontend_module": {
+      "sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+      "imports": 333,
+      "internal_relocations": 1622,
+      "external_relocations": 1799,
+      "entry_offsets": {
+        "prolog": 92504,
+        "epilog": 92540,
+        "unresolved": 92576
+      },
+      "imports_in_entry_direct_closure": 48,
+      "imports_to_other_translated_functions": 242,
+      "imports_to_main_data": 43
+    },
+    "interpretation": "Read-only metadata/name/address coverage only. No relocations applied, RSO translated, linked, or executed."
+  },
+  "latest_frontend_rso_probe": "checkpoints/20261020_frontend_rso_static_translation_probe.json",
+  "frontend_rso_probe_result": {
+    "module_prolog_translated": true,
+    "relocations_checked_exactly": 3421,
+    "generated_rso_functions": 8,
+    "compiled_coff_objects": 8,
+    "unsupported_instructions": 0,
+    "invalid_ssa_functions": 0,
+    "executable_created": false,
+    "screen_presented": false
+  },
+  "latest_frontend_rso_extended_probe": "checkpoints/20261020_frontend_rso_extended_translation_probe.json",
+  "frontend_rso_extended_probe_result": {
+    "address_taken_rso_code_candidates": 101,
+    "generated_rso_bodies": 262,
+    "interior_candidates_excluded": 2,
+    "compiled_rso_objects": 260,
+    "object_format_failures": 0,
+    "unsupported_instructions": 0,
+    "invalid_ssa_functions": 0,
+    "executable_created": false,
+    "screen_presented": false
+  },
+  "latest_frontend_rso_factory_probe": "checkpoints/20261020_frontend_rso_factory_translation_probe.json",
+  "frontend_rso_factory_probe_result": {
+    "factory_probe_address": "0x806AD3BC",
+    "original_section_offset": "0x1675C",
+    "original_observed_size_bytes": 408,
+    "additional_functions_translated_and_compiled": 3,
+    "combined_noninterior_rso_bodies_compiled": 263,
+    "unsupported_instructions": 0,
+    "invalid_ssa_functions": 0,
+    "executable_created": false,
+    "screen_presented": false,
+    "registration_table_static_values": {
+      "table": "0x806AF680",
+      "entry_0_dispatcher": "0x8021D30C",
+      "entry_1_factory": "0x806AD3BC",
+      "published_via": "0x8021D2F4"
+    },
+    "registration_disassembly_verified": true,
+    "factory_direct_call_targets_with_generated_sources": 7,
+    "factory_dol_targets_missing_function_map_entries": 0,
+    "runtime_registration_or_screen_presented": false,
+    "rso_factory_path_instruction_count": 258,
+    "rso_factory_path_indirect_branches": 0,
+    "static_dol_address_overlap_count": 0,
+    "probe_address_audit": "checkpoints/20261020_frontend_rso_probe_address_audit.json"
+  },
+  "latest_frontend_factory_direct_closure": "checkpoints/20261020_frontend_factory_direct_closure.json",
+  "frontend_factory_direct_closure_result": {
+    "unique_functions": 382,
+    "rso_functions": 3,
+    "dol_functions": 379,
+    "missing_metadata_nodes": 0,
+    "sources_present": 382,
+    "interior_translation_nodes": 4,
+    "direct_call_edges": 721,
+    "interior_translation_addresses": [
+      "0x80305AE4",
+      "0x80305AF0",
+      "0x80305AF8",
+      "0x80305AFC"
+    ],
+    "indirect_dispatch_sites": 101,
+    "functions_with_indirect_dispatch": 54
+  },
+  "latest_frontend_rso_prolog_dispatch_audit": "checkpoints/20261020_frontend_rso_prolog_dispatch_audit.json",
+  "frontend_rso_prolog_dispatch_result": {
+    "table": "0x806AD7C0",
+    "callbacks": [
+      "0x806A9F90",
+      "0x806AD298",
+      "0x806AD554",
+      "0x806AD6C8"
+    ],
+    "null_terminated": true,
+    "translated_and_compiled_callback_bodies": 4,
+    "module_prolog_sequence": [
+      "0x806AD72C callback loop",
+      "0x806AA038 thunk",
+      "0x806AA014 GSCR table registration"
+    ],
+    "executed": false
+  },
+  "latest_first_screen_main_to_simple_pool_path": "checkpoints/20261020_first_screen_main_to_simple_pool_path.json",
+  "latest_main_direct_closure_audit": "checkpoints/20261020_main_direct_closure_indirect_audit.json",
+  "main_direct_closure_result": {
+    "unique_functions": 1803,
+    "missing_metadata_nodes": 0,
+    "missing_sources": 0,
+    "source_hash_mismatches": 0,
+    "exact_function_map_entries": 1797,
+    "addresses_absent_from_exact_function_map": [
+      "0x80305AE4",
+      "0x80305AEC",
+      "0x80305AF0",
+      "0x80305AF4",
+      "0x80305AF8",
+      "0x80305AFC"
+    ],
+    "direct_call_edges": 4144,
+    "interior_translation_nodes": 6,
+    "interior_translation_addresses": [
+      "0x80305AE4",
+      "0x80305AEC",
+      "0x80305AF0",
+      "0x80305AF4",
+      "0x80305AF8",
+      "0x80305AFC"
+    ],
+    "indirect_functions": 220,
+    "indirect_call_sites": 385,
+    "indirect_jump_sites": 48,
+    "total_indirect_sites": 433
+  },
+  "main_direct_closure_audit_tool": {
+    "path": "recomp/tools/audit_direct_translation_closure.py",
+    "sha256": "28326c237ecaad8fa6b22d9cfc8134415e60032f8485e1f74d3fc27a041e52f2"
+  },
+  "latest_direct_iso_partition_probe": "checkpoints/20261020_nod_direct_iso_probe.json",
+  "direct_iso_partition_probe_result": {
+    "reader_commit": "6a54b418e541ce5eeb364399116afd6e47b817bb",
+    "toolchain": "Rust 1.99.1 x86_64-pc-windows-gnu",
+    "direct_iso_reads": [
+      "sys/main.dol",
+      "sys/fst.bin",
+      "RSO_ScriptGUIScreenFrontEndUI.rso"
+    ],
+    "partition_hash_validation": true,
+    "byte_identical_to_private_research_extraction": true,
+    "runtime_dvd_connected": false,
+    "nod_source_contains_built_in_common_keys": true,
+    "distribution_approved": false,
+    "game_executed": false,
+    "screen_presented": false
+  },
+  "latest_runtime_literal_guest_target_audit": "checkpoints/20261020_runtime_literal_guest_target_audit.json",
+  "runtime_literal_guest_target_audit_result": {
+    "runtime_cpp_files_scanned": 83,
+    "literal_call_sites": 14,
+    "unique_targets": 14,
+    "targets_inside_other_rm3e01_function_bodies": 14,
+    "exact_function_entries": 0,
+    "interpretation": "Literal guest dispatches embedded in upstream HLE are generally Mario Kart-specific and cannot be assumed to denote Prime entries; no rewrites or aliases were applied."
+  },
+  "latest_runtime_osinitcontext_literal_rejection": "checkpoints/20261020_runtime_osinitcontext_literal_rejection.json",
+  "runtime_osinitcontext_literal_rejection_result": {
+    "target": "0x801A20BC",
+    "containing_function": "fn_801A1DE0",
+    "offset": "0x2DC",
+    "instruction": "stw r0,0x2c(r1)",
+    "dol_raw_file_offset": "0x19D9DC",
+    "ghidra_xrefs_to_target": 0,
+    "accepted_as_callable_entry": false,
+    "runtime_path_executed": false,
+    "verifier": "tools/verify_runtime_osinitcontext_literal_rejection.py"
+  },
+  "latest_hle_registration_range_audit": "checkpoints/20261020_hle_registration_function_range_audit.json",
+  "latest_startup_alarm_bridge_audit": "checkpoints/20261020_hle_interior_registration_and_startup_alarm.json",
+  "hle_registration_range_audit_result": {
+    "active_sites": 569,
+    "unique_addresses": 569,
+    "exact_prime_function_entries": 0,
+    "inside_sized_prime_function_bodies": 569,
+    "registered_addresses_in_main_direct_closure": 0,
+    "indirect_dispatches_resolved": false
+  },
+  "startup_periodic_alarm_result": {
+    "path": [
+      "0x802D5150",
+      "0x802EAB50",
+      "0x802EDC9C",
+      "0x802EB5A4"
+    ],
+    "constructor_source_hash_verified": true,
+    "prime_ossetperiodicalarm_target": "0x804DEC60",
+    "translated": true,
+    "runtime_timer_bridge_validated": false,
+    "screen_presented": false
+  },
+  "hle_registration_range_audit_tool": "tools/audit_hle_registration_interior_targets.py",
+  "latest_prime_alarm_interrupt_route": "checkpoints/20261020_prime_alarm_interrupt_route.json",
+  "prime_alarm_interrupt_route_result": {
+    "exception_template_bytes_verified": true,
+    "handler_table_slot": 8,
+    "registered_wrapper": "0x804DF028",
+    "wrapper_tail_branches_to": "0x804DEDFC",
+    "handler_r3_is_interrupt_index": true,
+    "handler_r4_is_lowmem_0xD4_context_pointer": true,
+    "current_hle_callback_r4_matches": true,
+    "prime_alarm_queue_offset": "-0x1D50",
+    "wiicompiled_hle_queue_offset": "-0x6360",
+    "host_context_bridge_validated": false,
+    "interrupt_executed": false,
+    "decrementer_exception_simulated_by_inherited_runtime": false,
+    "runtime_source_evidence": "third_party/WiiCompiled/runtime/src/hle/os/os_init.cpp:268 states decrementer exceptions are not simulated; os_alarm.cpp pumps alarms from host callbacks.",
+    "decrementer_override_collision": {
+      "guest_address": "0x8012E594",
+      "prime_function": "PursuePlayer__10CPatternedFR13CStateManager9EStateMsgff",
+      "offset": "0x1A8",
+      "dol_instruction": "bge 0x8012E604",
+      "dynamic_execution_verified": false,
+      "ghidra_xrefs_to_target": 0,
+      "interpretation": "Interior-address binding mismatch; no Ghidra incoming refs. It is not proven to intercept sequential execution or be invoked.",
+      "hle_registration_source": "third_party/WiiCompiled/runtime/src/hle/os/os_init.cpp:273"
+    }
+  },
+  "entrypoint_direct_closure_result": {
+    "root": "0x80006320",
+    "unique_functions": 1906,
+    "missing_sources": 0,
+    "source_hash_mismatches": 0,
+    "direct_edges": 4358,
+    "indirect_sites": 447,
+    "fixed_hle_registration_exact_nodes": 0
+  },
+  "latest_decrementer_binding_audit": "checkpoints/20261020_decrementer_binding_collision.json",
+  "decrementer_binding_audit_verifier": "tools/verify_decrementer_binding_collision.py",
+  "prime_alarm_layout_verified": {
+    "queue_head": "0x8067E470",
+    "queue_tail": "0x8067E474",
+    "queue_sda1_offset": "-0x1D50",
+    "alarm_handler": {
+      "offset": "0x00",
+      "size": 4
+    },
+    "fire_time_hi": {
+      "offset": "0x08",
+      "size": 4
+    },
+    "fire_time_lo": {
+      "offset": "0x0C",
+      "size": 4
+    },
+    "prev_link": {
+      "offset": "0x10",
+      "size": 4
+    },
+    "next_link": {
+      "offset": "0x14",
+      "size": 4
+    },
+    "period_hi": {
+      "offset": "0x18",
+      "size": 4
+    },
+    "period_lo": {
+      "offset": "0x1C",
+      "size": 4
+    },
+    "evidence": "Ghidra decompilation of exact Prime OS alarm insertion 0x804DE9A0 and interrupt handler 0x804DEDFC on DOL SHA-256 6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104: insertion stores callback at word 0, deadline at words 2/3, prev/next at words 4/5; handler reads period at words 6/7 and updates queue head/tail.",
+    "runtime_current_hle_field_offsets_match": true,
+    "runtime_current_hle_queue_base_matches": false,
+    "dynamic_alarm_execution_verified": false
+  },
+  "latest_prime_context_save_binding": "checkpoints/20261020_prime_context_save_binding.json",
+  "prime_context_save_binding_result": {
+    "prime_entry": "0x804E0144",
+    "verified_static_caller": "0x804E6CD0",
+    "runtime_common_target_compiled": true,
+    "strict_link_remaining_imports": [
+      "func_801A0620",
+      "func_801AADE0"
+    ],
+    "screen_presented": false
+  }
+}

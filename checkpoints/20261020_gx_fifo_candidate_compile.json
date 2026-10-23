@@ -1,0 +1,54 @@
+{
+  "created_utc": "2026-10-20T07:04:40Z",
+  "game_revision": "RM3E01_00",
+  "purpose": "Compile-only investigation of WiiCompiled's GX FIFO symbols needed by translated objects. Neither object is linked into the RM3 runtime.",
+  "compiler": "LLVM-MinGW Clang 22.1.8",
+  "target": "COFF-x86-64",
+  "flags": [
+    "-std=c++20",
+    "-O2",
+    "-march=x86-64-v3",
+    "-fno-fast-math",
+    "-ffp-contract=off",
+    "-fno-slp-vectorize",
+    "-DNOMINMAX",
+    "-DSDL_MAIN_HANDLED",
+    "-DTARGET_PC",
+    "-D_DISABLE_STRING_ANNOTATION",
+    "-D_DISABLE_VECTOR_ANNOTATION"
+  ],
+  "candidate_objects": [
+    {
+      "source": "third_party/WiiCompiled/runtime/src/hle/gx/gx_stubs.cpp",
+      "source_sha256": "10fb0009c36ee92b91436e84384e2b49235807f37c309a97af83f92506b40f57",
+      "object": "build/runtime-core/gx-candidates/gx_stubs.o",
+      "size": 25676,
+      "sha256": "762bb6a93def54bd77d380661908d7fa89a7cbda694a99ce5466a88d27ec1a76",
+      "defined_fifo_symbols": [
+        "GX_HLE_FIFO_Write8",
+        "GX_HLE_FIFO_Write16",
+        "GX_HLE_FIFO_Write32",
+        "GX_HLE_FIFO_WriteFloat"
+      ]
+    },
+    {
+      "source": "third_party/WiiCompiled/runtime/src/hle/gx/gx_fifo.cpp",
+      "source_sha256": "31d29246b31439e60d0b5d8ef40725c5ddb3d614f1bd676dc09616761f060d14",
+      "object": "build/runtime-core/gx-candidates/gx_fifo.o",
+      "size": 33731,
+      "sha256": "7ff5137cdd17a7978586389939511fc8959606b06d9a300b2c3085536ff8fcc7",
+      "defined_fifo_symbols": ["GX_HLE_FIFO_WriteBurst"]
+    }
+  ],
+  "verification": {
+    "objects_coff_x64": 2,
+    "non_x64_objects": 0,
+    "five_unresolved_gx_fifo_imports_in_translated_plus_core_audit_have_candidate_definitions": true
+  },
+  "rejection_reasons_for_integration": [
+    "gx_stubs.cpp also contains fixed-address native overrides; their RM3E01_00 address collisions and reachability have not been audited.",
+    "The FIFO parser and Aurora GX behavior have not been compared against the Prime 3 command stream or a PPC reference execution.",
+    "Compile and symbol definition checks do not verify packet handling, render output, or runtime stability."
+  ],
+  "game_output": null
+}

@@ -1,0 +1,8 @@
+{
+  "game_revision": "RM3E01_00",
+  "startup_translated_functions": 3632,
+  "unique_direct_call_targets_outside_translation": 0,
+  "direct_call_edges_outside_translation": 0,
+  "targets": [],
+  "limitations": "The translator metadata lists direct-call dependencies only; indirect calls, SDK/system effects, dynamic modules, and reachability at runtime are not proven by this report."
+}

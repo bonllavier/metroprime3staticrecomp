@@ -1,0 +1,27 @@
+{
+  "result": "FAIL NAND usage runtime progress: original copied pathname begins with zero",
+  "revision": "RM3E01_00",
+  "observed_input_vector": "1-in/2-out, sizes 64/4/4",
+  "observed_first_request": {
+    "vectors": "0x17FC0820",
+    "path": "0x17FC0840",
+    "first_word": "0x00746974",
+    "clusters": "0x17FC0880",
+    "inodes": "0x17FC08A0"
+  },
+  "scope": "Both bounded runs remained alive but were waiting on repeated EINVAL. No successful menu or storage integration claim. SDK copy path is being observed before any proposed correction.",
+  "artifacts": [
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792618169_pid8332/runtime_probe.json",
+      "sha256": "15af95dec263f04ba6bcecb637c19b33bb1a77017ba71203baff2c0bcd2c18fe"
+    },
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792618689_pid5920/runtime_probe.json",
+      "sha256": "453ce872926e0e7bcbedfcc5e1c11cb4c6738ce884eb6b5709d319b177b0c2cd"
+    },
+    {
+      "path": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/base_1792618689_pid5920/console.log",
+      "sha256": "e5ed99a6ee0de7483cbfc24b443f5e0a7040dee51a35e5f3770b9360d00194eb"
+    }
+  ]
+}

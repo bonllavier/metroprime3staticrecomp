@@ -1,0 +1,22 @@
+{
+  "revision": "RM3E01_00",
+  "result": "PASS two negative diagnostic checks",
+  "tool_sha256": "ca4a7bc9d6d3676ffb0fdccd5b4bc915a5298a748c802772f7b2de8bd868c02f",
+  "original_capture_sha256": "c4704de6fa6ac7b9e6f8a92368d564d62bac01e0fb8be876e45b8e1fed5d2fab",
+  "probe_sha256": "368e38bf53d02efe90a8cfacee0433f3a81c59890067f2b07cc17d87ee227972",
+  "cases": [
+    {
+      "case": "corrupted_gpu_position",
+      "result": "PASS rejected invalid diagnostic",
+      "exit_code": 1,
+      "last_error": "AssertionError"
+    },
+    {
+      "case": "empty_raster",
+      "result": "PASS rejected invalid diagnostic",
+      "exit_code": 1,
+      "last_error": "AssertionError"
+    }
+  ],
+  "game_screen_verified": false
+}

@@ -1,0 +1,19 @@
+{
+  "result": "PASS original menu state-listener boundary; runtime still failed",
+  "runtime_delta": "0x47F920",
+  "target": "0x80B251E4",
+  "nominal": "0x806A58C4",
+  "text_offset": "0xEC64",
+  "original_prefix_bytes_verified": 24,
+  "probe": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792622215_pid13024\\runtime_probe.json",
+  "reference_fields": [
+    [
+      "0xeb5e",
+      6
+    ],
+    [
+      "0xeb66",
+      4
+    ]
+  ]
+}

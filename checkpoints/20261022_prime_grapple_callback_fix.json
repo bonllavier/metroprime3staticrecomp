@@ -1,0 +1,30 @@
+{
+  "result": "PASS translated callback, 417 live and nominal relocations, non-overlap/import gates; full executable link completed and final incremental CMake exit 0",
+  "revision": "RM3E01_00",
+  "module": "ScriptGrapplePoint",
+  "failure_pid": 11212,
+  "runtime_base": "0x80f8c760",
+  "runtime_text": "0x80f8c878",
+  "runtime_callback": "0x80f8e634",
+  "nominal_callback": "0x80692c1c",
+  "callback_text_offset": "0x1dbc",
+  "original_callback_materialization": {
+    "high_immediate_offset": "0x1aaa",
+    "low_immediate_offset": "0x1ab2",
+    "record_callback_stack_offset": "0x38",
+    "record_context_stack_offset": "0x3c"
+  },
+  "observed_caller_lr": "0x801af200",
+  "live_audit": "20261022_prime_grapple_callback_live.json",
+  "module_relocations_verified": 417,
+  "module_functions_before": 50,
+  "module_functions_after": 51,
+  "total_functions_after": 824,
+  "scope": "Original PPC callback translated and registered; no guest patch or skipped invocation. No manual C++ class recovery claim.",
+  "import_contract": "20261022_prime_grapple_callback_import_contract.json",
+  "gameplay_verified": false,
+  "new_source_sha256": "531abe48aa880b27174e32680d81c39abe4cd2526d0dcb70d32e8df9e6606979",
+  "exe_sha256": "33893acd7d28e7590a1f1219146be4f77ec0f83c09ad336e988cf430e789493b",
+  "build_log": "recomp/.tools/prime_grapple_callback_build_stdout_20261022.log",
+  "runtime_retest": "Pending manual QA"
+}

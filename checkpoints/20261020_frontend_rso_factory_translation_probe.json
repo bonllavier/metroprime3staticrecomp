@@ -1,0 +1,225 @@
+{
+  "created_utc": "2026-10-20T08:33:27.392299+00:00",
+  "revision": "RM3E01_00",
+  "module": "RSO_ScriptGUIScreenFrontEndUI.rso",
+  "rso_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+  "program_sha256": "6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104",
+  "factory_reference": {
+    "rso_section": 1,
+    "section_offset": "0x1675C",
+    "observed_original_size_bytes": 408,
+    "source": "docs/front_end_rso.md; previously examined against RM3E01 RSO and main registration path"
+  },
+  "probe_address_calculation": {
+    "module_probe_base": "0x80690000",
+    "section_1_file_layout_offset": "0x6C60",
+    "section_1_probe_address": "0x80696C60",
+    "factory_probe_address": "0x806AD3BC",
+    "observed_factory_end_probe_address": "0x806AD554"
+  },
+  "translation": {
+    "function_map_added_entries": 1,
+    "explicit_root": "0x806AD3BC",
+    "interior_to_other_translation": false,
+    "estimated_ir_instructions": 294,
+    "unsupported_instructions": 0,
+    "invalid_ssa_functions": 0,
+    "generated_rso_bodies": 265,
+    "interior_rso_bodies": 2,
+    "factory_calls": [
+      "0x8027D99C",
+      "0x802DCE04",
+      "0x802DCE5C",
+      "0x802DCEC8",
+      "0x80382710",
+      "0x803EDAF8",
+      "0x806AA044"
+    ],
+    "metadata_sha256": "865dc3d823fd6b33954a922280b50485544309164c1d77763c2d3939aa4bc4b2"
+  },
+  "compiled_additional_functions": [
+    {
+      "address": "0x806AA044",
+      "source": "func_806AA044.cpp",
+      "source_sha256": "fcfdc9686cd4fa35733c5f9b2856fd84470642e980e547dc792c0bdb6a024bdf",
+      "source_size": 13573,
+      "interior_to_other_translation": false,
+      "estimated_ir_instructions": 240,
+      "direct_call_dependencies": [
+        "0x800CAEF0",
+        "0x8037FA18",
+        "0x803825E0",
+        "0x806AD2FC"
+      ],
+      "object": "func_806AA044.o",
+      "object_size": 31231,
+      "object_sha256": "e27153d3eca46f8f6e118743dabb6a5df890373e6b2f07092fa2ae6db8a7e0f1",
+      "object_format": "COFF-x86-64",
+      "machine": "AMD64"
+    },
+    {
+      "address": "0x806AD2FC",
+      "source": "func_806AD2FC.cpp",
+      "source_sha256": "a5cb87277bd3b72d0e2a2138eb7c9811027a7aa884c8a9ca6e8e8b9eb490a9f1",
+      "source_size": 4341,
+      "interior_to_other_translation": false,
+      "estimated_ir_instructions": 100,
+      "direct_call_dependencies": [
+        "0x80013488",
+        "0x801A8014",
+        "0x801AA300"
+      ],
+      "object": "func_806AD2FC.o",
+      "object_size": 23981,
+      "object_sha256": "a76e6cf6a654141f4dd641e58b843a88f7e66f1bed4dc2e8b608227dee1035a5",
+      "object_format": "COFF-x86-64",
+      "machine": "AMD64"
+    },
+    {
+      "address": "0x806AD3BC",
+      "source": "func_806AD3BC.cpp",
+      "source_sha256": "b108264188a234624afbd0570dfba4072d01cbe376204dfc04283fff8c5e9218",
+      "source_size": 11867,
+      "interior_to_other_translation": false,
+      "estimated_ir_instructions": 294,
+      "direct_call_dependencies": [
+        "0x8027D99C",
+        "0x802DCE04",
+        "0x802DCE5C",
+        "0x802DCEC8",
+        "0x80382710",
+        "0x803EDAF8",
+        "0x806AA044"
+      ],
+      "object": "func_806AD3BC.o",
+      "object_size": 39730,
+      "object_sha256": "aab3971e6a02e0f8ca05ba733cdb178babdc6c5b21e66ea83f6cd388e99c1eea",
+      "object_format": "COFF-x86-64",
+      "machine": "AMD64"
+    }
+  ],
+  "combined_static_module_coverage": {
+    "noninterior_translated_bodies": 263,
+    "objects_compiled_across_extended_and_factory_batches": 263,
+    "all_objects_coff_amd64": true,
+    "prior_module_sources_unchanged_count": 262,
+    "prior_module_objects_compiled_count": 260
+  },
+  "limitations": [
+    "The 408-byte original function extent is prior RSO analysis evidence; this translator metadata records emitted IR estimates, not a byte-for-byte PPC equivalence proof.",
+    "PPC translation and COFF compilation do not establish the original native ABI or screen reachability.",
+    "No RSO loader, dispatcher registration, game executable, or running screen was added.",
+    "All synthetic REL, generated sources, and objects remain under ignored recomp/.tools; the source RSO and ISO were not modified."
+  ],
+  "registration_and_disassembly_evidence": {
+    "source": "WiiCompiled-loaded synthetic REL at probe base 0x80690000; PpcDisassembler output and translated function func_806AA014.cpp",
+    "register_function": {
+      "address": "0x806AA014",
+      "decoded_instruction_count": 9,
+      "decoded_range": [
+        "0x806AA014",
+        "0x806AA038"
+      ],
+      "terminator": "branch to 0x8021D2F4"
+    },
+    "computed_table_values": {
+      "bss_table_address": "0x806AF680",
+      "table_entry_0_dispatcher": "0x8021D30C",
+      "table_entry_1_factory": "0x806AD3BC",
+      "publish_call": "0x8021D2F4"
+    },
+    "setter_thunk": {
+      "address": "0x806AA040",
+      "decoded_instruction_count": 1,
+      "instruction": "b 0x8021D2F4",
+      "bytes": 4
+    },
+    "following_constructor": {
+      "address": "0x806AA044",
+      "decoded_instruction_count": 108,
+      "decoded_range": [
+        "0x806AA044",
+        "0x806AA1F4"
+      ],
+      "terminator": "blr"
+    },
+    "factory_disassembly": {
+      "address": "0x806AD3BC",
+      "decoded_instruction_count": 102,
+      "decoded_range": [
+        "0x806AD3BC",
+        "0x806AD554"
+      ],
+      "terminator": "blr",
+      "matches_prior_observed_extent_bytes": 408
+    },
+    "scope_note": "This establishes static address/relocation consistency and decoded extents in the synthetic probe. It does not prove RSO activation, runtime call reachability, ABI correctness, or rendered output.",
+    "factory_direct_dependency_audit": {
+      "result": "all seven direct-call targets have generated source; all six DOL targets have exact function-map entries",
+      "targets": [
+        {
+          "address": "0x8027D99C",
+          "classification": "DOL",
+          "DOL_function_map_entry": true,
+          "generated_source_exists": true,
+          "generated_source_sha256": "2bde6f5f2822a74357d0241010053935b510482ed33f395cb13f9cabfd6bca13"
+        },
+        {
+          "address": "0x802DCE04",
+          "classification": "DOL",
+          "DOL_function_map_entry": true,
+          "generated_source_exists": true,
+          "generated_source_sha256": "d40682d9b07c741d8e691aa6b39ace318bc3b90804c639c7f357ec9c9d9fcf38"
+        },
+        {
+          "address": "0x802DCE5C",
+          "classification": "DOL",
+          "DOL_function_map_entry": true,
+          "generated_source_exists": true,
+          "generated_source_sha256": "1ff303ad26e7e3b0cb5a080fd5b81e86b0fa92cb2b7c434df092c09363f2dfa6"
+        },
+        {
+          "address": "0x802DCEC8",
+          "classification": "DOL",
+          "DOL_function_map_entry": true,
+          "generated_source_exists": true,
+          "generated_source_sha256": "f95c2e70d7c6f5954ec2cab34a1301fa2f0a9a7d53373f5e1d74e75a71feef30"
+        },
+        {
+          "address": "0x80382710",
+          "classification": "DOL",
+          "DOL_function_map_entry": true,
+          "generated_source_exists": true,
+          "generated_source_sha256": "0ffd8d5ee306a88655b74b6195b333823327fab42dc0348fc3cb4d6dd5399068"
+        },
+        {
+          "address": "0x803EDAF8",
+          "classification": "DOL",
+          "DOL_function_map_entry": true,
+          "generated_source_exists": true,
+          "generated_source_sha256": "7c26d38676a42df3e9313c01d00db0b82a8e338da216e941b04ae427459cf566"
+        },
+        {
+          "address": "0x806AA044",
+          "classification": "RSO-internal",
+          "DOL_function_map_entry": null,
+          "generated_source_exists": true,
+          "generated_source_sha256": "fcfdc9686cd4fa35733c5f9b2856fd84470642e980e547dc792c0bdb6a024bdf"
+        }
+      ],
+      "interpretation": "Generation coverage only; whole-program strict linking and runtime execution remain unverified."
+    },
+    "rso_factory_path_indirect_branch_scan": {
+      "functions": [
+        "0x806AD3BC",
+        "0x806AA044",
+        "0x806AD2FC"
+      ],
+      "instructions_decoded": 258,
+      "indirect_branch_mnemonics_found": 0,
+      "decoder": "WiiCompiled PpcDisassembler over the WiiCompiled-loaded synthetic REL image",
+      "scope": "Only these three RSO bodies. This says nothing about indirect calls in DOL dependencies, callbacks, loader dispatch, or the module lifecycle."
+    }
+  },
+  "probe_address_overlap_audit": "20261020_frontend_rso_probe_address_audit.json"
+}

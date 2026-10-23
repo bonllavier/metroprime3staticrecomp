@@ -1,0 +1,46 @@
+{
+  "revision": "RM3E01_00",
+  "function": "0x800E01F0",
+  "failing_target": "0x800E0574",
+  "table": "0x80591910",
+  "entries": [
+    "0x800e0528",
+    "0x800e055c",
+    "0x800e0568",
+    "0x800e0568",
+    "0x800e0574",
+    "0x800e0580",
+    "0x800e055c",
+    "0x800e058c",
+    "0x800e058c",
+    "0x800e0598",
+    "0x800e05b0",
+    "0x800e05c8"
+  ],
+  "all_original_table_targets_translated": true,
+  "failing_selector": 4,
+  "unsupported_instructions": 0,
+  "candidate_sha256": "e1f6ef0ced3954ae3c27ec5f2df43d9aa11972090f660b4dd14da699fcbb3531",
+  "runtime_qa": "pending user return to soldier scene",
+  "performance_and_quadrants": "under investigation; no fix claimed",
+  "platform_tests": "21/21 PASS",
+  "performance_candidate_sha256": "fd2e4fc9d6ca372f514e1532063c4aebf305ea8585e25c42dfe015799ef7d7c6",
+  "performance_candidate_promoted": false,
+  "profiling": {
+    "process": 8044,
+    "live_fps_range": "14.6..18.5",
+    "main_thread_cpu_ms": 3437.5,
+    "renderer_worker_cpu_ms": 328.125,
+    "presenter_cpu_ms": 93.75,
+    "samples_per_thread": 120,
+    "interval_seconds": 0.025,
+    "note": "Suspension overhead extends capture wall time; raw stack words are candidate addresses, not unwound stacks. Main thread is CPU bound, renderer mostly waits.",
+    "evidence": "recomp/.tools/performance_scene_pid8044_20261022.json"
+  },
+  "performance_changes": [
+    "Avoid clock and mutex for an empty IPC reply queue using atomic published count",
+    "Use direct IPC control polling and skip IPC handler walk when no interrupt",
+    "Test pending DSP mailbox bit before guest table validation"
+  ],
+  "graphics": "No root cause confirmed. Awaiting fixed-cross versus moving-block description; no speculative graphic patch."
+}

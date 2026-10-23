@@ -1,0 +1,27 @@
+{
+  "profile_count": 1,
+  "name": "Jugador",
+  "create_id": "89917cbd904d2813",
+  "header_crc_residue": 0,
+  "size": 767456,
+  "sha256": "278a56a0c229c683d0a44c2f22cc06ae54dd49188c3a827b3a1150353465f5dd",
+  "result": "PASS offline database/header CRC contract; original RFL and save reload pending",
+  "tests": "unittest 5/5; independent binascii CRC comparison; damaged headers and structural corruption rejected",
+  "observer_original_body_preserved": true,
+  "original_template_address": "0x8058A5A8",
+  "profile_personal_data": "locally generated, no external personal Mii data",
+  "files": [
+    {
+      "path": "recomp\\tools\\prepare_prime_mii_profile.py",
+      "sha256": "5433e57ad6ff23f10ba5fcace319e44eeb61761927130d22d47d20fbfc578708"
+    },
+    {
+      "path": "recomp\\tools\\test_prime_mii_profile.py",
+      "sha256": "15c78eef0b3c04359842b0d0e1ce949a316a40330fa40a50fbebad211b310208"
+    },
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\NAND\\shared2\\menu\\FaceLib\\RFL_DB.dat",
+      "sha256": "278a56a0c229c683d0a44c2f22cc06ae54dd49188c3a827b3a1150353465f5dd"
+    }
+  ]
+}

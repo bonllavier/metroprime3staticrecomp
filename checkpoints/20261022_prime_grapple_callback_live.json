@@ -1,0 +1,265 @@
+{
+  "revision": "RM3E01_00",
+  "module": "RSO_ScriptGrapplePoint.rso",
+  "original_sha256": "65a7f4c935e0182ce280cabbbcdb2fec2db484ad1f494b4a1b346907a211eeca",
+  "runtime_base": "0x80f8c760",
+  "prolog_address": "0x80f8fbd0",
+  "dump_sha256": "9a57c6b07aa35a7570b459f71c8bf49cee33248fd613a4d3c061799abdc06343",
+  "dump_path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792678049_pid11212\\mem1.bin",
+  "sections": [
+    {
+      "index": 0,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 1,
+      "file_offset": 280,
+      "size": 13660,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 2163787896
+    },
+    {
+      "index": 2,
+      "file_offset": 13940,
+      "size": 12,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 2163801556
+    },
+    {
+      "index": 3,
+      "file_offset": 13952,
+      "size": 4,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 2163801568
+    },
+    {
+      "index": 4,
+      "file_offset": 13960,
+      "size": 224,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 2163801576
+    },
+    {
+      "index": 5,
+      "file_offset": 14184,
+      "size": 328,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 2163801800
+    },
+    {
+      "index": 6,
+      "file_offset": 0,
+      "size": 172,
+      "executable_flag": false,
+      "bss": true,
+      "runtime_address": 2163811136
+    },
+    {
+      "index": 7,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 8,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 9,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 10,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 11,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 12,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 13,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 14,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 15,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 16,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 17,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 18,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 19,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 20,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 21,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 22,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    },
+    {
+      "index": 23,
+      "file_offset": 0,
+      "size": 0,
+      "executable_flag": false,
+      "bss": false,
+      "runtime_address": 0
+    }
+  ],
+  "relocations_checked": 417,
+  "mismatches": [],
+  "verified_import_thunks": [],
+  "section_contents": [
+    {
+      "index": 1,
+      "size": 13660,
+      "expected_sha256": "ca22dd652bd8861baf3aa85b8b144be692ce03b056bc48ae32ce98ed3937f105",
+      "runtime_sha256": "ca22dd652bd8861baf3aa85b8b144be692ce03b056bc48ae32ce98ed3937f105",
+      "different_bytes": 0,
+      "first_differences": []
+    },
+    {
+      "index": 2,
+      "size": 12,
+      "expected_sha256": "5710e8aaa3f002c45459e6ea6535011d348c8a847ccf2f0046742472f1afa07e",
+      "runtime_sha256": "5710e8aaa3f002c45459e6ea6535011d348c8a847ccf2f0046742472f1afa07e",
+      "different_bytes": 0,
+      "first_differences": []
+    },
+    {
+      "index": 3,
+      "size": 4,
+      "expected_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+      "runtime_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+      "different_bytes": 0,
+      "first_differences": []
+    },
+    {
+      "index": 4,
+      "size": 224,
+      "expected_sha256": "66b2fc1cc2c51fa40ee4e078bbeccd87814dbf20227fc6cab111416f87f468ef",
+      "runtime_sha256": "66b2fc1cc2c51fa40ee4e078bbeccd87814dbf20227fc6cab111416f87f468ef",
+      "different_bytes": 0,
+      "first_differences": []
+    },
+    {
+      "index": 5,
+      "size": 328,
+      "expected_sha256": "f421d851bf1894cefcdaa97b9d59c0ddc797ad719c8b085e65b2f80b2d74b594",
+      "runtime_sha256": "f421d851bf1894cefcdaa97b9d59c0ddc797ad719c8b085e65b2f80b2d74b594",
+      "different_bytes": 0,
+      "first_differences": []
+    }
+  ],
+  "bss": [
+    {
+      "index": 6,
+      "address": "0x80f92340",
+      "size": 172,
+      "all_zero_before_prolog": false,
+      "sha256": "0eb0bf23904b35daf4ba51ab6dd5a76a9756d7605d3b13cf9d39a6650cf6c22e"
+    }
+  ],
+  "constructor_entries": [
+    "0x80f8fa2c",
+    "0x80f8fce0"
+  ],
+  "source": "Original SDK linker output in a private runtime RAM dump; not host execution of these PPC functions.",
+  "all_relocations_match": true,
+  "all_section_contents_match": true,
+  "game_screen_verified": false
+}

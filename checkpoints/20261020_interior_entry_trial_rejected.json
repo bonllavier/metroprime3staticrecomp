@@ -1,0 +1,18 @@
+{
+  "created_utc": "2026-10-20T06:24:00Z",
+  "status": "rejected_superseded",
+  "revision": "RM3E01_00",
+  "incorrect_claim": "The conditional dispatch at 0x800063C0 targeted 0x804B9E94, an unregistered interior address.",
+  "cause": "Arithmetic error in hexadecimal subtraction. 0x804C0000 - 24932 equals 0x804B9E9C, not 0x804B9E94.",
+  "verified_target": "0x804B9E9C",
+  "verified_symbol": "InitMetroTRK",
+  "canonical_map_contains_target": true,
+  "ghidra_decompilation": "__start resolves the conditional indirect call as InitMetroTRK.",
+  "consequence": "The isolated 0x804B9E94 translation/build was unrelated to the boot target and has been removed from the active plan. It must not be cited as resolving a startup gap.",
+  "canonical_matching_or_translation_modified": false,
+  "iso_modified": false,
+  "corrected_checkpoints": [
+    "20261020_entry_boot_audit.json",
+    "20261020_direct_call_closure.json"
+  ]
+}

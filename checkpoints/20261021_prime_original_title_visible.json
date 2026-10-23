@@ -1,0 +1,36 @@
+{
+  "revision": "RM3E01_00",
+  "original_title_screen_visible": true,
+  "visual_review": "Window at second70 shows original Metroid Prime 3 Corruption logo, copyright and Press A to Start, reached by the original front end and THP decoder.",
+  "capture": {
+    "at_second": 70,
+    "path": "${LOCAL_PATH}",
+    "print_window_return": true,
+    "sha256": "4e495b9d5a0a3d7f47bb918f31521b7d6a41a3b1ffed3d387e77ef7f633e6c8e"
+  },
+  "executable_sha256": "ca351c12856b27a817f72793267de59be17a63dce06bd94d30f438692e11389a",
+  "runtime_stable": false,
+  "later_failure": "Original draw packet: 4 vertices, 112 bytes; Aurora layout expanded to 208 bytes by duplicate NBT publication.",
+  "menu_interaction_verified": false,
+  "audio_verified": false,
+  "hardware_pixel_parity_verified": false,
+  "independent_pixel_checks": "Frame119 compressed input matches the private THP exactly. FFmpeg one-code bound fails (134 samples differ by2). Direct mathematical IDCT with truncation is closer, but still has two V samples differing by2; no limit was relaxed.",
+  "artifacts": [
+    {
+      "path": "recomp\\build\\RM3E01_00_runtime_link_probe\\UserData\\Logs\\base_1792613248_pid9292\\runtime_probe.json",
+      "sha256": "8f4731828d5801254b0bad4667520d01af319c9605451832d18c646a28e91323"
+    },
+    {
+      "path": "recomp\\checkpoints\\20261021_prime_title_vertex_boundary.json",
+      "sha256": "65a1ab64fd5a1ef2df922e40a3b35358ea6ef01576a6253bb134becf5f0f8ed2"
+    },
+    {
+      "path": "recomp\\checkpoints\\20261021_prime_title_frame119_pixel_comparison.json",
+      "sha256": "d4fbc78f7e629811ed8662236f7137570862b430e95520624b40e9f2170e52ff"
+    },
+    {
+      "path": "recomp\\checkpoints\\20261021_prime_title_frame119_direct_idct.json",
+      "sha256": "1048e7ddd5568bda65254ca2d1fcf62bd33e02fe94fa7b994e3e65758bb49db9"
+    }
+  ]
+}

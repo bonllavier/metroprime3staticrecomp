@@ -1,0 +1,26 @@
+.tools/
+input/**
+generated/**
+build/**
+logs/**
+*.dmp
+*.log
+
+
+# Local binaries and game media
+*.exe
+*.dll
+*.pdb
+*.iso
+*.rvz
+*.wbfs
+*.gcm
+*.nkit.iso
+*.dmp
+
+# Generated analysis and local build outputs
+/analysis/
+**/bin/
+**/obj/
+**/__pycache__/
+**/TestResults/

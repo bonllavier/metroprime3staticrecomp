@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "feature": "In-game performance diagnostics overlay, enabled initially, F9 toggle",
+  "implementation": {
+    "host": "Read-only GetProcessTimes/GetThreadTimes + Toolhelp thread list once/second. Top4 OS thread IDs sorted by CPU time, 100 percent per logical processor; total process percent normalized by logical count. No suspension, affinity changes or input injection.",
+    "gpu": "PDH GPU Engine Utilization Percentage filtered to current PID, ALL engine types; display maximum valid engine plus engtype name. The initial 3D-only filter missed Graphics_1 and incorrectly suggested no GPU usage.",
+    "graphics": "AuroraStats plus sampled elapsed host time in CPU-side rendering stages, including waits. Inclusive estimated ms/s, not CPU execution time and not GPU timestamps. Draw assembly is unmerged path only, not renderer total.",
+    "gpu_timer_limit": "WebGPU GPU timestamp queries not instrumented; UI explicitly says GPU milliseconds unavailable.",
+    "controls": "F9 toggle; draggable closable diagnostic window; no gameplay button automation."
+  },
+  "validation": {
+    "host_busy_fixture": {
+      "logical_processors": 8,
+      "process_percent": 12.2,
+      "busy_logical_processors": 0.98,
+      "hottest_thread_percent": 97.61,
+      "result": "PASS; distinguishes one occupied logical CPU from process total."
+    },
+    "gpu_external_probe": {
+      "pid": 9984,
+      "open_query": "PASS",
+      "add_counter": "PASS",
+      "collect": "PASS",
+      "formatted_array": "PASS",
+      "matched_3d_engines": 10,
+      "all_counter_statuses": 0,
+      "reported_percent": 0.0,
+      "limit": "Live values zero during this particular interval; do not infer GPU busy time or stable gameplay performance from this probe."
+    },
+    "platform_tests": "21/21 PASS",
+    "build": "PASS",
+    "user_gameplay_screenshot": {
+      "process_cpu_percent": 13.0,
+      "busy_logical_processors": 1.04,
+      "logical_processors": 8,
+      "hottest_tid": 16784,
+      "hottest_cpu_one_logical_percent": 96.6,
+      "fps": 17.0,
+      "result": "Strong serial CPU bottleneck; screenshot does not show all CPU capacity used."
+    },
+    "gpu_all_engine_probe": {
+      "pid": 13348,
+      "matched_engines": 27,
+      "active_engine": "Graphics_1",
+      "active_percent": 3.9814,
+      "result": "Explains incorrect zero from initial3D-only filter; no driver/global GPU utilization assumption."
+    },
+    "profile_hangar": {
+      "path": "recomp/.tools/perf_overlay_hangar_13348.json",
+      "main_tid": 16784,
+      "main_cpu_ms": 4468.75,
+      "samples": 240,
+      "exact_texture_equality_samples": 37,
+      "mapped_vertex_samples": 14,
+      "packed_draw_samples": 9,
+      "external_unsymbolized_samples": 71
+    },
+    "corrected_live": {
+      "capture": "recomp/.tools/performance_overlay_corrected_window.png",
+      "gpu_engine": "Graphics_1",
+      "intro_gpu_percent": 2.72815,
+      "result": "Corrected overlay verified visually and host log; no automated input."
+    },
+    "latest_user_gameplay": {
+      "fps": 19.4,
+      "hottest_tid": 19020,
+      "hottest_cpu_percent": 99.2,
+      "process_cpu_percent": 12.6,
+      "busy_logical_processors": 1.01,
+      "gpu_engine": "Graphics_1",
+      "gpu_percent": 3.6,
+      "result": "Serial CPU bottleneck persists; overlay correction did not redistribute execution."
+    },
+    "saturated_thread_followup": {
+      "profile": "recomp/.tools/perf_saturated_tid19020.json",
+      "samples": 500,
+      "main_tid": 19020,
+      "main_cpu_ms": 7296.875,
+      "exact_texture_equality_samples": 77,
+      "mapped_vertex_expansion_samples": 30,
+      "packed_draw_samples": 25,
+      "ipc_poll_samples": 21,
+      "external_samples": 105,
+      "external_note": "Nearest DLL exports identified repeated CRT getenv and locks; closest export is not a validated unwind."
+    }
+  },
+  "iso": "untouched",
+  "matching": "untouched",
+  "gameplay_fps_issue": "remains open; feature is diagnostic, not a claimed speed fix",
+  "candidate_sha256": "623f58d522621850cbe46ebfc83b96ac84ad0e4a820f1f71e8ca456d035e9f06",
+  "pid": 15596,
+  "followup_candidate": {
+    "sha256": "1eb06ebfdb561fbe4295916f8fa87c43def4d62ab905ed17e83680c05161046b",
+    "build": "4/4 PASS",
+    "promoted": false,
+    "running_pid_preserved": 15596,
+    "change": "Copy launch-time diagnostic environment values once per call site in Aurora common/command_processor. Preserves absent/empty/value distinction and captured file paths. Avoid per-draw Windows CRT environment lock. Gameplay pipeline and exact source validation unchanged.",
+    "microbenchmark": {
+      "iterations": 1000000,
+      "crt_ms": 3134.528,
+      "snapshot_ms": 2.052,
+      "method": "No-inline wrappers with volatile guard prevent loop-hoisting getenv. Same absent-value result. Earlier hoisted benchmark discarded.",
+      "limit": "Isolated overhead only; no live FPS improvement claim."
+    },
+    "next": "Combine/validate performance changes at next appropriate restart; no repeated manual load requested for this alone."
+  }
+}

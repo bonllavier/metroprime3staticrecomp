@@ -3,8 +3,10 @@
 #include <array>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
-static void Check(bool ok){if(!ok)throw std::runtime_error("Packed DL expansion contract failed");}
+static void CheckAt(bool ok,int line){if(!ok)throw std::runtime_error("Packed DL expansion contract failed at line "+std::to_string(line));}
+#define Check(...) CheckAt((__VA_ARGS__),__LINE__)
 int main(){
     using namespace PrimeDlVertices;
     // Fixed-width copies preserve every byte and never overwrite a tail.
@@ -105,5 +107,45 @@ int main(){
     layout={{4,1,1,0x1000,0}};Check(!Expand(&index,1,1,layout,output,read,1024));
     layout={{4,3,1,0x1000,4}};Check(!Expand(&index,1,1,layout,output,read,1024));
     layout={{4,1,3,0x1000,4}};Check(!Expand(&index,1,1,layout,output,read,1024));
+    // Large fully mapped draws may expand independent vertex ranges on two
+    // persistent host workers. Compare every byte with the validated scalar
+    // fallback, and repeat after mutating the source array to catch stale reads.
+    {
+        constexpr uint32_t vertices=2048;
+        constexpr uint32_t sourceStride=37;
+        std::vector<uint8_t> mappedRam(256u*8u),packed(size_t(vertices)*sourceStride),
+                            parallelOutput,scalarOutput;
+        for(size_t i=0;i<mappedRam.size();++i)mappedRam[i]=uint8_t(i*31u+7u);
+        for(uint32_t vertex=0;vertex<vertices;++vertex) {
+            const size_t base=size_t(vertex)*sourceStride;
+            packed[base]=uint8_t(vertex);
+            for(unsigned byte=1;byte<sourceStride;++byte)
+                packed[base+byte]=uint8_t(vertex*17u+byte*29u);
+        }
+        std::vector<Attribute> mappedAttributes{{4,1,1,0x1000,8,mappedRam.data(),mappedRam.size()},
+                                                {36,0,1,0,0}};
+        auto scalarAttributes=mappedAttributes;
+        scalarAttributes[0].arrayData=nullptr;scalarAttributes[0].arrayBytes=0;
+        const auto mappedRead=[&](uint32_t address,size_t bytes,const uint8_t*& span) {
+            if(address<0x1000 || address-0x1000>mappedRam.size() ||
+               bytes>mappedRam.size()-(address-0x1000))return false;
+            span=mappedRam.data()+address-0x1000;return true;
+        };
+        bool usedParallel=false;
+        Check(Expand(packed.data(),packed.size(),vertices,mappedAttributes,parallelOutput,
+                     mappedRead,1024*1024,&usedParallel));
+        Check(Expand(packed.data(),packed.size(),vertices,scalarAttributes,scalarOutput,
+                     mappedRead,1024*1024));
+        Check(parallelOutput==scalarOutput);
+        Check(usedParallel==(std::thread::hardware_concurrency()>2));
+        const auto previousOutput=parallelOutput;
+        mappedRam[8]^=0x5A;
+        Check(Expand(packed.data(),packed.size(),vertices,mappedAttributes,parallelOutput,
+                     mappedRead,1024*1024,&usedParallel));
+        Check(Expand(packed.data(),packed.size(),vertices,scalarAttributes,scalarOutput,
+                     mappedRead,1024*1024));
+        Check(parallelOutput==scalarOutput);
+        Check(parallelOutput!=previousOutput);
+    }
     std::cout<<"PASS mixed 8/16-bit indices, packed colors, NBT3, IEEE bits and rejected bounds/layouts\n";
 }

@@ -877,7 +877,13 @@ static bool TrySubmitPrimePackedDl(uint8_t opcode,GXVtxFmt fmt,uint16_t count,
         if(!Memory::Contains(address,bytes))return false;
         span=static_cast<const uint8_t*>(Memory::GetPointer(address,bytes));return true;
     };
-    if(!PrimeDlVertices::Expand(source,sourceBytes,count,attributes,expanded,read,GxFifoStorage::MaxBufferedBytes))return false;
+    bool expandedParallel=false;
+    if(!PrimeDlVertices::Expand(source,sourceBytes,count,attributes,expanded,read,
+                                GxFifoStorage::MaxBufferedBytes,&expandedParallel))return false;
+    static unsigned parallelTraces=0;
+    if(expandedParallel && parallelTraces++<8)RT_LOG(RT_TAG_GX)
+        <<"[prime-packed-indexed-dl] parallel vertex expansion vertices="<<count
+        <<" bytes="<<expanded.size()<<" workers=2"<<std::endl;
     struct RestoreFormat {
         GXVtxFmt previous;
         ~RestoreFormat(){g_hleGxState.currentVtxFmt=previous;}

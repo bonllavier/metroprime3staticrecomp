@@ -114,6 +114,10 @@ El HLE VI ahora pasa por `r4` un puntero OSContext guest valido al handler Prime
 La prueba de 25 s consume el comando IOS sincronico 7 en `head=28` y avanza la cola hasta `head=29`; el estado anterior se deten?a antes de ese consumo. El proceso permanece vivo y sin fatal, pero no hay imagen del juego y termina sondeando retraces. Ninja y CTest 9/9 pasan. Evidencia: `recomp/checkpoints/20261021_prime_vi_context_argument.json`; verificar con `python -B recomp/tools/verify_prime_vi_context_argument.py`. El DOL RM3E01_00 mantiene SHA-256 `6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104`; la ISO continua intacta y en solo lectura. Proximo: localizar PC/estado del hilo despues del comando 7; no simular respuestas IOS ni afirmar que ya se renderiza una pantalla.
 
 
+## Paralelismo
+
+El experimento de distribucion de trabajo se desarrolla en la rama `parallel-experiment`, separada de `main` y de la etiqueta `before-parallelism`. El primer candidato paraleliza condicionalmente la expansion de vertices de display lists grandes; la equivalencia de bytes esta cubierta por pruebas, pero falta medir el efecto sobre FPS reales. Alcance, limites y comandos: [experimento de paralelismo](docs/parallelizacion.md).
+
 ## QA manual por peticion del usuario, 22 de octubre
 
 El usuario regreso y asume el QA. Se retiro la inyeccion de botones por

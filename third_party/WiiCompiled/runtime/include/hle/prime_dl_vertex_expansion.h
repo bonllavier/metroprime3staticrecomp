@@ -2,6 +2,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <algorithm>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 #include <vector>
 
 namespace PrimeDlVertices {
@@ -72,13 +77,139 @@ inline void ExpandMappedAttribute(const uint8_t* source,size_t sourceStride,
     default: return ExpandMappedAttributeImpl<IndexBytes>(source,sourceStride,destination,directStride,count,attribute);
     }
 }
+inline void ExpandMappedRange(const uint8_t* source,size_t sourceStride,
+                              uint8_t* destination,size_t directStride,
+                              uint32_t first,uint32_t last,
+                              const std::vector<Attribute>& attributes) {
+    size_t sourceOffset=0,directOffset=0;
+    for(const auto& attribute:attributes) {
+        for(uint32_t vertex=first;vertex<last;++vertex) {
+            const uint8_t* input=source+size_t(vertex)*sourceStride+sourceOffset;
+            const uint8_t* components=input;
+            if(attribute.indexBytes) {
+                uint32_t index=input[0];
+                if(attribute.indexBytes==2)index=(index<<8)|input[1];
+                components=attribute.arrayData+size_t(index)*attribute.arrayStride;
+            }
+            CopyComponents(destination+size_t(vertex)*directStride+directOffset,
+                           components,attribute.bytes);
+        }
+        sourceOffset+=attribute.indexBytes ? attribute.indexBytes : attribute.bytes;
+        directOffset+=attribute.bytes;
+    }
+}
+
+// The draw still waits for expansion to finish before it is submitted to GX.
+// Two persistent workers only help large, fully mapped packets; smaller draws
+// stay on the current thread to avoid paying synchronization cost per primitive.
+class MappedExpansionWorkers {
+public:
+    static MappedExpansionWorkers& Instance() {
+        static MappedExpansionWorkers workers;
+        return workers;
+    }
+    bool Run(const uint8_t* source,size_t sourceStride,uint8_t* destination,
+             size_t directStride,uint32_t count,
+             const std::vector<Attribute>& attributes) {
+        if(m_workers.empty())return false;
+        std::lock_guard<std::mutex> runLock(m_runMutex);
+        Job job{source,sourceStride,destination,directStride,count,&attributes};
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_job=&job;
+            m_nextTask.store(0,std::memory_order_relaxed);
+            m_finishedWorkers=0;
+            ++m_generation;
+        }
+        m_start.notify_all();
+        RunAvailableTasks(&job);
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_done.wait(lock,[this]{return m_finishedWorkers==m_workers.size();});
+        m_job=nullptr;
+        return true;
+    }
+private:
+    struct Job {
+        const uint8_t* source;
+        size_t sourceStride;
+        uint8_t* destination;
+        size_t directStride;
+        uint32_t count;
+        const std::vector<Attribute>* attributes;
+    };
+    static constexpr uint32_t kVerticesPerTask=256;
+    MappedExpansionWorkers() {
+        const unsigned logical=std::thread::hardware_concurrency();
+        const unsigned workerCount=logical>2 ? std::min(2u,logical-2u) : 0u;
+        try {
+            m_workers.reserve(workerCount);
+            for(unsigned i=0;i<workerCount;++i)
+                m_workers.emplace_back([this]{WorkerLoop();});
+        } catch(...) {
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                m_stopping=true;
+            }
+            m_start.notify_all();
+            for(auto& worker:m_workers)if(worker.joinable())worker.join();
+            m_workers.clear();
+            m_stopping=false;
+        }
+    }
+    ~MappedExpansionWorkers() {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_stopping=true;
+        }
+        m_start.notify_all();
+        for(auto& worker:m_workers)if(worker.joinable())worker.join();
+    }
+    void RunAvailableTasks(const Job* job) {
+        const uint32_t taskCount=1u+(job->count-1u)/kVerticesPerTask;
+        for(;;) {
+            const uint32_t task=m_nextTask.fetch_add(1,std::memory_order_relaxed);
+            if(task>=taskCount)break;
+            const uint32_t first=task*kVerticesPerTask;
+            const uint32_t last=std::min(job->count,first+kVerticesPerTask);
+            ExpandMappedRange(job->source,job->sourceStride,job->destination,
+                              job->directStride,first,last,*job->attributes);
+        }
+    }
+    void WorkerLoop() {
+        uint64_t observedGeneration=0;
+        std::unique_lock<std::mutex> lock(m_mutex);
+        while(!m_stopping) {
+            m_start.wait(lock,[this,observedGeneration]{
+                return m_stopping || m_generation!=observedGeneration;
+            });
+            if(m_stopping)return;
+            observedGeneration=m_generation;
+            const Job* job=m_job;
+            lock.unlock();
+            RunAvailableTasks(job);
+            lock.lock();
+            ++m_finishedWorkers;
+            if(m_finishedWorkers==m_workers.size())m_done.notify_one();
+        }
+    }
+    std::vector<std::thread> m_workers;
+    std::mutex m_runMutex,m_mutex;
+    std::condition_variable m_start,m_done;
+    std::atomic<uint32_t> m_nextTask{0};
+    const Job* m_job=nullptr;
+    uint64_t m_generation=0;
+    size_t m_finishedWorkers=0;
+    bool m_stopping=false;
+};
+
 // Expand array indices by copying the ORIGINAL big-endian component bytes.
 // No float conversion, quantization, native GX attribute writer or stale array
 // memo is involved. The caller publishes the corresponding direct VAT layout.
 template<class ReadSpan>
 bool Expand(const uint8_t* source,size_t sourceBytes,uint32_t count,
             const std::vector<Attribute>& attributes,std::vector<uint8_t>& output,
-            ReadSpan&& read,size_t maxBytes) {
+            ReadSpan&& read,size_t maxBytes,bool* usedParallel=nullptr) {
+    if(usedParallel)*usedParallel=false;
     size_t sourceStride=0,directStride=0;
     for(const auto& a:attributes) {
         if(!a.bytes || !a.groups || a.bytes%a.groups ||
@@ -106,15 +237,26 @@ bool Expand(const uint8_t* source,size_t sourceBytes,uint32_t count,
         }
     }
     if(fullyMapped) {
-        size_t sourceOffset=0,directOffset=0;
-        for(const auto& a:attributes) {
-            const auto* input=source+sourceOffset;
-            auto* destination=output.data()+directOffset;
-            if(a.indexBytes==2)ExpandMappedAttribute<2>(input,sourceStride,destination,directStride,count,a);
-            else if(a.indexBytes==1)ExpandMappedAttribute<1>(input,sourceStride,destination,directStride,count,a);
-            else ExpandMappedAttribute<0>(input,sourceStride,destination,directStride,count,a);
-            sourceOffset+=a.indexBytes ? a.indexBytes : a.bytes;
-            directOffset+=a.bytes;
+        const bool hasIndexed=std::any_of(attributes.begin(),attributes.end(),
+                                          [](const Attribute& a){return a.indexBytes!=0;});
+        constexpr size_t kParallelMinimumBytes=64u*1024u;
+        constexpr uint32_t kParallelMinimumVertices=512;
+        if(hasIndexed && output.size()>=kParallelMinimumBytes &&
+           count>=kParallelMinimumVertices &&
+           MappedExpansionWorkers::Instance().Run(source,sourceStride,output.data(),
+                                                  directStride,count,attributes)) {
+            if(usedParallel)*usedParallel=true;
+        } else {
+            size_t sourceOffset=0,directOffset=0;
+            for(const auto& a:attributes) {
+                const auto* input=source+sourceOffset;
+                auto* destination=output.data()+directOffset;
+                if(a.indexBytes==2)ExpandMappedAttribute<2>(input,sourceStride,destination,directStride,count,a);
+                else if(a.indexBytes==1)ExpandMappedAttribute<1>(input,sourceStride,destination,directStride,count,a);
+                else ExpandMappedAttribute<0>(input,sourceStride,destination,directStride,count,a);
+                sourceOffset+=a.indexBytes ? a.indexBytes : a.bytes;
+                directOffset+=a.bytes;
+            }
         }
         return true;
     }

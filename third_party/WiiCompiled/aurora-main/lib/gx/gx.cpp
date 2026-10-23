@@ -568,6 +568,7 @@ gfx::TextureHandle resolve_static_texture(const GXTexObj_& obj) {
   static RawTextureSnapshotCache<StaticTextureKey,gfx::TextureHandle> rawSnapshots(16*1024*1024,512);
   const bool rawSnapshot = obj.no_cache() && obj.data != nullptr;
   const StaticTextureKey rawKey = rawSnapshot ? make_static_texture_key(obj) : StaticTextureKey{};
+  const size_t rawKeyHash = rawSnapshot ? absl::Hash<StaticTextureKey>{}(rawKey) : 0;
   const u32 rawSize = rawSnapshot ? GXGetTexBufferSize(static_cast<u16>(obj.width()), static_cast<u16>(obj.height()),
       obj.format(), obj.has_mips(), obj.has_mips() ? static_cast<u8>(obj.mip_count()-1) : 0) : 0;
   if (rawSnapshot) {
@@ -582,11 +583,11 @@ gfx::TextureHandle resolve_static_texture(const GXTexObj_& obj) {
       if (now>=nextReport) {
         nextReport=now+std::chrono::seconds(5);
         const auto stats=rawSnapshots.Stats();
-        Log.info("[prime-raw-cache] lookups={} hits={} misses={} evictions={} replacements={} entries={} source_bytes={} source_budget=16777216 entry_limit=512",
-                 stats.lookups,stats.hits,stats.misses,stats.evictions,stats.replacements,rawSnapshots.EntryCount(),rawSnapshots.ByteSize());
+        Log.info("[prime-raw-cache] lookups={} hits={} misses={} evictions={} replacements={} key_probes={} entries={} source_bytes={} source_budget=16777216 entry_limit=512",
+                 stats.lookups,stats.hits,stats.misses,stats.evictions,stats.replacements,stats.keyProbes,rawSnapshots.EntryCount(),rawSnapshots.ByteSize());
       }
     }
-    if(auto handle=rawSnapshots.Find(rawKey,obj.data,rawSize)) return handle;
+    if(auto handle=rawSnapshots.Find(rawKey,obj.data,rawSize,nullptr,0,rawKeyHash,true)) return handle;
   }
   const bool canCacheUpload = !obj.no_cache() && can_cache_static_texture_upload(obj);
 
@@ -651,7 +652,7 @@ gfx::TextureHandle resolve_static_texture(const GXTexObj_& obj) {
     handle = gfx::new_static_texture_2d(obj.width(), obj.height(), obj.mip_count(), obj.format(),
                                         {static_cast<const uint8_t*>(obj.data), dataSize}, false, nameStr);
   }
-  if (rawSnapshot) rawSnapshots.Store(rawKey,obj.data,rawSize,handle);
+  if (rawSnapshot) rawSnapshots.Store(rawKey,obj.data,rawSize,handle,nullptr,0,rawKeyHash,true);
   if (canCacheUpload) {
     store_cached_texture(obj, handle);
     if (canUseSourceCache) {
@@ -681,6 +682,7 @@ gfx::TextureHandle resolve_static_palette_texture(const GXTexObj_& obj, const GX
   const bool rawSnapshot=(obj.no_cache() || tlut.no_cache()) && obj.data && tlut.data;
   auto rawKey=rawSnapshot ? make_static_palette_texture_key(obj,tlut) : StaticPaletteTextureKey{};
   rawKey.texture.texDataVersion=0;rawKey.tlutDataVersion=0;
+  const size_t rawKeyHash=rawSnapshot ? absl::Hash<StaticPaletteTextureKey>{}(rawKey) : 0;
   const u32 rawSize=rawSnapshot ? GXGetTexBufferSize(static_cast<u16>(obj.width()),static_cast<u16>(obj.height()),
       obj.format(),obj.has_mips(),obj.has_mips() ? static_cast<u8>(obj.mip_count()-1) : 0) : 0;
   const size_t paletteSize=rawSnapshot ? static_cast<size_t>(tlut.numEntries)*2 : 0;
@@ -699,11 +701,11 @@ gfx::TextureHandle resolve_static_palette_texture(const GXTexObj_& obj, const GX
       if(now>=nextReport) {
         nextReport=now+std::chrono::seconds(5);
         const auto stats=rawPalettes.Stats();
-        Log.info("[prime-raw-palette-cache] lookups={} hits={} misses={} evictions={} replacements={} entries={} source_bytes={} source_budget=8388608 entry_limit=256",
-                 stats.lookups,stats.hits,stats.misses,stats.evictions,stats.replacements,rawPalettes.EntryCount(),rawPalettes.ByteSize());
+        Log.info("[prime-raw-palette-cache] lookups={} hits={} misses={} evictions={} replacements={} key_probes={} entries={} source_bytes={} source_budget=8388608 entry_limit=256",
+                 stats.lookups,stats.hits,stats.misses,stats.evictions,stats.replacements,stats.keyProbes,rawPalettes.EntryCount(),rawPalettes.ByteSize());
       }
     }
-    if(auto handle=rawPalettes.Find(rawKey,obj.data,rawSize,tlut.data,paletteSize))return handle;
+    if(auto handle=rawPalettes.Find(rawKey,obj.data,rawSize,tlut.data,paletteSize,rawKeyHash,true))return handle;
   }
 
   if (!obj.no_cache() && !tlut.no_cache() && obj.texObjId != 0) {
@@ -754,7 +756,7 @@ gfx::TextureHandle resolve_static_palette_texture(const GXTexObj_& obj, const GX
                                    {converted.data.data(), converted.data.size()}, false, "GX Static Palette Texture");
     handle->hasArbitraryMips = converted.hasArbitraryMips;
   }
-  if (rawSnapshot) rawPalettes.Store(rawKey,obj.data,rawSize,handle,tlut.data,paletteSize);
+  if (rawSnapshot) rawPalettes.Store(rawKey,obj.data,rawSize,handle,tlut.data,paletteSize,rawKeyHash,true);
   if (!obj.no_cache() && !tlut.no_cache()) {
     store_cached_texture(obj, handle, tlut.tlutObjId, tlut.tlutDataVersion);
     if (canUseSourceCache) {

@@ -143,3 +143,6 @@ afirmar unwind completo. Pruebas de fixture de captura, simbolizacion y
 salida del observador tras terminar su proceso PASS; captura del bloqueo
 real y correccion siguen pendientes. No se recompilo el juego por este
 cambio de herramientas. Checkpoint 20261022_passive_hang_observer.json.
+
+
+Actualizacion 2026-10-23: las mediciones de la escena pesada muestran un hilo GX saturado y coste dominante en resolucion de texturas estaticas. El cache de snapshots ahora indexa claves por hash sin quitar la validacion exacta de bytes. Build Windows y pruebas CTest 21/21 pasan; falta medir FPS en la misma escena con recomp/tools/run_parallel_candidate.ps1 -PerformanceTrace.

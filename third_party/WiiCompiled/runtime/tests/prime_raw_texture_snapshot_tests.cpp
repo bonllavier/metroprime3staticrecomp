@@ -70,6 +70,28 @@ int main(){
     const uint8_t changed=124;
     Check(recent.Find({261},&changed,1)==0); // Recency never skips byte validation.
   }
+  {
+    aurora::gx::RawTextureSnapshotCache<CountedKey,int> indexed(4096,512);
+    const uint8_t source=91;
+    for(int i=0;i<262;++i)indexed.Store({i},&source,1,i+1,nullptr,0,static_cast<size_t>(i),true);
+    CountedKey::comparisons=0;
+    for(int i=0;i<1000;++i)Check(indexed.Find({0},&source,1,nullptr,0,0,true)==1);
+    Check(CountedKey::comparisons==1000); // A cold LRU key takes one indexed probe, not 262 list scans.
+    Check(indexed.Stats().keyProbes==1000);
+    // Hash collisions still require full key and byte equality.
+    indexed.Store({1000},&source,1,1001,nullptr,0,7,true);
+    indexed.Store({1001},&source,1,1002,nullptr,0,7,true);
+    Check(indexed.Find({1001},&source,1,nullptr,0,7,true)==1002);
+    Check(indexed.Find({1000},&source,1,nullptr,0,7,true)==1001);
+    aurora::gx::RawTextureSnapshotCache<CountedKey,int> eviction(4096,2);
+    eviction.Store({1},&source,1,11,nullptr,0,1,true);
+    eviction.Store({2},&source,1,22,nullptr,0,2,true);
+    eviction.Store({3},&source,1,33,nullptr,0,3,true); // Eviction removes the stale index node too.
+    Check(eviction.Find({1},&source,1,nullptr,0,1,true)==0);
+    Check(eviction.Find({2},&source,1,nullptr,0,2,true)==22);
+    eviction.Store({1},&source,1,111,nullptr,0,1,true);
+    Check(eviction.Find({1},&source,1,nullptr,0,1,true)==111);
+  }
   using Cache=aurora::gx::RawTextureSnapshotCache<int,std::shared_ptr<int>>;
   Cache cache(12,2);
   std::array<uint8_t,6> bytes{1,2,3,4,5,6};

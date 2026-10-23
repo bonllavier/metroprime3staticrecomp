@@ -24,3 +24,17 @@ ctest --test-dir build/runtime-platform-tests --output-on-failure
 ```
 
 La siguiente validaci?n es medir, en la misma escena y resoluci?n, FPS, tiempo de expansi?n y uso por hilo con el candidato frente a la base. Si el coste no baja, ajustar el umbral o retirar esta ruta. No se debe atribuir una mejora de rendimiento al cambio antes de esa comparaci?n.
+
+## Medicion y candidato del 2026-10-23
+
+La captura de la escena pesada registro 23-24 FPS, un hilo del runtime alrededor del 99-101%, GPU entre 2.6-4.0% y unas 78-90 mil llamadas GX por ventana de cinco segundos. Las estimaciones del profiler son inclusivas: Draw contiene Textures, que contiene StaticTexture; no se deben sumar entre si. En estos datos el camino de texturas estaticas es el subcosto dominante observado.
+
+Las texturas GX sin contrato de generacion se siguen validando byte por byte, pero su cache LRU buscaba la clave recorriendo linealmente hasta 512 entradas. Se agrego un indice hash para las consultas de snapshots y paletas; las colisiones todavia verifican la clave completa y los bytes, y los desalojos quitan tambien el indice. La prueba cubre una clave fria entre 262 entradas (una comparacion), colisiones y eviction. Build Windows y CTest 21/21 pasan. La version de juego aun no se ha medido; el proceso previo se mantuvo abierto para no interrumpir el avance.
+
+El lanzador ahora abre el `WiiCompiled.exe` recompilado y conserva teclado/raton. `-PerformanceTrace` activa el registro de aciertos/fallos del cache de snapshots y los contadores de GX. Despues de guardar y cerrar la sesion activa, iniciar desde la raiz con:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\recomp\tools\run_parallel_candidate.ps1 -PerformanceTrace
+```
+
+Comparar la misma vista durante al menos 15 segundos; revisar `UserData/Logs/<sesion>/console.log` para `[prime-raw-cache]` y `[prime-raw-palette-cache]`. Esta mejora reduce busqueda de claves; no prueba por si sola que se alcancen 60 FPS.

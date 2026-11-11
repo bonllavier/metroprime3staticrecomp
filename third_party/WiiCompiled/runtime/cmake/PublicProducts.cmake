@@ -420,6 +420,22 @@ if(MKW_GAME_PROFILE_RM3E01_00)
         target_sources(WiiCompiled PRIVATE "${MKW_PRIME_PORT_RC}")
         # windres needs the version header on its include path.
         set_property(SOURCE "${MKW_PRIME_PORT_RC}" APPEND PROPERTY COMPILE_OPTIONS "-I${MKW_RUNTIME_SOURCE_DIR}/include")
+    elseif(MKW_PLATFORM_LINUX)
+        # The same icon for the SDL window: no resource section on Linux, so the 128x128 entry of the .ico
+        # is decoded at build time into RGBA pixels that main.cpp hands to Aurora.
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
+        set(MKW_PRIME_PORT_ICON "${MKW_RUNTIME_SOURCE_DIR}/assets/windows/MetroidPrime3PCPort.ico")
+        set(MKW_PRIME_PORT_ICON_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/generated/prime_port_icon.cpp")
+        add_custom_command(
+            OUTPUT "${MKW_PRIME_PORT_ICON_SOURCE}"
+            COMMAND "${Python3_EXECUTABLE}" -I "${MKW_RUNTIME_SOURCE_DIR}/cmake/ico_to_rgba_source.py"
+                    "${MKW_PRIME_PORT_ICON}" 128 "${MKW_PRIME_PORT_ICON_SOURCE}"
+            DEPENDS "${MKW_PRIME_PORT_ICON}" "${MKW_RUNTIME_SOURCE_DIR}/cmake/ico_to_rgba_source.py"
+            COMMENT "Converting the Prime port icon for the Linux window"
+            VERBATIM)
+        set_source_files_properties("${MKW_PRIME_PORT_ICON_SOURCE}" PROPERTIES
+            SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+        target_sources(WiiCompiled PRIVATE "${MKW_PRIME_PORT_ICON_SOURCE}")
     endif()
 endif()
 if(TARGET mkw_base_sensitive)

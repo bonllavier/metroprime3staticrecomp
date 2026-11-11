@@ -98,6 +98,12 @@ extern "C" void InstallDxgiFrameLatencyLimit(unsigned frames);
 extern std::atomic_bool g_auroraFrameActive;
 extern "C" int g_gxFrameCount;
 extern "C" const char* DVDResolveHostPathForTest(const char* dvdPath);
+#if defined(__linux__)
+// Window icon pixels generated from the product's .ico (cmake/ico_to_rgba_source.py); weak, so a
+// product without an icon still links and keeps SDL's default.
+extern "C" __attribute__((weak)) const uint32_t g_productWindowIconSize;
+extern "C" __attribute__((weak)) const uint8_t g_productWindowIconRgba[];
+#endif
 bool OS_HLE_InterruptsEnabled() noexcept;
 
 namespace {
@@ -1614,6 +1620,13 @@ int RuntimeMain(int argc, char** argv) {
             auroraConfig.iconRGBA8 = windowIconRgba.data();
             auroraConfig.iconWidth = windowIconSize;
             auroraConfig.iconHeight = windowIconSize;
+        }
+#elif defined(__linux__)
+        // The product links the RGBA pixels of its .ico when it has one (cmake/PublicProducts.cmake).
+        if (&g_productWindowIconSize != nullptr && g_productWindowIconSize != 0) {
+            auroraConfig.iconRGBA8 = const_cast<uint8_t*>(g_productWindowIconRgba);
+            auroraConfig.iconWidth = g_productWindowIconSize;
+            auroraConfig.iconHeight = g_productWindowIconSize;
         }
 #endif
         const auto applicationDataDirectory = RuntimeConfigFile::ApplicationDataDirectory();

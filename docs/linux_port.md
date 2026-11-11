@@ -98,4 +98,6 @@ Ubuntu 22.04, X11, RTX 3050 (Vulkan, driver 580), RVZ leído con `nod`: el juego
 
 Correcciones que hizo falta aplicar: `data_sections_init_blobs.S` regenerado en el host (el de Windows es COFF con rutas `G:/`), MSAA no admitido por Vulkan, raíz de continuaciones sin fibras de Windows y selección de controlador de audio.
 
+Las pantallas propias del port que sustituyen a las de la correa (`runtime/assets/texture_replacements/strap_screen`, 8 imágenes: RM3E01 inglés/francés/español y Trilogy R3ME01) las copia `build_prime_runtime.sh` junto al ejecutable, como hace `package_release.ps1` en Windows; el juego las instala en `UserData/texture_replacements` al arrancar (Aurora: "Indexed 8 texture replacements").
+
 Pendiente de QA manual: ratón, mando (iconos Xbox/PlayStation), teclado, logros, F1/F9/F12, rendimiento con la caché caliente, Wayland.

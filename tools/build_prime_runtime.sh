@@ -131,4 +131,19 @@ cmake -S recomp/third_party/WiiCompiled/runtime -B "$build_dir" -G Ninja \
     '-DCMAKE_C_FLAGS_RELEASE=-O3 -DNDEBUG' || die 'Prime runtime graph configuration failed'
 step 'build'
 cmake --build "$build_dir" --target WiiCompiled --parallel "$jobs" || die 'Runtime build failed'
+
+# The port's two start-up screens that replace the Wii Remote strap screen (same list
+# as package_release.ps1: RM3E01 English/French/Spanish and Trilogy R3ME01 hashes).
+# The executable installs them into UserData/texture_replacements on start-up.
+step 'start-up screens'
+strap_source=recomp/third_party/WiiCompiled/runtime/assets/texture_replacements/strap_screen
+strap_target=$build_dir/texture_replacements/strap_screen
+mkdir -p "$strap_target"
+for image in tex1_832x456_0a2f3408cab0cbcc_14.png tex1_832x456_550dd77642afbb04_14.png \
+             tex1_832x456_ad15d2f8f67a24d8_14.png tex1_832x456_daf65c9d00a79c85_14.png \
+             tex1_832x456_ad8eb16a5f40d2e2_14.png tex1_832x456_0dd8e2ea1b2d67da_14.png \
+             tex1_832x456_f6c8146f6a1af236_14.png tex1_832x456_9a1135bd0715a8fe_14.png; do
+    [[ -f "$strap_source/$image" ]] || die "Start-up screen missing: $strap_source/$image"
+    cp -f "$strap_source/$image" "$strap_target/"
+done
 echo "built: $(find "$build_dir" -maxdepth 1 -type f -name 'Corruption_3 PC' -print)"

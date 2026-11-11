@@ -32,8 +32,11 @@
 #include <condition_variable>
 #include <deque>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <mutex>
+#include <set>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -1081,6 +1084,19 @@ static size_t physical_core_count() {
         }
       }
     }
+#elif defined(__linux__)
+    // One distinct sibling list per physical core (CPUs without SMT list themselves alone).
+    std::set<std::string> siblingLists;
+    for (unsigned cpu = 0; cpu < std::thread::hardware_concurrency(); ++cpu) {
+      std::ifstream file("/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/topology/thread_siblings_list");
+      std::string list;
+      if (!std::getline(file, list)) {
+        siblingLists.clear();
+        break;
+      }
+      siblingLists.insert(list);
+    }
+    cores = siblingLists.size();
 #endif
     if (cores == 0) cores = std::max<size_t>(1, std::thread::hardware_concurrency() / 2);
     return cores;
@@ -1088,13 +1104,29 @@ static size_t physical_core_count() {
   return count;
 }
 
-static void pipeline_worker() {
+// Which compiles a worker takes. Windows changes a worker's thread priority for each compile, so every worker
+// serves every queue. Linux cannot: without CAP_SYS_NICE (RLIMIT_NICE 0 on a desktop) a thread may raise its
+// nice value but never lower it again, and the game, GX and frame threads cannot go above normal either. So
+// Linux keeps two pools: urgent workers at normal priority, and bridged/prewarm workers at a fixed low
+// priority, which is the BELOW_NORMAL the tested policy gives those compiles on Windows (render_policy.hpp).
+enum class WorkerTier : uint8_t { Any, Urgent, Low };
+#if defined(__linux__)
+// CFS weight 110 against 1024 for the game threads: prewarm still uses every idle core at full speed, but a
+// waking game, GX or frame thread preempts it (at nice 0 six prewarm workers halved the frame rate).
+constexpr int LowTierCompileNice = 10;
+#endif
+
+static void pipeline_worker(WorkerTier tier) {
 #ifdef TRACY_ENABLE
   tracy::SetThreadName("Pipeline compilation thread");
 #endif
 #if defined(_WIN32) || defined(__linux__)
   // A burst of compiles must not run on the game thread's hyperthread sibling (host_cores.h).
   aurora::host_cores::keep_off_game_core();
+#endif
+#if defined(__linux__)
+  aurora::host_cores::set_thread_name(tier == WorkerTier::Low ? "Aurora prewarm" : "Aurora compile");
+  if (tier == WorkerTier::Low) aurora::host_cores::set_thread_nice(LowTierCompileNice);
 #endif
 
   while (true) {
@@ -1108,10 +1140,13 @@ static void pipeline_worker() {
       g_pipelineCv.wait(lock, [&] {
         bool urgentQueued = false, bridgedQueued = false;
         for (const auto& queued : g_priorityPipelines) (queued.bridged ? bridgedQueued : urgentQueued) = true;
+        bool backgroundQueued = !g_backgroundPipelines.empty();
+        if (tier == WorkerTier::Urgent) bridgedQueued = backgroundQueued = false;
+        if (tier == WorkerTier::Low) urgentQueued = false;
         const size_t inPlayCap =
             gx::policy::in_play_compile_cap(physical_core_count(), g_skipUnreadyGxPipelines.load(std::memory_order_relaxed));
         slot = gx::policy::pick_compile_slot(urgentQueued, bridgedQueued, g_activeBridgedPipelineWorkers,
-                                             MaxBridgedPipelineWorkers, !g_backgroundPipelines.empty(),
+                                             MaxBridgedPipelineWorkers, backgroundQueued,
                                              g_activeBackgroundPipelineWorkers, MaxBackgroundPipelineWorkers,
                                              g_activeUrgentPipelineWorkers, inPlayCap);
         return slot != CompileSlot::None || g_pipelineThreadEnd;
@@ -1556,12 +1591,23 @@ void initialize_pipeline_cache() {
   } else {
     g_hasPipelineThread = true;
     const size_t workerCount = pipeline_worker_count();
+#if defined(__linux__)
+    // Two pools of the same size (see WorkerTier): the urgent pool alone never runs bridged or prewarm work.
+    g_pipelineThreads.reserve(workerCount * 2);
+    for (size_t i = 0; i < workerCount; ++i) {
+      g_pipelineThreads.emplace_back(pipeline_worker, WorkerTier::Urgent);
+      g_pipelineThreads.emplace_back(pipeline_worker, WorkerTier::Low);
+    }
+    Log.info("Enabled {} urgent pipeline compilation workers and {} bridged/prewarm workers at nice {}",
+             workerCount, std::min(workerCount, MaxBackgroundPipelineWorkers), LowTierCompileNice);
+#else
     g_pipelineThreads.reserve(workerCount);
     for (size_t i = 0; i < workerCount; ++i) {
-      g_pipelineThreads.emplace_back(pipeline_worker);
+      g_pipelineThreads.emplace_back(pipeline_worker, WorkerTier::Any);
     }
     Log.info("Enabled {} priority pipeline compilation workers ({} background prewarm)",
              workerCount, MaxBackgroundPipelineWorkers);
+#endif
   }
 
   load_pipeline_cache();

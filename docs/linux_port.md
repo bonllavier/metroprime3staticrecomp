@@ -90,6 +90,8 @@ Dependencias externas al repo `recomp` que el pipeline lee por ruta relativa (co
 | Raíz de las continuaciones de hilos Prime | `GetCurrentFiber` | `HostContext::Current()` (libco) en todos los backends | implementado; el juego arranca |
 | Salida de audio | WASAPI vía SDL | SDL; si el controlador elegido no tiene salida por defecto (PipeWire activo en un sistema PulseAudio, p. ej. Ubuntu 22.04) prueba los demás (ALSA → PulseAudio) | implementado; audio real comprobado |
 | MSAA 2x/8x (opción F1 y recetas de la semilla grabadas en D3D12) | D3D12 los admite | el backend Vulkan de Dawn solo 1x/4x: 2x→1x, 8x→4x y recetas no compatibles no se precompilan | implementado (antes abortaba al arrancar) |
+| Guardado de la caché monolítica de pipelines Vulkan | `PerformIdleTasks` buscado en `webgpu_dawn.dll` | llamada directa a `dawn::native::PerformIdleTasks` (Dawn enlazado estáticamente) | implementado: sin esto cada arranque recompilaba ~11.000 pipelines (>9 min, ~150 ms cada uno en NVIDIA) bloqueando el dibujado; ahora la precarga desde caché tarda ~65 s |
+| `SDL_SyncWindow` en cada fotograma | inmediato | en X11 es una ida y vuelta al servidor y, con los bordes de KDE, una espera de 10 ms por fotograma; solo se llama tras un cambio de ventana pedido por el juego | implementado: de ~35-50 a 60 FPS estables (preparación del fotograma 13,7 → 2-4 ms) |
 | Vigilante de parones (diagnóstico F8, QA) | temporizadores de alta resolución + Toolhelp32 | — | pendiente (solo diagnóstico) |
 
 ## Primer arranque en Linux (2026-11-11)
@@ -99,5 +101,7 @@ Ubuntu 22.04, X11, RTX 3050 (Vulkan, driver 580), RVZ leído con `nod`: el juego
 Correcciones que hizo falta aplicar: `data_sections_init_blobs.S` regenerado en el host (el de Windows es COFF con rutas `G:/`), MSAA no admitido por Vulkan, raíz de continuaciones sin fibras de Windows y selección de controlador de audio.
 
 Las pantallas propias del port que sustituyen a las de la correa (`runtime/assets/texture_replacements/strap_screen`, 8 imágenes: RM3E01 inglés/francés/español y Trilogy R3ME01) las copia `build_prime_runtime.sh` junto al ejecutable, como hace `package_release.ps1` en Windows; el juego las instala en `UserData/texture_replacements` al arrancar (Aurora: "Indexed 8 texture replacements").
+
+Rendimiento (RTX 3050, i7-4790, X11): 60 FPS estables tras la precarga. Durante el primer minuto (precarga de 11.371 pipelines desde la caché) baja a ~22-29 FPS; pendiente de optimizar.
 
 Pendiente de QA manual: ratón, mando (iconos Xbox/PlayStation), teclado, logros, F1/F9/F12, rendimiento con la caché caliente, Wayland.

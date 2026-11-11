@@ -600,10 +600,25 @@ bool is_presentable() noexcept {
          g_surfaceReady.load(std::memory_order_acquire);
 }
 
+// Set when this code asks the window system for a size, position or fullscreen change.
+// Starts set so the first pump waits once for the window's initial placement.
+static std::atomic_bool g_windowSyncPending{true};
+static void request_window_sync() noexcept { g_windowSyncPending.store(true, std::memory_order_release); }
+
 void pump_events() noexcept {
+#if defined(_WIN32)
   if (g_window != nullptr) {
     SDL_SyncWindow(g_window);
   }
+#else
+  // On X11 SDL_SyncWindow is a server round trip per call, and when the window manager
+  // places the window a few pixels from SDL's expectation (decoration offsets) it also
+  // sleeps 10 ms before giving up: called every frame it capped the game well below
+  // 60 FPS. Only wait for operations this code requested.
+  if (g_window != nullptr && g_windowSyncPending.exchange(false, std::memory_order_acq_rel)) {
+    SDL_SyncWindow(g_window);
+  }
+#endif
   SDL_PumpEvents();
 }
 
@@ -718,6 +733,7 @@ void set_display_mode(AuroraDisplayMode mode) {
   }
   g_displayMode.store(mode, std::memory_order_release);
   g_nativeResizePending.store(true, std::memory_order_release);
+  request_window_sync();
   TRY_WARN(push_custom_event(CustomEvent::FutureResize), "Failed to queue fullscreen resize event: {}",
            SDL_GetError());
 }
@@ -727,15 +743,18 @@ AuroraDisplayMode get_display_mode() { return g_displayMode.load(std::memory_ord
 void set_window_size(uint32_t width, uint32_t height) {
   TRY_WARN(SDL_RestoreWindow(g_window), "Failed to un-maximize window: {}", SDL_GetError());
   TRY_WARN(SDL_SetWindowSize(g_window, width, height), "Failed to set window size: {}", SDL_GetError());
+  request_window_sync();
 }
 
 void set_window_position(uint32_t x, uint32_t y) {
   TRY_WARN(SDL_SetWindowPosition(g_window, x, y), "Failed to set window position: {}", SDL_GetError());
+  request_window_sync();
 }
 
 void center_window() {
   TRY_WARN(SDL_SetWindowPosition(g_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED),
            "Failed to center window: {}", SDL_GetError());
+  request_window_sync();
 }
 
 void sync_frame_buffer_size() noexcept {

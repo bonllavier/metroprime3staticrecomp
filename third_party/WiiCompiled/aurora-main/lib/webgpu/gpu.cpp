@@ -915,6 +915,15 @@ void serialize_pipeline_caches() noexcept {
   if (performIdleTasks != nullptr) {
     performIdleTasks(&g_device);
   }
+#elif defined(WEBGPU_DAWN) && defined(__linux__)
+  // Dawn is linked statically here, so the native entry point is called directly. Without
+  // it the monolithic VkPipelineCache is never written to the blob cache and every launch
+  // recompiles all pipelines in the driver (~150 ms each on NVIDIA), holding the device
+  // lock the frame encoder needs.
+  if (!g_device || g_backendType != wgpu::BackendType::Vulkan) {
+    return;
+  }
+  dawn::native::PerformIdleTasks(g_device);
 #endif
 }
 

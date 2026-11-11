@@ -1,9 +1,14 @@
+#include "../gfx/post_process.hpp"
 #include "../diagnostic_env.hpp"
 #include "command_processor.hpp"
+#include "uber.hpp"
+#include "../gfx/pipeline_cache.hpp"
+#include "fifo.hpp"
 #include "xf_viewport.hpp"
 #include "producer_profile.hpp"
 
 #include "../gfx/common.hpp"
+#include "../gfx/draw_dump.hpp"
 #include "../dolphin/gx/__gx.h"
 #include "../gfx/texture_replacement.hpp"
 #include "dolphin/gx/GXAurora.h"
@@ -17,9 +22,11 @@
 #include <tracy/Tracy.hpp>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <mutex>
 #include <optional>
@@ -37,6 +44,9 @@ static bool CachedWiiCompiledTracePrimeMii() {
   return enabled;
 }
 
+
+// Defined in GXGeometry.cpp; see GXAuroraVtxStateEpoch.
+extern "C" u64 g_gxVtxStateEpoch;
 
 namespace aurora::gx::fifo {
 static Module Log("aurora::gx::fifo");
@@ -456,6 +466,7 @@ static void apply_xf_viewport(u32 sourceHeader) {
   const f32 width = sx * 2.0f;
   const f32 height = -sy * 2.0f;
   constexpr f32 z24Scale = 16777216.0f;
+  constexpr f32 z24Max = 16777215.0f;
 
   if (CachedWiiCompiledTracePrimeMii()) {
     static unsigned observations = 0;
@@ -475,8 +486,12 @@ static void apply_xf_viewport(u32 sourceHeader) {
       .top = aurora::gx::xf_viewport_edge(oy, height),
       .width = width,
       .height = height,
-      .znear = (oz - sz) / z24Scale,
-      .zfar = oz / z24Scale,
+      // EFB depth saturates at 0xFFFFFF, the value a full clear stores. Prime's
+      // viewport puts the far plane at 16777216 and draws sky layers with a
+      // collapsed range there under LEQUAL; unclamped they land just beyond
+      // the cleared depth and fail the test that passes on hardware.
+      .znear = std::min(oz - sz, z24Max) / z24Scale,
+      .zfar = std::min(oz, z24Max) / z24Scale,
   });
 }
 
@@ -504,6 +519,7 @@ static void apply_xf_projection() {
 
 // Forward declarations for register handlers
 static void handle_bp(u32 value, bool bigEndian);
+static bool host_callback_pending();
 static void handle_cp(u8 addr, u32 value, bool bigEndian);
 static void handle_xf(const u8* data, u32& pos, u32 size, bool bigEndian);
 static bool handle_draw(u8 cmd, const u8* data, u32& pos, u32 size, bool bigEndian);
@@ -603,9 +619,15 @@ uint32_t process(const u8* data, u32 size, bool bigEndian) {
     }
 
     case GX_LOAD_AURORA: {
-      if (!handle_aurora(data, pos, size, bigEndian)) {
-        return size;
+      try {
+        if (!handle_aurora(data, pos, size, bigEndian)) {
+          return size;
+        }
+      } catch (const gfx::StagingBatchFull&) {
+        return commandStart;  // a deferred draw that does not fit: retried after the batch is submitted
       }
+      // A host callback pauses decoding here; process_all runs it without the renderer lock.
+      if (host_callback_pending()) return pos;
       break;
     }
 
@@ -1439,7 +1461,17 @@ static void handle_bp(u32 value, bool bigEndian) {
 }
 
 extern "C" uint32_t GXRawDrawTextureMask(GXVtxFmt fmt) {
-  if (__gx->dirtyState != 0) __GXSetDirtyState();
+  // The shadow and the stream buffer belong to the writer. A decoder-thread
+  // caller (host callback) relies on the writer having published its dirty
+  // state before the callback entered the stream (GXAuroraPublishDirtyState).
+  if (!on_decoder_thread() && __gx->dirtyState != 0) __GXSetDirtyState();
+  if (async_enabled() && !on_decoder_thread()) {
+    // Decoder state is only current on the decoder thread; a producer caller
+    // pays a full sync (the HLE issues this from a host callback instead).
+    static u32 producerMaskCalls = 0;
+    if (producerMaskCalls++ < 4)
+      Log.warn("GXRawDrawTextureMask on the producer with the asynchronous decoder: syncing");
+  }
   drain();
   std::lock_guard gpuLock(aurora::renderer_gpu_mutex());
   PipelineConfig config{};
@@ -1449,6 +1481,13 @@ extern "C" uint32_t GXRawDrawTextureMask(GXVtxFmt fmt) {
 }
 
 extern "C" void GXApplyBPReg(u8 reg, u32 value) {
+  if (async_enabled() && !on_decoder_thread()) {
+    // The same bytes the SDK writes; the decoder thread applies them in order.
+    write_u8(GX_LOAD_BP_REG);
+    write_u32((static_cast<u32>(reg) << 24) | (value & 0x00FFFFFFu));
+    commit();
+    return;
+  }
   // Direct BP writes bypass the normal FIFO decoder's worker barrier and GPU
   // mutex. Even an empty producer FIFO must wait for the next pass/staging
   // preparation before mutating shared recording state.
@@ -1480,6 +1519,12 @@ static bool cp_register_write_unchanged(u8 addr, u32 value) {
   return false;
 }
 
+// GXAuroraVtxStateEpoch belongs to the writer. Loads decoded on the
+// asynchronous decoder thread were already counted at GXCallDisplayList.
+static inline void bump_vtx_state_epoch() {
+  if (!on_decoder_thread()) ++g_gxVtxStateEpoch;
+}
+
 // CP register handler - decodes CP register writes and updates g_gxState
 static void handle_cp(u8 addr, u32 value, bool bigEndian) {
   if (cp_register_write_unchanged(addr, value)) return;
@@ -1507,6 +1552,7 @@ static void handle_cp(u8 addr, u32 value, bool bigEndian) {
     }
     mark_pipeline_state_dirty();
     g_gxState.clearVtxSizeCache();
+    bump_vtx_state_epoch();
     break;
   }
 
@@ -1527,6 +1573,7 @@ static void handle_cp(u8 addr, u32 value, bool bigEndian) {
     }
     mark_pipeline_state_dirty();
     g_gxState.clearVtxSizeCache();
+    bump_vtx_state_epoch();
     break;
   }
 
@@ -1583,6 +1630,7 @@ static void handle_cp(u8 addr, u32 value, bool bigEndian) {
       vf.attrs[GX_VA_TEX0].frac = static_cast<u8>(bp_get(value, 5, 25));
       mark_pipeline_state_dirty();
       g_gxState.clearVtxSizeCache();
+      bump_vtx_state_epoch();
     }
     // VAT B registers (0x80-0x87)
     else if (addr >= 0x80 && addr <= 0x87) {
@@ -1602,6 +1650,7 @@ static void handle_cp(u8 addr, u32 value, bool bigEndian) {
       // TEX4 frac is in VAT C
       mark_pipeline_state_dirty();
       g_gxState.clearVtxSizeCache();
+      bump_vtx_state_epoch();
     }
     // VAT C registers (0x90-0x97)
     else if (addr >= 0x90 && addr <= 0x97) {
@@ -1619,6 +1668,7 @@ static void handle_cp(u8 addr, u32 value, bool bigEndian) {
       vf.attrs[GX_VA_TEX7].frac = static_cast<u8>(bp_get(value, 5, 27));
       mark_pipeline_state_dirty();
       g_gxState.clearVtxSizeCache();
+      bump_vtx_state_epoch();
     }
     // Array base addresses (0xA0-0xAF)
     else if (addr >= 0xA0 && addr <= 0xAF) {
@@ -1800,6 +1850,7 @@ static void handle_xf(const u8* data, u32& pos, u32 size, bool bigEndian) {
           g_gxState.projType = static_cast<GXProjectionType>(val);
         }
         projectionUpdated = true;
+        gfx::post::note_projection(g_gxState.xfProjection.data(), g_gxState.projType == GX_PERSPECTIVE);
         break;
       }
       case 0x3F:
@@ -1866,6 +1917,10 @@ static void handle_xf(const u8* data, u32& pos, u32 size, bool bigEndian) {
 static void handle_draw_overrun(u8 cmd, u16 vtxCount, u32 vtxSize, u32 totalVtxBytes, const u8* data, const u32& pos,
                                 u32 size) {
   static u32 truncatedDrawLogCount = 0;
+  if (on_decoder_thread() && truncatedDrawLogCount < 8) {
+    Log.error("asynchronous decoder: chunk ends inside a draw ({} of {} vertex bytes present); the stream after it is misaligned",
+              size - pos, totalVtxBytes);
+  }
   if (truncatedDrawLogCount >= 64) {
     if (truncatedDrawLogCount == 64) {
       Log.warn("suppressing further truncated draw diagnostics");
@@ -2102,10 +2157,21 @@ static ArrayRef<u16> offset_index_template(const CachedIndexTemplate& indexTempl
 
 struct CachedPipelineState {
   gfx::PipelineRef ref = 0;
+  gfx::PipelineRef fallbackRef = 0;
   HashType configHash = 0;
   // Carried here so the draw can be recorded without keeping the PipelineConfig that produced it alive; it is the only field of the config the draw itself still needs.
   u32 dstAlpha = UINT32_MAX;
   ShaderInfo shaderInfo{};
+  // Ubershader bridge, prepared the first time a draw of this material finds its pipeline still compiling.
+  const PipelineConfig* config = nullptr;
+  mutable struct UberBridge {
+    bool tried = false;
+    bool ok = false;
+    bool specReady = false;  // the specialised pipeline compiled: no more lookups for this material
+    gfx::PipelineRef ref = 0;
+    ShaderInfo info{};
+    UberData data{};
+  } uber;
 };
 
 static const CachedPipelineState& cached_pipeline_state(const PipelineConfig& config) {
@@ -2124,16 +2190,434 @@ static const CachedPipelineState& cached_pipeline_state(const PipelineConfig& co
     return entry.state;
   }
 
+  gfx::PipelineRef fallbackRef = 0;
+  if (config.shaderConfig.perPixelLighting != 0) {
+    // While the per-pixel (or enhanced metal) pipeline compiles, draw with the vertex-lit one,
+    // which the shipped seed covers.
+    PipelineConfig vertexLit = config;
+    vertexLit.shaderConfig.perPixelLighting = 0;
+    vertexLit.shaderConfig.enhancedMetal = 0;
+    fallbackRef = gfx::pipeline_ref(vertexLit);
+  }
   entry.valid = true;
   entry.config = config;
   entry.state = {
       .ref = gfx::pipeline_ref(config),
+      .fallbackRef = fallbackRef,
       .configHash = hash,
       .dstAlpha = config.dstAlpha,
       .shaderInfo = build_shader_info(config.shaderConfig),
+      .config = &entry.config,
   };
   return entry.state;
 }
+
+// Enhanced materials: the same material with the enhanced-metal variant forced on. A table of its
+// own: cached_pipeline_state's table backs resolve_pipeline_state's memo, which must not be
+// rewritten behind its back.
+static const CachedPipelineState& material_pipeline_state(const PipelineConfig& base) {
+  constexpr size_t CacheSize = 256;
+  struct Entry {
+    bool valid = false;
+    PipelineConfig config{};
+    CachedPipelineState state{};
+  };
+  static std::array<Entry, CacheSize> cache{};
+  PipelineConfig config = base;
+  config.shaderConfig.enhancedMetal = 1;
+  const HashType hash = xxh3_hash(config, static_cast<HashType>(gfx::ShaderType::GX));
+  auto& entry = cache[hash & (CacheSize - 1)];
+  if (entry.valid && entry.state.configHash == hash && std::memcmp(&entry.config, &config, sizeof(config)) == 0)
+    LIKELY {
+    return entry.state;
+  }
+  // While it compiles, draw with the vertex-lit material (covered by the shipped seed).
+  PipelineConfig vertexLit = config;
+  vertexLit.shaderConfig.perPixelLighting = 0;
+  vertexLit.shaderConfig.enhancedMetal = 0;
+  entry.valid = true;
+  entry.config = config;
+  entry.state = {
+      .ref = gfx::pipeline_ref(config),
+      .fallbackRef = gfx::pipeline_ref(vertexLit),
+      .configHash = hash,
+      .dstAlpha = config.dstAlpha,
+      .shaderInfo = build_shader_info(config.shaderConfig),
+      .config = &entry.config,
+  };
+  return entry.state;
+}
+
+// Environment material (level 1): the same draw with ShaderConfig::envMaterial set. While that
+// pipeline compiles the draw keeps its original pipeline (already in the cache or the seed), so the
+// effect appears a little later instead of a hitch.
+static const CachedPipelineState& env_pipeline_state(const PipelineConfig& base) {
+  constexpr size_t CacheSize = 512;
+  struct Entry {
+    bool valid = false;
+    PipelineConfig config{};
+    CachedPipelineState state{};
+  };
+  static std::array<Entry, CacheSize> cache{};
+  PipelineConfig config = base;
+  config.shaderConfig.envMaterial = 1;
+  const HashType hash = xxh3_hash(config, static_cast<HashType>(gfx::ShaderType::GX));
+  auto& entry = cache[hash & (CacheSize - 1)];
+  if (entry.valid && entry.state.configHash == hash && std::memcmp(&entry.config, &config, sizeof(config)) == 0)
+    LIKELY {
+    return entry.state;
+  }
+  entry.valid = true;
+  entry.config = config;
+  entry.state = {
+      .ref = gfx::pipeline_ref(config),
+      .fallbackRef = gfx::pipeline_ref(base),
+      .configHash = hash,
+      .dstAlpha = config.dstAlpha,
+      .shaderInfo = build_shader_info(config.shaderConfig),
+      .config = &entry.config,
+  };
+  return entry.state;
+}
+
+// Soft projected shadows: the draw with the soft-shadow flag (shader_soft_shadow, PCF on the projected texture); the
+// original pipeline draws while the variant compiles.
+static const CachedPipelineState& soft_shadow_pipeline_state(const PipelineConfig& base) {
+  constexpr size_t CacheSize = 64;
+  struct Entry {
+    bool valid = false;
+    PipelineConfig config{};
+    CachedPipelineState state{};
+  };
+  static std::array<Entry, CacheSize> cache{};
+  PipelineConfig config = base;
+  set_shader_soft_shadow(config.shaderConfig);
+  const HashType hash = xxh3_hash(config, static_cast<HashType>(gfx::ShaderType::GX));
+  auto& entry = cache[hash & (CacheSize - 1)];
+  if (entry.valid && entry.state.configHash == hash && std::memcmp(&entry.config, &config, sizeof(config)) == 0)
+    LIKELY {
+    return entry.state;
+  }
+  entry.valid = true;
+  entry.config = config;
+  entry.state = {
+      .ref = gfx::pipeline_ref(config),
+      .fallbackRef = gfx::pipeline_ref(base),
+      .configHash = hash,
+      .dstAlpha = config.dstAlpha,
+      .shaderInfo = build_shader_info(config.shaderConfig),
+      .config = &entry.config,
+  };
+  return entry.state;
+}
+
+// The 3D world's own view: perspective, a depth band of at least half the range (not the arm cannon,
+// sky layers or far backdrops) and nearly the full EFB width (not the radar or small inset views).
+static bool env_world_view() noexcept {
+  const auto& vp = g_gxState.logicalViewport;
+  return g_gxState.projType == GX_PERSPECTIVE && vp.zfar - vp.znear >= 0.5f &&
+         vp.width >= static_cast<float>(logical_fb_size().x) * 0.9f;
+}
+
+// Level 2: tally of the lights the game's lit world draws used this frame; the strongest and most
+// used become the next frame's borrowed lights (view space, so one frame of camera lag at most).
+namespace {
+struct LightTally {
+  Light light;
+  float luma = 0.0f;
+  uint32_t draws = 0;
+};
+std::array<LightTally, 16> g_lightTally{};
+size_t g_lightTallyCount = 0;
+uint32_t g_lightTallyFrame = UINT32_MAX;
+
+void borrowed_lights_frame(uint32_t frame) {
+  if (frame == g_lightTallyFrame) return;
+  if (g_lightTallyFrame != UINT32_MAX) {
+    std::array<size_t, 16> order{};
+    for (size_t i = 0; i < g_lightTallyCount; ++i) order[i] = i;
+    std::sort(order.begin(), order.begin() + g_lightTallyCount, [](size_t a, size_t b) {
+      return g_lightTally[a].luma * static_cast<float>(g_lightTally[a].draws) >
+             g_lightTally[b].luma * static_cast<float>(g_lightTally[b].draws);
+    });
+    g_borrowedLights.count = static_cast<uint32_t>(std::min(g_lightTallyCount, MaxBorrowedLights));
+    float positions[MaxBorrowedLights][3] = {};
+    float luminance[MaxBorrowedLights] = {};
+    for (uint32_t i = 0; i < g_borrowedLights.count; ++i) {
+      const auto& tally = g_lightTally[order[i]];
+      g_borrowedLights.lights[i] = prepare_shader_light(tally.light);
+      positions[i][0] = tally.light.pos[0]; positions[i][1] = tally.light.pos[1]; positions[i][2] = tally.light.pos[2];
+      luminance[i] = tally.luma;
+    }
+    gfx::post::note_lights(g_borrowedLights.count, positions, luminance);
+  }
+  g_lightTallyFrame = frame;
+  g_lightTallyCount = 0;
+}
+
+void tally_draw_lights() {
+  const auto mask = g_gxState.colorChannelState[GX_COLOR0].lightMask;
+  for (size_t i = 0; i < GX::MaxLights; ++i) {
+    if (!mask.test(i)) continue;
+    const Light& light = g_gxState.lights[i];
+    const float luma = light.color[0] * 0.299f + light.color[1] * 0.587f + light.color[2] * 0.114f;
+    if (!(luma > 0.02f)) continue;
+    bool found = false;
+    for (size_t k = 0; k < g_lightTallyCount; ++k) {
+      if (g_lightTally[k].light == light) { ++g_lightTally[k].draws; found = true; break; }
+    }
+    if (!found && g_lightTallyCount < g_lightTally.size())
+      g_lightTally[g_lightTallyCount++] = {light, luma, 1};
+  }
+}
+} // namespace
+
+// Modern lighting, level 1: the engine's own lights (RM3E01 CLight lists; docs/iluminacion_motor.md).
+// The runtime sends them in world space once per game frame (game thread). Here, at the first static
+// lightmapped world draw of each frame, they are moved into that draw's view (the world geometry is
+// drawn with an identity model matrix, so its position matrix is the camera's view), converted to GX
+// lights exactly as the engine's loader (0x803E8BD4) would, ranked, and handed to the environment
+// material, the light shafts and the contact shadows. Static lights are baked into the lightmaps:
+// they only ever add highlights, never diffuse light.
+namespace engine_lights {
+// GX producer thread only (the game thread's input lives in gx.cpp, take_engine_lights).
+std::vector<AuroraEngineLight> g_world;
+uint64_t g_seenGeneration = 0;
+uint32_t g_freshFrame = UINT32_MAX;  // GX frame that received the latest list
+constexpr uint32_t kStaleFrames = 30;  // no new list for half a second: menu, map, video
+struct ViewLight {
+  Light gx{};          // as the engine would load it for this view
+  float radius = 0.f;  // world units (the view has no scale)
+  float luma = 0.f;    // luminance at the light, with the brightness its k0 encodes
+  float score = 0.f;
+  uint32_t type = 0;
+  bool dynamic = false;
+};
+std::vector<ViewLight> g_view;
+std::vector<uint32_t> g_dynamicOrder;  // g_view indices of the dynamic lights, in the engine's order
+uint32_t g_viewFrame = UINT32_MAX;
+bool g_viewValid = false;
+constexpr float kUnbounded = 1.0e6f;
+
+Light to_gx(const AuroraEngineLight& l, const Mat3x4<float>& v) {
+  const auto point = [&](const float* p) {
+    return Vec4<float>{v.m0[0] * p[0] + v.m0[1] * p[1] + v.m0[2] * p[2] + v.m0[3],
+                       v.m1[0] * p[0] + v.m1[1] * p[1] + v.m1[2] * p[2] + v.m1[3],
+                       v.m2[0] * p[0] + v.m2[1] * p[1] + v.m2[2] * p[2] + v.m2[3], 0.f};
+  };
+  const auto direction = [&](const float* d) {
+    return Vec4<float>{v.m0[0] * d[0] + v.m0[1] * d[1] + v.m0[2] * d[2],
+                       v.m1[0] * d[0] + v.m1[1] * d[1] + v.m1[2] * d[2],
+                       v.m2[0] * d[0] + v.m2[1] * d[1] + v.m2[2] * d[2], 0.f};
+  };
+  Light out{};
+  out.color = {static_cast<float>(l.color[0]) / 255.f, static_cast<float>(l.color[1]) / 255.f,
+               static_cast<float>(l.color[2]) / 255.f, static_cast<float>(l.color[3]) / 255.f};
+  out.cosAtt = {1.f, 0.f, 0.f, 0.f};
+  out.distAtt = {l.distAtt[0], l.distAtt[1], l.distAtt[2], 0.f};
+  switch (l.type) {
+  case 0: {  // spot: GXInitLightDir negates; GXInitLightSpot(cutoff, GX_SP_COS2)
+    out.pos = point(l.pos);
+    const auto d = direction(l.dir);
+    out.dir = {-d[0], -d[1], -d[2], 0.f};
+    if (l.spotCutoff > 0.f && l.spotCutoff <= 90.f) {
+      const float cr = std::cos(l.spotCutoff * 3.14159265f / 180.f);
+      out.cosAtt = {0.f, -cr / (1.f - cr), 1.f / (1.f - cr), 0.f};
+    }
+    break;
+  }
+  case 2: {  // directional: a point 2^20 away against the direction, no attenuation
+    const auto d = direction(l.dir);
+    out.pos = {-d[0] * 1048576.f, -d[1] * 1048576.f, -d[2] * 1048576.f, 0.f};
+    out.distAtt = {1.f, 0.f, 0.f, 0.f};
+    break;
+  }
+  case 4: {  // custom: position, direction and the light's own angle attenuation
+    out.pos = point(l.pos);
+    const auto d = direction(l.dir);
+    out.dir = {-d[0], -d[1], -d[2], 0.f};
+    out.cosAtt = {l.angleAtt[0], l.angleAtt[1], l.angleAtt[2], 0.f};
+    break;
+  }
+  default:  // point (1) and local ambient (3): position only, no angle attenuation
+    out.pos = point(l.pos);
+    break;
+  }
+  return out;
+}
+
+float length3(const Vec4<float>& v) { return std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); }
+
+void frame(const Mat3x4<float>& view, uint32_t frame) {
+  g_viewFrame = frame;
+  {
+    float rows[12];
+    for (int c = 0; c < 4; ++c) {
+      rows[c] = view.m0[c];
+      rows[4 + c] = view.m1[c];
+      rows[8 + c] = view.m2[c];
+    }
+    gfx::post::note_world_view(rows);
+  }
+  if (take_engine_lights(g_world, g_seenGeneration)) g_freshFrame = frame;
+  g_view.clear();
+  g_dynamicOrder.clear();
+  g_engineEnvLights.count = 0;
+  g_viewValid = false;
+  const bool fresh = g_freshFrame != UINT32_MAX && frame - g_freshFrame <= kStaleFrames;
+  if (!fresh || !g_engineLightsOption.load(std::memory_order_relaxed)) {
+    gfx::post::note_engine_lights(0, nullptr, nullptr, nullptr, nullptr);
+    return;
+  }
+  for (const auto& l : g_world) {
+    if (l.type == 3 || l.type > 4) continue;  // local ambient: no direction, no highlight
+    ViewLight vl;
+    vl.gx = to_gx(l, view);
+    vl.type = l.type;
+    vl.dynamic = (l.flags & AURORA_ENGINE_LIGHT_DYNAMIC) != 0;
+    vl.radius = l.radius > 0.f && l.type != 2 ? std::min(l.radius, kUnbounded) : kUnbounded;
+    const float maxChannel = std::max({vl.gx.color[0], vl.gx.color[1], vl.gx.color[2]});
+    if (!(maxChannel > 0.01f)) continue;
+    // k0 < 1 is how the engine makes a light brighter than its 8-bit colour.
+    const float boost = l.type == 2 ? 1.f : std::clamp(1.f / std::max(std::abs(l.distAtt[0]), 0.05f), 0.25f, 4.f);
+    vl.luma = (vl.gx.color[0] * 0.299f + vl.gx.color[1] * 0.587f + vl.gx.color[2] * 0.114f) * boost;
+    if (l.type == 2) {
+      vl.score = vl.luma * 4.f;
+    } else {
+      const float d = length3(vl.gx.pos);
+      const float z = -vl.gx.pos[2];  // GX view space looks down -z
+      if (d - vl.radius > 60.f || z < -vl.radius) {
+        vl.score = 0.f;  // out of reach of anything near the camera, or entirely behind it
+      } else {
+        vl.score = vl.luma * std::clamp(vl.radius / std::max(d, 0.5f), 0.f, 4.f) * (vl.dynamic ? 1.5f : 1.f);
+      }
+    }
+    if (vl.dynamic) g_dynamicOrder.push_back(static_cast<uint32_t>(g_view.size()));
+    g_view.push_back(vl);
+  }
+  g_viewValid = true;
+  std::array<uint32_t, 16> best{};
+  size_t bestCount = 0;
+  for (uint32_t i = 0; i < g_view.size(); ++i) {
+    if (!(g_view[i].score > 0.f)) continue;
+    size_t at = bestCount < best.size() ? bestCount++ : best.size();
+    if (at == best.size()) {
+      if (g_view[i].score <= g_view[best[best.size() - 1]].score) continue;
+      at = best.size() - 1;
+    }
+    while (at > 0 && g_view[best[at - 1]].score < g_view[i].score) {
+      best[at] = best[at - 1];
+      --at;
+    }
+    best[at] = i;
+  }
+  // Environment material: the strongest eight, range in color.a (+ static, - dynamic).
+  const size_t envCount = std::min(bestCount, MaxEnvLights);
+  for (size_t k = 0; k < envCount; ++k) {
+    const ViewLight& vl = g_view[best[k]];
+    Light light = prepare_shader_light(vl.gx);
+    light.color[3] = vl.dynamic ? -std::max(vl.radius, 0.01f) : std::max(vl.radius, 0.01f);
+    g_engineEnvLights.lights[k] = light;
+  }
+  g_engineEnvLights.count = static_cast<uint32_t>(envCount);
+  g_engineEnvLights.frame = frame;
+  // Light shafts and contact shadows: the four strongest; shafts only for lights in front.
+  float positions[4][3] = {}, radius[4] = {}, luma[4] = {};
+  uint8_t directional[4] = {};
+  float shaftPos[4][3] = {}, shaftLuma[4] = {};
+  uint32_t count = 0, shafts = 0;
+  for (size_t k = 0; k < bestCount && (count < 4 || shafts < 4); ++k) {
+    const ViewLight& vl = g_view[best[k]];
+    if (count < 4) {
+      for (int c = 0; c < 3; ++c) positions[count][c] = vl.gx.pos[c];
+      radius[count] = vl.radius;
+      luma[count] = vl.luma;
+      directional[count] = vl.type == 2 ? 1 : 0;
+      ++count;
+    }
+    if (shafts < 4 && vl.type != 2 && -vl.gx.pos[2] > 0.1f) {
+      for (int c = 0; c < 3; ++c) shaftPos[shafts][c] = vl.gx.pos[c];
+      shaftLuma[shafts] = std::min(vl.luma, 1.f);
+      ++shafts;
+    }
+  }
+  gfx::post::note_engine_lights(count, positions, radius, luma, directional);
+  if (gfx::post::light_shafts_wanted() && shafts > 0) gfx::post::note_lights(shafts, shaftPos, shaftLuma);
+}
+
+// Lit lightmapped world pieces: the engine gives each piece at most four of the frame's dynamic lights
+// (0x8047DC54) and leaves the rest out. When a piece has exactly four, the overlapping dynamic lights
+// the engine left out go into the free GX slots 4-7 for this draw only; the uniform carries the light
+// mask, so the pipeline does not change. Restored right after the uniform is built.
+struct InjectSave {
+  bool active = false;
+  std::array<Light, 4> lights{};
+  std::array<std::bitset<GX::MaxLights>, 4> masks{};
+};
+
+bool inject_extra(InjectSave& save, uint32_t frame) {
+  if (!g_viewValid || g_viewFrame != frame || g_dynamicOrder.size() <= 4) return false;
+  const auto mask0 = g_gxState.colorChannelState[GX_COLOR0].lightMask;
+  if (mask0.to_ulong() != 0x0Fu) return false;
+  // The four loaded lights, found again in the engine's dynamic list.
+  std::array<float, 4> loadedRadius{};
+  std::array<bool, 64> used{};
+  int matched = 0;
+  for (size_t slot = 0; slot < 4; ++slot) {
+    const Light& loaded = g_gxState.lights[slot];
+    loadedRadius[slot] = -1.f;
+    const float tolerance = 1.0e-3f * (1.f + length3(loaded.pos));
+    for (size_t k = 0; k < g_dynamicOrder.size() && k < used.size(); ++k) {
+      const Light& candidate = g_view[g_dynamicOrder[k]].gx;
+      if (used[k] || std::abs(candidate.pos[0] - loaded.pos[0]) > tolerance ||
+          std::abs(candidate.pos[1] - loaded.pos[1]) > tolerance || std::abs(candidate.pos[2] - loaded.pos[2]) > tolerance)
+        continue;
+      used[k] = true;
+      loadedRadius[slot] = g_view[g_dynamicOrder[k]].radius;
+      ++matched;
+      break;
+    }
+  }
+  if (matched == 0) return false;
+  std::array<uint32_t, 4> extra{};
+  uint32_t extraCount = 0;
+  for (size_t k = 0; k < g_dynamicOrder.size() && k < used.size() && extraCount < 4; ++k) {
+    if (used[k]) continue;
+    const ViewLight& c = g_view[g_dynamicOrder[k]];
+    if (c.type == 2) continue;
+    bool overlaps = false;
+    for (size_t slot = 0; slot < 4 && !overlaps; ++slot) {
+      if (loadedRadius[slot] <= 0.f) continue;
+      const Light& loaded = g_gxState.lights[slot];
+      const float dx = c.gx.pos[0] - loaded.pos[0], dy = c.gx.pos[1] - loaded.pos[1], dz = c.gx.pos[2] - loaded.pos[2];
+      const float reach = c.radius + loadedRadius[slot];
+      overlaps = dx * dx + dy * dy + dz * dz < reach * reach;
+    }
+    if (overlaps) extra[extraCount++] = g_dynamicOrder[k];
+  }
+  if (extraCount == 0) return false;
+  save.active = true;
+  for (size_t i = 0; i < 4; ++i) save.lights[i] = g_gxState.lights[4 + i];
+  for (size_t ch = 0; ch < 4; ++ch) save.masks[ch] = g_gxState.colorChannelState[ch].lightMask;
+  std::bitset<GX::MaxLights> added;
+  for (uint32_t i = 0; i < extraCount; ++i) {
+    g_gxState.lights[4 + i] = g_view[extra[i]].gx;
+    added.set(4 + i);
+  }
+  for (size_t ch = 0; ch < 4; ++ch)
+    if (g_gxState.colorChannelState[ch].lightMask == mask0) g_gxState.colorChannelState[ch].lightMask |= added;
+  g_gxState.preparedLightsDirty = true;
+  return true;
+}
+
+void restore(InjectSave& save) {
+  if (!save.active) return;
+  for (size_t i = 0; i < 4; ++i) g_gxState.lights[4 + i] = save.lights[i];
+  for (size_t ch = 0; ch < 4; ++ch) g_gxState.colorChannelState[ch].lightMask = save.masks[ch];
+  g_gxState.preparedLightsDirty = true;
+  save.active = false;
+}
+} // namespace engine_lights
 
 // Resolving a pipeline the long way costs a ~2.7KB zero-init, a full populate_pipeline_config, an XXH3 over the whole config and a memcmp against the hash-indexed slot -- roughly 11KB of memory traffic for a result that is almost always identical to the previous draw's.
 static const CachedPipelineState& resolve_pipeline_state(GXPrimitive prim, GXVtxFmt fmt) {
@@ -2192,7 +2676,7 @@ static bool admit_draw(GXPrimitive prim, GXVtxFmt fmt, u16 count, uint32_t verte
   const auto& info = resolve_pipeline_state(prim, fmt).shaderInfo;
   demand[1] = gfx::staging_uniform_bytes(info.uniformSize);
   if (frame_interpolation_identity_needed() && frame_interpolation_replay_safe())
-    demand[1] *= 1 + MaxInterpolatedFrames;
+    demand[1] *= 1 + active_interpolation_samples();
   for (int i = GX_VA_POS; i <= GX_VA_TEX7; ++i) {
     if ((g_gxState.vtxDesc[i] == GX_INDEX8 || g_gxState.vtxDesc[i] == GX_INDEX16) &&
         g_gxState.arrays[i].cachedRange.size == 0)
@@ -2212,6 +2696,16 @@ bool submit_raw_draw(GXPrimitive prim, GXVtxFmt fmt, const uint8_t* vertices, ui
     __GXSetDirtyState();
   }
 
+  if (async_enabled() && !on_decoder_thread()) {
+    // The HLE producer derived vertexBytes from the VAT/VCD state it published
+    // above; the decoder thread re-derives the stride from the same state.
+    if (!has_complete_primitive(prim, vtxCount)) return true;
+    write_u8(static_cast<u8>(fmt | prim));
+    write_u16(vtxCount);
+    write_data(vertices, vertexBytes);
+    commit();
+    return true;
+  }
   // Raw bridge draws consume live decoded GX state that is also maintained by the HLE producer.
   drain();
 
@@ -2291,6 +2785,7 @@ static bool handle_draw(u8 cmd, const u8* data, u32& pos, u32 size, bool bigEndi
   GXPrimitive prim = primitive_from_draw_cmd(cmd);
 
   if (pos + 2 > size) {
+    if (on_decoder_thread()) Log.error("asynchronous decoder: chunk ends inside a draw header; the stream after it is misaligned");
     return false;
   }
   u16 vtxCount = read_u16(data + pos, bigEndian);
@@ -2304,6 +2799,18 @@ static bool handle_draw(u8 cmd, const u8* data, u32& pos, u32 size, bool bigEndi
   }
 
   u32 totalVtxBytes = vtxCount * vtxSize;
+  if (g_gxState.vtxDesc[GX_VA_POS] == GX_NONE) UNLIKELY {
+    // Never a real draw: the stream is misaligned or the VCD load was lost.
+    // A pipeline key built from it would poison the cache (and every boot).
+    static u32 noPositionLogCount = 0;
+    if (noPositionLogCount++ < 8) {
+      Log.error("draw cmd=0x{:02X} fmt={} count={} stride={} with no position attribute (decoder thread={}): skipped",
+                cmd, static_cast<u32>(fmt), vtxCount, vtxSize, on_decoder_thread());
+    }
+    if (pos + totalVtxBytes > size) return false;
+    pos += totalVtxBytes;
+    return true;
+  }
   if (pos + totalVtxBytes > size) UNLIKELY {
     handle_draw_overrun(cmd, vtxCount, vtxSize, totalVtxBytes, data, pos, size);
     return false;
@@ -2393,10 +2900,193 @@ static bool handle_draw(u8 cmd, const u8* data, u32& pos, u32 size, bool bigEndi
   return true;
 }
 
+// One line per draw of the dumped frame: what decides visibility (cull, depth,
+// alpha test, blend, write masks), where it lands (XF viewport/projection, the
+// current position matrix) and what it samples.
+// Second line of a dumped draw, once its textures are resolved: per sampled map the GX
+// size/format/TLUT, the host pointer of its guest data, data version, and the host
+// texture this draw binds (null = none) with its size, format, mips and replacement flag.
+static void dump_draw_textures(std::FILE* f, const PipelineConfig* config) {
+  const auto& s = g_gxState;
+  if (config != nullptr) {
+    // Material line: what decides which host material effects apply (lighting, texgen sources).
+    const auto& sc = config->shaderConfig;
+    std::fprintf(f, "  mat ppl=%u metal=%u lit=%d/%d lights=0x%02x/0x%02x nrm=%u stages=%u texgen=", unsigned(sc.perPixelLighting),
+                 unsigned(sc.enhancedMetal), int(sc.colorChannels[0].lightingEnabled),
+                 int(sc.colorChannels[1].lightingEnabled), unsigned(s.colorChannelState[0].lightMask.to_ulong()),
+                 unsigned(s.colorChannelState[1].lightMask.to_ulong()), unsigned(sc.attrs[GX_VA_NRM].attrType),
+                 unsigned(sc.tevStageCount));
+    for (u32 i = 0; i < sc.numTexGens; ++i) std::fprintf(f, "%s%u", i ? "," : "", unsigned(sc.tcgs[i].src));
+    std::fputc('\n', f);
+  }
+  std::fprintf(f, "  tex");
+  u32 printed = 0;
+  for (u32 i = 0; i < s.numTevStages; ++i) {
+    const u32 map = s.tevStages[i].texMapId;
+    if (map >= MaxTextures || (printed & (1u << map))) continue;
+    printed |= 1u << map;
+    const auto& obj = s.loadedTextures[map];
+    const auto& bind = s.textures[map];
+    std::fprintf(f, " t%u=%ux%u/f%u/tl%u/d%p/v%u/id%u/b%p", map, obj.width(), obj.height(), obj.format(),
+                 unsigned(obj.tlut), obj.data, obj.texDataVersion, obj.texObjId,
+                 static_cast<const void*>(bind.ref.get()));
+    if (bind.ref)
+      std::fprintf(f, "/%ux%u/hf%u/m%u/r%d", bind.ref->size.width, bind.ref->size.height,
+                   unsigned(bind.ref->gxFormat), unsigned(bind.ref->mipCount), int(bind.ref->isReplacement));
+    if (gfx::draw_dump::g_saveTextures.load(std::memory_order_acquire) && obj.data != nullptr) {
+      const std::filesystem::path dir = gfx::draw_dump::base_path() + ".textures";
+      std::fprintf(f, "/n%s", gfx::texture_replacement::dump_texture_for_inspection(obj, dir).c_str());
+    }
+  }
+  std::fputc('\n', f);
+}
+
+static void dump_draw(std::FILE* f, GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount, const gfx::Range& vertRange) {
+  const auto& s = g_gxState;
+  const auto& vp = s.xfViewport;
+  const auto& pr = s.xfProjection;
+  std::fprintf(f,
+               "draw %u pass=%u prim=%u fmt=%u verts=%u cull=%u depth=%d/%u/%d color=%d alpha=%d "
+               "blend=%u/%u/%u/%u dstalpha=%d acmp=%u/%u/%u/%u/%u zcomp_early=%d ztex=%u fog=%u "
+               "xfvp=%g,%g,%.9g,%g,%g,%.9g lvp=%g,%g,%g,%g,%.9g,%.9g scissor=%d,%d,%d,%d "
+               "proj=%u:%g,%g,%g,%g,%g,%g pnmtx=%u zclear=0x%06x",
+               gfx::draw_dump::next_draw_index(), gfx::current_render_pass_index(), unsigned(prim), unsigned(fmt),
+               unsigned(vtxCount), unsigned(s.cullMode), int(s.depthCompare), unsigned(s.depthFunc),
+               int(s.depthUpdate), int(s.colorUpdate), int(s.alphaUpdate), unsigned(s.blendMode),
+               unsigned(s.blendFacSrc), unsigned(s.blendFacDst), unsigned(s.blendOp),
+               s.dstAlpha == UINT32_MAX ? -1 : int(s.dstAlpha), unsigned(s.alphaCompare.comp0),
+               unsigned(s.alphaCompare.ref0), unsigned(s.alphaCompare.op), unsigned(s.alphaCompare.comp1),
+               unsigned(s.alphaCompare.ref1), int(s.zCompLocBeforeTex), unsigned(s.zTextureOp),
+               unsigned(s.fog.type), vp[0], vp[1], vp[2], vp[3], vp[4], vp[5], s.logicalViewport.left,
+               s.logicalViewport.top, s.logicalViewport.width, s.logicalViewport.height, s.logicalViewport.znear,
+               s.logicalViewport.zfar, s.logicalScissor.x, s.logicalScissor.y, s.logicalScissor.width,
+               s.logicalScissor.height, unsigned(s.projType), pr[0], pr[1], pr[2], pr[3], pr[4], pr[5],
+               unsigned(s.currentPnMtx), unsigned(s.clearDepth));
+  if (s.currentPnMtx < MaxPnMtx) {
+    const auto& m = s.pnMtx[s.currentPnMtx].pos;
+    std::fprintf(f, " mtx=%g,%g,%g,%g|%g,%g,%g,%g|%g,%g,%g,%g", m.m0.x(), m.m0.y(), m.m0.z(), m.m0.w(), m.m1.x(),
+                 m.m1.y(), m.m1.z(), m.m1.w(), m.m2.x(), m.m2.y(), m.m2.z(), m.m2.w());
+  }
+  // Texgen matrices as the decoder holds them (late guest reads show up as repeated or skipped scroll steps),
+  // and a hash of all staged vertex bytes.
+  for (u32 i = 0; i < s.numTexGens && i < MaxTexCoord; ++i) {
+    const auto& tcg = s.tcgs[i];
+    const u32 slot = u32(tcg.mtx) / 3;
+    if (tcg.mtx == GX_IDENTITY || slot >= MaxPnMtx + MaxTexMtx) continue;
+    const auto& m = slot < MaxPnMtx ? s.pnMtx[slot].pos : s.texMtxs[slot - MaxPnMtx];
+    std::fprintf(f, " tm%u=%u:%g,%g,%g,%g|%g,%g,%g,%g", i, slot, m.m0.x(), m.m0.y(), m.m0.z(), m.m0.w(), m.m1.x(),
+                 m.m1.y(), m.m1.z(), m.m1.w());
+    if (tcg.postMtx != GX_PTIDENTITY) {
+      const u32 pt = (u32(tcg.postMtx) - u32(GX_PTTEXMTX0)) / 3;
+      if (pt < MaxPTTexMtx) {
+        const auto& p = s.ptTexMtxs[pt];
+        std::fprintf(f, " pt%u=%u:%g,%g,%g,%g|%g,%g,%g,%g", i, pt, p.m0.x(), p.m0.y(), p.m0.z(), p.m0.w(), p.m1.x(),
+                     p.m1.y(), p.m1.z(), p.m1.w());
+      }
+    }
+  }
+  if (const auto* staged = gfx::staged_vertex_data(vertRange); staged != nullptr) {
+    u64 h = 1469598103934665603ull;
+    for (u32 i = 0; i < vertRange.size; ++i) h = (h ^ staged[i]) * 1099511628211ull;
+    std::fprintf(f, " vh=%016llx", static_cast<unsigned long long>(h));
+  }
+  std::fprintf(f, " pf=%u tev=%u texgens=%u chans=%u", unsigned(s.pixelFmt), unsigned(s.numTevStages),
+               unsigned(s.numTexGens), unsigned(s.numChans));
+  // Per stage: color args a,b,c,d op/scale>reg | alpha args a,b,c,d op/scale>reg, texmap, konst sel.
+  for (u32 i = 0; i < s.numTevStages && i < MaxTevStages; ++i) {
+    const auto& t = s.tevStages[i];
+    std::fprintf(f, " s%u=c%u,%u,%u,%u/%u%u>%u|a%u,%u,%u,%u/%u%u>%u,m%u,k%u/%u", i, unsigned(t.colorPass.a),
+                 unsigned(t.colorPass.b), unsigned(t.colorPass.c), unsigned(t.colorPass.d), unsigned(t.colorOp.op),
+                 unsigned(t.colorOp.scale), unsigned(t.colorOp.outReg), unsigned(t.alphaPass.a),
+                 unsigned(t.alphaPass.b), unsigned(t.alphaPass.c), unsigned(t.alphaPass.d), unsigned(t.alphaOp.op),
+                 unsigned(t.alphaOp.scale), unsigned(t.alphaOp.outReg), unsigned(t.texMapId), unsigned(t.kcSel),
+                 unsigned(t.kaSel));
+  }
+  std::fprintf(f, " k0=%.3f,%.3f,%.3f,%.3f k1=%.3f,%.3f,%.3f,%.3f c0=%.3f,%.3f,%.3f,%.3f", s.kcolors[0].x(),
+               s.kcolors[0].y(), s.kcolors[0].z(), s.kcolors[0].w(), s.kcolors[1].x(), s.kcolors[1].y(),
+               s.kcolors[1].z(), s.kcolors[1].w(), s.colorRegs[1].x(), s.colorRegs[1].y(), s.colorRegs[1].z(),
+               s.colorRegs[1].w());
+  // Color/alpha channel 0: material source, lighting, material and ambient colors (RASC/RASA inputs).
+  for (u32 ch = 0; ch < 2; ++ch) {
+    const auto& cfg = s.colorChannelConfig[ch];
+    const auto& st = s.colorChannelState[ch];
+    std::fprintf(f, " ch%u=src%u/amb%u/light%d/df%u/af%u mat=%.3f,%.3f,%.3f,%.3f amb=%.3f,%.3f,%.3f,%.3f", ch,
+                 unsigned(cfg.matSrc), unsigned(cfg.ambSrc), int(cfg.lightingEnabled), unsigned(cfg.diffFn),
+                 unsigned(cfg.attnFn), st.matColor.x(), st.matColor.y(), st.matColor.z(), st.matColor.w(),
+                 st.ambColor.x(), st.ambColor.y(), st.ambColor.z(), st.ambColor.w());
+  }
+  std::fprintf(f, " vclr0=%u", unsigned(s.vtxDesc[GX_VA_CLR0]));
+  // Up to 4 direct positions as submitted (big-endian guest layout).
+  if (s.vtxDesc[GX_VA_POS] == GX_DIRECT && vtxCount != 0) {
+    const auto& pos = s.vtxFmts[fmt].attrs[GX_VA_POS];
+    u32 offset = 0;
+    for (int attr = GX_VA_PNMTXIDX; attr <= GX_VA_TEX7MTXIDX; ++attr)
+      if (s.vtxDesc[attr] != GX_NONE) offset += 1;
+    const u32 stride = vertRange.size / vtxCount;
+    const u32 comps = pos.cnt == GX_POS_XYZ ? 3 : 2;
+    const auto* data = gfx::staged_vertex_data(vertRange);
+    if (data != nullptr && (pos.type == GX_F32 || pos.type == GX_S16 || pos.type == GX_U16 || pos.type == GX_S8 || pos.type == GX_U8)) {
+      std::fprintf(f, " pos(t%u,f%u)=", unsigned(pos.type), unsigned(pos.frac));
+      for (u32 v = 0; v < std::min<u32>(vtxCount, 4); ++v) {
+        const u8* p = data + v * stride + offset;
+        for (u32 c = 0; c < comps; ++c) {
+          float value = 0.f;
+          if (pos.type == GX_F32) {
+            const u32 bits = (u32(p[4 * c]) << 24) | (u32(p[4 * c + 1]) << 16) | (u32(p[4 * c + 2]) << 8) | p[4 * c + 3];
+            std::memcpy(&value, &bits, 4);
+          } else if (pos.type == GX_S16 || pos.type == GX_U16) {
+            const u16 raw = u16((p[2 * c] << 8) | p[2 * c + 1]);
+            value = (pos.type == GX_S16 ? float(s16(raw)) : float(raw)) / float(1u << pos.frac);
+          } else {
+            value = (pos.type == GX_S8 ? float(s8(p[c])) : float(p[c])) / float(1u << pos.frac);
+          }
+          std::fprintf(f, "%s%g", c ? "," : "", value);
+        }
+        std::fputc(v + 1 < std::min<u32>(vtxCount, 4) ? ';' : ' ', f);
+      }
+      std::fprintf(f, " stride=%u", stride);
+      if (s.vtxDesc[GX_VA_PNMTXIDX] == GX_DIRECT) {
+        std::fprintf(f, " mtxidx=");
+        for (u32 v = 0; v < std::min<u32>(vtxCount, 7); ++v) std::fprintf(f, "%u%s", unsigned(data[v * stride]), v + 1 < std::min<u32>(vtxCount, 7) ? "," : "");
+        for (u32 slot = 0; slot < MaxPnMtx; ++slot) {
+          const auto& m = s.pnMtx[slot].pos;
+          std::fprintf(f, " m%u=%g,%g,%g,%g|%g,%g,%g,%g|%g,%g,%g,%g", slot, m.m0.x(), m.m0.y(), m.m0.z(), m.m0.w(), m.m1.x(),
+                       m.m1.y(), m.m1.z(), m.m1.w(), m.m2.x(), m.m2.y(), m.m2.z(), m.m2.w());
+        }
+      }
+      if (vtxCount > 4) {
+        std::fprintf(f, " pos_rest=");
+        for (u32 v = 4; v < std::min<u32>(vtxCount, 8); ++v) {
+          const u8* p = data + v * stride + offset;
+          for (u32 c = 0; c < comps && pos.type == GX_F32; ++c) {
+            const u32 bits = (u32(p[4 * c]) << 24) | (u32(p[4 * c + 1]) << 16) | (u32(p[4 * c + 2]) << 8) | p[4 * c + 3];
+            float value; std::memcpy(&value, &bits, 4);
+            std::fprintf(f, "%s%g", c ? "," : "", value);
+          }
+          std::fputc(';', f);
+        }
+      }
+    }
+  }
+  std::fprintf(f, " tex=");
+  u32 dumpedMaps = 0;
+  for (u32 i = 0; i < s.numTevStages && i < MaxTevStages; ++i) {
+    const u32 map = underlying(s.tevStages[i].texMapId);
+    if (map >= MaxTextures || (dumpedMaps & (1u << map)) != 0) continue;
+    dumpedMaps |= 1u << map;
+    const auto& t = s.loadedTextures[map];
+    std::fprintf(f, "[%u:%ux%u/f%u@%p]", map, t.width(), t.height(), t.format(), t.data);
+  }
+  std::fputc('\n', f);
+}
+
 static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
                                  gfx::Range vertRange, uint16_t usedPnMtxMask,
                                  HashType matrixTopologySignature,
                                  HashType geometrySignature, bool interpolationIdentityActive) {
+  if (auto* dump = gfx::draw_dump::active()) UNLIKELY {
+    dump_draw(dump, prim, fmt, vtxCount, vertRange);
+  }
   producer_profile::Scope profile(producer_profile::Draw);
   ZoneScoped;
   static unsigned primeActiveTextureTrace = 0;
@@ -2495,10 +3185,138 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
     }
   }
 
-  const auto& pipelineState = resolve_pipeline_state(prim, fmt);
-  const auto& info = pipelineState.shaderInfo;
+  const CachedPipelineState* resolvedState = &resolve_pipeline_state(prim, fmt);
+  resolve_sampled_textures(resolvedState->shaderInfo);
 
-  resolve_sampled_textures(info);
+  // Texture tags (skin, Samus' face, material classes): hashed once per uploaded texture, cached on
+  // the TextureRef.
+  uint8_t drawTags = 0;
+  if (gfx::texture_replacement::texture_tags_listed() != 0) UNLIKELY {
+    for (u32 i = 0; i < g_gxState.numTevStages; ++i) {
+      const u32 map = g_gxState.tevStages[i].texMapId;
+      if (map >= MaxTextures) continue;
+      const auto& ref = g_gxState.textures[map].ref;
+      if (!ref) continue;
+      int8_t tags = ref->tagBits.load(std::memory_order_relaxed);
+      if (tags < 0) {
+        tags = static_cast<int8_t>(gfx::texture_replacement::texture_tags(g_gxState.loadedTextures[map]));
+        ref->tagBits.store(tags, std::memory_order_relaxed);
+      }
+      drawTags |= static_cast<uint8_t>(tags);
+    }
+  }
+  g_drawMetal = {};
+  // A material class wins over the skin tag: Samus' skin and eyes out of the suit have their own
+  // classes (skin-like parameters), while the skin tag keeps every other listed face neutral and
+  // covers them too when enhanced materials are off or the class is not set.
+  if (const uint8_t cls = gfx::texture_replacement::material_class_of(drawTags);
+      cls != 0 && g_enhancedMaterials.load(std::memory_order_relaxed)) UNLIKELY {
+    const uint64_t packed = g_materialClasses[cls].load(std::memory_order_relaxed);
+    const auto* config = resolvedState->config;
+    if (packed != 0 && config != nullptr && config->shaderConfig.perPixelLighting != 0 &&
+        resolvedState->shaderInfo.lightingEnabled) {
+      if (config->shaderConfig.enhancedMetal == 0) resolvedState = &material_pipeline_state(*config);
+      const uint32_t strengthBits = static_cast<uint32_t>(packed >> 32);
+      std::memcpy(&g_drawMetal.strength, &strengthBits, sizeof(float));
+      g_drawMetal.params = static_cast<uint32_t>(packed);
+      g_drawMetal.extSlot = static_cast<int8_t>(cls);
+      g_drawMetal.active = true;
+    }
+  }
+  if (!g_drawMetal.active && (drawTags & gfx::texture_replacement::TagNoMetal) != 0) {
+    g_drawMetal.active = true;  // skin: no metal at all
+  }
+  // World surfaces (experimental levels 1-2): lightmapped, unlit, opaque draws of the world view get
+  // the environment material; their class is the texture's own, or the generic world class.
+  const bool envMaterialOn = g_envMaterial.load(std::memory_order_relaxed);
+  const bool envLightsOn = g_envBorrowedLights.load(std::memory_order_relaxed);
+  const bool shaftsOn = gfx::post::light_shafts_wanted();
+  const bool litRoomsOn = g_litRoomMaterial.load(std::memory_order_relaxed);
+  if (envMaterialOn || envLightsOn || shaftsOn || litRoomsOn) UNLIKELY {
+    const uint32_t frame = gfx::current_frame();
+    borrowed_lights_frame(frame);
+    const auto* config = resolvedState->config;
+    const bool worldView = env_world_view();
+    if ((envLightsOn || shaftsOn) && worldView && resolvedState->shaderInfo.lightingEnabled) tally_draw_lights();
+    // Lit rooms: lightmapped walls that also take GX lights get the world material with those lights
+    // (the enhanced-material pipeline, like a class texture). Actors never use lightmaps.
+    if (litRoomsOn && !g_drawMetal.active && config != nullptr && worldView &&
+        resolvedState->shaderInfo.lightingEnabled && config->shaderConfig.perPixelLighting != 0 &&
+        config->shaderConfig.enhancedMetal == 0 && !resolvedState->shaderInfo.uber &&
+        g_gxState.blendMode == GX_BM_NONE && g_gxState.depthUpdate &&
+        env_lightmap_stage(config->shaderConfig) >= 0) {
+      const uint64_t packed = g_materialClasses[EnvMaterialClass].load(std::memory_order_relaxed);
+      if (packed != 0) {
+        resolvedState = &material_pipeline_state(*config);
+        const uint32_t strengthBits = static_cast<uint32_t>(packed >> 32);
+        std::memcpy(&g_drawMetal.strength, &strengthBits, sizeof(float));
+        g_drawMetal.params = static_cast<uint32_t>(packed);
+        g_drawMetal.extSlot = static_cast<int8_t>(EnvMaterialClass);
+        g_drawMetal.active = true;
+      }
+    }
+    if (envMaterialOn && !g_drawMetal.active && config != nullptr && worldView &&
+        !resolvedState->shaderInfo.lightingEnabled && !resolvedState->shaderInfo.uber &&
+        g_gxState.blendMode == GX_BM_NONE && g_gxState.depthUpdate &&
+        config->shaderConfig.attrs[GX_VA_NRM].attrType != GX_NONE && env_lightmap_stage(config->shaderConfig) >= 0) {
+      uint8_t cls = gfx::texture_replacement::material_class_of(drawTags);
+      uint64_t packed = 0;
+      if (cls != 0 && g_enhancedMaterials.load(std::memory_order_relaxed))
+        packed = g_materialClasses[cls].load(std::memory_order_relaxed);
+      if (packed == 0) {
+        cls = EnvMaterialClass;
+        packed = g_materialClasses[cls].load(std::memory_order_relaxed);
+      }
+      if (packed != 0) {
+        resolvedState = &env_pipeline_state(*config);
+        const uint32_t strengthBits = static_cast<uint32_t>(packed >> 32);
+        std::memcpy(&g_drawMetal.strength, &strengthBits, sizeof(float));
+        g_drawMetal.params = static_cast<uint32_t>(packed);
+        g_drawMetal.extSlot = static_cast<int8_t>(cls);
+        g_drawMetal.active = true;
+      }
+    }
+  }
+  // Modern lighting: the engine's lights of this game frame, moved into the view of its first static
+  // lightmapped world draw, lit or not (the world's model matrix is the identity). After the borrowed
+  // lights' frame start above, so the light shafts keep the engine's lights; before build_uniform.
+  {
+    const uint32_t frame = gfx::current_frame();
+    const auto* config = resolvedState->config;
+    if (frame != engine_lights::g_viewFrame && config != nullptr &&
+        config->shaderConfig.attrs[GX_VA_PNMTXIDX].attrType == GX_NONE && env_world_view() &&
+        env_lightmap_stage(config->shaderConfig) >= 0) {
+      engine_lights::frame(g_gxState.pnMtx[std::min<u32>(g_gxState.currentPnMtx, MaxPnMtx - 1)].pos, frame);
+    }
+  }
+  // World up for the floor reflections (post-process): from the first static lightmapped world draw
+  // of each frame, whose normal matrix is the camera's view rotation (Prime's world is z-up).
+  {
+    static uint32_t upFrame = UINT32_MAX;
+    const uint32_t frame = gfx::current_frame();
+    const auto* config = resolvedState->config;
+    if (frame != upFrame && config != nullptr && !resolvedState->shaderInfo.lightingEnabled &&
+        config->shaderConfig.attrs[GX_VA_PNMTXIDX].attrType == GX_NONE && env_world_view() &&
+        env_lightmap_stage(config->shaderConfig) >= 0) {
+      upFrame = frame;
+      const auto& nrm = g_gxState.pnMtx[std::min<u32>(g_gxState.currentPnMtx, MaxPnMtx - 1)].nrm;
+      gfx::post::note_world_up(nrm.m0[2], nrm.m1[2], nrm.m2[2]);
+    }
+  }
+  // Soft projected shadows: Prime multiplies its character shadow textures into the frame
+  // (dst * (1 - src)) through a position texgen.
+  if (g_softShadows.load(std::memory_order_relaxed)) UNLIKELY {
+    const auto* config = resolvedState->config;
+    if (config != nullptr && !resolvedState->shaderInfo.uber && g_gxState.blendMode == GX_BM_BLEND &&
+        g_gxState.blendFacSrc == GX_BL_ZERO && g_gxState.blendFacDst == GX_BL_INVSRCCLR &&
+        shadow_projection_stage(config->shaderConfig) >= 0)
+      resolvedState = &soft_shadow_pipeline_state(*config);
+  }
+  const auto& pipelineState = *resolvedState;
+  const auto& info = pipelineState.shaderInfo;
+  if (auto* dump = gfx::draw_dump::active()) UNLIKELY {
+    dump_draw_textures(dump, pipelineState.config);
+  }
 
   const auto bindGroups = build_bind_groups(info);
 
@@ -2520,12 +3338,54 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
         .pipeline = pipelineDrawSignature,
         .texture = textureSignature,
         .matrixTopology = matrixTopologySignature,
+        .geometry = xxh3_hash(geometrySignature, xxh3_hash(matrixTopologySignature, drawShape)),
     };
+  }
+  // Modern lighting: dynamic lights the engine left out of a lit lightmapped world piece (slots 4-7).
+  engine_lights::InjectSave injected{};
+  if (g_extraDynamicLights.load(std::memory_order_relaxed) && info.lightingEnabled) UNLIKELY {
+    const auto* config = pipelineState.config;
+    if (config != nullptr && config->shaderConfig.attrs[GX_VA_PNMTXIDX].attrType == GX_NONE && env_world_view() &&
+        env_lightmap_stage(config->shaderConfig) >= 0)
+      engine_lights::inject_extra(injected, gfx::current_frame());
   }
   const auto uniformRanges =
       build_uniform(info, vertRange.offset, ranges, drawIdentity, interpolationIdentityActive,
                     usedPnMtxMask);
   s_lastDrawRecordedInterpolation = interpolationIdentityActive;
+
+  // Hybrid ubershader: while this material's specialised pipeline is still compiling, also stage the
+  // ubershader's uniforms so the encoder can draw with it instead of waiting. Frame interpolation's
+  // per-slot ranges are laid out for the specialised shader, so an inserted image draws such a material
+  // at its final position (render() picks the ubershader's own range): better than not drawing it.
+  gfx::PipelineRef uberPipeline = 0;
+  gfx::Range uberUniformRange{};
+  if (uber_hybrid_enabled() && pipelineState.config != nullptr) UNLIKELY {
+    auto& bridge = pipelineState.uber;
+    if (!bridge.specReady && !uber_force()) {
+      wgpu::RenderPipeline probe;
+      bridge.specReady = gfx::try_pipeline(pipeline, probe);
+    }
+    if (uber_force() || !bridge.specReady) {
+      if (!bridge.tried) {
+        bridge.tried = true;
+        const UberConfig uc = make_uber_config(*pipelineState.config, info);
+        bool fits = false;
+        bridge.info = build_uber_shader_info(uc, &fits);
+        if (fits) {
+          bridge.data = make_uber_data(pipelineState.config->shaderConfig);
+          bridge.ref = gfx::pipeline_ref(encode_uber_pipeline(uc));
+          bridge.ok = true;
+        }
+      }
+      if (bridge.ok) {
+        uberPipeline = bridge.ref;
+        uberUniformRange = build_uniform(bridge.info, vertRange.offset, ranges, drawIdentity, false, usedPnMtxMask,
+                                         &bridge.data).current;
+      }
+    }
+  }
+  engine_lights::restore(injected);
 
   uint32_t instanceCount = 1;
   if (prim == GX_LINES) {
@@ -2535,8 +3395,14 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
   } else if (prim == GX_POINTS) {
     instanceCount = vtxCount;
   }
+  const bool ssaoExclude = (drawTags & gfx::texture_replacement::TagNoSsao) != 0 && gfx::post::ssao_exclude_active();
+  const bool ssaoCover =
+      !ssaoExclude && (drawTags & gfx::texture_replacement::TagSsaoCover) != 0 && gfx::post::ssao_exclude_active();
+  g_drawMetal = {};
+  gfx::post::note_draw();
   gfx::push_draw_command(DrawData{
       .pipeline = pipeline,
+      .fallbackPipeline = pipelineState.fallbackRef,
       .vertRange = vertRange,
       .idxRange = idxRange,
       .uniformRange = uniformRanges.current,
@@ -2546,7 +3412,17 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
       .instanceCount = instanceCount,
       .expandedPrimitive = prim == GX_LINES || prim == GX_LINESTRIP || prim == GX_POINTS,
       .bindGroups = bindGroups,
-      .dstAlpha = pipelineState.dstAlpha,
+      // The pipeline only knows that destination alpha applies; the value is this draw's.
+      .dstAlpha = pipelineState.dstAlpha == UINT32_MAX ? UINT32_MAX : g_gxState.dstAlpha,
+      .uberPipeline = uberPipeline,
+      .uberUniformRange = uberUniformRange,
+      .ssaoExclude = ssaoExclude,
+      .ssaoCover = ssaoCover,
+      .depthWrite = g_gxState.depthUpdate,
+      .depthWriteUnordered =
+          g_gxState.depthUpdate &&
+          (!g_gxState.depthCompare || !(g_gxState.depthFunc == GX_NEVER || g_gxState.depthFunc == GX_LESS ||
+                                        g_gxState.depthFunc == GX_EQUAL || g_gxState.depthFunc == GX_LEQUAL)),
   });
   g_gxState.stateDirty = false;
 }
@@ -2560,6 +3436,44 @@ std::string read_string(const u8* data, u32& pos, u32 size, bool bigEndian) {
   std::string str(reinterpret_cast<const char*>(data) + pos, length);
   pos += length;
   return str;
+}
+
+// GX_LOAD_AURORA_HOST_CALLBACK: process() stops after the command so the
+// callback runs on the decoder thread outside the renderer lock (copies and
+// binds inside it take their own locks), then process_all resumes.
+namespace {
+struct PendingHostCallback {
+  bool pending = false;
+  u32 id = 0;
+  const u8* data = nullptr;
+  u32 size = 0;
+};
+PendingHostCallback s_pendingHostCallback;
+std::atomic<void (*)(uint32_t, const uint8_t*, uint32_t)> g_hostCallback{nullptr};
+} // namespace
+
+std::atomic<DeferredDrawExpander> g_deferredDrawExpander{nullptr};
+void set_deferred_draw_expander(DeferredDrawExpander expander) {
+  g_deferredDrawExpander.store(expander, std::memory_order_release);
+}
+bool has_deferred_draw_expander() { return g_deferredDrawExpander.load(std::memory_order_acquire) != nullptr; }
+
+void set_host_callback(void (*callback)(uint32_t, const uint8_t*, uint32_t)) {
+  g_hostCallback.store(callback, std::memory_order_release);
+}
+
+void invoke_host_callback(uint32_t id, const uint8_t* data, uint32_t size) {
+  if (const auto callback = g_hostCallback.load(std::memory_order_acquire)) callback(id, data, size);
+}
+
+static bool host_callback_pending() { return s_pendingHostCallback.pending; }
+
+bool dispatch_pending_host_callback() {
+  if (!s_pendingHostCallback.pending) return false;
+  const PendingHostCallback call = s_pendingHostCallback;
+  s_pendingHostCallback = {};
+  invoke_host_callback(call.id, call.data, call.size);
+  return true;
 }
 
 bool handle_aurora(const u8* data, u32& pos, u32 size, bool bigEndian) {
@@ -2625,6 +3539,24 @@ bool handle_aurora(const u8* data, u32& pos, u32 size, bool bigEndian) {
       array.cachedRange = {};
       mark_pipeline_state_dirty();
     }
+  } else if (subCmd >= GX_LOAD_AURORA_ARRAYDATA && subCmd <= (GX_LOAD_AURORA_ARRAYDATA | 0x0f)) {
+    // The array by value (GXSetArrayCopy): this decoder's own copy, as the writer saw the array.
+    static std::array<std::vector<u8>, 16> s_arrayCopies;
+    CHECK(pos + 5 <= size, "GX_LOAD_AURORA_ARRAYDATA read overrun");
+    const u32 cpIdx = subCmd - GX_LOAD_AURORA_ARRAYDATA;
+    const u32 bytes = read_u32(data + pos, bigEndian);
+    const bool le = data[pos + 4] == 1;
+    pos += 5;
+    CHECK(pos + bytes <= size, "GX_LOAD_AURORA_ARRAYDATA payload overrun");
+    auto& copy = s_arrayCopies[cpIdx];
+    copy.assign(data + pos, data + pos + bytes);
+    pos += bytes;
+    auto& array = g_gxState.arrays[cpIdx + GX_VA_POS];
+    array.data = copy.data();
+    array.size = bytes;
+    array.le = le;
+    array.cachedRange = {};
+    mark_pipeline_state_dirty();
   } else if (subCmd == GX_LOAD_AURORA_TEXOBJ) {
     CHECK(pos + 34 <= size, "GX_LOAD_AURORA_TEXOBJ read overrun");
     const auto texMapId = data[pos];
@@ -2700,6 +3632,29 @@ bool handle_aurora(const u8* data, u32& pos, u32 size, bool bigEndian) {
   } else if (subCmd == GX_LOAD_AURORA_DEBUG_MARKER_INSERT) {
     auto label = read_string(data, pos, size, bigEndian);
     gfx::insert_debug_marker(std::move(label));
+  } else if (subCmd == GX_LOAD_AURORA_HOST_CALLBACK) {
+    CHECK(pos + 8 <= size, "GX_LOAD_AURORA_HOST_CALLBACK read overrun");
+    const u32 id = read_u32(data + pos, bigEndian);
+    const u32 bytes = read_u32(data + pos + 4, bigEndian);
+    pos += 8;
+    CHECK(pos + bytes <= size, "GX_LOAD_AURORA_HOST_CALLBACK payload overrun");
+    s_pendingHostCallback = {true, id, data + pos, bytes};
+    pos += bytes;
+  } else if (subCmd == GX_LOAD_AURORA_DEFERRED_DRAW) {
+    CHECK(pos + 4 <= size, "GX_LOAD_AURORA_DEFERRED_DRAW read overrun");
+    const u32 bytes = read_u32(data + pos, bigEndian);
+    CHECK(pos + 4 + bytes <= size, "GX_LOAD_AURORA_DEFERRED_DRAW payload overrun");
+    const auto expander = g_deferredDrawExpander.load(std::memory_order_acquire);
+    CHECK(expander != nullptr, "GX_LOAD_AURORA_DEFERRED_DRAW without an expander");
+    u32 wireBytes = 0;
+    const u8* wire = expander(data + pos + 4, bytes, &wireBytes);
+    // A StagingBatchFull thrown by handle_draw leaves pos at this command: the
+    // caller retries it whole (the expansion runs again; it has no side effects).
+    if (wire != nullptr && wireBytes >= 3) {
+      u32 wirePos = 1;
+      if (!handle_draw(wire[0], wire, wirePos, wireBytes, true)) return false;
+    }
+    pos += 4 + bytes;
   }
 
   else {

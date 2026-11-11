@@ -18,6 +18,7 @@ struct ConvRequest {
   TextureHandle dst;         // Destination texture
   SampleFilter sampleFilter = SampleFilter::Nearest;
   bool forceOpaqueAlpha = false;
+  bool multisampledDepthSource = false; // srcView is the MSAA EFB depth buffer
 };
 
 bool needs_conversion(GXTexFmt fmt);

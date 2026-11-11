@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01_00",
+  "goal": "Split the GX consumer thread: Wii command interpretation stays on it, Aurora's decoding (fifo::process, texture resolve, draw recording) moves to a new 'Aurora GX decoder' thread. Stage 1, switchable, default off.",
+  "option": {
+    "f1": "Rendimiento > Decodificador de Aurora en hilo propio (experimental)",
+    "config": "[prime] aurora_decode_thread = true",
+    "env": "WII_COMPILED_AURORA_DECODE_THREAD=1",
+    "log": "Asynchronous GX decoder started (chunk 64 KiB, soft 32 KiB, eager 2 KiB)"
+  },
+  "aurora_changes": [
+    "lib/gx/stream_queue.hpp: chunk queue + decoder thread (order, pool, back-pressure 16 MiB/1024, sync, failure propagation, stop).",
+    "lib/gx/fifo.{hpp,cpp}: async_enabled/set_async_enabled/on_decoder_thread/commit/hand_off/sync/async_idle/decoder_native_thread_id/shutdown_async; drain() = sync() on the producer and no-op on the decoder; process_all runs queued host callbacks outside the renderer lock.",
+    "lib/gx/command_processor.{hpp,cpp}: GXApplyBPReg and submit_raw_draw write stream bytes on the producer; GX_LOAD_AURORA_HOST_CALLBACK (0x0040) pauses process() so the callback runs unlocked; GXRawDrawTextureMask warns+syncs if called on the producer.",
+    "lib/dolphin/gx: GXEnd commits, GXCallDisplayList copies bytes, GXDrawDone hands off, GXCopyTex/copy_disp/GXBindRaw* skip the drain on the decoder, GXCopyTexWithParams/GXCopyDispTrackedWithParams (GXFrameBuffer.h).",
+    "lib/aurora.cpp + include/aurora/aurora.h: aurora_set_async_decoder, aurora_set_stream_callback, aurora_stream_host_callback, aurora_stream_flush/sync/idle, aurora_on_decoder_thread, aurora_get_decoder_thread_id, aurora_stream_shutdown; frame-worker wait callback skipped on the decoder."
+  ],
+  "runtime_changes": [
+    "include/hle/prime_gx_stream.h + src/hle/gx/gx_stream.cpp: payloads and decoder-side handlers for PE token, texture bind, TLUT load, palette bind, texture copy, XFB copy (+ latency note, XFB ready).",
+    "gx_fifo.cpp: GX_HLE_ApplyRawBp/BindDrawPalettes emit when PrimeGxStream::Async(); g_primeTlutMemory is decoder-owned; ResetFifo syncs; font diagnostics skipped.",
+    "gx_copy.cpp: colour copy emits TexCopy. gx_stubs.cpp: GX_HLE_PrimeDrawDone = GxGpuThread::Sync + aurora_stream_sync.",
+    "gx_gpu_thread.cpp: Lock syncs the decoder (also without the consumer thread); flush under the lock when the burst queue empties; Shutdown stops the decoder.",
+    "gx_frame.cpp: EnsureAuroraFrameActive syncs before beginning a frame. main.cpp: timing service skipped on the decoder. memory.cpp: PE token poll flushes when the guest thread is the producer.",
+    "settings_overlay.cpp: checkbox + decoder thread in F8 profiles. prime_host_options.cpp/runtime_config.h: option plumbing."
+  ],
+  "validation": {
+    "tests": "mkw_aurora_stream_queue_tests (new), gx_fifo_storage, dl_vertex_cache, cpu_fifo_capture, wpad_packet pass",
+    "build": "linked 2026-10-25",
+    "user": "pending: enable the option, play (scan visor, transformation, shadows, cutscenes, pause, save/load, room changes), F8 in a heavy room; profile analyzers accept 5 threads"
+  },
+  "doc": "recomp/docs/hilo_decodificador_aurora.md (design, invariants, test plan)"
+}

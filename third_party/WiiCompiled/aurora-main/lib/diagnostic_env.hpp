@@ -15,7 +15,12 @@ struct EnvironmentValue {
     const char* get() const {return present ? value.c_str() : nullptr;}
 };
 }
+// Public builds carry none of these switches: the code behind them compiles away.
+#if !defined(MKW_PRIME_QA_TOOLS)
+#define AURORA_DIAGNOSTIC_ENV(name) (static_cast<const char*>(nullptr))
+#else
 #define AURORA_DIAGNOSTIC_ENV(name) ([]() -> const char* { \
     static const aurora::diagnostics::EnvironmentValue value(name); \
     return value.get(); \
 }())
+#endif

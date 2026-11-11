@@ -48,6 +48,13 @@ void GXSetPixelFmt(GXPixelFmt pix_fmt, GXZFmt16 z_fmt);
 void GXSetTexCopySrc(u16 left, u16 top, u16 wd, u16 ht);
 void GXSetTexCopyDst(u16 wd, u16 ht, GXTexFmt fmt, GXBool mipmap);
 void GXCopyTex(void* dest, GXBool clear);
+// Decoder-thread copy entry points whose parameters travel with the call
+// (see GX_LOAD_AURORA_HOST_CALLBACK); GXCopyTex/GXCopyDispTracked otherwise
+// read copy state the producer set earlier.
+void GXCopyTexWithParams(void* dest, GXBool clear, u16 left, u16 top, u16 width, u16 height, u16 dstWidth,
+                         u16 dstHeight, u32 format, GXBool halfScale);
+void GXCopyDispTrackedWithParams(void* dest, GXBool clear, u32 visibleLines, u16 left, u16 top, u16 width,
+                                 u16 height, u16 dstWidth, u16 dstHeight);
 void GXClearBoundingBox(void);
 void GXReadBoundingBox(u16* left, u16* right, u16* top, u16* bottom);
 u16 GXGetNumXfbLines(u16 efbHeight, f32 yScale);

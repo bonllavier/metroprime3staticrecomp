@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-05",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "request": "Allow more than 60 FPS for people with faster PCs, without harming the game or RetroAchievements. Autonomous overnight work; the user cannot see it on their monitor.",
+  "executable_sha256": "72aef863230b5a700d8f5f408ec1a28b7f38c2f50a1c1126b7eb363ad3a03d08",
+  "executable": "recomp/build/RM3E01_00_runtime_link_probe/Corruption_3 PC.exe (QA build); previous one kept as Corruption_3 PC.before_uncapped.exe",
+  "decision": "Presentation-only interpolation in Aurora. Logic and VI stay at 60 Hz. See recomp/docs/fps_altos.md.",
+  "game_timing_evidence": {
+    "0x802EBAF4": "fixed-step accumulator over OSGetTime; always at least one tick per call",
+    "0x802EA018": "picks the step each loop: 0.02 s or 1/60 s by lbl_8067DF01",
+    "gpMain+0x12D": "30fps.txt flag: two ticks per draw",
+    "rate_literals_dol": "60.0: 54 refs in 46 functions; 30.0: 38 refs in 34 functions; some may be degrees",
+    "functions_counted": 18501
+  },
+  "fixes": [
+    "Prime retrace presents now stamp the interpolation schedule (vi.cpp StampInterpolationSchedule)",
+    "dxgi_frame_latency.cpp: queue 4 and no wait while interpolating; Mailbox through set_non_blocking_present",
+    "policy::next_frame_cadence: any display rate, native image skipped when no tick lands on it",
+    "Group start follows encoding; native image held back by at most 1 - 1/N of a frame",
+    "policy::next_images_per_frame with growth backoff up to 256 s",
+    "Ubershader bridge allowed with interpolation",
+    "efb_ram: permanent freeze from lock inversion between g_asyncMutex and the Dawn device lock",
+    "Off at monitors of 61 Hz or less, checked once a second"
+  ],
+  "runs_private": {
+    "off": "recomp/qa/runs/hangar/20261105_021949_final_off",
+    "sim_144": "recomp/qa/runs/hangar_i144/20261105_021254_final_144_sim",
+    "sim_uncapped": "recomp/qa/runs/hangar_uncap/20261105_022924_final_uncap_sim2",
+    "real_uncapped_60hz_monitor": "recomp/qa/runs/hangar_uncap/20261105_015633_uncap_real2",
+    "real_120_held": "recomp/qa/runs/hangar_i120/20261105_024532_final_real120_hold",
+    "toggle_stress": "recomp/qa/runs/hangar_i120/20261105_023816_final_toggle",
+    "slots_only_screenshots": "recomp/qa/runs/hangar_i120/20261105_014631_slots_visual2"
+  },
+  "tests": "test_graphics.ps1 ALL PASSED on the final sources; DLL imports identical to the previous executable; changed modules pass a syntax-only compile without MKW_PRIME_QA_TOOLS",
+  "limits": [
+    "Never seen on a monitor above 60 Hz. Smoothness, tearing and aiming latency there are unverified.",
+    "Exclusive fullscreen above 60 Hz not exercised.",
+    "The blocking Present on the test PC looks like forced V-Sync in the driver; that is a hypothesis, the NVIDIA panel was not checked.",
+    "No public build was produced and nothing was published. publish/README.md not updated.",
+    "Trilogy trees regenerated and both executables rebuilt on 2026-11-05 (QA build; MP3 sha256 b78ea837920a6bc1883b41997eeb6c78d4a7a02d28fc4a1df151922ad28d4d24, Menu 3d719e6b15e435c84eec7e7772d7d74c80a48420171a27e58e487532cbdd90ac). Menu to MP3 cockpit passes off (titles/probe_runs/20261105_084154_interp_off) and at 144 simulated (20261105_084448_interp_144_sim). Interpolated images, real frame rate and F1 not checked on Trilogy.",
+    "WII_COMPILED_GPU_TIMING run grew the test build's shared dawn_cache by about 300 MB."
+  ]
+}

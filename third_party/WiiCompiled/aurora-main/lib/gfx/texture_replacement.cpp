@@ -7,6 +7,8 @@
 #include "texture_convert.hpp"
 
 #include <absl/container/flat_hash_map.h>
+#include <atomic>
+#include <mutex>
 #include <absl/container/flat_hash_set.h>
 #include <fmt/format.h>
 #include <tracy/Tracy.hpp>
@@ -68,6 +70,17 @@ struct ReplacementIndexEntry {
 };
 
 absl::flat_hash_map<RuntimeTextureKey, ReplacementIndexEntry> s_replacementIndex;
+// Variants: <root>/variants/<name>/ applies only while <name> is active, ahead of the main index
+// (a host switches prompt icons with the input device in use). Requested from any thread, applied
+// by the texture-resolving thread (apply_pending_variant).
+absl::flat_hash_map<RuntimeTextureKey, ReplacementIndexEntry> s_variantIndex;
+std::string s_activeVariant;
+std::mutex s_variantRequestMutex;
+std::string s_requestedVariant;
+std::atomic<bool> s_variantRequested{false};
+// Keys of the textures the last variant switch changed (old and new variant), for the renderer's
+// caches of the original conversions (variant_changed_texture).
+absl::flat_hash_set<RuntimeTextureKey> s_variantChangedKeys;
 absl::flat_hash_map<RuntimeTextureKey, CachedReplacement> s_replacementCache;
 absl::flat_hash_set<RuntimeTextureKey> s_failedKeys;
 absl::flat_hash_set<RuntimeTextureKey> s_reportedMisses;
@@ -536,7 +549,7 @@ void build_index() noexcept {
 
     const auto& path = it->path();
 
-    if (is_relative_to(path, s_dumpRoot)) {
+    if (is_relative_to(path, s_dumpRoot) || is_relative_to(path, s_replacementRoot / "variants")) {
       continue;
     }
 
@@ -560,6 +573,11 @@ void build_index() noexcept {
 }
 
 const ReplacementIndexEntry* find_replacement_path(const RuntimeTextureKey& key) noexcept {
+  if (!s_variantIndex.empty()) {
+    if (const auto it = s_variantIndex.find(key); it != s_variantIndex.end()) {
+      return &it->second;
+    }
+  }
   if (const auto it = s_replacementIndex.find(key); it != s_replacementIndex.end()) {
     return &it->second;
   }
@@ -639,7 +657,7 @@ void cache_replacement(const RuntimeTextureKey& key, const gfx::TextureHandle& h
   evict_replacement_cache_if_needed();
 }
 
-bool dump_editable_texture_dds(const RuntimeTextureKey& key, const GXTexObj_& obj) noexcept {
+bool write_texture_dds(const std::filesystem::path& path, const GXTexObj_& obj) noexcept {
   const ArrayRef<uint8_t> texData{static_cast<const uint8_t*>(obj.data), UINT32_MAX};
   const uint32_t texWidth = obj.width();
   const uint32_t texHeight = obj.height();
@@ -663,8 +681,11 @@ bool dump_editable_texture_dds(const RuntimeTextureKey& key, const GXTexObj_& ob
     return false;
   }
 
-  const auto path = s_dumpRoot / format_replacement_filename(key);
   return dds::write_rgba8_dds(path, texWidth, texHeight, pixels.data);
+}
+
+bool dump_editable_texture_dds(const RuntimeTextureKey& key, const GXTexObj_& obj) noexcept {
+  return write_texture_dds(s_dumpRoot / format_replacement_filename(key), obj);
 }
 
 bool report_missing_key(const RuntimeTextureKey& key, const GXTexObj_& obj) noexcept {
@@ -680,8 +701,90 @@ bool report_missing_key(const RuntimeTextureKey& key, const GXTexObj_& obj) noex
 
 void initialize() noexcept { build_index(); }
 
+bool variant_changed_texture(uint32_t width, uint32_t height, uint32_t format, const void* data,
+                             size_t baseLevelBytes) noexcept {
+  if (s_variantChangedKeys.empty() || data == nullptr || baseLevelBytes == 0 || is_palette_format(format)) {
+    return false;
+  }
+  bool sameShape = false;
+  for (const auto& key : s_variantChangedKeys) {
+    sameShape = sameShape || (key.width == width && key.height == height && key.format == format);
+  }
+  if (!sameShape) {
+    return false;
+  }
+  const RuntimeTextureKey key{.textureHash = XXH64(data, baseLevelBytes, 0), .width = width, .height = height,
+                              .hasTlut = false, .format = format};
+  return s_variantChangedKeys.contains(key);
+}
+
+void request_variant(const char* name) noexcept {
+  std::lock_guard lock{s_variantRequestMutex};
+  s_requestedVariant = name != nullptr ? name : "";
+  s_variantRequested.store(true, std::memory_order_release);
+}
+
+bool apply_pending_variant(std::vector<TextureHandle>& dropped) noexcept {
+  if (!s_variantRequested.load(std::memory_order_acquire)) {
+    return false;
+  }
+  std::string name;
+  {
+    std::lock_guard lock{s_variantRequestMutex};
+    name = s_requestedVariant;
+    s_variantRequested.store(false, std::memory_order_relaxed);
+  }
+  if (!g_config.allowTextureReplacements || s_replacementRoot.empty()) {
+    return false;
+  }
+  // Same name again re-reads the folder: the host regenerated its files.
+  absl::flat_hash_map<RuntimeTextureKey, ReplacementIndexEntry> next;
+  if (!name.empty()) {
+    std::error_code ec;
+    for (std::filesystem::directory_iterator it(s_replacementRoot / "variants" / fs_path_from_string(name), ec);
+         !ec && it != std::filesystem::directory_iterator(); it.increment(ec)) {
+      const auto& path = it->path();
+      if (!it->is_regular_file(ec) || !iequals_ascii(fs_path_to_string(path.extension()), ".png")) {
+        continue;
+      }
+      if (const auto parsed = parse_replacement_filename(fs_path_to_string(path.filename())); parsed.has_value()) {
+        next.try_emplace(*parsed, ReplacementIndexEntry{path});
+      }
+    }
+  }
+  // Every texture either variant replaces changes: drop its cached replacement and report the
+  // handle so the renderer forgets textures it resolved through it.
+  dropped.clear();
+  s_variantChangedKeys.clear();
+  const auto drop = [&](const RuntimeTextureKey& key) {
+    s_variantChangedKeys.insert(key);
+    s_failedKeys.erase(key);
+    const auto it = s_replacementCache.find(key);
+    if (it == s_replacementCache.end()) {
+      return;
+    }
+    dropped.push_back(it->second.handle);
+    s_replacementLru.erase(it->second.lruIt);
+    s_replacementCacheBytes -= std::min(s_replacementCacheBytes, it->second.bytes);
+    s_replacementCache.erase(it);
+  };
+  for (const auto& [key, entry] : s_variantIndex) {
+    drop(key);
+  }
+  for (const auto& [key, entry] : next) {
+    drop(key);
+  }
+  s_variantIndex = std::move(next);
+  s_activeVariant = name;
+  Log.info("Texture replacement variant '{}': {} textures, {} cached textures dropped", name, s_variantIndex.size(),
+           dropped.size());
+  return true;
+}
+
 void shutdown() noexcept {
   s_replacementIndex.clear();
+  s_variantIndex.clear();
+  s_activeVariant.clear();
   s_replacementCache.clear();
   s_failedKeys.clear();
   s_reportedMisses.clear();
@@ -767,6 +870,10 @@ std::optional<TextureHandle> find_replacement(const GXTexObj_& obj) noexcept {
   if (!g_config.allowTextureReplacements) {
     return std::nullopt;
   }
+  // Nothing to replace (e.g. only a host's variants exist and none is active): skip hashing.
+  if (s_replacementIndex.empty() && s_variantIndex.empty() && !g_config.allowTextureDumps) {
+    return std::nullopt;
+  }
 
   const RuntimeTextureKey key = build_runtime_key(obj);
   const auto* path = find_replacement_path(key);
@@ -795,6 +902,65 @@ std::optional<TextureHandle> find_replacement(const GXTexObj_& obj) noexcept {
 std::string build_texture_replacement_name(const GXTexObj_& obj) noexcept {
   const RuntimeTextureKey key = build_runtime_key(obj);
   return format_replacement_filename(key);
+}
+
+uint64_t texture_content_hash(const GXTexObj_& obj) noexcept { return build_runtime_key(obj).textureHash; }
+
+namespace {
+std::mutex s_tagMutex;
+absl::flat_hash_map<uint64_t, uint8_t> s_tagsByHash;
+std::atomic<uint8_t> s_tagsListed{0};
+} // namespace
+
+void set_texture_tag_list(uint8_t tag, const uint64_t* hashes, size_t count) noexcept {
+  std::lock_guard lock(s_tagMutex);
+  for (auto it = s_tagsByHash.begin(); it != s_tagsByHash.end();) {
+    it->second &= static_cast<uint8_t>(~tag);
+    if (it->second == 0) s_tagsByHash.erase(it++);
+    else ++it;
+  }
+  for (size_t i = 0; hashes != nullptr && i < count; ++i) s_tagsByHash[hashes[i]] |= tag;
+  uint8_t listed = 0;
+  for (const auto& [hash, tags] : s_tagsByHash) listed |= tags;
+  s_tagsListed.store(listed, std::memory_order_release);
+}
+
+void set_texture_material_list(uint8_t cls, const uint64_t* hashes, size_t count) noexcept {
+  cls &= MaterialClassCount - 1;
+  const uint8_t value = material_class_bits(cls);
+  std::lock_guard lock(s_tagMutex);
+  for (auto it = s_tagsByHash.begin(); it != s_tagsByHash.end();) {
+    if ((it->second & MaterialClassMask) == value) it->second &= static_cast<uint8_t>(~MaterialClassMask);
+    if (it->second == 0) s_tagsByHash.erase(it++);
+    else ++it;
+  }
+  for (size_t i = 0; cls != 0 && hashes != nullptr && i < count; ++i) {
+    auto& tags = s_tagsByHash[hashes[i]];
+    tags = static_cast<uint8_t>((tags & ~MaterialClassMask) | value);
+  }
+  uint8_t listed = 0;
+  for (const auto& [hash, tags] : s_tagsByHash) listed |= tags;
+  s_tagsListed.store(listed, std::memory_order_release);
+}
+
+uint8_t texture_tags_listed() noexcept { return s_tagsListed.load(std::memory_order_acquire); }
+
+uint8_t texture_tags(const GXTexObj_& obj) noexcept {
+  if (obj.data == nullptr) return 0;
+  const uint64_t hash = texture_content_hash(obj);
+  std::lock_guard lock(s_tagMutex);
+  const auto it = s_tagsByHash.find(hash);
+  return it == s_tagsByHash.end() ? 0 : it->second;
+}
+
+std::string dump_texture_for_inspection(const GXTexObj_& obj, const std::filesystem::path& dir) noexcept {
+  std::string name = build_texture_replacement_name(obj);
+  const auto path = dir / name;
+  std::error_code ec;
+  if (!std::filesystem::exists(path, ec) && ensure_directory(dir)) {
+    write_texture_dds(path, obj);  // palette textures need the TLUT mirror, kept only with replacement on
+  }
+  return name;
 }
 
 } // namespace aurora::gfx::texture_replacement

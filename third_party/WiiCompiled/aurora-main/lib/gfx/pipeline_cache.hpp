@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+
 #include "common.hpp"
 
 #include <functional>
@@ -22,6 +24,8 @@ void begin_pipeline_frame();
 void end_pipeline_frame();
 void set_skip_unready_pipelines(bool enabled) noexcept;
 bool skip_unready_pipelines() noexcept;
+// True from the boot prewarm's start until its queue drains.
+bool pipeline_prewarm_active() noexcept;
 uint32_t queued_pipeline_count() noexcept;
 
 template <typename Config>
@@ -29,6 +33,8 @@ PipelineRef find_pipeline(ShaderType type, const Config& config, NewPipelineCall
 
 bool wait_pipeline(PipelineRef ref, wgpu::RenderPipeline& pipeline);
 bool try_pipeline(PipelineRef ref, wgpu::RenderPipeline& pipeline);
+bool wait_pipeline_until(PipelineRef ref, wgpu::RenderPipeline& pipeline,
+                         std::chrono::steady_clock::time_point deadline);
 // Waits indefinitely for a draw about to be committed to a persistent texture with no re-issue
 // path. Separate from wait_pipeline so skip-unready mode never becomes blocking for other passes.
 bool wait_pipeline_for_persistent_pass(PipelineRef ref, wgpu::RenderPipeline& pipeline);

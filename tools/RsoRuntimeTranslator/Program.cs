@@ -20,6 +20,10 @@ var input = JsonSerializer.Deserialize<RsoInput>(File.ReadAllText(args[0]), json
 var moduleImage = RelFile.Load(input.Rel).BuildImage(input.Base);
 var image = new ProgramImageBuilder().Build(DolFile.Load(input.Dol), moduleImage,
     ramSize: 0x700000);
+// Relocation-proven switch tables (one relocation per entry) replace the
+// translator's bound heuristic, which can pick an unrelated compare.
+Translator.Core.Disassembly.JumpTableOverrides.Tables = (input.JumpTables ?? [])
+    .ToDictionary(table => table.Bctr, table => (IReadOnlyList<uint>)table.Targets);
 var translator = new FunctionTranslator(image);
 var rewriter = new RelocatedInstructions(input.ModuleId, input.Sites.ToDictionary(site => site.Pc));
 var boundaries = input.Boundaries.ToHashSet();
@@ -35,6 +39,7 @@ for (var address = input.TextStart; address < input.TextEnd; address += 4)
 var queue = new Queue<uint>(input.Roots);
 var translated = new HashSet<uint>();
 var records = new List<object>();
+var covered = new HashSet<uint>();
 Directory.CreateDirectory(args[1]);
 var imagePath = Path.Combine(args[1], "relocated_module.bin");
 if (!File.Exists(imagePath) || !File.ReadAllBytes(imagePath).SequenceEqual(moduleImage.Data))
@@ -76,12 +81,20 @@ while (queue.TryDequeue(out var entry))
     code = string.Join('\n', lines);
     var path = Path.Combine(args[1], $"rso{input.ModuleId}_func_{entry:X8}.cpp");
     WriteChanged(path, code);
+    covered.UnionWith(result.Instructions.Select(instruction => instruction.Address));
     var dependencies = result.Emission?.EmittedDirectCallTargets ?? [];
     foreach (var target in dependencies.Where(InModule)) queue.Enqueue(target);
     records.Add(new { entry, name = $"rso{input.ModuleId}_func_{entry:X8}", path = Path.GetFileName(path),
         sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant(),
         ppcInstructions = result.Instructions.Count, directTargets = dependencies,
         instructionAddresses = result.Instructions.Select(instruction => instruction.Address).ToArray() });
+}
+foreach (var table in input.JumpTables ?? [])
+{
+    if (!covered.Contains(table.Bctr)) continue; // dispatch in code no root reaches
+    var missing = table.Targets.Where(target => !covered.Contains(target)).ToList();
+    if (missing.Count != 0)
+        throw new InvalidOperationException($"Switch at {table.Bctr:X8} left {missing.Count} case labels untranslated");
 }
 WriteChanged(Path.Combine(args[1], "translation.json"), JsonSerializer.Serialize(new {
     input.ModuleId, input.Base, functions = records, unsupportedInstructions = 0,
@@ -96,4 +109,6 @@ static void WriteChanged(string path, string content)
 }
 
 sealed record RsoInput(string Dol, string Rel, uint Base, uint ModuleId,
-    uint TextStart, uint TextEnd, List<uint> Roots, List<uint> Boundaries, List<RsoSite> Sites);
+    uint TextStart, uint TextEnd, List<uint> Roots, List<uint> Boundaries, List<RsoSite> Sites,
+    List<RsoJumpTable>? JumpTables = null);
+sealed record RsoJumpTable(uint Bctr, List<uint> Targets);

@@ -10,15 +10,35 @@
 #include <vector>
 
 namespace PrimeDlVertices {
-// Local to one display-list visitor. Every non-draw command and nested list
-// invalidates this proof; it is never a global mirror of mutable GX state.
+// Local to one display-list visitor; never a global mirror of mutable GX state.
+// It proves two things for the next draw of the same vertex format: the vertex
+// layout (CP: VCD, VAT, arrays) already published to Aurora, and the TLUT
+// palette bindings of its sampled textures. A CP write, an XF register write, a
+// nested list or an unknown command drops both. Matrix loads (indexed XF) and NOPs
+// change neither, and only the BP registers listed in BpEffect touch the palettes:
+// skinned characters load a matrix before every small draw, and each of those
+// used to republish the whole layout (Norion cinematic, 2026-10-30).
 struct PublicationTracker {
     bool valid=false;
+    bool palettesValid=false;
     uint32_t format=0;
     bool NeedsPublish(uint32_t requested) const {return !valid || requested!=format;}
-    void Completed(uint32_t requested){valid=true;format=requested;}
-    void Invalidate(){valid=false;}
+    bool NeedsPalettes(uint32_t requested) const {return !palettesValid || requested!=format;}
+    void Completed(uint32_t requested){valid=palettesValid=true;format=requested;}
+    void Invalidate(){valid=palettesValid=false;}
+    void InvalidatePalettes(){palettesValid=false;}
 };
+// What a BP register write between two draws invalidates.
+enum class BpEffect : uint8_t { None, Palettes, All };
+constexpr BpEffect BpEffectOf(uint8_t reg) {
+    // PE finish/token/copy and the EFB copy registers: anything may follow.
+    if(reg>=0x44 && reg<=0x53) return BpEffect::All;
+    // Which textures are sampled (gen mode, indirect stages, TEV orders), the
+    // texture image/format/TLUT registers and TLUT loads.
+    if(reg==0x00 || (reg>=0x10 && reg<=0x2F) || reg==0x64 || reg==0x65 || (reg>=0x80 && reg<=0xBB))
+        return BpEffect::Palettes;
+    return BpEffect::None;  // TEV colour/alpha, konst, fog, blend, z mode, scissor offsets...
+}
 struct Attribute {
     uint32_t bytes=0, indexBytes=0, groups=1;
     uint32_t arrayBase=0, arrayStride=0;
@@ -48,9 +68,19 @@ template<unsigned IndexBytes,size_t CopyBytes=0>
 inline void ExpandMappedAttributeImpl(const uint8_t* source,size_t sourceStride,
                                   uint8_t* destination,size_t directStride,
                                   uint32_t count,const Attribute& attribute) {
+    // Indexed reads land anywhere in the array: start loading the element a few
+    // vertices ahead (10-30 % faster on the skinned small draws of cinematics,
+    // scratch benchmark 2026-10-30). A prefetch never changes the result.
+    const uint32_t ahead=count>=32 ? 8u : 4u;
     for(uint32_t vertex=0;vertex<count;++vertex) {
         const uint8_t* components=source;
         if constexpr(IndexBytes!=0) {
+            if(vertex+ahead<count) {
+                const uint8_t* next=source+size_t(ahead)*sourceStride;
+                uint32_t nextIndex=next[0];
+                if constexpr(IndexBytes==2)nextIndex=(nextIndex<<8)|next[1];
+                __builtin_prefetch(attribute.arrayData+size_t(nextIndex)*attribute.arrayStride);
+            }
             uint32_t index=source[0];
             if constexpr(IndexBytes==2)index=(index<<8)|source[1];
             components=attribute.arrayData+size_t(index)*attribute.arrayStride;
@@ -201,6 +231,28 @@ private:
     size_t m_finishedWorkers=0;
     bool m_stopping=false;
 };
+
+// True when Expand succeeds for any source bytes of this shape: the layout is
+// valid and every indexed attribute maps its whole index domain (the strided
+// path, no per-index reads that could fail). Such a draw can be expanded
+// later, elsewhere (the asynchronous decoder), with the same result.
+inline bool ExpandCannotFail(size_t sourceBytes,uint32_t count,const std::vector<Attribute>& attributes,size_t maxBytes) {
+    size_t sourceStride=0,directStride=0;
+    for(const auto& a:attributes) {
+        if(!a.bytes || a.groups!=1 || (a.indexBytes!=0 && a.indexBytes!=1 && a.indexBytes!=2))return false;
+        if(a.indexBytes) {
+            if(!a.arrayBase || !a.arrayStride || !a.arrayData)return false;
+            const uint64_t last=a.indexBytes==1 ? 255u : 65535u;
+            const uint64_t span=last*a.arrayStride+a.bytes;
+            if(span>a.arrayBytes || uint64_t(a.arrayBase)+span>uint64_t(UINT32_MAX)+1u)return false;
+        }
+        const uint64_t encoded=a.indexBytes ? a.indexBytes : a.bytes;
+        if(encoded>maxBytes-sourceStride || a.bytes>maxBytes-directStride)return false;
+        sourceStride+=encoded;directStride+=a.bytes;
+    }
+    return count && sourceStride && directStride && count<=maxBytes/sourceStride &&
+           count<=maxBytes/directStride && sourceBytes==sourceStride*count;
+}
 
 // Expand array indices by copying the ORIGINAL big-endian component bytes.
 // No float conversion, quantization, native GX attribute writer or stale array

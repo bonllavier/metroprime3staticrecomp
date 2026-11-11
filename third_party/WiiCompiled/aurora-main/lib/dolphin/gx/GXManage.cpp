@@ -261,14 +261,25 @@ GXFifoObj* GXInit(void* base, u32 size) {
   return &sFifoObj;
 }
 
-void GXDrawDone() {
+// With the asynchronous decoder these are in-order barriers only (the stream
+// keeps every earlier command ahead); a host that must observe completion
+// calls aurora_stream_sync itself.
+static void draw_done_barrier() {
+  if (aurora::gx::fifo::async_enabled()) {
+    if (!aurora::gx::fifo::on_decoder_thread()) aurora::gx::fifo::hand_off();
+    return;
+  }
   aurora::gx::fifo::drain();
+}
+
+void GXDrawDone() {
+  draw_done_barrier();
   if (DrawDoneCB != nullptr)
     DrawDoneCB();
 }
 
 void GXSetDrawDone() {
-  aurora::gx::fifo::drain();
+  draw_done_barrier();
   if (DrawDoneCB != nullptr)
     DrawDoneCB();
 }
@@ -316,6 +327,14 @@ void __GXSetDirtyState() {
   __gx->dirtyState = 0;
 }
 
+// Writer: emits pending shadow state (VCD/VAT/BP masks) into the stream now,
+// so a host callback written next observes it on the decoder thread.
+extern "C" void GXAuroraPublishDirtyState() {
+  if (__gx->dirtyState != 0) {
+    __GXSetDirtyState();
+  }
+}
+
 void __GXSetGenMode() {
   GX_WRITE_RAS_REG(__gx->genMode);
   __gx->bpSent = 1;
@@ -338,6 +357,7 @@ void __GXSetVCD() {
   // Write VCD lo and hi to CP registers
   GX_WRITE_SOME_REG4(8, 0x50, __gx->vcdLo, -12);
   GX_WRITE_SOME_REG4(8, 0x60, __gx->vcdHi, -12);
+  aurora::gx::fifo::note_vcd_emitted();
 
   // Write XF vertex specs
   u32 nCols = 0;
@@ -398,6 +418,7 @@ void __GXSetVAT() {
       GX_WRITE_SOME_REG4(8, i | 0x70, __gx->vatA[i], i - 12);
       GX_WRITE_SOME_REG4(8, i | 0x80, __gx->vatB[i], i - 12);
       GX_WRITE_SOME_REG4(8, i | 0x90, __gx->vatC[i], i - 12);
+      aurora::gx::fifo::note_vat_emitted(i);
     }
   }
   __gx->dirtyVAT = 0;

@@ -2,6 +2,7 @@ add_library(aurora_core STATIC
         lib/aurora.cpp
         lib/input.cpp
         lib/window.cpp
+        lib/display_refresh.cpp
         lib/logging.cpp
         lib/system_info.cpp
         lib/system_info.hpp

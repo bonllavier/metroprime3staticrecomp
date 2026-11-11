@@ -95,7 +95,7 @@ def capture(pid, *, iterations=3, interval=.1, stack_bytes=1024):
         path=C.create_unicode_buffer(32768);size=W.DWORD(len(path))
         if not query(process,0,path,C.byref(size)):raise C.WinError(C.get_last_error())
         exe=Path(path.value)
-        if exe.name.lower()!='wiicompiled.exe':raise ValueError('Unexpected target executable')
+        if exe.name.lower() not in ('wiicompiled.exe','corruption_3 pc.exe','corruption_3 trilogy menu.exe','corruption_3 trilogy mp3.exe'):raise ValueError('Unexpected target executable')
         ps=C.WinDLL('psapi',use_last_error=True)
         class ModuleInfo(C.Structure):
             _fields_=[('base',C.c_void_p),('size',W.DWORD),('entry',C.c_void_p)]

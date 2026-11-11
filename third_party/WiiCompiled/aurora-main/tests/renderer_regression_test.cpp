@@ -1,6 +1,7 @@
 #include "gx_test_common.hpp"
 #include "gfx/staging_map.hpp"
 #include "gx/pipeline.hpp"
+#include "gfx/texture_replacement.hpp"
 
 #include <thread>
 
@@ -18,6 +19,7 @@ std::vector<u8> draw(GXPrimitive primitive, u16 count, GXVtxFmt format = GX_VTXF
 TEST_F(GXFifoTest, MaximumQuadCountTerminatesWithoutOutOfRangeIndices) {
   g_gxState.lastVtxFmt = GX_VTXFMT0;
   g_gxState.lastVtxSize = 1;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;  // draws without a position are dropped (see handle_draw)
   for (const u16 count : {65532, 65533, 65534, 65535}) {
     g_gxState.stateDirty = true;
     decode_fifo(draw(GX_QUADS, count));
@@ -30,6 +32,7 @@ TEST_F(GXFifoTest, MaximumQuadCountTerminatesWithoutOutOfRangeIndices) {
 TEST_F(GXFifoTest, IncompletePrimitivesNeverJoinAcrossDraws) {
   g_gxState.lastVtxFmt = GX_VTXFMT0;
   g_gxState.lastVtxSize = 1;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;  // draws without a position are dropped (see handle_draw)
   aurora::gfx::testing::use_draw_command_tracking(true);
   decode_fifo(draw(GX_TRIANGLES, 4));
   EXPECT_EQ(aurora::gfx::testing::last_pushed_indices(), (std::vector<u16>{0, 1, 2}));
@@ -43,6 +46,7 @@ TEST_F(GXFifoTest, IncompletePrimitivesNeverJoinAcrossDraws) {
 TEST_F(GXFifoTest, MergeStopsBeforeSixteenBitIndexOverflow) {
   g_gxState.lastVtxFmt = GX_VTXFMT0;
   g_gxState.lastVtxSize = 1;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;  // draws without a position are dropped (see handle_draw)
   aurora::gfx::testing::use_draw_command_tracking(true);
   decode_fifo(draw(GX_TRIANGLES, 65535));
   decode_fifo(draw(GX_TRIANGLES, 3));
@@ -53,6 +57,7 @@ TEST_F(GXFifoTest, MergeStopsBeforeSixteenBitIndexOverflow) {
 TEST_F(GXFifoTest, VertexCacheInvalidationBreaksDrawMerging) {
   g_gxState.lastVtxFmt = GX_VTXFMT0;
   g_gxState.lastVtxSize = 1;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;  // draws without a position are dropped (see handle_draw)
   aurora::gfx::testing::use_draw_command_tracking(true);
   decode_fifo(draw(GX_TRIANGLES, 3));
   decode_fifo({GX_CMD_INVL_VC});
@@ -81,6 +86,7 @@ TEST_F(GXFifoTest, EqualStrideVertexFormatChangeBreaksDrawMerging) {
 TEST_F(GXFifoTest, SingleExpandedPrimitiveCannotMergeWithTriangles) {
   g_gxState.lastVtxFmt = GX_VTXFMT0;
   g_gxState.lastVtxSize = 1;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;  // draws without a position are dropped (see handle_draw)
   aurora::gfx::testing::use_draw_command_tracking(true);
   decode_fifo(draw(GX_POINTS, 1));
   decode_fifo(draw(GX_TRIANGLES, 3));
@@ -93,6 +99,7 @@ TEST_F(GXFifoTest, DisplayListSubmitsStagingWhenADrawDoesNotFit) {
   aurora::gx::fifo::clear_buffer();
   g_gxState.lastVtxFmt = GX_VTXFMT0;
   g_gxState.lastVtxSize = 1;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;  // draws without a position are dropped (see handle_draw)
   // admitted=1 refuses the middle draw; admitted=2 refuses the last, so only a replay of the refused draw pushes 0x33.
   for (const u32 admitted : {1u, 2u}) for (const bool bigEndian : {true, false}) {
     std::vector<u8> list;
@@ -179,6 +186,8 @@ TEST(FrameInterpolationContract, IdenticalMeshesInDifferentViewportsDoNotShareHi
   std::array<uint8_t, uniformSize> previous{};
   gx::begin_frame_interpolation();
   record(0.f, previous);
+  // The display copy that ends the game frame.
+  gx::note_frame_interpolation_boundary();
   gx::finalize_frame_interpolation();
   gfx::testing::reset_uniform_allocations();
   gx::g_gxState.logicalViewport.top = 240.f;
@@ -186,6 +195,8 @@ TEST(FrameInterpolationContract, IdenticalMeshesInDifferentViewportsDoNotShareHi
   gx::begin_frame_interpolation();
   const auto ranges = record(20.f, current);
   const auto expected = current;
+  // The display copy that ends the game frame.
+  gx::note_frame_interpolation_boundary();
   gx::finalize_frame_interpolation();
   EXPECT_EQ(current, expected);
   if (ranges[0].size) {
@@ -196,4 +207,94 @@ TEST(FrameInterpolationContract, IdenticalMeshesInDifferentViewportsDoNotShareHi
   gx::g_gxState.logicalViewport = savedViewport;
   gx::set_frame_interpolation_fps(0);
   gx::begin_frame_interpolation();
+}
+
+// The decoder drops a draw whose vertex description has no position instead of building a pipeline
+// key from it (such a key poisoned the pipeline cache on 2026-10-25).
+TEST_F(GXFifoTest, DrawWithoutPositionAttributeIsDropped) {
+  g_gxState.lastVtxFmt = GX_VTXFMT0;
+  g_gxState.lastVtxSize = 1;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_NONE;
+  aurora::gfx::testing::use_draw_command_tracking(true);
+  decode_fifo(draw(GX_TRIANGLES, 3));
+  EXPECT_TRUE(aurora::gfx::testing::last_pushed_indices().empty());
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;
+  g_gxState.stateDirty = true;
+  decode_fifo(draw(GX_TRIANGLES, 3));
+  EXPECT_EQ(aurora::gfx::testing::last_pushed_indices(), (std::vector<u16>{0, 1, 2}));
+}
+
+// Material classes 1..15 share the texture tag byte with the other tags (bits 2-4 and 6); every class
+// must round-trip and never touch the skin, SSAO or cover bits, nor the cache's "not hashed" sign bit.
+TEST(TextureTags, MaterialClassBitsRoundTripWithoutTouchingOtherTags) {
+  namespace tr = aurora::gfx::texture_replacement;
+  constexpr uint8_t other = tr::TagNoSsao | tr::TagNoMetal | tr::TagSsaoCover;
+  for (uint8_t cls = 0; cls < tr::MaterialClassCount; ++cls) {
+    const uint8_t bits = tr::material_class_bits(cls);
+    EXPECT_EQ(bits & ~tr::MaterialClassMask, 0) << int(cls);
+    EXPECT_EQ(bits & (other | 0x80), 0) << int(cls);
+    EXPECT_EQ(tr::material_class_of(bits), cls);
+    EXPECT_EQ(tr::material_class_of(static_cast<uint8_t>(bits | other)), cls);
+  }
+  EXPECT_EQ(tr::material_class_of(other), 0);
+}
+
+// Environment material (world lighting level 1): the lightmap is found by the TEV structure of
+// Prime's lightmapped world (F7 31/10/2026, Olympus), not by the UV set.
+namespace {
+aurora::gx::ShaderConfig lightmap_config(GXTevColorArg laterD) {
+  using namespace aurora::gx;
+  ShaderConfig config{};
+  config.numTexGens = 2;
+  config.tcgs[0].src = GX_TG_TEX0;
+  config.tcgs[1].src = GX_TG_TEX1;
+  config.tevStageCount = 2;
+  // Stage 0: C0 = raster + lightmap * C1 (first UV set).
+  auto& s0 = config.tevStages[0];
+  s0.colorPass = {GX_CC_ZERO, GX_CC_TEXC, GX_CC_C1, GX_CC_RASC};
+  s0.colorOp.outReg = GX_TEVREG0;
+  s0.texCoordId = GX_TEXCOORD0;
+  s0.texMapId = GX_TEXMAP0;
+  // Stage 1: PREV = C0 * diffuse (+ laterD) (second UV set).
+  auto& s1 = config.tevStages[1];
+  s1.colorPass = {GX_CC_ZERO, GX_CC_C0, GX_CC_TEXC, laterD};
+  s1.colorOp.outReg = GX_TEVPREV;
+  s1.texCoordId = GX_TEXCOORD1;
+  s1.texMapId = GX_TEXMAP1;
+  return config;
+}
+} // namespace
+
+TEST(EnvironmentMaterial, FindsPrimeLightmapStage) {
+  EXPECT_EQ(aurora::gx::env_lightmap_stage(lightmap_config(GX_CC_ZERO)), 0);
+}
+
+TEST(EnvironmentMaterial, AddedMaskIsNotALightmap) {
+  // PREV + texture * register: an emissive or detail mask added on top, not baked light.
+  EXPECT_EQ(aurora::gx::env_lightmap_stage(lightmap_config(GX_CC_CPREV)), -1);
+}
+
+TEST(EnvironmentMaterial, PlainTexturedDrawHasNoLightmap) {
+  auto config = lightmap_config(GX_CC_ZERO);
+  config.tevStages[0].colorOp.outReg = GX_TEVPREV;  // straight into PREV: nothing multiplies it later
+  EXPECT_EQ(aurora::gx::env_lightmap_stage(config), -1);
+}
+
+// The ubershader marker (pad1) must keep its historical bit: pipeline_cache.db rows written by older
+// builds rely on it, and valid_pipeline_config drops persisted rows that carry it. The host variants
+// use the remaining bit and an explicit padding byte, never the marker.
+TEST(ShaderConfigLayout, UberMarkerKeepsItsBit) {
+  using namespace aurora::gx;
+  const auto flagsByte = [](const ShaderConfig& c) { return reinterpret_cast<const uint8_t*>(&c)[2]; };
+  ShaderConfig uber{};
+  uber.pad1 = 1;
+  EXPECT_EQ(flagsByte(uber), 0x40);
+  ShaderConfig env{};
+  env.envMaterial = 1;
+  EXPECT_EQ(flagsByte(env), 0x80);
+  ShaderConfig soft{};
+  set_shader_soft_shadow(soft);
+  EXPECT_EQ(flagsByte(soft), 0);
+  EXPECT_TRUE(shader_soft_shadow(soft));
+  EXPECT_FALSE(shader_soft_shadow(ShaderConfig{}));
 }

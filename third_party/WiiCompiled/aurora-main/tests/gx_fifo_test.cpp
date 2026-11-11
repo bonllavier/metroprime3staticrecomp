@@ -9,6 +9,8 @@
 #include "__gx.h"
 
 #include <algorithm>
+#include <chrono>
+#include <cstdio>
 #include <cmath>
 #include <initializer_list>
 #include <limits>
@@ -17,10 +19,44 @@ using aurora::gx::g_gxState;
 
 TEST(GXPipelineConfig, RejectsInvalidDeserializedEnums) {
   aurora::gx::PipelineConfig config{};
+  // A key without a position attribute is never a real draw (see PipelineConfigWithoutPosition below).
+  config.shaderConfig.attrs[GX_VA_POS].attrType = GX_DIRECT;
   EXPECT_TRUE(aurora::gx::valid_pipeline_config(config));
 
   config.depthFunc = static_cast<GXCompare>(0x009F01F2);
   EXPECT_FALSE(aurora::gx::valid_pipeline_config(config));
+}
+
+// 2026-10-25: a key decoded from a misaligned stream (no position attribute, or an attribute type past
+// GX_INDEX16) reached the persistent cache and made every later boot abort in the shader generator
+// with "unmapped vtx attr". Such keys must never be considered valid.
+TEST(GXPipelineConfig, PipelineConfigWithoutPositionIsInvalid) {
+  aurora::gx::PipelineConfig config{};
+  EXPECT_EQ(config.shaderConfig.attrs[GX_VA_POS].attrType, GX_NONE);
+  EXPECT_FALSE(aurora::gx::valid_pipeline_config(config));
+  config.shaderConfig.attrs[GX_VA_POS].attrType = GX_INDEX16;
+  EXPECT_TRUE(aurora::gx::valid_pipeline_config(config));
+}
+
+TEST(GXPipelineConfig, AttributeTypePastIndex16IsInvalid) {
+  aurora::gx::PipelineConfig config{};
+  config.shaderConfig.attrs[GX_VA_POS].attrType = GX_DIRECT;
+  ASSERT_TRUE(aurora::gx::valid_pipeline_config(config));
+  config.shaderConfig.attrs[GX_VA_TEX0].attrType = static_cast<GXAttrType>(9);  // the value that aborted the shader build
+  EXPECT_FALSE(aurora::gx::valid_pipeline_config(config));
+}
+
+TEST(GXPipelineConfig, OnlyPowerOfTwoSampleCountsAreValid) {
+  aurora::gx::PipelineConfig config{};
+  config.shaderConfig.attrs[GX_VA_POS].attrType = GX_DIRECT;
+  for (const uint32_t samples : {1u, 2u, 4u, 8u}) {
+    config.msaaSamples = samples;
+    EXPECT_TRUE(aurora::gx::valid_pipeline_config(config)) << samples;
+  }
+  for (const uint32_t samples : {0u, 3u, 5u, 6u, 16u}) {
+    config.msaaSamples = samples;
+    EXPECT_FALSE(aurora::gx::valid_pipeline_config(config)) << samples;
+  }
 }
 
 TEST(GXPipelineConfig, FoggedLateZLogicOrPreservesEggDofMask) {
@@ -197,6 +233,8 @@ TEST(FrameInterpolationContract, RequiresStablePerspectiveDrawSequence) {
           uniforms.interpolated.begin(), uniforms.interpolated.end(),
           [](const aurora::gfx::Range& range) { return range.size != 0; }));
     }
+    // The display copy that ends the game frame.
+    aurora::gx::note_frame_interpolation_boundary();
     aurora::gx::finalize_frame_interpolation();
     return interpolatedUniforms;
   };
@@ -262,6 +300,8 @@ TEST(FrameInterpolationContract, RequiresStablePerspectiveDrawSequence) {
           uniforms.interpolated.begin(), uniforms.interpolated.end(),
           [](const aurora::gfx::Range& range) { return range.size != 0; }));
     }
+    // The display copy that ends the game frame.
+    aurora::gx::note_frame_interpolation_boundary();
     aurora::gx::finalize_frame_interpolation();
     return interpolatedUniforms;
   };
@@ -430,6 +470,8 @@ TEST(FrameInterpolationContract, IndexedPaletteHistoryKeepsAbsoluteVertexSlots) 
   std::array<uint8_t, uniformSize> previousSource{};
   aurora::gx::begin_frame_interpolation();
   recordFrame(identity, 0.0f, 100.0f, previousSource);
+  // The display copy that ends the game frame.
+  aurora::gx::note_frame_interpolation_boundary();
   aurora::gx::finalize_frame_interpolation();
 
   // Current slot 0 is spatially nearest previous slot 1 and vice versa. The old nearest-unused
@@ -439,6 +481,8 @@ TEST(FrameInterpolationContract, IndexedPaletteHistoryKeepsAbsoluteVertexSlots) 
   aurora::gx::begin_frame_interpolation();
   const auto ranges = recordFrame(identity, 90.0f, 10.0f, currentSource);
   ASSERT_NE(ranges[0].size, 0u);
+  // The display copy that ends the game frame.
+  aurora::gx::note_frame_interpolation_boundary();
   aurora::gx::finalize_frame_interpolation();
 
   const auto& interpolated = aurora::gfx::testing::uniform_allocation(0);
@@ -458,6 +502,7 @@ TEST(FrameInterpolationContract, IndexedPaletteHistoryKeepsAbsoluteVertexSlots) 
   auto changedTopology = identity;
   ++changedTopology.combined;
   ++changedTopology.matrixTopology;
+  ++changedTopology.geometry;  // the geometry identity hashes the topology too
   aurora::gfx::testing::reset_uniform_allocations();
   std::array<uint8_t, uniformSize> changedSource{};
   aurora::gx::begin_frame_interpolation();
@@ -465,6 +510,8 @@ TEST(FrameInterpolationContract, IndexedPaletteHistoryKeepsAbsoluteVertexSlots) 
   // Staging may reserve a copy for sibling matching; the correctness contract
   // is that an unmatched topology receives the current pose unchanged.
   const auto expectedCurrent = changedSource;
+  // The display copy that ends the game frame.
+  aurora::gx::note_frame_interpolation_boundary();
   aurora::gx::finalize_frame_interpolation();
   EXPECT_EQ(changedSource, expectedCurrent);
   if (changedRanges[0].size != 0) {
@@ -475,6 +522,458 @@ TEST(FrameInterpolationContract, IndexedPaletteHistoryKeepsAbsoluteVertexSlots) 
     EXPECT_EQ(std::memcmp(duplicated.data(), expectedCurrent.data(), expectedCurrent.size()), 0);
   }
 
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gfx::testing::reset_uniform_allocations();
+}
+
+TEST(FrameInterpolationContract, GameFrameSplitAcrossBatchesMatchesAsOneFrame) {
+  // Prime seals a batch at its VI retrace, which falls inside the next game frame: the head of a
+  // frame is recorded in one batch and its tail in the next. Both halves pair with the same previous
+  // frame, and a previous draw claimed by the head is not taken again by the tail.
+  constexpr size_t projectionOffset = 0;
+  constexpr size_t positionOffset = sizeof(aurora::Mat4x4<float>);
+  constexpr size_t normalOffset = positionOffset + sizeof(aurora::Mat3x4<float>);
+  constexpr size_t uniformSize = normalOffset + sizeof(aurora::Mat3x4<float>);
+  const aurora::Mat4x4<float> projection{};
+  const auto matrixAt = [](float x) {
+    return aurora::Mat3x4<float>{
+        {1.0f, 0.0f, 0.0f, x},
+        {0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f},
+    };
+  };
+  std::array<std::array<uint8_t, uniformSize>, 8> sources{};
+  size_t nextSource = 0;
+  const auto record = [&](aurora::HashType combined, float x) {
+    g_gxState.currentPnMtx = 0;
+    g_gxState.pnMtx[0].pos = matrixAt(x);
+    g_gxState.pnMtx[0].nrm = matrixAt(0.0f);
+    auto& source = sources[nextSource++];
+    std::memcpy(source.data() + positionOffset, &g_gxState.pnMtx[0].pos, sizeof(aurora::Mat3x4<float>));
+    std::memcpy(source.data() + normalOffset, &g_gxState.pnMtx[0].nrm, sizeof(aurora::Mat3x4<float>));
+    return aurora::gx::record_interpolation_draw(
+        aurora::gx::FrameInterpolationDrawIdentity{.combined = combined, .pipeline = 7, .texture = 9},
+        projection, 1u,
+        aurora::gx::InterpolatedUniformLayout{
+            .sourceUniformData = source.data(),
+            .uniformSize = source.size(),
+            .projectionOffset = projectionOffset,
+            .positionOffset = positionOffset,
+            .normalOffset = normalOffset,
+            .currentMatrix = 0,
+            .indexedMatrices = false,
+        });
+  };
+  const auto interpolatedX = [&](const aurora::gfx::Range& range) {
+    const auto& bytes = aurora::gfx::testing::uniform_allocation(range.offset);
+    aurora::Mat3x4<float> position{};
+    std::memcpy(static_cast<void*>(&position), bytes.data() + positionOffset, sizeof(position));
+    return position.m0.w();
+  };
+
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gx::set_frame_interpolation_fps(120);
+  aurora::gfx::testing::reset_uniform_allocations();
+
+  // Batch 1: all of frame A (two instances of one mesh at x = 0 and 10, one unique draw at 100), its
+  // display copy, then the head of frame B: the instance now at 9, nearest to A's instance at 10.
+  aurora::gx::begin_frame_interpolation();
+  record(200, 0.0f);
+  record(200, 10.0f);
+  record(300, 100.0f);
+  aurora::gx::note_frame_interpolation_boundary();
+  const auto head = record(200, 9.0f);
+  aurora::gx::finalize_frame_interpolation();
+  EXPECT_TRUE(aurora::gx::has_interpolated_frame());
+  ASSERT_NE(head[0].size, 0u);
+  EXPECT_FLOAT_EQ(interpolatedX(head[0]), 9.5f);
+
+  // Batch 2: the tail of frame B and its display copy. The second instance is at 8: A's instance at 10
+  // is nearer but already belongs to the head, so it pairs with A's instance at 0.
+  aurora::gx::begin_frame_interpolation();
+  const auto tail = record(200, 8.0f);
+  const auto unique = record(300, 104.0f);
+  aurora::gx::note_frame_interpolation_boundary();
+  aurora::gx::finalize_frame_interpolation();
+  EXPECT_TRUE(aurora::gx::has_interpolated_frame());
+  EXPECT_EQ(aurora::gx::interpolated_frame_count(), 1u);
+  ASSERT_NE(tail[0].size, 0u);
+  ASSERT_NE(unique[0].size, 0u);
+  EXPECT_FLOAT_EQ(interpolatedX(tail[0]), 4.0f);
+  EXPECT_FLOAT_EQ(interpolatedX(unique[0]), 102.0f);
+
+  // A seal with no display copy presents nothing new: no inserted images for it.
+  aurora::gx::begin_frame_interpolation();
+  record(300, 106.0f);
+  aurora::gx::finalize_frame_interpolation();
+  EXPECT_FALSE(aurora::gx::has_interpolated_frame());
+  EXPECT_EQ(aurora::gx::interpolated_frame_count(), 0u);
+
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gfx::testing::reset_uniform_allocations();
+}
+
+TEST(FrameInterpolationContract, CameraCutLeavesTheFrameWithoutInsertedImages) {
+  // Twenty static draws all jump 40 m between two frames: a cut between two shots, not motion.
+  constexpr size_t positionOffset = sizeof(aurora::Mat4x4<float>);
+  constexpr size_t normalOffset = positionOffset + sizeof(aurora::Mat3x4<float>);
+  constexpr size_t uniformSize = normalOffset + sizeof(aurora::Mat3x4<float>);
+  const aurora::Mat4x4<float> projection{};
+  std::array<std::array<uint8_t, uniformSize>, 64> sources{};
+  size_t nextSource = 0;
+  const auto frame = [&](float shift) {
+    aurora::gx::begin_frame_interpolation();
+    for (uint32_t i = 0; i < 20; ++i) {
+      g_gxState.currentPnMtx = 0;
+      g_gxState.pnMtx[0].pos = aurora::Mat3x4<float>{
+          {1.0f, 0.0f, 0.0f, static_cast<float>(i) * 3.0f + shift},
+          {0.0f, 1.0f, 0.0f, 0.0f},
+          {0.0f, 0.0f, 1.0f, -20.0f},
+      };
+      g_gxState.pnMtx[0].nrm = g_gxState.pnMtx[0].pos;
+      auto& source = sources[nextSource++ % sources.size()];
+      aurora::gx::record_interpolation_draw(
+          aurora::gx::FrameInterpolationDrawIdentity{.combined = 1000u + i, .pipeline = 5, .texture = 6},
+          projection, 1u,
+          aurora::gx::InterpolatedUniformLayout{
+              .sourceUniformData = source.data(),
+              .uniformSize = source.size(),
+              .projectionOffset = 0,
+              .positionOffset = positionOffset,
+              .normalOffset = normalOffset,
+              .currentMatrix = 0,
+              .indexedMatrices = false,
+          });
+    }
+    aurora::gx::note_frame_interpolation_boundary();
+    aurora::gx::finalize_frame_interpolation();
+    return aurora::gx::has_interpolated_frame();
+  };
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gx::set_frame_interpolation_fps(120);
+  aurora::gfx::testing::reset_uniform_allocations();
+  EXPECT_TRUE(frame(0.0f));
+  EXPECT_TRUE(frame(0.2f));    // walking: interpolated
+  EXPECT_FALSE(frame(40.2f));  // cut: the native image only
+  EXPECT_TRUE(frame(40.4f));
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gfx::testing::reset_uniform_allocations();
+}
+
+namespace {
+// One non-indexed perspective draw at translation (x, 0, 0) for the matching tests below.
+struct OneMatrixRecorder {
+  static constexpr size_t positionOffset = sizeof(aurora::Mat4x4<float>);
+  static constexpr size_t normalOffset = positionOffset + sizeof(aurora::Mat3x4<float>);
+  static constexpr size_t uniformSize = normalOffset + sizeof(aurora::Mat3x4<float>);
+  std::array<std::array<uint8_t, uniformSize>, 16> sources{};
+  size_t nextSource = 0;
+
+  aurora::gfx::Range record(const aurora::gx::FrameInterpolationDrawIdentity& identity, float x) {
+    g_gxState.currentPnMtx = 0;
+    g_gxState.pnMtx[0].pos = aurora::Mat3x4<float>{
+        {1.0f, 0.0f, 0.0f, x},
+        {0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f},
+    };
+    g_gxState.pnMtx[0].nrm = g_gxState.pnMtx[0].pos;
+    auto& source = sources[nextSource++ % sources.size()];
+    std::memcpy(source.data() + positionOffset, &g_gxState.pnMtx[0].pos, sizeof(aurora::Mat3x4<float>));
+    return aurora::gx::record_interpolation_draw(
+        identity, aurora::Mat4x4<float>{}, 1u,
+        aurora::gx::InterpolatedUniformLayout{
+            .sourceUniformData = source.data(),
+            .uniformSize = source.size(),
+            .projectionOffset = 0,
+            .positionOffset = positionOffset,
+            .normalOffset = normalOffset,
+            .currentMatrix = 0,
+            .indexedMatrices = false,
+        })[0];
+  }
+
+  static float slotX(const aurora::gfx::Range& range) {
+    const auto& bytes = aurora::gfx::testing::uniform_allocation(range.offset);
+    aurora::Mat3x4<float> position{};
+    std::memcpy(static_cast<void*>(&position), bytes.data() + positionOffset, sizeof(position));
+    return position.m0.w();
+  }
+};
+
+void start_interpolation_test() {
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gx::set_frame_interpolation_fps(120);
+  aurora::gfx::testing::reset_uniform_allocations();
+}
+
+void end_interpolation_test() {
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gfx::testing::reset_uniform_allocations();
+}
+
+void end_game_frame() {
+  aurora::gx::note_frame_interpolation_boundary();
+  aurora::gx::finalize_frame_interpolation();
+}
+} // namespace
+
+TEST(FrameInterpolationContract, SpriteWithoutANearbyPartnerIsNotDrawnHalfwayToAnother) {
+  // Fire sprites appear and vanish every frame. A sprite left without its own partner must not pair
+  // with one of another flame metres away, or the inserted image draws it in between: a clone.
+  OneMatrixRecorder recorder;
+  const auto sprite = [](uint64_t instance) {
+    return aurora::gx::FrameInterpolationDrawIdentity{
+        .combined = 100u + instance, .pipeline = 5, .texture = 6, .geometry = 7};
+  };
+  start_interpolation_test();
+  aurora::gx::begin_frame_interpolation();
+  recorder.record(sprite(0), 0.0f);
+  end_game_frame();
+
+  aurora::gx::begin_frame_interpolation();
+  const auto far = recorder.record(sprite(1), 40.0f);
+  end_game_frame();
+  ASSERT_NE(far.size, 0u);
+  EXPECT_FLOAT_EQ(OneMatrixRecorder::slotX(far), 40.0f);  // shown where it is
+
+  aurora::gx::begin_frame_interpolation();
+  const auto near = recorder.record(sprite(2), 41.0f);
+  end_game_frame();
+  ASSERT_NE(near.size, 0u);
+  const float weight = aurora::gx::interpolated_frame_weight(0);
+  EXPECT_NEAR(OneMatrixRecorder::slotX(near), 40.0f + weight, 1.0e-4f);  // a small step still pairs
+  end_interpolation_test();
+}
+
+TEST(FrameInterpolationContract, DrawWithoutPartnerMovesWithItsSameMatrixSibling) {
+  // A wall piece whose material changed (lit by a shot) loses its identity partner. It must move with
+  // the pieces that share its matrix, not stand at its final place while they are halfway there.
+  OneMatrixRecorder recorder;
+  const aurora::gx::FrameInterpolationDrawIdentity wall{
+      .combined = 10, .pipeline = 11, .texture = 12, .geometry = 13};
+  const aurora::gx::FrameInterpolationDrawIdentity litWall{
+      .combined = 20, .pipeline = 21, .texture = 22, .geometry = 23};
+  start_interpolation_test();
+  aurora::gx::begin_frame_interpolation();
+  recorder.record(wall, 0.0f);
+  end_game_frame();
+
+  aurora::gx::begin_frame_interpolation();
+  const auto matched = recorder.record(wall, 2.0f);
+  const auto unpaired = recorder.record(litWall, 2.0f);
+  end_game_frame();
+  ASSERT_NE(matched.size, 0u);
+  ASSERT_NE(unpaired.size, 0u);
+  const float weight = aurora::gx::interpolated_frame_weight(0);
+  EXPECT_NEAR(OneMatrixRecorder::slotX(matched), 2.0f * weight, 1.0e-4f);
+  EXPECT_FLOAT_EQ(OneMatrixRecorder::slotX(unpaired), OneMatrixRecorder::slotX(matched));
+  end_interpolation_test();
+}
+
+TEST(FrameInterpolationContract, ThousandsOfLookalikeDrawsMatchCheaplyAndToThemselves) {
+  // The pause-screen map draws ~5000 pieces sharing mesh and material, packed within a few units of
+  // view space. Matching them all against each other cost 30-70 ms per frame (a 120 FPS game fell to
+  // 30 on that screen). Each piece must still pair with itself while the map pans, at a bounded cost.
+  constexpr size_t kSide = 15;
+  constexpr size_t kDraws = kSide * kSide * 14;  // 3150
+  constexpr int kFrames = 24;
+  const aurora::gx::FrameInterpolationDrawIdentity piece{
+      .combined = 70, .pipeline = 71, .texture = 72, .geometry = 73};
+  std::vector<std::array<uint8_t, OneMatrixRecorder::uniformSize>> sources(kDraws);
+  std::vector<aurora::gfx::Range> ranges(kDraws);
+  // One mesh for all, spread out or packed; and groups of 30 meshes sharing one material, packed.
+  struct Layout {
+    float spacing;
+    size_t meshGroup;
+  };
+  for (const Layout layout : {Layout{0.1f, kDraws}, Layout{6.0f, kDraws}, Layout{0.1f, 30}}) {
+    const float spacing = layout.spacing;
+    start_interpolation_test();
+    double worstMs = 0.0;
+    std::vector<double> movingMs;
+    uint64_t worstEvaluations = 0;
+    float pan = 0.0f;
+    float previousPan = 0.0f;
+    for (int frame = 0; frame < kFrames; ++frame) {
+      previousPan = pan;
+      pan = frame < 3 ? 0.0f : static_cast<float>(frame - 2) * spacing * 0.3f;  // still, then panning
+      aurora::gx::begin_frame_interpolation();
+      for (size_t i = 0; i < kDraws; ++i) {
+        g_gxState.currentPnMtx = 0;
+        g_gxState.pnMtx[0].pos = aurora::Mat3x4<float>{
+            {1.0f, 0.0f, 0.0f, static_cast<float>(i % kSide) * spacing + pan},
+            {0.0f, 1.0f, 0.0f, static_cast<float>((i / kSide) % kSide) * spacing},
+            {0.0f, 0.0f, 1.0f, -30.0f - static_cast<float>(i / (kSide * kSide)) * spacing},
+        };
+        g_gxState.pnMtx[0].nrm = g_gxState.pnMtx[0].pos;
+        std::memcpy(sources[i].data() + OneMatrixRecorder::positionOffset, &g_gxState.pnMtx[0].pos,
+                    sizeof(aurora::Mat3x4<float>));
+        ranges[i] = aurora::gx::record_interpolation_draw(
+            aurora::gx::FrameInterpolationDrawIdentity{
+                .combined = piece.combined + 1000 * (i / layout.meshGroup),
+                .pipeline = piece.pipeline,
+                .texture = piece.texture,
+                .geometry = piece.geometry + 1000 * (i / layout.meshGroup)},
+            aurora::Mat4x4<float>{}, 1u,
+            aurora::gx::InterpolatedUniformLayout{
+                .sourceUniformData = sources[i].data(),
+                .uniformSize = sources[i].size(),
+                .projectionOffset = 0,
+                .positionOffset = OneMatrixRecorder::positionOffset,
+                .normalOffset = OneMatrixRecorder::normalOffset,
+                .currentMatrix = 0,
+                .indexedMatrices = false,
+            })[0];
+      }
+      const uint64_t evaluationsBefore = aurora::gx::frame_interpolation_pair_evaluations();
+      const auto start = std::chrono::steady_clock::now();
+      end_game_frame();
+      const double ms =
+          std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+      worstMs = std::max(worstMs, ms);
+      if (frame >= 4) {
+        movingMs.push_back(ms);
+      }
+      worstEvaluations = std::max(worstEvaluations,
+                                  aurora::gx::frame_interpolation_pair_evaluations() - evaluationsBefore);
+    }
+    const float weight = aurora::gx::interpolated_frame_weight(0);
+    for (const size_t i : {size_t{0}, size_t{7}, kDraws / 2, kDraws - 1}) {
+      ASSERT_NE(ranges[i].size, 0u);
+      const float x = static_cast<float>(i % kSide) * spacing;
+      EXPECT_NEAR(OneMatrixRecorder::slotX(ranges[i]), x + previousPan + (pan - previousPan) * weight,
+                  spacing * 0.05f)
+          << "piece " << i << " spacing " << spacing << " group " << layout.meshGroup;
+    }
+    // Wall time is informative only (shared machine); the pair count is the contract. Before the
+    // fix: ~200k pairs per frame packed, ~10M spread out.
+    std::sort(movingMs.begin(), movingMs.end());
+    std::printf("[ lookalike ] spacing %.1f, groups of %zu: median %.2f ms, worst %.2f ms, %llu pairs measured\n",
+                spacing, layout.meshGroup, movingMs[movingMs.size() / 2], worstMs,
+                static_cast<unsigned long long>(worstEvaluations));
+    EXPECT_LE(worstEvaluations, uint64_t{4096} + uint64_t{4} * kDraws)
+        << "spacing " << spacing << " group " << layout.meshGroup;
+    end_interpolation_test();
+  }
+}
+
+TEST(FrameInterpolationContract, CameraTurnKeepsPiecesWithDifferentOriginsTogether) {
+  // Two static pieces of one wall, origins 30 m apart, while the camera turns 12 degrees and steps
+  // forward. Both must put their shared corner at the same place, or a seam opens between them.
+  using M = aurora::Mat3x4<float>;
+  const auto view = [](float degrees, float forward) {
+    const float r = degrees * 3.14159265f / 180.0f;
+    const float c = std::cos(r);
+    const float s = std::sin(r);
+    return M{{c, 0.0f, s, 0.0f}, {0.0f, 1.0f, 0.0f, 0.0f}, {-s, 0.0f, c, forward}};
+  };
+  const auto model = [](float x) {
+    return M{{1.0f, 0.0f, 0.0f, x}, {0.0f, 1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f, -20.0f}};
+  };
+  const auto row = [](const M& m, int r) { return r == 0 ? m.m0 : (r == 1 ? m.m1 : m.m2); };
+  const auto multiply = [&](const M& a, const M& b) {
+    float out[3][4];
+    for (int r = 0; r < 3; ++r) {
+      for (int c = 0; c < 4; ++c) {
+        out[r][c] = row(a, r)[0] * row(b, 0)[c] + row(a, r)[1] * row(b, 1)[c] +
+                    row(a, r)[2] * row(b, 2)[c] + (c == 3 ? row(a, r)[3] : 0.0f);
+      }
+    }
+    return M{{out[0][0], out[0][1], out[0][2], out[0][3]},
+             {out[1][0], out[1][1], out[1][2], out[1][3]},
+             {out[2][0], out[2][1], out[2][2], out[2][3]}};
+  };
+  const auto apply = [&](const M& m, float x, float y, float z) {
+    return std::array<float, 3>{row(m, 0)[0] * x + row(m, 0)[1] * y + row(m, 0)[2] * z + row(m, 0)[3],
+                                row(m, 1)[0] * x + row(m, 1)[1] * y + row(m, 1)[2] * z + row(m, 1)[3],
+                                row(m, 2)[0] * x + row(m, 2)[1] * y + row(m, 2)[2] * z + row(m, 2)[3]};
+  };
+  const M before = view(0.0f, 0.0f);
+  const M after = view(12.0f, 0.3f);
+  for (const float weight : {0.25f, 0.5f, 0.75f}) {
+    M left{};
+    M right{};
+    ASSERT_TRUE(aurora::gx::interpolate_transform(multiply(before, model(-15.0f)),
+                                                  multiply(after, model(-15.0f)), weight, left));
+    ASSERT_TRUE(aurora::gx::interpolate_transform(multiply(before, model(15.0f)),
+                                                  multiply(after, model(15.0f)), weight, right));
+    // The world point (0, 0, -20) is local (15, 0, 0) of the left piece and (-15, 0, 0) of the right.
+    const auto fromLeft = apply(left, 15.0f, 0.0f, 0.0f);
+    const auto fromRight = apply(right, -15.0f, 0.0f, 0.0f);
+    for (int i = 0; i < 3; ++i) {
+      EXPECT_NEAR(fromLeft[i], fromRight[i], 1.0e-3f) << "weight " << weight << " axis " << i;
+    }
+  }
+}
+
+TEST(FrameInterpolationContract, LowLatencyPredictsPastTheFrameOnlyForSmallMotion) {
+  // Low latency shows the frame first and its in-between image half a frame later, carried forward
+  // along the last motion (weight 1.5). A step too large to trust shows the frame itself instead.
+  constexpr size_t positionOffset = sizeof(aurora::Mat4x4<float>);
+  constexpr size_t normalOffset = positionOffset + sizeof(aurora::Mat3x4<float>);
+  constexpr size_t uniformSize = normalOffset + sizeof(aurora::Mat3x4<float>);
+  const aurora::Mat4x4<float> projection{};
+  std::array<std::array<uint8_t, uniformSize>, 8> sources{};
+  size_t nextSource = 0;
+  const auto frame = [&](float smallX, float jumpX) {
+    std::array<aurora::gfx::Range, 2> ranges{};
+    aurora::gx::begin_frame_interpolation();
+    const std::array<float, 2> xs{smallX, jumpX};
+    for (uint32_t i = 0; i < 2; ++i) {
+      g_gxState.currentPnMtx = 0;
+      g_gxState.pnMtx[0].pos = aurora::Mat3x4<float>{
+          {1.0f, 0.0f, 0.0f, xs[i]},
+          {0.0f, 1.0f, 0.0f, 0.0f},
+          {0.0f, 0.0f, 1.0f, 0.0f},
+      };
+      g_gxState.pnMtx[0].nrm = g_gxState.pnMtx[0].pos;
+      auto& source = sources[nextSource++ % sources.size()];
+      std::memcpy(source.data() + positionOffset, &g_gxState.pnMtx[0].pos, sizeof(aurora::Mat3x4<float>));
+      ranges[i] = aurora::gx::record_interpolation_draw(
+          aurora::gx::FrameInterpolationDrawIdentity{.combined = 70u + i, .pipeline = 3, .texture = 4},
+          projection, 1u,
+          aurora::gx::InterpolatedUniformLayout{
+              .sourceUniformData = source.data(),
+              .uniformSize = source.size(),
+              .projectionOffset = 0,
+              .positionOffset = positionOffset,
+              .normalOffset = normalOffset,
+              .currentMatrix = 0,
+              .indexedMatrices = false,
+          })[0];
+    }
+    aurora::gx::note_frame_interpolation_boundary();
+    aurora::gx::finalize_frame_interpolation();
+    return ranges;
+  };
+  const auto slotX = [&](const aurora::gfx::Range& range) {
+    const auto& bytes = aurora::gfx::testing::uniform_allocation(range.offset);
+    aurora::Mat3x4<float> position{};
+    std::memcpy(static_cast<void*>(&position), bytes.data() + positionOffset, sizeof(position));
+    return position.m0.w();
+  };
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gx::set_frame_interpolation_low_latency(true);
+  aurora::gx::set_frame_interpolation_fps(120);
+  aurora::gfx::testing::reset_uniform_allocations();
+  frame(0.0f, 0.0f);
+  const auto ranges = frame(2.0f, 40.0f);
+  EXPECT_TRUE(aurora::gx::interpolated_frame_extrapolates());
+  EXPECT_FLOAT_EQ(aurora::gx::interpolated_frame_weight(0), 1.5f);
+  EXPECT_TRUE(aurora::gx::interpolated_frame_presents_native());
+  ASSERT_NE(ranges[0].size, 0u);
+  ASSERT_NE(ranges[1].size, 0u);
+  EXPECT_FLOAT_EQ(slotX(ranges[0]), 3.0f);   // 2 units per frame, half a frame on
+  EXPECT_FLOAT_EQ(slotX(ranges[1]), 40.0f);  // 40 units in one frame: no guess
+  aurora::gx::set_frame_interpolation_low_latency(false);
   aurora::gx::set_frame_interpolation_fps(0);
   aurora::gx::begin_frame_interpolation();
   aurora::gfx::testing::reset_uniform_allocations();
@@ -1986,6 +2485,39 @@ TEST_F(GXFifoTest, SetArray_Pos_EncodesAuroraArrayBaseAndStride) {
   EXPECT_TRUE(gxState().stateDirty);
 }
 
+// GX_LOAD_AURORA_ARRAYDATA: the decoder keeps its own copy, so later writes to the source do not reach
+// the draws (asynchronous decoder, arrays the game rewrites; Bryyo lava 2026-11-01).
+TEST_F(GXFifoTest, ArrayData_DecoderKeepsItsOwnCopy) {
+  u8 source[24];
+  for (u8 i = 0; i < sizeof(source); ++i) source[i] = static_cast<u8>(i + 1);
+  // Without the asynchronous decoder the caller must use GXSetArray.
+  EXPECT_FALSE(GXSetArrayCopy(GX_VA_POS, source, sizeof(source), 12));
+  EXPECT_TRUE(capture_fifo().empty());
+
+  std::vector<u8> bytes{GX_LOAD_AURORA, 0x00, static_cast<u8>(GX_LOAD_AURORA_ARRAYDATA), 0, 0, 0,
+                        static_cast<u8>(sizeof(source)), 0};
+  bytes.insert(bytes.end(), source, source + sizeof(source));
+  bytes.insert(bytes.end(), {GX_LOAD_CP_REG, GX_CP_REG_ARRAYSTRIDE, 0, 0, 0, 12});
+
+  reset_gx_state();
+  gxState().arrays[GX_VA_POS].cachedRange.offset = 4;
+  gxState().arrays[GX_VA_POS].cachedRange.size = 8;
+  gxState().stateDirty = false;
+  decode_fifo(bytes);
+
+  const auto& array = gxState().arrays[GX_VA_POS];
+  ASSERT_NE(array.data, nullptr);
+  EXPECT_NE(array.data, static_cast<const void*>(source));
+  EXPECT_EQ(array.size, sizeof(source));
+  EXPECT_EQ(array.stride, 12);
+  EXPECT_FALSE(array.le);
+  EXPECT_EQ(array.cachedRange.size, 0u);
+  EXPECT_TRUE(gxState().stateDirty);
+  source[0] = 0xEE;
+  EXPECT_EQ(static_cast<const u8*>(array.data)[0], 1);
+  EXPECT_EQ(std::memcmp(static_cast<const u8*>(array.data) + 1, source + 1, sizeof(source) - 1), 0);
+}
+
 TEST_F(GXFifoTest, SetArray_Nbt_UsesNrmCommandSlotAndState) {
   u8 nbtData[96]{};
   u8 untouchedData[24]{};
@@ -2158,6 +2690,7 @@ TEST_F(GXFifoTest, RawDrawDrainsQueuedMaterialStateWithoutDeferredDirtyBits) {
   // active VAT. Seed its size cache so this test can isolate FIFO ordering.
   g_gxState.lastVtxFmt = GX_VTXFMT0;
   g_gxState.lastVtxSize = 1;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;  // draws without a position are dropped (see handle_draw)
   const std::array<u8, 4> vertices{};
 
   ASSERT_TRUE(aurora::gx::fifo::submit_raw_draw(GX_QUADS, GX_VTXFMT0, vertices.data(), 4,
@@ -2204,6 +2737,7 @@ TEST_F(GXFifoTest, RawDrawPreservesHorizontalXzQuadVertices) {
 
   g_gxState.lastVtxFmt = GX_VTXFMT0;
   g_gxState.lastVtxSize = 14;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;  // draws without a position are dropped (see handle_draw)
   g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;
   g_gxState.vtxDesc[GX_VA_TEX0] = GX_DIRECT;
   auto& fmt = g_gxState.vtxFmts[GX_VTXFMT0];
@@ -2252,6 +2786,7 @@ static void append_test_draw(std::vector<u8>& fifo, GXPrimitive primitive, u16 c
 TEST_F(GXFifoTest, DrawTopologyTemplatesPreserveExactGxIndexOrder) {
   g_gxState.lastVtxFmt = GX_VTXFMT0;
   g_gxState.lastVtxSize = 1;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;  // draws without a position are dropped (see handle_draw)
   g_gxState.stateDirty = true;
 
   const auto decodeAndReadIndices = [&](GXPrimitive primitive, u16 count) {
@@ -2286,6 +2821,7 @@ TEST_F(GXFifoTest, DrawTopologyTemplatesPreserveExactGxIndexOrder) {
 TEST_F(GXFifoTest, MergedDrawOffsetsCachedTopologyWithoutJoiningPrimitives) {
   g_gxState.lastVtxFmt = GX_VTXFMT0;
   g_gxState.lastVtxSize = 1;
+  g_gxState.vtxDesc[GX_VA_POS] = GX_DIRECT;  // draws without a position are dropped (see handle_draw)
   g_gxState.stateDirty = true;
   aurora::gfx::testing::use_draw_command_tracking(true);
 
@@ -4530,13 +5066,24 @@ TEST_F(GXFifoTest, CopyTexDepthZ16PreservesVerticalCopyFilterForConversion) {
   EXPECT_EQ(gxState().copyTextures.at(image.data()).format, GX_TF_Z16);
 }
 
-TEST_F(GXFifoTest, CopyTexDepthZ16UsesRa8Ia8Semantics) {
-  constexpr auto rgba = aurora::gfx::tex_copy_conv::detail::z16_ra8_as_ia8_rgba(0x12);
-  EXPECT_EQ(rgba, (std::array<std::uint8_t, 4>{0x12, 0x12, 0x12, 0xff}));
+TEST_F(GXFifoTest, CopyTexDepthZ16UsesRg8Ia8Semantics) {
+  constexpr auto rgba = aurora::gfx::tex_copy_conv::detail::z16_rg8_as_ia8_rgba(0x12, 0x34);
+  EXPECT_EQ(rgba, (std::array<std::uint8_t, 4>{0x12, 0x12, 0x12, 0x34}));
 
   constexpr auto shader = aurora::gfx::tex_copy_conv::detail::Z16FragmentShader;
   EXPECT_NE(shader.find("let i = f32(depth_bytes.r)"), std::string_view::npos);
-  EXPECT_NE(shader.find("return vec4f(i, i, i, 1.0)"), std::string_view::npos);
+  EXPECT_NE(shader.find("return vec4f(i, i, i, f32(depth_bytes.g) / 255.0)"), std::string_view::npos);
+}
+
+// With MSAA on, the scan visor's depth probe crashed the game (v0.1.6): the copy has to bind the EFB
+// depth buffer as a multisampled texture, and both variants must declare the name the shader body reads.
+TEST_F(GXFifoTest, CopyTexDepthBindsMultisampledSourceUnderMsaa) {
+  constexpr auto single = aurora::gfx::tex_copy_conv::detail::DepthSourceBinding;
+  constexpr auto msaa = aurora::gfx::tex_copy_conv::detail::MultisampledDepthSourceBinding;
+  EXPECT_NE(single.find("var src: texture_depth_2d;"), std::string_view::npos);
+  EXPECT_NE(msaa.find("var src: texture_depth_multisampled_2d;"), std::string_view::npos);
+  EXPECT_NE(single.find("@group(0) @binding(0)"), std::string_view::npos);
+  EXPECT_NE(msaa.find("@group(0) @binding(0)"), std::string_view::npos);
 }
 
 TEST_F(GXFifoTest, CopyTexClearTrueNoOpsWhenAllUpdateMasksAreDisabled) {
@@ -5026,4 +5573,233 @@ TEST_F(GXFifoTest, Composite_TevSetup) {
   EXPECT_EQ(g_gxState.tevStages[0].channelId, GX_COLOR0A0);
   EXPECT_EQ(g_gxState.tevStages[0].colorPass.d, GX_CC_TEXC);
   EXPECT_EQ(g_gxState.tevStages[0].alphaPass.d, GX_CA_TEXA);
+}
+
+namespace {
+// Two-slot palette draws for the skeleton tests: slot 0 and slot 1 of PNMTX, positions only.
+struct PaletteDrawRecorder {
+  static constexpr uint16_t kUsedMask = (1u << 0) | (1u << 1);
+  static constexpr size_t kPositionOffset = sizeof(aurora::Mat4x4<float>);
+  static constexpr size_t kNormalOffset = kPositionOffset + aurora::gx::MaxPnMtx * sizeof(aurora::Mat3x4<float>);
+  static constexpr size_t kUniformSize = kNormalOffset + aurora::gx::MaxPnMtx * sizeof(aurora::Mat3x4<float>);
+  std::array<std::array<uint8_t, kUniformSize>, 16> sources{};
+  size_t next = 0;
+
+  aurora::gfx::Range record(uint64_t identity, const aurora::Mat3x4<float>& slot0,
+                            const aurora::Mat3x4<float>& slot1) {
+    auto& source = sources[next++ % sources.size()];
+    g_gxState.pnMtx[0].pos = slot0;
+    g_gxState.pnMtx[1].pos = slot1;
+    g_gxState.pnMtx[0].nrm = slot0;
+    g_gxState.pnMtx[1].nrm = slot1;
+    std::memcpy(source.data() + kPositionOffset, &slot0, sizeof(slot0));
+    std::memcpy(source.data() + kPositionOffset + sizeof(slot0), &slot1, sizeof(slot1));
+    std::memcpy(source.data() + kNormalOffset, &slot0, sizeof(slot0));
+    std::memcpy(source.data() + kNormalOffset + sizeof(slot0), &slot1, sizeof(slot1));
+    return aurora::gx::record_interpolation_draw(
+        aurora::gx::FrameInterpolationDrawIdentity{.combined = identity, .pipeline = 5, .texture = 6,
+                                                   .matrixTopology = identity + 1, .geometry = identity + 2},
+        aurora::Mat4x4<float>{}, kUsedMask,
+        aurora::gx::InterpolatedUniformLayout{
+            .sourceUniformData = source.data(),
+            .uniformSize = source.size(),
+            .projectionOffset = 0,
+            .positionOffset = kPositionOffset,
+            .normalOffset = kNormalOffset,
+            .currentMatrix = 0,
+            .indexedMatrices = true,
+        })[0];
+  }
+
+  static aurora::Mat3x4<float> slot(const aurora::gfx::Range& range, size_t index) {
+    const auto& bytes = aurora::gfx::testing::uniform_allocation(range.offset);
+    aurora::Mat3x4<float> matrix{};
+    std::memcpy(static_cast<void*>(&matrix), bytes.data() + kPositionOffset + index * sizeof(matrix), sizeof(matrix));
+    return matrix;
+  }
+};
+
+aurora::Mat3x4<float> moved(float x) {
+  return {{1.0f, 0.0f, 0.0f, x}, {0.0f, 1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 0.0f}};
+}
+aurora::Mat3x4<float> turned(float degrees, float x) {
+  const float c = std::cos(degrees * 3.14159265f / 180.0f), s = std::sin(degrees * 3.14159265f / 180.0f);
+  return {{c, -s, 0.0f, x}, {s, c, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 0.0f}};
+}
+
+void start_interpolation(bool lowLatency) {
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gx::set_frame_interpolation_low_latency(lowLatency);
+  aurora::gx::set_frame_interpolation_fps(120);
+  aurora::gfx::testing::reset_uniform_allocations();
+}
+
+void stop_interpolation() {
+  aurora::gx::set_frame_interpolation_low_latency(false);
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gfx::testing::reset_uniform_allocations();
+}
+}  // namespace
+
+TEST(FrameInterpolationContract, LowLatencyDoesNotCarryAFastTurningBonePastTheFrame) {
+  // Palette pairs had no rotation measure, so a bone turning 90 degrees per frame was predicted half a
+  // frame on like any other, and in close cinematic shots the overshot pose opened black holes.
+  PaletteDrawRecorder recorder;
+  start_interpolation(true);
+  for (const float step : {5.0f, 90.0f}) {
+    aurora::gfx::testing::reset_uniform_allocations();
+    aurora::gx::begin_frame_interpolation();
+    recorder.record(100, moved(0.0f), turned(0.0f, 10.0f));
+    aurora::gx::note_frame_interpolation_boundary();
+    aurora::gx::finalize_frame_interpolation();
+    aurora::gx::begin_frame_interpolation();
+    const auto range = recorder.record(100, moved(2.0f), turned(step, 10.0f));
+    aurora::gx::note_frame_interpolation_boundary();
+    aurora::gx::finalize_frame_interpolation();
+    ASSERT_TRUE(aurora::gx::interpolated_frame_extrapolates());
+    ASSERT_NE(range.size, 0u);
+    const auto bone = PaletteDrawRecorder::slot(range, 0);
+    if (step == 5.0f) {
+      EXPECT_FLOAT_EQ(bone.m0.w(), 3.0f) << "slow motion is still predicted";
+    } else {
+      EXPECT_FLOAT_EQ(bone.m0.w(), 2.0f) << "a 90 degree turn keeps the whole palette at the frame";
+      const auto fast = PaletteDrawRecorder::slot(range, 1);
+      EXPECT_NEAR(fast.m0.x(), 0.0f, 1.0e-5f);
+      EXPECT_NEAR(fast.m1.x(), 1.0f, 1.0e-5f);
+    }
+  }
+  stop_interpolation();
+}
+
+TEST(FrameInterpolationContract, PiecesOfOneSkeletonTakeTheSameDecision) {
+  // A character is several palette draws that share bones. Deciding per draw let one piece be carried
+  // forward while its neighbour stayed at the frame, and the mesh tore along their seam.
+  PaletteDrawRecorder recorder;
+  const auto shared = [](float x) { return moved(x); };
+
+  // Low latency: piece A has a bone too fast to predict, so piece B (sharing slot 0) is not predicted either.
+  start_interpolation(true);
+  aurora::gx::begin_frame_interpolation();
+  recorder.record(200, shared(0.0f), turned(0.0f, 5.0f));
+  recorder.record(300, shared(0.0f), moved(20.0f));
+  aurora::gx::note_frame_interpolation_boundary();
+  aurora::gx::finalize_frame_interpolation();
+  aurora::gfx::testing::reset_uniform_allocations();
+  aurora::gx::begin_frame_interpolation();
+  recorder.record(200, shared(2.0f), turned(80.0f, 5.0f));
+  const auto pieceB = recorder.record(300, shared(2.0f), moved(22.0f));
+  aurora::gx::note_frame_interpolation_boundary();
+  aurora::gx::finalize_frame_interpolation();
+  ASSERT_NE(pieceB.size, 0u);
+  EXPECT_FLOAT_EQ(PaletteDrawRecorder::slot(pieceB, 0).m0.w(), 2.0f);
+  EXPECT_FLOAT_EQ(PaletteDrawRecorder::slot(pieceB, 1).m0.w(), 22.0f);
+  stop_interpolation();
+
+  // Interpolating: piece A has no partner (it appears this frame), so piece B keeps the frame as well
+  // instead of moving while A stays.
+  start_interpolation(false);
+  aurora::gx::begin_frame_interpolation();
+  recorder.record(400, shared(0.0f), moved(30.0f));
+  aurora::gx::note_frame_interpolation_boundary();
+  aurora::gx::finalize_frame_interpolation();
+  aurora::gfx::testing::reset_uniform_allocations();
+  aurora::gx::begin_frame_interpolation();
+  recorder.record(500, shared(2.0f), moved(7.0f));
+  const auto matched = recorder.record(400, shared(2.0f), moved(32.0f));
+  aurora::gx::note_frame_interpolation_boundary();
+  aurora::gx::finalize_frame_interpolation();
+  if (matched.size != 0) {
+    EXPECT_FLOAT_EQ(PaletteDrawRecorder::slot(matched, 0).m0.w(), 2.0f);
+    EXPECT_FLOAT_EQ(PaletteDrawRecorder::slot(matched, 1).m0.w(), 32.0f);
+  }
+  // A skeleton whose pieces all have partners still moves.
+  aurora::gfx::testing::reset_uniform_allocations();
+  aurora::gx::begin_frame_interpolation();
+  recorder.record(500, shared(4.0f), moved(9.0f));
+  const auto both = recorder.record(400, shared(4.0f), moved(34.0f));
+  aurora::gx::note_frame_interpolation_boundary();
+  aurora::gx::finalize_frame_interpolation();
+  ASSERT_NE(both.size, 0u);
+  EXPECT_FLOAT_EQ(PaletteDrawRecorder::slot(both, 0).m0.w(), 3.0f);
+  EXPECT_FLOAT_EQ(PaletteDrawRecorder::slot(both, 1).m0.w(), 33.0f);
+  stop_interpolation();
+}
+
+TEST(FrameInterpolationContract, TextureMatricesMoveWithTheCameraButNotAcrossJumps) {
+  const auto map = [](float degrees, float u) {
+    const float c = 0.5f * std::cos(degrees * 3.14159265f / 180.0f);
+    const float s = 0.5f * std::sin(degrees * 3.14159265f / 180.0f);
+    return aurora::Mat3x4<float>{{c, -s, 0.0f, u}, {s, c, 0.0f, 0.5f}, {0.0f, 0.0f, 1.0f, 0.0f}};
+  };
+  EXPECT_TRUE(aurora::gx::texture_matrix_moves_smoothly(map(0.0f, 0.5f), map(4.0f, 0.5f))) << "a camera turn";
+  EXPECT_TRUE(aurora::gx::texture_matrix_moves_smoothly(map(0.0f, 0.80136f), map(0.0f, 0.801526f))) << "a slow scroll";
+  EXPECT_FALSE(aurora::gx::texture_matrix_moves_smoothly(map(0.0f, 0.25f), map(0.0f, 0.5f))) << "a jump to another cell";
+  EXPECT_FALSE(aurora::gx::texture_matrix_moves_smoothly(map(0.0f, 0.5f), map(60.0f, 0.5f))) << "too fast to trust";
+  EXPECT_FALSE(aurora::gx::texture_matrix_moves_smoothly(map(3.0f, 0.5f), map(3.0f, 0.5f))) << "unchanged";
+
+  // A console screen: a static one-matrix draw whose environment map follows the camera. Its in-between
+  // image must take the map halfway as well, or the glossy layer runs ahead of the panel and flickers.
+  constexpr size_t positionOffset = sizeof(aurora::Mat4x4<float>);
+  constexpr size_t normalOffset = positionOffset + sizeof(aurora::Mat3x4<float>);
+  constexpr size_t textureOffset = normalOffset + sizeof(aurora::Mat3x4<float>);
+  constexpr size_t uniformSize = textureOffset + 2 * sizeof(aurora::Mat3x4<float>);
+  std::array<std::array<uint8_t, uniformSize>, 4> sources{};
+  size_t nextSource = 0;
+  const auto frame = [&](float cameraX, const aurora::Mat3x4<float>& envMap, const aurora::Mat3x4<float>& cell) {
+    aurora::gx::begin_frame_interpolation();
+    g_gxState.currentPnMtx = 0;
+    g_gxState.pnMtx[0].pos = aurora::Mat3x4<float>{
+        {1.0f, 0.0f, 0.0f, cameraX},
+        {0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, -5.0f},
+    };
+    g_gxState.pnMtx[0].nrm = g_gxState.pnMtx[0].pos;
+    auto& source = sources[nextSource++ % sources.size()];
+    std::memcpy(source.data() + positionOffset, &g_gxState.pnMtx[0].pos, sizeof(aurora::Mat3x4<float>));
+    std::memcpy(source.data() + normalOffset, &g_gxState.pnMtx[0].nrm, sizeof(aurora::Mat3x4<float>));
+    std::memcpy(source.data() + textureOffset, &envMap, sizeof(envMap));
+    std::memcpy(source.data() + textureOffset + sizeof(envMap), &cell, sizeof(cell));
+    aurora::gx::InterpolatedUniformLayout layout{
+        .sourceUniformData = source.data(),
+        .uniformSize = source.size(),
+        .projectionOffset = 0,
+        .positionOffset = positionOffset,
+        .normalOffset = normalOffset,
+        .currentMatrix = 0,
+        .indexedMatrices = false,
+        .textureMatrixCount = 2,
+    };
+    layout.textureMatrixOffsets[0] = textureOffset;
+    layout.textureMatrixOffsets[1] = textureOffset + sizeof(aurora::Mat3x4<float>);
+    const auto range = aurora::gx::record_interpolation_draw(
+        aurora::gx::FrameInterpolationDrawIdentity{.combined = 900, .pipeline = 7, .texture = 8}, aurora::Mat4x4<float>{},
+        1u, layout)[0];
+    aurora::gx::note_frame_interpolation_boundary();
+    aurora::gx::finalize_frame_interpolation();
+    return range;
+  };
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gx::set_frame_interpolation_low_latency(false);
+  aurora::gx::set_frame_interpolation_fps(120);
+  aurora::gfx::testing::reset_uniform_allocations();
+  frame(0.0f, map(0.0f, 0.5f), map(0.0f, 0.25f));
+  const auto range = frame(0.2f, map(4.0f, 0.5f), map(0.0f, 0.5f));
+  ASSERT_NE(range.size, 0u);
+  ASSERT_FLOAT_EQ(aurora::gx::interpolated_frame_weight(0), 0.5f);
+  const auto& bytes = aurora::gfx::testing::uniform_allocation(range.offset);
+  aurora::Mat3x4<float> envMap{}, cell{}, position{};
+  std::memcpy(static_cast<void*>(&position), bytes.data() + positionOffset, sizeof(position));
+  std::memcpy(static_cast<void*>(&envMap), bytes.data() + textureOffset, sizeof(envMap));
+  std::memcpy(static_cast<void*>(&cell), bytes.data() + textureOffset + sizeof(envMap), sizeof(cell));
+  EXPECT_NEAR(position.m0.w(), 0.1f, 1.0e-5f) << "the geometry halfway";
+  const auto halfway = map(2.0f, 0.5f);
+  EXPECT_NEAR(envMap.m0.y(), (map(0.0f, 0.5f).m0.y() + map(4.0f, 0.5f).m0.y()) * 0.5f, 1.0e-6f);
+  EXPECT_NEAR(envMap.m0.y(), halfway.m0.y(), 2.0e-4f) << "the map halfway too";
+  EXPECT_FLOAT_EQ(cell.m0.w(), 0.5f) << "an animation cell keeps the frame's own value";
+  aurora::gx::set_frame_interpolation_fps(0);
+  aurora::gx::begin_frame_interpolation();
+  aurora::gfx::testing::reset_uniform_allocations();
 }

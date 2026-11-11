@@ -55,6 +55,21 @@ void AuroraSetViewportPolicy(AuroraViewportPolicy policy) {
   }
 }
 
+void AuroraSetFixedAspect(float aspect) {
+  if (aurora::window::fixed_aspect() == aspect) {
+    return;
+  }
+  if (g_gxState.viewportPolicy == AURORA_VIEWPORT_16_9) {
+    // Finish commands using the old framebuffer mapping before changing it.
+    aurora::gx::fifo::drain();
+  }
+  aurora::window::set_fixed_aspect(aspect);
+  if (g_gxState.viewportPolicy == AURORA_VIEWPORT_16_9) {
+    aurora::gx::set_logical_viewport(g_gxState.logicalViewport);
+    aurora::gx::set_logical_scissor(g_gxState.logicalScissor);
+  }
+}
+
 void AuroraGetRenderSize(u32* width, u32* height) {
   // The guest CPU thread uses this safe render-size value outside render passes.
   const auto renderSize = aurora::gfx::get_frame_buffer_size();

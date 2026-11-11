@@ -2,6 +2,7 @@
 #include "__gx.h"
 
 #include "../../gfx/texture.hpp"
+#include "../../gx/fifo.hpp"
 #include "../../gfx/texture_replacement.hpp"
 #include "dolphin/gx/GXAurora.h"
 
@@ -195,7 +196,7 @@ void GXInitTexObjLOD(GXTexObj* obj_, GXTexFilter minFilt, GXTexFilter magFilt, f
                      float lodBias, GXBool biasClamp, GXBool doEdgeLod, GXAnisotropy maxAniso) {
   auto* obj = reinterpret_cast<GXTexObj_*>(obj_);
   const float clampedBias = std::clamp(lodBias, -4.0f, 3.99f);
-  const auto lbias = static_cast<u8>(32.0f * clampedBias);
+  const auto lbias = static_cast<u8>(static_cast<int>(32.0f * clampedBias));
   SET_REG_FIELD(0, obj->mode0, 8, 9, lbias);
   SET_REG_FIELD(0, obj->mode0, 1, 4, magFilt == GX_LINEAR ? 1 : 0);
   SET_REG_FIELD(0, obj->mode0, 3, 5, GX2HWFiltConv[minFilt]);
@@ -249,7 +250,7 @@ void GXInitTexObjMinLOD(GXTexObj* obj_, float minLod) {
 void GXInitTexObjLODBias(GXTexObj* obj_, float lodBias) {
   auto* obj = reinterpret_cast<GXTexObj_*>(obj_);
   const float clampedBias = std::clamp(lodBias, -4.0f, 3.99f);
-  const auto lbias = static_cast<u8>(32.0f * clampedBias);
+  const auto lbias = static_cast<u8>(static_cast<int>(32.0f * clampedBias));
   SET_REG_FIELD(0, obj->mode0, 8, 9, lbias);
 }
 
@@ -282,6 +283,8 @@ void* GXGetTexObjUserData(const GXTexObj* obj_) {
 // The Prime adapter resolves and bounds-checks that guest allocation explicitly.
 void GXBindRawTextureMemory(unsigned slot, const void* data, unsigned width, unsigned height,
                             unsigned format, bool mipmap) {
+  // Direct decoder-state write: queued draws must still see the old binding.
+  if (!aurora::gx::fifo::on_decoder_thread() && aurora::gx::fifo::get_buffer_size() != 0) aurora::gx::fifo::drain();
   auto& obj = g_gxState.loadedTextures.at(slot);
   obj.data = data;
   obj.mWidth = width; obj.mHeight = height; obj.mFormat = format;
@@ -294,12 +297,12 @@ void GXBindRawTextureMemory(unsigned slot, const void* data, unsigned width, uns
 
 void GXBindRawTexturePalette(unsigned slot, const void* data, unsigned format,
                              unsigned entries, unsigned generation) {
+  if (!aurora::gx::fifo::on_decoder_thread() && aurora::gx::fifo::get_buffer_size() != 0) aurora::gx::fifo::drain();
   auto& palette = g_gxState.loadedTluts.at(slot);
   auto& texture = g_gxState.loadedTextures.at(slot);
-  // PrimeTlutMemory owns a stable TMEM buffer and increments generation on
-  // every Load, including a reload to the same address. Rebinding an unchanged
-  // slot need not break an otherwise mergeable draw. This does not enable a
-  // source-cache shortcut: nonmerged draws still compare both byte spans.
+  // PrimeTlutMemory owns a stable TMEM buffer and versions each 512-byte range
+  // on every overlapping Load. An unchanged palette range can safely reuse its
+  // converted snapshot until a load touches one of its granules.
   const bool changed = palette.data != data || palette.format != static_cast<GXTlutFmt>(format) ||
                        palette.numEntries != entries || palette.tlutDataVersion != generation ||
                        !palette.no_cache() || texture.tlut != static_cast<GXTlut>(slot);

@@ -42,6 +42,15 @@ int main() {
                      "Prime ISO path was not preserved separately from research DVD root")) return 1;
     }
     {
+        // F1 saved whole-number decimals without a point ("8" = TOML integer); they must still load.
+        std::istringstream input("[effects]\nssao_samples = 8\nssao_radius = 1.5\nssao_softness = 3\n");
+        const auto config = RuntimeConfigFile::ParseConfig(input, "effects-integers.toml");
+        if (!Require(config.effectsSsaoSamples == std::optional<float>{8.0f} &&
+                     config.effectsSsaoRadius == std::optional<float>{1.5f} &&
+                     config.effectsSsaoSoftness == std::optional<float>{3.0f},
+                     "whole-number effect settings were not loaded")) return 1;
+    }
+    {
         std::istringstream input("[video]\nmetalfx_spatial_upscaling = true\n");
         const RuntimeUserConfig config = RuntimeConfigFile::ParseConfig(input, "enabled.toml");
         if (!Require(config.metalFxSpatialUpscaling == std::optional<bool>{true},
@@ -101,6 +110,35 @@ int main() {
         if (!Require(document && document->at("video").at("show_fps").as_boolean() &&
                          document->at("video").at("advanced").at("foo").as_integer() == 1,
                      "key was not added to an implicit table")) return 1;
+    }
+    {
+        // Video options added with the F1 menu: valid values load, invalid ones are ignored (never abort).
+        std::istringstream good("[video]\nmsaa = 4\nanisotropic_filtering = 16\n[prime]\nkeyboard_icons = false\n"
+                                "mouse_look_hint_scale = 1.5\nmouse_look_hint_x = 0.25\nmouse_look_hint_y = 0.75\n");
+        const RuntimeUserConfig config = RuntimeConfigFile::ParseConfig(good, "video-good.toml");
+        if (!Require(config.msaa == std::optional<uint32_t>{4} && config.anisotropicFiltering == std::optional<uint32_t>{16} &&
+                         config.primeKeyboardIcons == std::optional<bool>{false} &&
+                         config.primeMouseLookHintScale == std::optional<float>{1.5f} &&
+                         config.primeMouseLookHintX == std::optional<float>{0.25f} &&
+                         config.primeMouseLookHintY == std::optional<float>{0.75f},
+                     "video/prime options were not loaded")) return 1;
+        std::istringstream bad("[video]\nmsaa = 3\nanisotropic_filtering = 5\n");
+        const RuntimeUserConfig rejected = RuntimeConfigFile::ParseConfig(bad, "video-bad.toml");
+        if (!Require(!rejected.msaa && !rejected.anisotropicFiltering,
+                     "unsupported MSAA/anisotropy values were accepted")) return 1;
+    }
+    {
+        for (const uint32_t v : {1u, 2u, 4u, 8u})
+            if (!Require(RuntimeConfigFile::IsSupportedMsaa(v), "supported MSAA rejected")) return 1;
+        for (const uint32_t v : {0u, 3u, 16u, 64u})
+            if (!Require(!RuntimeConfigFile::IsSupportedMsaa(v), "unsupported MSAA accepted")) return 1;
+        for (const uint32_t v : {0u, 2u, 4u, 8u, 16u})
+            if (!Require(RuntimeConfigFile::IsSupportedAnisotropicFiltering(v), "supported anisotropy rejected")) return 1;
+        for (const uint32_t v : {1u, 3u, 32u})
+            if (!Require(!RuntimeConfigFile::IsSupportedAnisotropicFiltering(v), "unsupported anisotropy accepted")) return 1;
+        for (const uint32_t v : {0u, 2u, 4u})
+            if (!Require(RuntimeConfigFile::IsSupportedTextureUpscale(v), "supported upscale rejected")) return 1;
+        if (!Require(!RuntimeConfigFile::IsSupportedTextureUpscale(3), "unsupported upscale accepted")) return 1;
     }
     return 0;
 }

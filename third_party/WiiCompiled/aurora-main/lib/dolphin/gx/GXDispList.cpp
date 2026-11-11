@@ -7,6 +7,8 @@
 #include <cstring>
 
 static __GXData_struct sSavedGXData;
+// Defined in GXGeometry.cpp; see GXAuroraVtxStateEpoch.
+extern "C" u64 g_gxVtxStateEpoch;
 
 extern "C" {
 void GXBeginDisplayList(void* list, u32 size) {
@@ -40,6 +42,9 @@ u32 GXEndDisplayList() {
   // Restore saved shadow register state
   if (__gx->dlSaveContext != 0) {
     std::memcpy(__gx, &sSavedGXData, sizeof(*__gx));
+    ++g_gxVtxStateEpoch;
+    // The decoder keeps what the recording emitted; the shadow went back.
+    aurora::gx::fifo::mark_vertex_cp_unknown();
   }
 
   __gx->inDispList = 0;
@@ -64,6 +69,20 @@ void GXCallDisplayList(const void* data, u32 nbytes) {
     return;
   }
 
+  // CP loads inside the list change the decoder's vertex registers behind the
+  // shadow: GXSetVtxDesc/GXSetVtxAttrFmt then re-emit, and the vertex-state
+  // epoch moves here, where the synchronous decoder would have moved it.
+  if (aurora::gx::fifo::note_display_list_called(static_cast<const u8*>(data), nbytes)) {
+    ++g_gxVtxStateEpoch;
+  }
+
+  // With the asynchronous decoder the bytes are copied into the stream, in
+  // order behind everything already written, and decoded by that thread.
+  if (aurora::gx::fifo::async_enabled() && !aurora::gx::fifo::on_decoder_thread()) {
+    aurora::gx::fifo::write_data(data, nbytes);
+    aurora::gx::fifo::commit();
+    return;
+  }
   // Decode the display list immediately while its borrowed resources are valid.
   aurora::gx::fifo::drain();
   aurora::gx::fifo::process_all(static_cast<const u8*>(data), nbytes, true);
@@ -81,6 +100,8 @@ void GXCallDisplayListLE(const void* data, u32 nbytes) {
   }
 
   // Decode little-endian lists separately after finishing the normal FIFO work.
+  aurora::gx::fifo::mark_vertex_cp_unknown();
+  ++g_gxVtxStateEpoch;
   aurora::gx::fifo::drain();
 
   // Process the display list through the command processor (little-endian)

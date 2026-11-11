@@ -5,6 +5,9 @@
 #include <atomic>
 #include "aurora_events.h"
 #include "hle/gx/gx_dynamic_aspect.h"
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+#include "hle/prime_widescreen.h"
+#endif
 
 #include <dolphin/vi.h>
 
@@ -177,8 +180,8 @@ void AssertMkwOffscreenScreenBypass() {
 
 void UpdateMkwDynamicAspectSurface(uint32_t surfaceWidth, uint32_t surfaceHeight) {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
-    (void)surfaceWidth;
-    (void)surfaceHeight;
+    // Prime: ultrawide (hle/prime_widescreen.h) follows the window shape here.
+    PrimeWidescreenOnSurface(surfaceWidth, surfaceHeight);
     return;
 #else
     const bool requestedForceAspect169 = g_requestedForceAspect169.load(std::memory_order_acquire);

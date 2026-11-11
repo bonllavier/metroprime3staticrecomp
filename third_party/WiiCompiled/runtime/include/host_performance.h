@@ -115,6 +115,9 @@ public:
             result.ready=true;
         }
         previousProcess=process;result.threads.clear();
+#if defined(MKW_PRIME_QA_TOOLS)
+        // Per-thread CPU list: enumerates every thread of the process, diagnostic builds only (public
+        // builds avoid the thread-enumeration API set that antivirus heuristics flag).
         std::map<DWORD,uint64_t> next;
         const HANDLE snapshot=CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD,0);
         if(snapshot!=INVALID_HANDLE_VALUE) {
@@ -133,6 +136,7 @@ public:
         }
         previousThreads=std::move(next);
         std::sort(result.threads.begin(),result.threads.end(),[](const auto& a,const auto& b){return a.percent>b.percent;});
+#endif
         SampleGpu();
 #endif
         last=now;return result;

@@ -34,6 +34,7 @@ extern "C" void Android_UnlockActivityMutex(void);
 
 #include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <vector>
 
 #include "dolphin/vi/vi_internal.hpp"
@@ -47,6 +48,9 @@ SDL_Renderer* g_renderer;
 float g_frameBufferScale = 0.f;
 bool g_frameBufferAspectFit = true;
 std::atomic_bool g_forceAspect169{false};
+// Shape of the fixed-aspect policy (AURORA_VIEWPORT_16_9): 16:9 unless the
+// game asks for a wider one (Prime ultrawide, AuroraSetFixedAspect).
+std::atomic<float> g_fixedAspect{16.f / 9.f};
 bool g_presentSurfaceFill = false;
 int g_presentAspectWidth = 0;
 int g_presentAspectHeight = 0;
@@ -530,14 +534,15 @@ AuroraWindowSize get_window_size() {
     if (g_frameBufferScale > 0.f && baseW > 0 && baseH > 0) {
       const auto [scaledW, scaledH] =
           scale_frame_buffer_to_aspect(static_cast<int>(baseW), static_cast<int>(baseH),
-                                       g_frameBufferScale, 16.f / 9.f);
+                                       g_frameBufferScale, g_fixedAspect.load(std::memory_order_acquire));
       fb_w = scaledW;
       fb_h = scaledH;
     } else {
+      const float fixedAspect = g_fixedAspect.load(std::memory_order_acquire);
       fb_w = std::min(native_fb_w,
-                      std::max(1, static_cast<int>(std::lround(native_fb_h * (16.f / 9.f)))));
+                      std::max(1, static_cast<int>(std::lround(native_fb_h * fixedAspect))));
       fb_h = std::min(native_fb_h,
-                      std::max(1, static_cast<int>(std::lround(native_fb_w * (9.f / 16.f)))));
+                      std::max(1, static_cast<int>(std::lround(native_fb_w / fixedAspect))));
     }
   } else if (g_frameBufferAspectFit && baseW > 0 && baseH > 0) {
     float renderScale = g_frameBufferScale > 0.f ? g_frameBufferScale : 1.f;
@@ -781,6 +786,21 @@ void set_force_aspect_16_9(bool force) {
   request_frame_buffer_resize();
 }
 
+void set_fixed_aspect(float aspect) {
+  if (!std::isfinite(aspect) || aspect < 1.f) {
+    aspect = 16.f / 9.f;
+  }
+  aspect = std::min(aspect, 8.f);
+  if (g_fixedAspect.exchange(aspect, std::memory_order_acq_rel) == aspect) {
+    return;
+  }
+  if (g_forceAspect169.load(std::memory_order_acquire)) {
+    request_frame_buffer_resize();
+  }
+}
+
+float fixed_aspect() noexcept { return g_fixedAspect.load(std::memory_order_acquire); }
+
 void set_present_surface_fill(bool fill) {
   g_presentSurfaceFill = fill;
 }
@@ -802,9 +822,18 @@ void unlock_present_aspect_ratio() {
   g_presentAspectHeight = 0;
 }
 
+float display_refresh_rate() noexcept {
+  if (g_window == nullptr) {
+    return 0.f;
+  }
+  const SDL_DisplayID display = SDL_GetDisplayForWindow(g_window);
+  const SDL_DisplayMode* mode = display != 0 ? SDL_GetCurrentDisplayMode(display) : nullptr;
+  return mode != nullptr ? mode->refresh_rate : 0.f;
+}
+
 bool get_present_aspect_ratio(float& aspect) noexcept {
   if (g_forceAspect169.load(std::memory_order_acquire)) {
-    aspect = 16.f / 9.f;
+    aspect = g_fixedAspect.load(std::memory_order_acquire);
     return true;
   }
   if (g_presentSurfaceFill && g_window != nullptr) {
@@ -833,6 +862,14 @@ bool get_present_aspect_ratio(float& aspect) noexcept {
 }
 
 void set_background_input(bool value) { SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, value ? "1" : "0"); }
+
+void* native_window_handle() noexcept {
+#if defined(_WIN32)
+  return g_nativeWindowHandle;
+#else
+  return nullptr;
+#endif
+}
 
 } // namespace aurora::window
 

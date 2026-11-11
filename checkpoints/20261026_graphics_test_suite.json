@@ -1,0 +1,48 @@
+{
+    "tested_utc":  "2026-11-11T08:38:48.8267775Z",
+    "revision":  "RM3E01_00",
+    "passed":  true,
+    "steps":  [
+                  {
+                      "name":  "build aurora tests",
+                      "exit_code":  0,
+                      "summary":  ""
+                  },
+                  {
+                      "name":  "build runtime tests",
+                      "exit_code":  0,
+                      "summary":  ""
+                  },
+                  {
+                      "name":  "aurora/gx_fifo_tests",
+                      "exit_code":  0,
+                      "summary":  "[  PASSED  ] 286 tests."
+                  },
+                  {
+                      "name":  "aurora/blob_cache_policy_tests",
+                      "exit_code":  0,
+                      "summary":  "[  PASSED  ] 8 tests."
+                  },
+                  {
+                      "name":  "aurora/render_policy_tests",
+                      "exit_code":  0,
+                      "summary":  "[ RUN      ] RenderPolicyImageRate.AnOverloadRightAfterGrowingAlsoCountsAsAFailedGrowth | [       OK ] RenderPolicyImageRate.AnOverloadRightAfterGrowingAlsoCountsAsAFailedGrowth (0 ms) | [ RUN      ] RenderPolicyImageRate.AClearlyLighterSceneForgetsTheWaitAndTheFailedGrowth | [       OK ] RenderPolicyImageRate.AClearlyLighterSceneForgetsTheWaitAndTheFailedGrowth (0 ms)"
+                  },
+                  {
+                      "name":  "runtime ctest",
+                      "exit_code":  0,
+                      "summary":  "100% tests passed out of 32"
+                  },
+                  {
+                      "name":  "python icon table",
+                      "exit_code":  0,
+                      "summary":  "test_default_config_json_knows_every_texture (__main__.IconTable.test_default_config_json_knows_every_texture) ... ok | test_every_button_the_game_shows_has_a_cap (__main__.IconTable.test_every_button_the_game_shows_has_a_cap) ... ok | test_every_row_says_what_to_draw (__main__.IconTable.test_every_row_says_what_to_draw) ... ok | test_names_are_unique (__main__.IconTable.test_names_are_unique) ... ok"
+                  },
+                  {
+                      "name":  "python seed filter",
+                      "exit_code":  0,
+                      "summary":  "test_clear_pipelines_are_never_filtered (__main__.SeedFilter.test_clear_pipelines_are_never_filtered) ... ok | test_every_shipped_recipe_is_valid (__main__.SeedFilter.test_every_shipped_recipe_is_valid) ... ok | test_recipes_without_position_are_refused (__main__.SeedFilter.test_recipes_without_position_are_refused) ... ok | test_ubershader_keys_are_refused (__main__.SeedFilter.test_ubershader_keys_are_refused) ... ok"
+                  }
+              ],
+    "limitation":  "No GPU or ISO: covers pure policy, generator output (golden), cache SQL, config parsing and input logic. Rendering correctness on screen stays a manual check."
+}

@@ -56,6 +56,10 @@ void WriteCrashArtifacts(std::string_view reason,
 // stderr diagnostics, crash artifacts, popup, exit.
 [[noreturn]] void FatalMissingGuestTarget(uint32_t target, struct CpuContext* cpu) noexcept;
 
+// Logs/<product>_<epoch>_pid<pid>/ of this run: console transcript and crash
+// artifacts. Bug reports copy from here.
+const std::filesystem::path& RunLogDirectory();
+
 } // namespace RuntimeCrash
 
 // Shows a user-facing explanation for a fatal runtime error. Declared here with

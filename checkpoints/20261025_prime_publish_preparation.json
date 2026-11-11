@@ -1,0 +1,140 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "request": "Prepare the project for external testers: English F1/Fx menus, locale-aware key caps, in-game bug reports, GitHub repository with only player-facing content, ISO drop folder, product name/icon, author credit, English README with banner, versioned releases.",
+  "product": {
+    "name": "Corruption_3 PC",
+    "executable": "recomp/build/RM3E01_00_runtime_link_probe/Corruption_3 PC.exe",
+    "version": "0.1.0",
+    "author": "bonllavier",
+    "identity_header": "runtime/include/prime_port_version.h",
+    "icon": "runtime/assets/windows/MetroidPrime3PCPort.ico (7 sizes, PNG entries, from imgs/logo.png)",
+    "version_block": "ProductName/FileDescription = Metroid Prime 3 PC Port, FileVersion 0.1.0, CompanyName bonllavier (verified with Get-Item VersionInfo)",
+    "repository": "https://github.com/bonllavier/Corruption_3-PC",
+    "rename_note": "renamed from Metroid Prime 3 PC Port / MetroidPrime3PCPort.exe at the user's request (same day); the .ico file keeps its old name"
+  },
+  "runtime_changes": [
+    "dvd.cpp: PrimePublishDvdFst reads the FST from the disc image (nod_partition_meta raw_fst) when no extracted DATA folder is configured; LoadFstIndexFromBytes registers entries without host paths; PublishPrimeDiscFstBytes; English fatal messages naming the game folder",
+    "runtime_config.h: PrimeGameImageDirectory (<portable root>/game), ResolvedPrimeIsoPath auto-detects .iso/.rvz/.wbfs/.gcz/.wia/.ciso, PrimeKeyboardMouseMode ([prime] keyboard_mouse, default true, env override)",
+    "kpad.cpp / prime_pointer_filter.cpp use PrimeKeyboardMouseMode; action labels in English",
+    "settings_overlay.cpp: 170 string replacements to English, F12 hotkey, Create bug report button, keyboard/mouse checkbox, footer with version and author, product name in startup/top bar",
+    "bug_report.cpp (new): screenshot via aurora_request_frame_capture(0, path) (frame 0 = next presented frame) converted BMP->PNG with GDI+, console.log + crash_*.txt copies, Config.toml, system.txt (RtlGetVersion, cpuid, GlobalMemoryStatusEx, DXGI adapters), HOW_TO_REPORT.txt, stored ZIP writer, Explorer /select",
+    "main.cpp: RuntimeCrash::RunLogDirectory(), fatal dialog titled with the product name and naming the run log folder, SDL window icon loaded from resource 1",
+    "network_config.cpp: NWC24 try-suspend returns 0 under the Prime profile (the MKW boot-cycle -42 produced 'WiiConnect24 cannot be used ... Error Code: 109042' at Game Select)",
+    "PublicProducts.cmake: OUTPUT_NAME MetroidPrime3PCPort, RC resource (icon + VERSIONINFO), MKW_GAME_PROFILE_RM3E01_00 on the product and cpu-baseline targets, links dxgi gdiplus",
+    "build_prime_runtime.ps1 and 18 other recomp/tools scripts reference MetroidPrime3PCPort.exe; cmake configure passes -DCMAKE_RC_COMPILER=<llvm-mingw>/windres.exe",
+    "prime_disc_picker.cpp (new): startup/F1 Windows file dialog for the disc image, path saved to [paths] iso_path (SetPrimeIsoPath); Reader::Reset retries with the new path",
+    "main.cpp SehLogger: only STATUS_SEVERITY_ERROR codes are fatal at first chance (Explorer dialog raises/catches 0x6BA RPC_S_SERVER_UNAVAILABLE)",
+    "runtime_config.h EnsureConfigFile seeds UserData/Config.toml from <portable root>/Config.default.toml; zip no longer ships UserData or game/",
+    "settings_overlay.cpp: skip-intro checkbox removed from the public panel (config/env/--skip-intro remain for private tests)",
+    "update_check.cpp (new, WinHTTP): GET api.github.com releases/latest at startup when [prime] check_updates (default true); F1 > Info tab (version, __DATE__/__TIME__, author, repo button, paths, status, Check now, Open download page); 30 s on-screen notice when newer",
+    "bug_report.cpp: report_<ts>_v<version> folder/zip, version line in HOW_TO_REPORT.txt; package ships Check for updates.ps1"
+  ],
+  "packaging": {
+    "script": "recomp/tools/package_release.ps1 -> dist/MetroidPrime3PCPort-v0.1.0-win64.zip + .sha256",
+    "contents": "exe, SDL3/dxcompiler/dxil/libc++/libpng16/libunwind/libz/webgpu_dawn DLLs, dsp_coef.bin, initial_pipeline_cache.db (seed merged: 3977 rows), wii_bootstrap/, portable.txt, UserData/Config.toml (clean), game/PUT_YOUR_DISC_IMAGE_HERE.txt, README/LICENSE/THIRD-PARTY-NOTICES/docs",
+    "guard": "refuses disc images, saves, logs, pipeline/dawn caches"
+  },
+  "repository_staging": {
+    "path": "publish/",
+    "files": "README.md (banner docs/media/banner.png), CHANGELOG.md, LICENSE (GPL-3), THIRD-PARTY-NOTICES.md, docs/controls.md, docs/troubleshooting.md, docs/development.md, .github/ISSUE_TEMPLATE/{bug_report,performance,config}.yml, .github/workflows/release.yml, .gitignore",
+    "publish_script": "recomp/tools/publish_release.ps1 (REST API, GITHUB_TOKEN, tags vX.Y.Z, uploads Corruption_3-PC-vX.Y.Z-win64.zip + sha256); default repo bonllavier/Corruption_3-PC",
+    "ci_build": "not possible: translated shards derive from the user's disc and are not uploaded"
+  },
+  "runs": [
+    {
+      "tag": "isoonly",
+      "pid": 5868,
+      "config": "no dvd_root, no iso_path, no env var; ISO hard-linked in game/",
+      "result": "[prime-iso-open] image=game/...iso, FST 235 entries from image, 219 files indexed; keyboard mode on from config; F12 report zip with screenshot/log/config/system; title screen still waiting for A at 45/70 s (skip-intro taps no longer overlap the title)"
+    },
+    {
+      "tag": "isoonly2",
+      "pid": 16592,
+      "config": "same + click on title at 20 s",
+      "result": "Game Select reached; 'WiiConnect24 cannot be used ... 109042' dialog shown (pre-existing HLE behaviour previously hidden by the skip-intro taps)"
+    },
+    {
+      "tag": "dvdroot",
+      "pid": 18236,
+      "config": "extracted folder restored",
+      "result": "same dialog: not caused by the disc-image path"
+    },
+    {
+      "tag": "oldexe",
+      "pid": 20972,
+      "config": "previous WiiCompiled.exe binary",
+      "result": "crashed at boot (MMIO write 0xCD000004): stale binary, not a valid comparison"
+    },
+    {
+      "tag": "newexe_oldflow",
+      "pid": 18904,
+      "config": "new exe, env var, single click at 32 s",
+      "result": "title still shown at 45 s: the old flow relied on the taps passing the title"
+    },
+    {
+      "tag": "final",
+      "pid": 20732,
+      "config": "WC24 fix, ISO only",
+      "result": "title click -> Main Menu without any dialog; 60 FPS; F12 report ok; second click dropped"
+    },
+    {
+      "tag": "final2",
+      "pid": 21236,
+      "config": "WC24 fix, clicks title/Play Game/slot",
+      "result": "title ok, Play Game click dropped, Extras click ok (Extras screen), F12 ok, 0 errors"
+    },
+    {
+      "tag": "final3",
+      "pid": 18208,
+      "config": "WC24 fix, ISO only, window activated once; clicks at 20/35/50 s",
+      "result": "title ok, click at 35 s on Play Game dropped while the Main Menu text was still animating, click at 50 s opened Extras; 60 FPS, 0 errors"
+    },
+    {
+      "tag": "picker",
+      "pid": 16548,
+      "config": "no iso_path, no game folder",
+      "result": "message box ok, file dialog crashed the runtime with SEH 0x6BA (fixed)"
+    },
+    {
+      "tag": "picker",
+      "pid": 20836,
+      "config": "same, SEH fix",
+      "result": "dialog shown, path typed, [prime-iso-pick] saved iso_path, [prime-iso-open] from the chosen file, Norion gameplay at 60 FPS by 70 s"
+    },
+    {
+      "tag": "cleaninstall",
+      "pid": 20796,
+      "config": "zip unpacked into an empty folder, no config; path typed into the dialog",
+      "result": "Config.default.toml seeded into UserData/Config.toml (keyboard_mouse, all performance options, [prime_keys]); [prime-iso-pick] saved; 219 files from the image; key icons generated; seed of 3977 pipelines compiling on the fresh Dawn cache; 0 errors"
+    },
+    {
+      "tag": "infotab",
+      "pid": 19500,
+      "config": "F1 pressed at 30 s",
+      "result": "options panel with Info tab visible, footer 'Corruption_3 PC 0.1.0 - created by bonllavier'; update check reports HTTP 404 until the first release exists; report_20261025_124414_v0.1.0.zip created"
+    }
+  ],
+  "iso": "untouched, read-only; a hard link to the user's ISO was placed in build/.../game/ for the test",
+  "matching": "decomp/ untouched",
+  "open_points": [
+    "Automated clicks sent ~15 s after the title (while the Main Menu text scramble animation runs) were dropped in three runs; a later click always registered. Verify by hand that menu clicks are reliable.",
+    "skip_intro now stops at the title screen (press A once); extending the taps past the video would risk selecting a save slot.",
+    "GPL-3 source offer for the modified host runtime is the user's decision; the staged repository holds documentation and release binaries only."
+  ],
+  "release": {
+    "zip": "dist/Corruption_3-PC-v0.1.0-win64.zip",
+    "sha256": "0e80e3b3febd9a7bf258288caf196e9a03029206f43d5f9cb7675617781f93b5",
+    "size_mb": 70.9,
+    "files": 33,
+    "publish_commit": "16faf4d",
+    "note": "repackaged after the dialog/skip-intro changes; see dist/*.sha256 for the final hash",
+    "default_config": "mirrors the maintainer's [prime_keys] and control options; every performance option true; skip_intro absent; UTF-8 without BOM"
+  },
+  "effects_20261026": {
+    "aurora_post_process": "lib/gfx/post_process.cpp: SSAO (accumulated reversed-Z depth, d = B/(A - z), first perspective projection per frame, skip z>0.9 and z<0.0005, perspective gate), bloom, CAS, FXAA, colour; [effects] config; F1 > Effects",
+    "reshade": "recomp/third_party/reshade (6.8.0 BSD-3 + SweetFX/MIT effects), [reshade] enabled, manual LoadLibrary with RESHADE_BASE_PATH_OVERRIDE; Home/End/PrintScreen",
+    "validation": "user confirmed effects visible (fxon run pid 15228); depth debug sessions pid 18620/12972/7588 with the user in Norion; ReShade loaded 6.8.0 and compiled the effect set (ReShade.log)",
+    "open": "final flicker check with depth accumulation pending the user's verdict; SSAO radius/intensity defaults may need tuning"
+  }
+}

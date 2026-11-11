@@ -1,5 +1,8 @@
 #include "gx_internal.h"
 #include "runtime_log.h"
+#include "hle/gx_gpu_thread.h"
+
+#include <aurora/aurora.h>
 
 #include <cstdio>
 
@@ -68,7 +71,9 @@ void BeginNextAuroraFrameWithRetry(std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     uint32_t attempts = 0;
     while (std::chrono::steady_clock::now() < deadline) {
-        UpdateAuroraAndProcessEvents();
+        // The GX consumer thread does not own the window or the overlay's
+        // event handling; the guest thread pumps them at its next retrace.
+        if (!GxGpuThread::OnGpuThread()) UpdateAuroraAndProcessEvents();
         ++attempts;
         if (BeginAuroraFrame()) {
             g_auroraFrameActive.store(true, std::memory_order_release);
@@ -89,6 +94,9 @@ void BeginNextAuroraFrameWithRetry(std::chrono::milliseconds timeout) {
 
 void EnsureAuroraFrameActive() {
     if (!g_auroraFrameActive.load(std::memory_order_acquire)) {
+        // Commands already queued belong to the frame that ended; the decoder
+        // must apply them before a new frame begins.
+        aurora_stream_sync();
         BeginNextAuroraFrameWithRetry();
     }
 }

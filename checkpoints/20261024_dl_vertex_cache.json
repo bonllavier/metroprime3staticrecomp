@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-24",
+  "game": "RM3E01_00",
+  "goal": "Cut GX consumer CPU load (it saturates while scanning: 80-88% busy, about 45 FPS) by reusing expanded display-list vertices across passes and frames.",
+  "design": {
+    "file": "runtime/include/hle/prime_dl_vertex_cache.h (new); integrated in runtime/src/hle/gx/gx_dl.cpp TrySubmitPrimePackedDl before PrimeDlVertices::Expand.",
+    "key": "source pointer, byte count, vertex count, format, LayoutSignature (attribute sizes, index widths, groups, array bases and strides).",
+    "reuse_proofs": [
+      "XXH3 of the encoded source bytes is unchanged",
+      "the folded GxGuestWrite generation of every array span the indices read (min..max index) is unchanged; generations advance on DMA and on the DC flush/store/zero hooks",
+      "spans in uncached mirrors (0xC0000000 and up) and multi-group attributes are never cached"
+    ],
+    "race": "Generations are sampled before expansion, so a racing write leads to a re-expansion, never a stale reuse.",
+    "budget": "64 MiB LRU, owned by the GX interpreting thread; entries above 1/8 of the budget are not stored.",
+    "switch": "WII_COMPILED_DISABLE_DL_VERTEX_CACHE=1 disables it for A/B comparison; [prime-dl-vertex-cache] stats every 65,536 lookups."
+  },
+  "expected": "Roughly the Expand share of the GX thread (ExpandMappedAttribute about 14% self in the slow scan seconds) on reused static geometry. The Aurora FIFO decode and BP state work remain.",
+  "validation": {
+    "build": "linked 2026-10-24",
+    "tests": "new mkw_prime_dl_vertex_cache_tests (reuse, array/source invalidation, layout key, untracked, budget) and mkw_gx_fifo_storage_tests pass",
+    "user": "pending: geometry correct (animated and moving objects), F8 while scanning, hit rate in console.log"
+  },
+  "rules": "Do not drop the source-digest or generation checks: the previous code avoided any cross-draw memo for correctness. See recomp/docs/copias_efb_y_cache.md for the DC notification rules this relies on.",
+  "regression_found": {
+    "recordings": [
+      "stack_profile_20261024_230708.txt",
+      "stack_profile_20261024_230911.txt"
+    ],
+    "symptom": "Sustained 20-50 FPS, no shader stalls (pipelines 0-0.7 s lost); the GX thread is 77-93% busy in the slow seconds.",
+    "cache_stats": "lookups 314M, hits 312M (99.5%), 135k entries, 21 MB",
+    "cause": "The unordered_map lookup (node and generation loads: memory latency) cost 22% of the GX thread self time in the slow seconds. Draw sizes from F5/F7 dumps: 71% of draws have 16 vertices or fewer, under 1% have more than 64, so for most draws the key/digest/lookup cost more than the expansion it skipped.",
+    "fix": [
+      "The cache only applies to draws of 48 vertices or more (kMinCachedVertices).",
+      "Attribute-plan reuse in TrySubmitPrimePackedDl: the plan is rebuilt only when the format, vtxStateGeneration or the base/stride of an indexed array changes (GXSetArray and CP 0xA0/0xB0 do not bump the generation, so they are compared explicitly)."
+    ],
+    "validation": {
+      "build": "linked 2026-10-24",
+      "tests": "pass",
+      "user": "pending: new F8"
+    }
+  }
+}

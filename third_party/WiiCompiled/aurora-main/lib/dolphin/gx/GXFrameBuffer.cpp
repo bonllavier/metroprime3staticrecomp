@@ -2,14 +2,18 @@
 #include "__gx.h"
 
 #include "../../gfx/tex_copy_conv.hpp"
+#include "../../gfx/post_process.hpp"
 #include "../../gfx/efb_ram_copy.hpp"
 #include "../../gfx/texture.hpp"
 #include "../../gx/fifo.hpp"
+#include "../../gx/render_policy.hpp"
 #include "../../internal.hpp"
 #include "../../window.hpp"
 #include "../../gfx/clear.hpp"
 #include "../../webgpu/gpu.hpp"
 #include "../vi/vi_internal.hpp"
+
+#include <absl/container/flat_hash_set.h>
 
 #include <algorithm>
 #include <cmath>
@@ -174,10 +178,29 @@ struct CopyTexturePoolEntry {
   u32 scaledWidth = 0;
   u32 scaledHeight = 0;
   aurora::gfx::TextureHandle handle;
+  u32 addedFrame = 0;
 };
 std::vector<CopyTexturePoolEntry> g_copyTexturePool;
   // Keep only a few reusable copy targets per destination.
 constexpr size_t kCopyTexturePoolPerKey = 3;
+  // Spares of other copy sizes kept per destination (covers a copy alternating between a few sizes).
+constexpr size_t kCopyTexturePoolOtherShapesPerDest = 2;
+
+// A destination whose copy size changes every frame (a zoom effect) left a spare for every old size until
+// the 5 s budget sweep: 768 MiB in a few seconds at high internal resolution. Drop all but the newest
+// spares of other sizes; targets still referenced elsewhere are never spares.
+void prune_other_shape_spares(const aurora::gx::GXState::CopyTextureKey& key) {
+  std::vector<aurora::gx::policy::PoolSpare> pool;
+  pool.reserve(g_copyTexturePool.size());
+  for (const auto& entry : g_copyTexturePool) {
+    pool.push_back({entry.key.dest, entry.key == key, entry.handle.use_count() <= 1});
+  }
+  // Highest index first, so earlier indices stay valid while erasing.
+  for (const size_t index : aurora::gx::policy::plan_other_shape_spare_drops(pool, key.dest,
+                                                                             kCopyTexturePoolOtherShapesPerDest)) {
+    g_copyTexturePool.erase(g_copyTexturePool.begin() + static_cast<std::ptrdiff_t>(index));
+  }
+}
 
 aurora::gfx::TextureHandle acquire_copy_texture(const aurora::gx::GXState::CopyTextureKey& key, u32 width, u32 height,
                                                 GXTexFmt texCopyFmt) {
@@ -199,9 +222,10 @@ aurora::gfx::TextureHandle acquire_copy_texture(const aurora::gx::GXState::CopyT
     ++it;
   }
 
+  prune_other_shape_spares(key);
   auto handle = create_copy_texture(width, height, texCopyFmt);
   if (sameKey < kCopyTexturePoolPerKey) {
-    g_copyTexturePool.push_back({key, width, height, handle});
+    g_copyTexturePool.push_back({key, width, height, handle, aurora::gfx::current_frame()});
   }
   return handle;
 }
@@ -240,6 +264,34 @@ void prune_copy_texture_pool(const void* dest) noexcept {
     return;
   }
   std::erase_if(g_copyTexturePool, [dest](const CopyTexturePoolEntry& entry) { return entry.key.dest == dest; });
+}
+
+u64 copy_texture_pool_bytes(absl::flat_hash_set<const void*>& seen) noexcept {
+  u64 bytes = 0;
+  for (const auto& entry : g_copyTexturePool) {
+    if (entry.handle && seen.insert(entry.handle.get()).second) {
+      bytes += static_cast<u64>(entry.handle->size.width) * entry.handle->size.height * 4u;
+    }
+  }
+  return bytes;
+}
+
+size_t prune_copy_texture_pool_spares(size_t keep, u32 idleFrames) noexcept {
+  // A spare is a retired target only the pool still references.
+  const u32 frame = aurora::gfx::current_frame();
+  std::vector<size_t> spares;
+  for (size_t i = 0; i < g_copyTexturePool.size(); ++i) {
+    const auto& entry = g_copyTexturePool[i];
+    if (entry.handle.use_count() <= 1 && frame - entry.addedFrame > idleFrames) spares.push_back(i);
+  }
+  if (spares.size() <= keep) return 0;
+  std::sort(spares.begin(), spares.end(), [](size_t a, size_t b) {
+    return g_copyTexturePool[a].addedFrame < g_copyTexturePool[b].addedFrame;
+  });
+  spares.resize(spares.size() - keep);  // oldest first; the newest `keep` survive
+  std::sort(spares.rbegin(), spares.rend());
+  for (size_t index : spares) g_copyTexturePool.erase(g_copyTexturePool.begin() + static_cast<std::ptrdiff_t>(index));
+  return spares.size();
 }
 } // namespace aurora::gx
 
@@ -416,18 +468,28 @@ void GXSetDispCopyGamma(GXGamma gamma) {
                                ((static_cast<u32>(g_gxState.dispCopyGamma) & 3u) << 7);
 }
 
-void GXCopyDisp(void* dest, GXBool clear) {
-  (void)dest;
-  // Finish queued commands before this copy reads live EFB state.
-  if (aurora::gx::fifo::get_buffer_size() != 0) {
+// `visibleLines` (0 = all) keeps only the top source lines in the presented
+// copy, as VI scans fewer lines than a taller XFB holds. The EFB clear still
+// covers the whole source rectangle the game requested.
+static void copy_disp(GXBool clear, u32 visibleLines) {
+  // Finish queued commands before this copy reads live EFB state. On the
+  // asynchronous decoder thread the stream is already in order.
+  if (!aurora::gx::fifo::on_decoder_thread() && aurora::gx::fifo::get_buffer_size() != 0) {
     aurora::gx::fifo::drain();
   }
   const auto rect = aurora::gx::map_logical_scissor(g_gxState.dispCopySrc);
+  const u32 srcHeight = std::max<u32>(g_gxState.dispCopySrc.height, 1);
+  const u32 shownLines = visibleLines != 0 ? std::min(visibleLines, srcHeight) : srcHeight;
   const auto logicalDstWidth =
       std::max<u32>(g_gxState.dispCopyDstWidth != 0 ? g_gxState.dispCopyDstWidth : static_cast<u32>(g_gxState.dispCopySrc.width), 1);
-  const auto logicalDstHeight =
-      std::max<u32>(g_gxState.dispCopyDstHeight != 0 ? g_gxState.dispCopyDstHeight : static_cast<u32>(g_gxState.dispCopySrc.height), 1);
+  const auto logicalDstHeight = std::max<u32>(
+      (g_gxState.dispCopyDstHeight != 0 ? g_gxState.dispCopyDstHeight : srcHeight) * shownLines / srcHeight, 1);
+  const aurora::Vec4<float> sourceRect{static_cast<float>(rect.x), static_cast<float>(rect.y),
+                                       static_cast<float>(rect.width),
+                                       static_cast<float>(rect.height) * shownLines / srcHeight};
   const auto [dstWidth, dstHeight] = scale_copy_dst(logicalDstWidth, logicalDstHeight);
+  // The presented picture is this EFB rectangle (render pixels); SSAO maps the image onto it.
+  aurora::gfx::post::note_display_source(sourceRect.x(), sourceRect.y(), sourceRect.z(), sourceRect.w());
 
   if (!g_gxState.displayCopyTexture || g_gxState.displayCopyWidth != dstWidth ||
       g_gxState.displayCopyHeight != dstHeight) {
@@ -443,11 +505,17 @@ void GXCopyDisp(void* dest, GXBool clear) {
   }
   aurora::gfx::resolve_pass(g_gxState.displayCopyTexture, rect, clearState.clearColor, clearState.clearAlpha,
                             clearState.clearDepth, clearState.clearColorValue, aurora::gx::clear_depth_value(),
-                            GX_TF_RGBA8, nullptr, false, &copyFilter, false,
-                            static_cast<float>(rect.height) / std::max<float>(g_gxState.dispCopySrc.height, 1.0f),
+                            GX_TF_RGBA8, shownLines != srcHeight ? &sourceRect : nullptr, false, &copyFilter,
+                            false, static_cast<float>(rect.height) / static_cast<float>(srcHeight),
                             (g_gxState.copyClamp & GX_CLAMP_TOP) != 0,
                             (g_gxState.copyClamp & GX_CLAMP_BOTTOM) != 0);
   aurora::gx::set_display_copy_present_source();
+  aurora::gfx::note_display_copy();
+}
+
+void GXCopyDisp(void* dest, GXBool clear) {
+  (void)dest;
+  copy_disp(clear, 0);
 }
 
 // The raw Prime path lets the guest VI driver select between distinct XFBs.
@@ -459,12 +527,12 @@ struct TrackedDisplayCopy {
 };
 static std::unordered_map<const void*, TrackedDisplayCopy> s_trackedDisplayCopies;
 
-void GXCopyDispTracked(void* dest, GXBool clear) {
+void GXCopyDispTracked(void* dest, GXBool clear, u32 visibleLines) {
   auto& target = s_trackedDisplayCopies[dest];
   g_gxState.displayCopyTexture = target.texture;
   g_gxState.displayCopyWidth = target.width;
   g_gxState.displayCopyHeight = target.height;
-  GXCopyDisp(dest, clear);
+  copy_disp(clear, visibleLines);
   target = {g_gxState.displayCopyTexture, g_gxState.displayCopyWidth, g_gxState.displayCopyHeight};
 }
 
@@ -481,7 +549,7 @@ bool GXSelectTrackedDisplayCopy(const void* dest) {
 
 void GXCopyTex(void* dest, GXBool clear) {
   // Texture copies must see all earlier draws and state changes.
-  if (aurora::gx::fifo::get_buffer_size() != 0) {
+  if (!aurora::gx::fifo::on_decoder_thread() && aurora::gx::fifo::get_buffer_size() != 0) {
     aurora::gx::fifo::drain();
   }
   const auto sourceRect = map_texture_copy_source(g_gxState.texCopySrc, g_gxState.texCopySrcRenderSpace);
@@ -531,21 +599,9 @@ void GXCopyTex(void* dest, GXBool clear) {
   }
 
   const bool alphaUpdate = g_gxState.alphaUpdate && aurora::gx::render_target_has_alpha(g_gxState.pixelFmt);
-  if (alphaUpdate && g_gxState.dstAlpha != UINT32_MAX) {
-    if (!clear) {
-      // TODO: Confirm how this copy should handle alpha without changing the EFB.
-    }
-    // Clear alpha with a pipeline that matches the pass sample count.
-    aurora::gfx::push_draw_command(aurora::gfx::clear::DrawData{
-        .pipeline = aurora::gfx::pipeline_ref(aurora::gfx::clear::PipelineConfig{
-            .msaaSamples = aurora::gfx::get_sample_count(),
-            .clearColor = false,
-            .clearAlpha = true,
-            .clearDepth = false,
-        }),
-        .color = wgpu::Color{0.f, 0.f, 0.f, g_gxState.dstAlpha / 255.f},
-    });
-  }
+  // Destination alpha only replaces the alpha of pixels being drawn; a copy
+  // reads the EFB as it is. Prime's interaction highlight copies the button
+  // mask while dst alpha is still enabled, so no alpha may be written here.
   if (aurora::gx::render_target_has_alpha(g_gxState.pixelFmt)) {
     clearState.clearAlpha = clear && alphaUpdate;
   }
@@ -559,6 +615,31 @@ void GXCopyTex(void* dest, GXBool clear) {
                             sourceRect.sampleRect.w() / std::max<float>(g_gxState.texCopySrc.height, 1.0f),
                             (g_gxState.copyClamp & GX_CLAMP_TOP) != 0,
                             (g_gxState.copyClamp & GX_CLAMP_BOTTOM) != 0, persistentCopy);
+  // The game's glow source: a half-size copy of (nearly) the whole EFB. Its blur offsets are sized
+  // for the Wii's texels, so the scaled copy is softened to that footprint (post::soften_copy).
+  if (g_gxState.texCopyHalfScale && logicalDstWidth > 0 && logicalDstHeight > 0) {
+    // Compared in render pixels (the mapped copy rectangle against the render target), whatever space
+    // the game's source rectangle was given in. The EFB is taller than what Prime draws (1920 x 916 of
+    // 1920 x 1080 here), so the height only has to cover most of it; the width is the full target.
+    const auto [targetWidth, targetHeight] = aurora::gfx::get_render_target_size();
+    const auto copyWidth = static_cast<uint64_t>(std::max<int32_t>(rect.width, 0));
+    const auto copyHeight = static_cast<uint64_t>(std::max<int32_t>(rect.height, 0));
+    const bool glowSource = targetWidth > 0 && targetHeight > 0 && copyWidth * 10u >= uint64_t{targetWidth} * 9u &&
+                            copyHeight * 10u >= uint64_t{targetHeight} * 6u;
+#if defined(MKW_PRIME_QA_TOOLS)
+    static uint32_t logged = 0;
+    if (logged < 6) {
+      ++logged;
+      std::fprintf(stderr, "[glow-soften] half-size copy %dx%d of target %ux%u, dst %ux%u (game %ux%u): %s\n",
+                   rect.width, rect.height, targetWidth, targetHeight, scaledDstWidth, scaledDstHeight,
+                   logicalDstWidth, logicalDstHeight, glowSource ? "glow source" : "not the whole picture");
+    }
+#endif
+    if (glowSource) {
+      aurora::gfx::note_resolve_soften(static_cast<float>(scaledDstWidth) / static_cast<float>(logicalDstWidth),
+                                       static_cast<float>(scaledDstHeight) / static_cast<float>(logicalDstHeight));
+    }
+  }
   ++handle.revision;
   handle.lastProducedFrame = currentFrame;
   handle.width = logicalDstWidth;
@@ -569,6 +650,28 @@ void GXCopyTex(void* dest, GXBool clear) {
   g_gxState.copyTextures[dest] = handle;
   // Keep the GPU copy and download it only if guest code reads the destination.
   aurora::gfx::efb_ram::schedule(dest, logicalDstWidth, logicalDstHeight, texCopyFmt, handle.handle);
+}
+
+// Decoder-thread entry points for host callbacks (aurora_stream_host_callback):
+// the copy parameters travel with the command instead of being read from
+// decoder state the producer thread set earlier.
+void GXCopyTexWithParams(void* dest, GXBool clear, u16 left, u16 top, u16 width, u16 height, u16 dstWidth,
+                         u16 dstHeight, u32 format, GXBool halfScale) {
+  g_gxState.texCopySrc = {left, top, width, height};
+  g_gxState.texCopySrcRenderSpace = false;
+  g_gxState.texCopyFmt = static_cast<GXTexFmt>(format);
+  g_gxState.texCopyDstWidth = dstWidth;
+  g_gxState.texCopyDstHeight = dstHeight;
+  g_gxState.texCopyHalfScale = halfScale != GX_FALSE;
+  GXCopyTex(dest, clear);
+}
+
+void GXCopyDispTrackedWithParams(void* dest, GXBool clear, u32 visibleLines, u16 left, u16 top, u16 width,
+                                 u16 height, u16 dstWidth, u16 dstHeight) {
+  g_gxState.dispCopySrc = {left, top, width, height};
+  g_gxState.dispCopyDstWidth = dstWidth;
+  g_gxState.dispCopyDstHeight = dstHeight;
+  GXCopyDispTracked(dest, clear, visibleLines);
 }
 
 void GXClearBoundingBox() {

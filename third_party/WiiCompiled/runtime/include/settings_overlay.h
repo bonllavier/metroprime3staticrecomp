@@ -9,6 +9,8 @@ void InitializeRuntimeSettings() noexcept;
 // Draw the F10 settings bar before each Aurora present.
 void HandleEvents(const AuroraEvent* events) noexcept;
 void Draw() noexcept;
+// Aurora's ImGui init callback: adds the HUD font (Latin-1, for the hint).
+void ImGuiInit(const AuroraWindowSize* size) noexcept;
 bool StartupScreenVisible() noexcept;
 void NotifyStrapInputAccepted() noexcept;
 void AdvancePresentedFrame() noexcept;

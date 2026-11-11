@@ -10,28 +10,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
 from inspect_startup_rso import inspect_bytes
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from discover_prime_rso_roots import discover
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--module", choices=("rhbm", "Tweaks", "ScriptGUIScreenFrontEndUI", "ScriptWorldTeleporter", "ScriptAchievement", "ScriptContextSensitiveActivator", "ScriptGrapplePoint", "ScriptMultiModelActor", "ScriptContextSensitiveAction", "ScriptContextActionButtonPressing", "Friendly", "GunTurret", "MapScreenWebInterface"), default="rhbm")
+    table = json.loads((ROOT / "recomp/config/RM3E01_00/rso_modules.json").read_text())["modules"]
+    rows = {row["name"]: row for row in table}
+    parser.add_argument("--module", choices=tuple(rows), default="rhbm")
     name = parser.parse_args().module
-    module_id = {"rhbm": 1, "Tweaks": 2, "ScriptGUIScreenFrontEndUI": 3, "ScriptWorldTeleporter": 4, "ScriptAchievement": 5, "ScriptContextSensitiveActivator": 6, "ScriptGrapplePoint": 7, "ScriptMultiModelActor": 8, "ScriptContextSensitiveAction": 9, "ScriptContextActionButtonPressing": 10, "Friendly": 11, "GunTurret": 12, "MapScreenWebInterface": 13}[name]
-    pins = {
-        "MapScreenWebInterface": ("89763875b4042e5cf2b3f230d5c7cd79e59f3edb39e4567fd5844ccc9c4f4d90", "870b306487d98a561c74a099114486b0fa59465395c4aa47bdb3417459358b59"),
-        "Friendly": ("88b498761ff3aecfde46df79c7d1d85e2bc9973c8d74ca9fd0cd983a5c6ec435", "dc2653331976e49bc902a8babf85b4b4212fb8e5ba439ac83a1f491ca79d3f92"),
-        "GunTurret": ("961f2790d74c57344ceb420fd26dd4ed827e6e43f7116fc163a45681e8925f8d", "99c2dd2a48635db5429f9195c06e8795bacbd4b8b38b4cce558041097897b0cb"),
-        "ScriptContextActionButtonPressing": ("b5ba4b9cade703b1a35302db055efd434b8d2d29ee9943767001012b78f1ba2e", "8b85d72b89a27943dece80ad5b7d9660221c52552ea58413381d34ae277a360c"),
-        "ScriptContextSensitiveAction": ("c375aa59eac9e33e487a1a2daf1c82a439d3f56fed38572e8eb4e511b6c2aa92", "ed687caa77f1f07a75f0e1349786050359fadad34fc0a1bb9a56540350845757"),
-        "ScriptMultiModelActor": ("dcb5371039daa01f64c9e3f6c549c6a8cb828dc620a74f2a30cfecebbc53dd94", "caa22a4a24e4e007d782e45d6ae71c5929db52d3709365969cd6e4f16bdb5d15"),
-        "ScriptGrapplePoint": ("65a7f4c935e0182ce280cabbbcdb2fec2db484ad1f494b4a1b346907a211eeca", "4618f940098b241373f3084197ee16b2f6c227b0ecbd8cfdc9f1faee5a0d307b"),
-        "ScriptContextSensitiveActivator": ("c38bf16c1d9a9ab8d73acea85bd1b4d782fcb1183a376a9e4f812985b2ebcebe", "0e685d02cfe15054c39b0ffb6fb7a960424d2cde75e980179408910d3dc4a523"),
-        "ScriptAchievement": ("795ca322e9b177e4bb929d7cf810309a22520b6399b95adbfa4366cfe389b73f", "f630a17c0febd4eb861733754828760836092726652202e0e47e21783279fee0"),
-        "rhbm": ("05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f", "15424c386904ed96657adb71bc252f9ebaa57a87b5a7f221d7ebd246d0fc2097"),
-        "Tweaks": ("f195aa36d03fb34a5a11821fa1533d52343d0be1d02e59a9e2a24e8791125a09", "c4951be364206f7cfde832bad35ffc752f29d1912169c655d62ee202a2588a8c"),
-        "ScriptGUIScreenFrontEndUI": ("a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b", "3b8fdfd6b8badd8cb38aa964580e690ded2d68df21ae1a1933d90a6c3cf14ed4"),
-        "ScriptWorldTeleporter": ("f9f419e45635483df42018ff494be2f209f81ee57b040a343b82a617f2bdb652", "b03282361b20f78e2d08aded0c99c1894df214008be7518c21f8c44b34d76d70"),
-    }
+    module_id = rows[name]["id"]
+    pins = {name: (rows[name]["rso_sha256"], rows[name]["rel_sha256"])}
     directory = ROOT / f"recomp/.tools/rso-runtime/{name}"
     directory.mkdir(parents=True, exist_ok=True)
     original_path = ROOT / f"recomp/.tools/disc-extraction-rm3e01/files/RSO/Rev2 Production/RSO_{name}.rso"
@@ -494,13 +484,22 @@ def main():
         assert references==callback["references"] and {r[1] for r in references}=={4,6}
         assert list(struct.unpack_from(">4I",raw,sections[1]["file_offset"]+offset))==callback["first_words"]
         roots.append(sections[1]["nominal"]+offset)
+    # Every relocated function entry of the module (see discover_prime_rso_roots):
+    # the reviewed roots above are a subset, kept as assertions.
+    discovered = discover(name)
+    discovered_roots = {sections[1]["nominal"] + row["text_offset"] for row in discovered["roots"]}
+    assert set(roots) <= discovered_roots, sorted(hex(r) for r in set(roots) - discovered_roots)
+    roots += sorted(discovered_roots - set(roots))
     boundaries.update(roots)
     base_metadata = json.loads((ROOT / "recomp/generated/RM3E01_00_conservative/base_translation_output.json").read_text())
     boundaries.update(row["entryPoint"] for row in base_metadata["functions"])
     manifest = {"dol": str(ROOT / "recomp/input/RM3E01_00/main.dol"), "rel": str(rel_path),
                 "base": base, "moduleId": module_id, "textStart": sections[1]["nominal"],
                 "textEnd": sections[1]["nominal"] + sections[1]["size"],
-                "roots": sorted(set(roots)), "boundaries": sorted(boundaries), "sites": sites}
+                "roots": sorted(set(roots)), "boundaries": sorted(boundaries), "sites": sites,
+                "jumpTables": [{"bctr": sections[1]["nominal"] + table["bctr"],
+                                "targets": [sections[1]["nominal"] + t for t in table["targets"]]}
+                               for table in discovered["jump_tables"]]}
     (directory / "input.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     (directory / "module.json").write_text(json.dumps({"module": name, "module_id": module_id,
         "original_sha256": module["sha256"], "sections": sections, "constructor_entries": constructors,

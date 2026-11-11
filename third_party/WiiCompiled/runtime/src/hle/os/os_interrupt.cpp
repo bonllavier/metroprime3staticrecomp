@@ -19,6 +19,8 @@
 extern "C" uint32_t SetInterruptMask_801a66e0(uint32_t mask, uint32_t enable);
 extern "C" uint32_t MemoryPrimeIpcPollControl();
 extern "C" uint16_t MemoryPrimeDspPollControl();
+extern "C" bool MemoryPrimeCpBreakpointPollReady();
+extern "C" void VI_HLE_DispatchPrimeCpInterrupt(CpuContext* interrupted);
 
 namespace OsHleInternal {
 std::atomic<bool> g_interrupts_enabled{true};
@@ -282,6 +284,26 @@ extern "C" void OS_HLE_DispatchPendingPrimeAidInterrupt()
 extern "C" void OS_HLE_PollPendingPrimeIpcInterrupt(CpuContext* ctx, uint32_t guestTarget)
 {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
+    // Same every-8th-return gate as the inline poll the translated shards emit
+    // (PollTranslatedCallBoundary in guest_abi/dispatch.h); looking at every
+    // 8th return delays an interrupt by a few hundred nanoseconds.
+    PollTranslatedCallBoundary(ctx, guestTarget);
+#else
+    OS_HLE_PollPendingPrimeIpcInterruptFull(ctx, guestTarget);
+#endif
+}
+
+// Every 8th translated call return reaches this (PollTranslatedCallBoundary).
+// Thinning it further (1 in 4 of those, 2026-10-31) froze the boot: AX init's
+// wait for the DSP callback (0x804C0968) is a spin without calls, so the
+// interrupt must be delivered at one of the returns before it; fewer checks
+// made that window miss. Do not reduce this frequency.
+
+namespace {
+// The check itself, out of line so the skipped calls above return without its frame.
+[[gnu::noinline]] void PollBoundaryDevices(CpuContext* ctx, uint32_t guestTarget)
+{
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
     if (ctx == nullptr || (ctx->msr & 0x00008000u) == 0) return;
     const uint32_t control = MemoryPrimeIpcPollControl();
     static std::atomic<uint32_t> pollTraceCount{0};
@@ -293,17 +315,35 @@ extern "C" void OS_HLE_PollPendingPrimeIpcInterrupt(CpuContext* ctx, uint32_t gu
                           << " control=0x" << control << " init=0x"
                           << ::Memory::Read32(0x8067E848u) << std::dec << std::endl;
     }
-    if (ctx == nullptr || (ctx->msr & 0x00008000u) == 0) {
-        return;
-    }
+    const bool ipcPending = (control & 0x14u) == 0x14u || (control & 0x22u) == 0x22u;
+    // The GP parked at a breakpoint raises the CP interrupt on hardware
+    // wherever the CPU is. A guest loop that waits for a PE token queued
+    // behind it (CSkinnedModel's staging ring, 0x803F486C/0x803F4A5C) only
+    // reaches this boundary poll, never the VI or idle polls that otherwise
+    // deliver it. The gate is two atomic loads.
+    const bool cpReady = MemoryPrimeCpBreakpointPollReady();
+    // Called at every translated call boundary: skip the context scope and
+    // the dispatchers unless a device actually has an interrupt pending.
+    const uint16_t dspControl = MemoryPrimeDspPollControl();
+    if (!ipcPending && !cpReady && ((dspControl & 0x180u) != 0x180u || (dspControl & 4u))) return;
     CpuContextScope contextScope(ctx);
-    if ((control & 0x14u) == 0x14u || (control & 0x22u) == 0x22u)
+    if (ipcPending)
         DispatchPendingPrimeIpcInterrupt();
     DispatchPendingPrimeDspInterrupt();
+    if (cpReady)
+        VI_HLE_DispatchPrimeCpInterrupt(ctx);
 #else
     (void)ctx;
     (void)guestTarget;
 #endif
+}
+} // namespace
+
+extern "C" [[gnu::noinline]] void OS_HLE_PollPendingPrimeIpcInterruptFull(CpuContext* ctx, uint32_t guestTarget)
+{
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+#endif
+    PollBoundaryDevices(ctx, guestTarget);
 }
 
 extern "C" bool OS_HLE_IsPrimeIpcInterruptDispatching()

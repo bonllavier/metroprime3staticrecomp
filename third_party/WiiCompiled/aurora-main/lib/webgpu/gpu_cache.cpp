@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <atomic>
+#include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <mutex>
@@ -10,6 +12,7 @@
 #include "../fs_helper.hpp"
 #include "../internal.hpp"
 #include "../sqlite_utils.hpp"
+#include "blob_cache_policy.hpp"
 #include "gpu.hpp"
 
 #include <sqlite3.h>
@@ -39,7 +42,13 @@ static std::vector<uint8_t> compress_buffer;
 // Schema 4 is a content reset for the vulkan_monolithic_pipeline_cache switch, which
 // obsoletes every per-pipeline blob at once.
 constexpr int CACHE_SCHEMA = 4;
-constexpr int64_t PruneAfterDays = 30;
+// Seven days: a build update re-keys what the generator changed, and anything the
+// current build stopped asking for is dead weight. The launch sweep below removes it
+// at once on a version change; this age limit covers driver updates and API switches.
+constexpr int64_t PruneAfterDays = 7;
+// Hard ceiling on the live size of dawn_cache.db (WII_COMPILED_AURORA_DAWN_CACHE_MB,
+// 64..16384). Over it, the least recently used blobs go first, down to 3/4 of the cap.
+constexpr uint64_t DefaultSizeCapMiB = 400;
 // Rows whose last_used lags today are collected in memory and written in one batch at
 // shutdown: the load path sits inside a read transaction that is always rolled back,
 // and day granularity makes anything more eager pointless.
@@ -49,6 +58,15 @@ static std::atomic<uint64_t> g_hits{0};
 static std::atomic<uint64_t> g_stores{0};
 static std::atomic<uint64_t> g_hitBytes{0};
 static std::vector<XXH128_hash_t> g_pendingTouches;
+// Keys loaded or stored during this launch, for the generation sweep.
+static std::vector<blob_policy::Key> g_touchedKeys;
+static std::string g_storedGeneration;
+static bool g_generationChanged = false;
+static bool g_compactAtShutdown = false;
+// A launch that touched fewer blobs than this did not exercise the cache; it never sweeps.
+constexpr size_t MinTouchedKeysToSweep = 64;
+
+static std::string current_generation() { return blob_policy::sanitize_generation(g_config.cacheGeneration); }
 
 static int64_t days_now() { return static_cast<int64_t>(std::time(nullptr) / 86400); }
 
@@ -135,6 +153,27 @@ static void prune_stale_rows() {
   }
 }
 
+static void log_policy(const std::string& message) { Log.info("{}", message); }
+
+static uint64_t size_cap_mib() {
+  uint64_t capMiB = DefaultSizeCapMiB;
+  if (const char* value = std::getenv("WII_COMPILED_AURORA_DAWN_CACHE_MB")) {
+    const auto parsed = std::strtoull(value, nullptr, 10);
+    if (parsed >= 64 && parsed <= 16384) capMiB = parsed;
+  }
+  return capMiB;
+}
+
+static void load_generation_meta() {
+  g_storedGeneration = blob_policy::load_generation(db);
+  const auto current = current_generation();
+  g_generationChanged = !current.empty() && current != g_storedGeneration;
+  if (g_generationChanged) {
+    Log.info("Shader cache generation changed ('{}' -> '{}'): obsolete blobs are removed after the boot prewarm",
+             g_storedGeneration.empty() ? "none" : g_storedGeneration, current);
+  }
+}
+
 static bool cache_init_core() {
   Log.debug("SQLite version {}", sqlite3_libversion());
 
@@ -157,6 +196,8 @@ static bool cache_init_core() {
   switch (check_schema()) {
   case SchemaState::Match:
     prune_stale_rows();
+    blob_policy::enforce_size_cap(db, static_cast<int64_t>(size_cap_mib() << 20), log_policy);
+    blob_policy::compact_if_wasteful(db, log_policy);
     break;
   case SchemaState::Mismatch: {
     // Dropping the table would leave the freed pages inside the file, so a schema
@@ -190,6 +231,7 @@ static bool cache_init_core() {
   case SchemaState::Error:
     return false;
   }
+  load_generation_meta();
 
   ret = sqlite3_prepare_v3(db, "SELECT value, size, compressed, last_used FROM cache WHERE key = ?", -1,
                            SQLITE_PREPARE_PERSISTENT, &load_stmt, nullptr);
@@ -260,7 +302,18 @@ static bool cache_init() {
   return true;
 }
 
+// Test switch WII_COMPILED_DAWN_CACHE_COLD_AFTER_BOOT=1: once the boot prewarm has drained, every lookup
+// misses, so shaders met in play compile cold (as for a player whose cache lacks them).
+static std::atomic<bool> g_bootPrewarmDrained{false};
+static bool cold_after_boot() {
+  static const bool enabled = std::getenv("WII_COMPILED_DAWN_CACHE_COLD_AFTER_BOOT") != nullptr;
+  return enabled;
+}
+
 size_t load_from_cache(void const* key, size_t keySize, void* value, size_t valueSize, void*) {
+  if (cold_after_boot() && g_bootPrewarmDrained.load(std::memory_order_relaxed)) {
+    return 0;
+  }
   std::lock_guard lock(cache_mutex);
 
   if (!cache_init()) {
@@ -321,6 +374,9 @@ size_t load_from_cache(void const* key, size_t keySize, void* value, size_t valu
     }
     if (sqlite3_column_int64(load_stmt, 3) != days_now()) {
       g_pendingTouches.push_back(keyHash);
+    }
+    if (g_generationChanged) {
+      g_touchedKeys.emplace_back(keyHash.low64, keyHash.high64);
     }
 
     if (value && valueSize == foundSize) {
@@ -409,6 +465,9 @@ void store_to_cache(void const* key, size_t keySize, void const* value, size_t v
   check(sqlite3_bind_int(store_stmt, 4, compressed));
   check(sqlite3_bind_int64(store_stmt, 5, days_now()));
   g_stores.fetch_add(1, std::memory_order_relaxed);
+  if (g_generationChanged) {
+    g_touchedKeys.emplace_back(keyHash.low64, keyHash.high64);
+  }
 
   const auto ret = sqlite3_step(store_stmt);
   if (ret != SQLITE_DONE) {
@@ -424,6 +483,27 @@ void store_to_cache(void const* key, size_t keySize, void const* value, size_t v
   tx.commit();
 }
 
+void blob_cache_finish_boot_sweep() noexcept {
+  g_bootPrewarmDrained.store(true, std::memory_order_relaxed);
+  std::lock_guard lock(cache_mutex);
+  if (db == nullptr || cache_broken || !g_generationChanged) {
+    return;
+  }
+  g_generationChanged = false;
+  const auto current = current_generation();
+  const auto result = blob_policy::sweep_untouched(db, g_touchedKeys, current, MinTouchedKeysToSweep, log_policy);
+  g_touchedKeys.clear();
+  g_touchedKeys.shrink_to_fit();
+  if (result.skipped) {
+    return;  // retried on the next launch: the stored generation was not updated
+  }
+  Log.info("Shader cache cleanup for build '{}' (previous '{}'): removed {} blobs not used by this launch ({:.1f} MiB), kept {}",
+           current, g_storedGeneration.empty() ? "none" : g_storedGeneration, result.removed,
+           static_cast<double>(result.removedBytes) / 1048576.0, result.kept);
+  g_storedGeneration = current;
+  g_compactAtShutdown = result.removed > 0;
+}
+
 void cache_shutdown() {
   std::lock_guard lock(cache_mutex);
 #if defined(AURORA_CACHE_USE_ZSTD)
@@ -436,6 +516,13 @@ void cache_shutdown() {
   load_stmt = nullptr;
   store_stmt = nullptr;
   touch_stmt = nullptr;
+  if (g_compactAtShutdown && db != nullptr) {
+    // After the sweep: return the freed pages to the filesystem while nothing else uses the cache.
+    g_compactAtShutdown = false;
+    if (sqlite::exec(db, "VACUUM;") != SQLITE_OK) {
+      Log.warn("Failed to compact the Dawn cache at shutdown: {}", sqlite3_errmsg(db));
+    }
+  }
   check(sqlite3_close(db));
   db = nullptr;
 }

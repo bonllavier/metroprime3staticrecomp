@@ -1,4 +1,5 @@
 #include "gx_internal.h"
+#include <aurora/aurora.h>
 #include "gx_stream_common.h"
 #include "gx_cp_decode.h"
 #include "isa/big_endian.h"
@@ -12,6 +13,9 @@
 #include "hle/prime_performance.h"
 #include "hle/prime_fifo_burst.h"
 #include "hle/prime_tlut_memory.h"
+#include "hle/gx_gpu_thread.h"
+#include "hle/prime_gx_stream.h"
+#include "hle/prime_input_latency.h"
 
 // Diagnostic environment switches are fixed for the lifetime of this process.
 static bool CachedWiiCompiledTracePrimeMiiFifo() {
@@ -29,14 +33,17 @@ HleGxState g_hleGxState;
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
 extern "C" bool PrimeGpuCpReadBlocked();
 extern "C" bool PrimeGpuTryCaptureCpuFifo(uint32_t value, unsigned width);
+extern "C" uint32_t PrimeGpuGatherWriteBulk(const uint8_t* data, uint32_t size);
 static std::vector<uint8_t> g_primeStoppedFifo;
-static bool g_primeFifoReplaying = false;
+// Not static: memory.cpp's gather-pipe store fast path checks it before appending (same test as HleFifoWrite).
+bool g_primeFifoReplaying = false;
 static thread_local bool g_primeFifoParsing = false;
 static bool g_primeFontFifoTraceArmed = false;
 #endif
 
 extern "C" void GX_HLE_PrimeResumeFifo() {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
+    GxGpuThread::ResumeRetained();
     if (g_primeFifoReplaying || PrimeGpuCpReadBlocked() || g_primeStoppedFifo.empty()) return;
     std::vector<uint8_t> pending;
     pending.swap(g_primeStoppedFifo);
@@ -65,11 +72,18 @@ extern "C" bool GX_HLE_PrimeFifoAtBoundary() {
     return !g_hleGxState.inBegin && g_hleGxState.fifoByteCount == 0;
 }
 
+// A GXBegin packet whose vertices span several bursts keeps Aurora inside
+// GXBegin until the last one arrives; nothing else may drain Aurora meanwhile.
+extern "C" bool GX_HLE_PrimeInsideDraw() {
+    return g_hleGxState.inBegin;
+}
+
 extern "C" void GX_HLE_PrimeResetFifo() {
     // PI_FIFO_RESET discards work; it must not report draw completion.
     const size_t discarded = g_hleGxState.fifoByteCount;
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
     g_primeStoppedFifo.clear();
+    GxGpuThread::DiscardRetained();
 #endif
     static unsigned resetTraceCount = 0;
     if (resetTraceCount++ < 16) {
@@ -87,20 +101,26 @@ extern "C" void GX_HLE_PrimeResetFifo() {
     g_hleGxState.auroraBeginCalled = false;
     g_hleGxState.ResetVertex();
     aurora::gx::fifo::abort_vertex_writer();
+    // The decoder thread must not be mid-frame while the producer aborts it.
+    aurora_stream_sync();
     if (g_auroraFrameActive.exchange(false, std::memory_order_acq_rel))
         aurora::gfx::abort_frame();
     RT_LOG(RT_TAG_GX) << "[prime-pi-fifo-reset] discarded_bytes=" << discarded
         << " frame_aborted=1 completion_signaled=0" << std::endl;
 }
 
-extern "C" void GXCopyDispTracked(void*, GXBool);
+extern "C" void GXCopyDispTracked(void*, GXBool, uint32_t);
+extern "C" void GxPrimeNoteDisplayCopy();
 extern "C" void GXBindRawTextureMemory(unsigned, const void*, unsigned, unsigned, unsigned, bool);
 extern "C" void GXBindRawTexturePalette(unsigned, const void*, unsigned, unsigned, unsigned);
 extern "C" uint32_t GXRawDrawTextureMask(GXVtxFmt);
+extern "C" void GXAuroraPublishDirtyState(void);
 void GX_HLE_PrimeCopyColorTexture(uint32_t,uint16_t,uint16_t,uint16_t,uint16_t,const PrimeRawBp::Registers::ColorCopy&,bool);
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
 static PrimeRawBp::Registers g_primeRawBp;
-static PrimeTlutMemory g_primeTlutMemory;
+// Decoder-thread state with the asynchronous decoder (gx_stream.cpp loads and
+// binds it in stream order); the producer only reads it for diagnostics then.
+PrimeTlutMemory g_primeTlutMemory;
 #endif
 
 void GX_HLE_PrimeBindDrawPalettes(GXVtxFmt fmt) {
@@ -111,6 +131,23 @@ void GX_HLE_PrimeBindDrawPalettes(GXVtxFmt fmt) {
     // submit_raw_draw still publishes dirty state and drains before drawing.
     const uint32_t indexedMask = g_primeRawBp.IndexedTextureMask();
     if (indexedMask == 0) return;
+    if (PrimeGxStream::Async()) {
+        // The sampled-texture mask and the TLUT bytes are decoder state: bind
+        // from the stream, with the BP values this draw was issued under.
+        PrimeGxStream::BindPalettes bind{};
+        bind.indexedMask = indexedMask;
+        bind.vtxFmt = static_cast<uint8_t>(fmt);
+        for (unsigned slot = 0; slot < 8; ++slot) {
+            bind.formats[slot] = static_cast<uint8_t>(g_primeRawBp.TextureFormat(slot));
+            bind.tlutWords[slot] = g_primeRawBp.values[0x98 + (slot & 3u) + (slot >= 4 ? 0x20 : 0)];
+        }
+        // The handler derives the sampled-texture mask from the decoder's
+        // vertex state: publish this draw's VCD/VAT ahead of the callback,
+        // where submit_raw_draw would otherwise emit them after it.
+        GXAuroraPublishDirtyState();
+        PrimeGxStream::EmitBindPalettes(bind);
+        return;
+    }
     const uint32_t sampledMask = GXRawDrawTextureMask(fmt) & indexedMask;
     for (unsigned slot = 0; slot < 8; ++slot) {
         if ((sampledMask & (1u << slot)) == 0) continue;
@@ -129,9 +166,10 @@ void GX_HLE_PrimeBindDrawPalettes(GXVtxFmt fmt) {
                 << std::hex << offset << " sampled_mask=0x" << sampledMask << std::dec << " entries=" << entries;
             throw std::runtime_error(message.str());
         }
-        GXBindRawTexturePalette(slot, palette, paletteFormat, entries, g_primeTlutMemory.Generation());
+        GXBindRawTexturePalette(slot, palette, paletteFormat, entries,
+                                g_primeTlutMemory.RangeGeneration(offset, entries * 2));
         static bool fontTextureDumped=false;
-        if (!fontTextureDumped && format==8 && g_primeRawBp.TextureWidth(slot)==64 && g_primeRawBp.TextureHeight(slot)==80) {
+        if (!fontTextureDumped && !PrimeGxStream::Async() && format==8 && g_primeRawBp.TextureWidth(slot)==64 && g_primeRawBp.TextureHeight(slot)==80) {
             if(const char* prefix=std::getenv("WII_COMPILED_DUMP_FONT_TEXTURE")) {
                 const uint32_t imageReg=0x94+(slot&3u)+(slot>=4 ? 0x20 : 0);
                 const uint32_t address=(g_primeRawBp.values[imageReg]<<5)|0x80000000u;
@@ -154,6 +192,36 @@ void GX_HLE_PrimeBindDrawPalettes(GXVtxFmt fmt) {
 #endif
 }
 
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+namespace {
+// Lines of an XFB the game's VI programming scans out: VTR.ACV active lines
+// per field, twice that when interlaced (DCR.NIN clear). Prime copies 480
+// lines but programs a shorter active area; the unscanned rows never reach a
+// TV, so presenting them shows a band. 0 (show the whole copy) when VI is not
+// programmed or the value does not fit the copy.
+uint32_t PrimeViVisibleLines(uint32_t copyHeight) {
+    const uint16_t vtr = Memory::Read16(0xCC002000u);
+    const uint16_t dcr = Memory::Read16(0xCC002002u);
+    const uint32_t acv = (vtr >> 4) & 0x3FFu;
+    uint32_t lines = (dcr & 4u) ? acv : acv * 2u;
+    if (lines > copyHeight) lines = acv;  // progressive timing counts whole frames
+    if (lines == 0 || lines > copyHeight) lines = 0;
+    static uint32_t tracedVtr = ~0u, tracedDcr = ~0u, tracedHeight = ~0u;
+    if (vtr != tracedVtr || dcr != tracedDcr || copyHeight != tracedHeight) {
+        tracedVtr = vtr;
+        tracedDcr = dcr;
+        tracedHeight = copyHeight;
+        RT_LOG(RT_TAG_GX) << "[prime-vi-visible] vtr=0x" << std::hex << vtr << " dcr=0x" << dcr
+            << " tfbl=0x" << Memory::Read16(0xCC00201Cu) << Memory::Read16(0xCC00201Eu)
+            << " vto=0x" << Memory::Read16(0xCC00200Cu) << Memory::Read16(0xCC00200Eu)
+            << std::dec << " acv=" << acv << " copy_height=" << copyHeight
+            << " presented_lines=" << (lines ? lines : copyHeight) << std::endl;
+    }
+    return lines;
+}
+}  // namespace
+#endif
+
 void GX_HLE_ApplyRawBp(uint8_t reg, uint32_t value) {
     {
         PrimePerformance::Scope performance(PrimePerformance::BpApply);
@@ -168,6 +236,12 @@ void GX_HLE_ApplyRawBp(uint8_t reg, uint32_t value) {
         // the preceding producer commands; Aurora owns copies of their
         // source data at that boundary. Publish the consumed token only here,
         // never advance it from the polling read or force the allocator free.
+        // With the asynchronous decoder the token travels in the stream and
+        // is published once that thread has decoded the preceding draws.
+        if (PrimeGxStream::Async()) {
+            PrimeGxStream::EmitPeToken(static_cast<uint16_t>(merged));
+            return;
+        }
         Memory::Write16(0xCC00100Eu, static_cast<uint16_t>(merged));
         static unsigned tokenTraceCount = 0;
         if (tokenTraceCount++ < 32)
@@ -186,7 +260,11 @@ void GX_HLE_ApplyRawBp(uint8_t reg, uint32_t value) {
         const uint8_t maxLod = static_cast<uint8_t>(((bp.TextureMode1(slot) >> 8) & 255u) / 16u);
         const uint32_t bytes = GXGetTexBufferSize(width, height, static_cast<GXTexFmt>(format), mips, maxLod);
         const void* data = Memory::GetPointer(address, bytes);
-        GXBindRawTextureMemory(slot, data, width, height, format, mips);
+        if (PrimeGxStream::Async())
+            PrimeGxStream::EmitTexBind({reinterpret_cast<uintptr_t>(data), width, height, format,
+                                        static_cast<uint8_t>(slot), static_cast<uint8_t>(mips)});
+        else
+            GXBindRawTextureMemory(slot, data, width, height, format, mips);
         if (width == 64 && height == 80 && std::getenv("WII_COMPILED_TRACE_PRIME_FONT_FIFO"))
             g_primeFontFifoTraceArmed = true;
         static unsigned textureTraceCount = 0;
@@ -206,7 +284,9 @@ void GX_HLE_ApplyRawBp(uint8_t reg, uint32_t value) {
         const uint32_t address = (bp.values[0x64] << 5) | 0x80000000u;
         const uint32_t offset = (merged & 1023u) << 9;
         const uint32_t bytes = ((merged >> 10) & 2047u) * 32u;
-        g_primeTlutMemory.Load(offset, Memory::GetPointer(address, bytes), bytes);
+        const void* source = Memory::GetPointer(address, bytes);
+        if (PrimeGxStream::Async()) PrimeGxStream::EmitTlutLoad({reinterpret_cast<uintptr_t>(source), offset, bytes});
+        else g_primeTlutMemory.Load(offset, source, bytes);
         static unsigned tlutTraceCount = 0;
         if (tlutTraceCount++ < 16)
             RT_LOG(RT_TAG_GX) << "[prime-raw-tlut-load] source=0x" << std::hex << address
@@ -256,14 +336,28 @@ void GX_HLE_ApplyRawBp(uint8_t reg, uint32_t value) {
     if (scaleWord != 0x100u)
         throw std::runtime_error("Prime raw XFB copy uses a vertical scale not yet verified by this adapter");
     EnsureAuroraFrameActive();
+    GxPrimeNoteDisplayCopy();  // a new frame for the volatile-array views (gx_dl.cpp)
+    if (PrimeGxStream::Async()) {
+        // The copy, the latency note and the XFB-ready flag all happen when the
+        // decoder reaches this point of the stream.
+        PrimeGxStream::EmitXfbCopy({reinterpret_cast<uintptr_t>(GuestToHostPtr(bp.Destination())),
+                                    PrimeInputLatency::DecodingSubmitTime(), bp.Destination(),
+                                    PrimeViVisibleLines(bp.Height()), bp.Left(), bp.Top(), bp.Width(), bp.Height(),
+                                    bp.PitchPixels(), static_cast<uint8_t>(bp.Clear())});
+        GXMarkFrameWork();
+    } else {
     // GXCopyDisp only drains non-empty native FIFOs; DrawDone also provides
     // the worker preparation barrier for this direct raw-state path.
     GXDrawDone();
     GXSetDispCopySrc(bp.Left(), bp.Top(), bp.Width(), bp.Height());
     GXSetDispCopyDst(bp.PitchPixels(), bp.Height());
-    GXCopyDispTracked(GuestToHostPtr(bp.Destination()), bp.Clear() ? GX_TRUE : GX_FALSE);
+    GXCopyDispTracked(GuestToHostPtr(bp.Destination()), bp.Clear() ? GX_TRUE : GX_FALSE,
+                      PrimeViVisibleLines(bp.Height()));
     GXMarkFrameWork();
+    PrimeInputLatency::NoteXfbCopy();
     VI_HLE_SetXfbReady(bp.Destination());
+    VI_HLE_NotePrimeXfbCopied(bp.Destination());
+    }
     static unsigned traceCount = 0;
     if (traceCount++ < 24)
         RT_LOG(RT_TAG_GX) << "[prime-raw-xfb-copy] destination=0x" << std::hex << bp.Destination()
@@ -366,6 +460,9 @@ static bool TrySubmitRawDirectFifoDraw(const uint8_t* packet, uint32_t packetByt
     }
 #endif
     EnsureAuroraFrameActive();
+    if (aurora_draw_dump_active())
+        RT_LOG(RT_TAG_GX) << "[dump-raw-draw] count=" << vtxCount << " fmt=" << vtxFmt << " pos_desc="
+            << g_hleGxState.vtxDesc[GX_VA_POS] << " bytes=" << packetBytes << std::endl;
 
     g_hleGxState.currentVtxFmt = vtxFmt;
     g_hleGxState.currentPrim = prim;
@@ -394,7 +491,7 @@ static bool TrySubmitRawDirectFifoDraw(const uint8_t* packet, uint32_t packetByt
     GX_HLE_PrimeBindDrawPalettes(vtxFmt);
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
     static unsigned fontDrawDumpCount=0;
-    if (fontDrawDumpCount<50 && vtxCount==4 && packetBytes==83 &&
+    if (!PrimeGxStream::Async() && fontDrawDumpCount<50 && vtxCount==4 && packetBytes==83 &&
         g_primeRawBp.TextureFormat(0)==8 && g_primeRawBp.TextureWidth(0)==64 && g_primeRawBp.TextureHeight(0)==80) {
         if(const char* prefix=std::getenv("WII_COMPILED_DUMP_FONT_TEXTURE")) {
             const uint32_t paletteWord=g_primeRawBp.values[0x98];
@@ -678,7 +775,8 @@ static void HleFifoConsume(u32 val, uint32_t sizeBytes) {
     }
 #endif
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
-    if (PrimeGpuCpReadBlocked()) {
+    // Queued bursts were already tested against the stall when submitted.
+    if (!GxGpuThread::DecodingQueued() && PrimeGpuCpReadBlocked()) {
         const uint32_t count = sizeBytes == 0 ? 4u : sizeBytes;
         if (count != 1 && count != 2 && count != 4)
             throw std::logic_error("Unsupported gather write width");
@@ -822,8 +920,11 @@ static void HleFifoConsume(u32 val, uint32_t sizeBytes) {
             std::array<uint8_t,5> stablePacket;
             std::memcpy(stablePacket.data(),data,stablePacket.size());
             if (!consumeBytes(5,sink)) break;
-            ApplyIndexedXfArrayForPacket(cmd,xfValue);
-            GXCallDisplayList(stablePacket.data(),stablePacket.size());
+            // With the asynchronous decoder the matrix words are read now (SubmitIndexedXfImmediate).
+            if (!(PrimeGxStream::Async() && SubmitIndexedXfImmediate(cmd,xfValue))) {
+                ApplyIndexedXfArrayForPacket(cmd,xfValue);
+                GXCallDisplayList(stablePacket.data(),stablePacket.size());
+            }
 #else
             ApplyIndexedXfArrayForPacket(cmd, xfValue);
             GXCallDisplayList(data, 5);
@@ -1154,6 +1255,8 @@ void HleFifoWrite(u32 val, uint32_t sizeBytes) {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
     if (!g_primeFifoReplaying && PrimeGpuTryCaptureCpuFifo(val, sizeBytes ? sizeBytes : 4u)) return;
 #endif
+    // Uncaptured writes decode inline; keep them behind every queued burst.
+    GxGpuThread::Sync gpuSync;
     HleFifoConsume(val, sizeBytes);
 }
 
@@ -1174,7 +1277,10 @@ extern "C" void GX_HLE_FIFO_WriteBurst(const uint8_t* data, uint32_t sizeBytes) 
     // bytes, and would discard those zeroes as NOPs before the packet resumes.
     // Route every Prime burst through the same ordered producer as scalar
     // stores. It also honors reentrant consumer ownership and DL recording.
-    PrimeFifoBurst::Write(data, sizeBytes, [](uint32_t value,unsigned width) { HleFifoWrite(value,width); });
+    // Bulk-copied into the open gather burst while capture is on; the rest keeps the old path.
+    const uint32_t taken = g_primeFifoReplaying ? 0u : PrimeGpuGatherWriteBulk(data, sizeBytes);
+    if (taken < sizeBytes)
+        PrimeFifoBurst::Write(data + taken, sizeBytes - taken, [](uint32_t value,unsigned width) { HleFifoWrite(value,width); });
     return;
 #endif
 

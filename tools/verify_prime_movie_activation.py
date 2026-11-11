@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[2]
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def main():
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--probe',type=Path,required=True);ap.add_argument('--checkpoint',type=Path,required=True);a=ap.parse_args()
-    probe=json.loads(a.probe.read_text(encoding='utf-8-sig'));log=Path(probe['log']);exe=ROOT/'recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe'
+    probe=json.loads(a.probe.read_text(encoding='utf-8-sig'));log=Path(probe['log']);exe=ROOT/'recomp/build/RM3E01_00_runtime_link_probe/Corruption_3 PC.exe'
     assert sha(exe)==probe['executable_sha256'] and sha(log)==probe['log_sha256']
     assert probe['alive_at_deadline'] and probe['gpu_validation_requested'] and not probe['failure_logged']
     text=log.read_text(encoding='utf-8',errors='replace')

@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "request": "Reduce host overhead on the game thread (points 1-4 of the performance report); indexed vertices deferred",
+  "evidence": "Unattended stack profile: 33.7% of game-thread samples ended in host DLLs. Attributed to their EXE callers: time base reads ~11-13% (all from OSGetTime 0x804E824C called by CGraphics BeginScene 0x803E9F78, i.e. the wait for the previous frame's GPU breakpoint), GX lock wait ~6% (host_lock_wait_ms 1.0-3.0 s per 10 s), F9 host sampler ~4%, log stream formatting ~2.3%, disc read path ~1%.",
+  "applied": {
+    "1_performance_panel_default_off": "F9 panel starts hidden; the choice is saved ([prime] show_performance_panel). While visible it samples host CPU on the game thread and enables producer profiling.",
+    "2_io_logging": "Disc reads no longer re-read every byte for an FNV check nor log 3 lines each; IOS di/kd/ioctl lines likewise. The first 32 per site are still logged; WII_COMPILED_TRACE_PRIME_IO=1 restores all (runtime_log.h RtLogRepeated). std::cerr now writes whole lines per thread (one pipe write per line, lines no longer interleave between threads).",
+    "texture_decode_pool_fix": "DecodePool::run: helpers that start after the caller returned no longer touch its stack (shared-owned state). This was the cause of the Main Menu crash (and stack corruption seen as a fault in webgpu_dawn.dll).",
+    "crash_log_module": "Structured exceptions now log the faulting module and offset."
+  },
+  "not_applied": {
+    "3_time_base": "Discarded after measuring: the reads are inside the BeginScene wait loop, so cheaper reads do not raise FPS.",
+    "4_gpu_lock_yield_inside_display_lists": "Implemented and reverted: the yield never triggered (dl_yields=0), so the waits happen outside display lists (copies, texture creation, frame seal). Unproven synchronization changes were not kept.",
+    "display_copy_bind_group_cache": "Still reverted pending a stable baseline.",
+    "indexed_vertices": "Deferred by the user."
+  },
+  "validation": {
+    "unattended_100s_runs": "two runs, 60.0 FPS in all 8 windows each (previously 57-59), 0 crashes",
+    "texture_decode_verify": "8449 checked, 0 mismatched (stable snapshot)",
+    "console_log_size_100s": "0.22 MB (about 0.8 MB before)",
+    "remaining": "host lock wait still 0.5-3 s per 10 s in the unattended scene; source outside display lists, not yet located"
+  }
+}

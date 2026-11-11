@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-02",
+  "game": "RM3E01, disc 0, revision 0",
+  "symptom": "First person: vertical look reacts at once, horizontal feels slow when looking to the sides, with mouse and gamepad.",
+  "correction_to_earlier_notes": "20261025_prime_mouse_look.json and the old header said the factor is applied as an angular velocity. It only is when the factor is 0 (damping). Otherwise 0x801799A8 applies a torque.",
+  "game_path": {
+    "0x801799A8": "target = factor * speed * surface; rate capped with SetAngularVelocityOR at speed * surface; torque = clamp(|target - current| / (speed * surface), 0, 1) * 0x802E6D20 (CTweakPlayer +0x3C/+0x5C/+0x7C by sensitivity, then surface); factor below 1e-5: rate *= 60 * dt * CTweakPlayer +0xBC.. (0.45). Quick turn: 0x8067BDCC frame counter with RotateToOR. +0x3AD4 timer zeroes the turn (grapple targets).",
+    "0x80137F40": "Orientation advances first-order, q + dt * 0.5 * (0, w) * q, with the rate from before this frame's torque; momentum += dt * torque. Normalized when added, so the angle is 2 * atan(w * dt / 2).",
+    "0x80137A58": "Rate +0x184.. = momentum +0x16C.. / (mass +0x154 * moment scale +0x158)."
+  },
+  "live_values": "Read from the running game with the read-only peek: turn speed 1.0, surface multiplier 2.5 (Standard), so 2.5 rad/s = 143 deg/s; torque tweak 14000; mass 200, moment scale 1.0; damping 0.45.",
+  "cause": "Three limits pitch never had: cap of 143 deg/s (12 pixels per frame at 0.2 deg/pixel, the excess was lost); 14000 / 2.5 / 200 / 60 = 47% of the rate error closed per frame; one frame of lag because the torque only reaches the orientation on the next frame.",
+  "fix": "New post-hook on 0x801799A8, prologue 9421fde0 (prepare_prime_runtime_hooks.py). PrimeMouseLookAfterTurn keeps writing the clamped factor, because 0x8017A208 uses it for movement, and adds the delta to g_turnDx. PrimeMouseLookAfterMove then writes rate +0x18C, momentum +0x174 and clears torque +0x1BC, only when the turn hook accepted input, orbit is 0, no quick turn is running and +0x3AD4 is not positive. YawRate = 2 * tan(angle / 2) / dt, angle limited to 2.3 rad per frame.",
+  "gamepad": "The right stick goes through PrimeMouseLook::AddMotion, so it needs no code of its own. 'Camera speed' above 143 deg/s now takes effect horizontally. The default of 220 was capped before; the user's config has 125.",
+  "validation": {
+    "unit_tests": "mkw_prime_mouse_look_tests covers YawRate against the game's integrator formula; test_graphics.ps1 ALL PASSED (275 gx_fifo, 8 blob cache, 36 render policy, 29 ctest, python).",
+    "in_game": "qa_replay selfcheck (label yaw_hook) with a read-only memory sampler. The recording has one motion, 140,-40 pixels at frame 8227, sensitivity 0.2. Measured yaw -27.9999 deg (expected -28), pitch +7.998 deg (expected +8), peak rate 29.6 rad/s, rate 0 two samples later. 0 errors in the replay report.",
+    "not_tested": "The user's own feel with mouse and gamepad, grapple targets, quick turn, moving while turning, and the gamepad path in game (same function, no pad recording exists)."
+  },
+  "side_effects": "Older QA recordings with mouse motion turn further than when recorded, so replays such as hangar can diverge. Horizontal mouse feels faster at the same sensitivity."
+}

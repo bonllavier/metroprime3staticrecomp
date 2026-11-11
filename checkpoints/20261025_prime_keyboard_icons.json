@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "request": "Replace the game's Wii button icons with the keyboard/mouse keys of the primary mapping, fully automated, as an option off by default.",
+  "game_side": {
+    "hud_icons_by_name": [
+      "TXTR_IconJumpButton 9a5c38f61c32950a",
+      "TXTR_IconFireButton e15ba218bc67c381",
+      "TXTR_IconVisorSelectButton 67e306e5055ad34f",
+      "TXTR_IconHyperButton ce6469fe7e203475"
+    ],
+    "text_tags": "CTextParser tags (DOL strings 0x8059D8F8..): &image=0x<id>; / &image=SI,sx,sy,0x<id>; / &image=A,fps,0x<id>,...; 1,720 tags in 3,064 STRG resources; STRG v3 is UTF-8",
+    "pak_format": "version 2, header 0x40 + MD5, sections STRG (named resources: name, type, u64 id) / RSHD (compressed flag, type, id, size, offset) / DATA; compressed resources are CMPD blocks (u32 flags<<24|size, u32 decompressed size) whose payload is segmented LZO1X: s16 size per 16 KiB segment, negative = stored",
+    "txtr": "u32 Retro format (0 I4,1 I8,2 IA4,3 IA8,4 C4,5 C8,6 C14x2,7 RGB565,8 RGB5A3,9 RGBA8,10 CMPR), u16 w, u16 h, u32 mips, [palette], tiled image data stored bottom-up",
+    "aurora_key": "tex1_<w>x<h>_<XXH64(base level, seed 0)>[_<XXH64(referenced TLUT range)>]_<GX format>.png; indexed recursively from <UserData>/texture_replacements once at startup"
+  },
+  "table": "51 textures (sweep of every <=64 px texture of the GUI paks added A x4 incl. TXTR_IconFireButton, B RGB565, 64x32 D-pad pictures x5, stick up 64x32 and the four stick diagonals) (A x5, B x3, Z x4, C x4, - x2, + x2, 1 x2, 2, HOME?, D-pad x2, stick x5, shake x2, remote tilt/push x3); embedded in runtime/src/hle/input/prime_key_icons.cpp, copy in recomp/config/RM3E01_00/keyboard_icon_textures.json; shared pixel data: B_Default=IconJumpButton, Rev_Minus=IconVisorSelectButton, Rev_Plus=IconHyperButton, RevZButtonOff=RevCButtonOff (left original).",
+  "uncertain": [
+    "StartButtonOut (plain grey circle, options 'Exit') mapped to HOME",
+    "128x115 Wii Remote tilt animation (Metroid1.pak) mapped to push/pull (E / Q)",
+    "pointer icon 6a74653492612ba7 left original"
+  ],
+  "implementation": {
+    "runtime": "PrimeKeyIcons::Generate (GDI+ via the llvm-mingw headers, needs <objidl.h> before <gdiplus.h>; gdiplus linked in cmake/PublicProducts.cmake): rounded key cap, auto-fitted bold Segoe UI, 4x the texture size, rows flipped; labels from PrimeKeyBindings slot 0: universal shorts for Shift/Ctrl/Alt/Esc/Enter/Tab/Win/arrows, otherwise GetKeyNameTextW through a USB-HID-usage -> PS/2 set 1 table (OS language and active layout: Ñ, Ö, Espacio/Space/Leertaste); mouse labels Spanish when the Windows UI language is Spanish, English otherwise",
+    "startup": "main.cpp before aurora_initialize: when [prime] keyboard_icons (env WII_COMPILED_PRIME_KEYBOARD_ICONS) the icons are written and allowTextureReplacements is forced on",
+    "ui": "F1 > Controles checkbox (restart)",
+    "tools": "recomp/tools/prime_icons/ (pak reader, LZO, TXTR decoder, tag scanner, XXH64, table builder) + README; sweep_small.py / pick_candidates.py (all small GUI textures as sheets, hand-picked positions resolved to hashes)"
+  },
+  "validation": {
+    "build": "WiiCompiled.exe 161,316,352 bytes, 2026-10-25 07:08",
+    "smoke": "40 s launch: '[prime-key-icons] 36/36 icons written', Aurora 'Indexed 36 texture replacements'; generated sheet reviewed (labels follow the user's bindings: Num 1/Num 2 for 1/2, 1/2 for +/-, Clic med. on D-pad down); second 35 s run with Windows key names: 36/36 written and indexed",
+    "in_game": "first QA (user, 07:00): the Combat Visor prompt showed the 2 key cap in place of the - button, correct orientation; the A of that prompt (TXTR_IconFireButton) was missing from the table and is now included"
+  }
+}

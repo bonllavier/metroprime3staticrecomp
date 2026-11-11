@@ -139,7 +139,7 @@ def main() -> int:
         },
         "runtime_trace": {
             "build_result": "PASS",
-            "executable_path": "recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe",
+            "executable_path": "recomp/build/RM3E01_00_runtime_link_probe/Corruption_3 PC.exe",
             "executable_sha256_for_original_trace": RUNTIME_EXE_SHA256,
             "executable_artifact_available": False,
             "executable_note": "A later diagnostic rebuild replaced this binary. The preserved trace log is still hash-verified; the current executable is not attributed to this older run.",
@@ -168,7 +168,7 @@ def main() -> int:
             "interpretation": "Ghidra's FUN_800CC804 decompilation and the runtime callsite/argument trace identify Wii Home Button resources. The callback value is already present in the reused stack slot at function entry; the request remains state 0 at the sampled dispatch. This trace does not establish the value's original writer or the RSO load base.",
             "last_progress": "The probe reached USB open plus three queued IOCTLV requests; no later IPC packet appeared before the harness stopped the still-running process. No game screen was rendered.",
         },
-        "conclusion": "The offset is within section 1 and translates/compiles as part of a six-function probe with no unsupported instructions or invalid SSA. This does not prove that the game loads RSO_rhbm at a section base that makes 0x0101C690 valid, that the request field is an initialized callback, or that this candidate is a semantic function boundary. Nothing was integrated into WiiCompiled.exe.",
+        "conclusion": "The offset is within section 1 and translates/compiles as part of a six-function probe with no unsupported instructions or invalid SSA. This does not prove that the game loads RSO_rhbm at a section base that makes 0x0101C690 valid, that the request field is an initialized callback, or that this candidate is a semantic function boundary. Nothing was integrated into Corruption_3 PC.exe.",
         "invariants": {
             "matching_dol_modified": False,
             "iso_modified": False,

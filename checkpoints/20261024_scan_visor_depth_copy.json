@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-24",
+  "game": "RM3E01_00",
+  "symptom": "Fatal error 'Unsupported Prime raw color texture-copy mode' when opening the scan visor",
+  "log": "[prime-raw-texture-copy-rejected] trigger=0x1003b pe=0x3 stride_word=0x8 source_xy=0x1f916 source_wh=0x7c1f",
+  "diagnosis": "PE pixel format 3 (Z24) marks a depth copy (GXCopyTex switches the PE format for Z destinations). The 4-bit copy format 0xB is GX_TF_Z16, which the SDK encodes as 11 (libogc GX_SetTexCopyDst: if fmt == GX_TF_Z16 lfmt = 11). Rectangle 32x32 at (278,126); stride 256 bytes = 8 Z16 blocks of 32 bytes. The raw-BP adapter only accepted colour copies.",
+  "fix": "runtime/include/hle/prime_raw_bp.h DecodeColorCopy: depth sources map nibble 1 -> GX_TF_Z8 (8x4 blocks), 0xB -> GX_TF_Z16 (4x4, 16 bpp), 6 -> GX_TF_Z24X8 (4x4, 32 bpp), the depth formats Aurora resolves from the depth buffer; other depth nibbles (Z4, Z8M, Z8L, Z16L) still reject explicitly.",
+  "tests": "gx_fifo_storage_tests: scan-visor Z16 copy decodes to format 0x13, 32x32, 2048 bytes; Z8 decodes; Z8M rejects; existing colour cases unchanged. Both input/FIFO test executables pass.",
+  "follow_ups": [
+    "Second visor copy: GX_CTF_Z8L (nibble 0xA). Added Z4/Z8M/Z8L/Z16L depth conversions (upstream aurora semantics) and their sample-format compatibility; see 20261024_upstream_aurora_selected.json.",
+    "The visor then reads the Z8L copy on the CPU: 'Unsupported CPU-visible EFB copy format 0x3a'. efb_ram_encoder.cpp now describes GX_CTF_Z4 as I4, GX_TF_Z8/GX_CTF_Z8M/GX_CTF_Z8L as I8 and GX_CTF_Z16L as IA8 (the conversion leaves the depth byte in R and the second byte in A, so IA8 Z16 lands as [middle, high])."
+  ],
+  "follow_up_intensity": "Third visor copy rejected: trigger=0x18213 pe=0x41 source 640x448 half-scale, stride 1280. BP bit 15 selects the intensity copy formats (nibble 1 = GX_TF_I8 -> 320x224). prime_raw_bp.h now accepts GX_TF_I4/I8/IA4/IA8 (nibbles 0-3) with their block shapes (I4 8x8, I8/IA4 8x4, IA8 4x4); Aurora already converts and RAM-encodes them. Test added for the exact visor registers.",
+  "scan_targeting": {
+    "symptom": "Visor opens but nothing can be scanned and the blue outline of scannable objects is missing",
+    "capture": "capture_20261024_022256: scene draws tag objects with dst alpha IDs (12, 24, 32, 40, 52, 68, 80; 0 = not scannable, blend ONE/ZERO so the shader dst-alpha path writes them). Then A8 91x62 (host) around the reticle, Z16 and Z8L of the same rectangle, a full-screen A8 and the half-scale I8.",
+    "cause": "The game reads the reticle probe copies on the CPU. Aurora downloaded CPU-visible copies only up to 256 bytes (lens-flare probe); the visor's A8 (~768 bytes), Z16 (2048) and Z8L (1024) stayed GPU-only, so guest RAM was stale and no target was found.",
+    "fix": "aurora lib/gfx/efb_ram_copy.cpp: kAsyncReadbackMaxBytes 256 -> 4096 (asynchronous, one-frame-late readback, 32 destination slots)."
+  },
+  "scan_visuals": {
+    "symptom": "Scanning works, but the blue outline/tint of scannable objects is missing (Wii reference: trooper rimmed and tinted blue, scene dimmed)",
+    "capture": "capture_20261024_024110 with WII_COMPILED_DRAW_DUMP_ALL_COPIES: copy3 saves the top-left quarter (0x8073c3c0); copy4 = full-screen A8 object IDs (0x90118800, correct: trooper 80, others 8/32/60...); copy5 = half-scale I8 scene; draw 442 (9 TEV stages) samples the ID copy as I8 (neighbour-equality edge count) and as C8 (palette colour per ID) into the quarter; copy6 = result (0x90118800); draw 443 restores the quarter, draw 444 composites the result full screen.",
+    "finding": "copy6 had the dimmed grey scene but every tagged object black/alpha 0: the C8 lookup returned nothing. copy_ref_matches_texobj required copy_texture_format_compatible(A8, C8), which was false, so the C8 sample read guest RAM (never downloaded for a full-screen copy) instead of the dynamic palette conversion of the copy.",
+    "fix": "aurora gx.hpp copy_texture_format_compatible: 8-bit copies (A8, R8, G8, B8, I8, Z8, Z8M, Z8L) are sampleable as GX_TF_C8 and 4-bit copies (R4, I4, Z4) as GX_TF_C4, through resolve_dynamic_palette_texture (index from the copy texture's R channel). C14X2 stays unmatched."
+  },
+  "validation": {
+    "build": "linked 2026-10-24 02:57",
+    "tests": "mkw_gx_fifo_storage_tests passes",
+    "user": "scan visor colours and outlines now match the Wii reference (trooper, crates, tank, door); top-left artefact gone"
+  },
+  "audit_2026-10-24": {
+    "goal": "Find other effects hit by the same classes of bug",
+    "proactive": "prime_raw_bp.h accepts the remaining colour channel copies GX_CTF_RA4 (2), RA8 (3), R8/G8/B8 (8/9/0xA), RG8/GB8 (0xB/0xC) with their block shapes (tests added); only nibble 1 and >0xC stay rejected for colour sources.",
+    "detectors": [
+      "[render-fidelity] texture at an EFB copy does not match it (format/size) -> reads guest RAM (logged once per shape, gx.cpp find_copy_texture_for_texobj)",
+      "[render-fidelity] nonzero dst alpha with a source-alpha colour blend uses the blend-constant path (logged once per value/blend, gx.cpp)"
+    ],
+    "log_review": "Last 8 session logs: besides the fixed visor errors only a one-off boot-time indexed light load with an unset array (harmless) and unhandled SPR 542/543/921 writes.",
+    "not_detectable_without_hooks": "CPU reads of copies larger than 4 KB (would need guest-read tracking of EFB copy destinations)."
+  }
+}

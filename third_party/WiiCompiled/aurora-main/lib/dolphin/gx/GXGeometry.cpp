@@ -3,6 +3,10 @@
 #include "dolphin/gd/GDGeometry.h"
 #include "../../gx/fifo.hpp"
 
+// See GXAuroraVtxStateEpoch: advanced by every vertex-state mutation below and by
+// the CP decoder's VCD/VAT handlers.
+extern "C" u64 g_gxVtxStateEpoch = 1;
+
 static inline void SETVCDATTR(GXAttr attr, GXAttrType type) {
   switch (attr) {
   case GX_VA_PNMTXIDX:
@@ -153,14 +157,22 @@ static inline void SETVAT(u32* va, u32* vb, u32* vc, GXAttr attr, GXCompCnt cnt,
   }
 }
 
+// Does the decoder's live register differ from `type` although the shadow
+// may not change? That happens after raw display-list CP loads, which the
+// writer records (fifo flags); the shadow itself catches every SDK change.
+// g_gxState belongs to the decoder: read it only while that is this thread.
 static inline bool AuroraVtxDescDiffers(GXAttr attr, GXAttrType type) {
-  return attr >= GX_VA_PNMTXIDX && attr < GX_VA_MAX_ATTR && g_gxState.vtxDesc[attr] != type;
+  if (attr < GX_VA_PNMTXIDX || attr >= GX_VA_MAX_ATTR) return false;
+  if (aurora::gx::fifo::vertex_cp_unknown_vcd()) return true;
+  return !aurora::gx::fifo::async_enabled() && g_gxState.vtxDesc[attr] != type;
 }
 
 static inline bool AuroraVtxAttrFmtDiffers(GXVtxFmt vtxfmt, GXAttr attr, GXCompCnt cnt, GXCompType type, u8 frac) {
   if (vtxfmt < GX_VTXFMT0 || vtxfmt >= GX_MAX_VTXFMT || attr < GX_VA_POS || attr >= GX_VA_MAX_ATTR) {
     return true;
   }
+  if (aurora::gx::fifo::vertex_cp_unknown_vat(static_cast<u8>(vtxfmt))) return true;
+  if (aurora::gx::fifo::async_enabled()) return false;
   const auto& fmt = g_gxState.vtxFmts[vtxfmt].attrs[attr];
   return fmt.cnt != cnt || fmt.type != type || fmt.frac != frac;
 }
@@ -185,12 +197,14 @@ void GXSetVtxDesc(GXAttr attr, GXAttrType type) {
       __gx->vcdHi != oldVcdHi || __gx->hasNrms != oldHasNrms || __gx->hasBiNrms != oldHasBiNrms ||
       __gx->nrmType != oldNrmType) {
     __gx->dirtyState |= 8;
+    ++g_gxVtxStateEpoch;
   }
 }
 
 void GXSetSourceVtxDesc(GXAttr attr, GXAttrType type) {
-  if (attr >= GX_VA_PNMTXIDX && attr < GX_VA_MAX_ATTR) {
+  if (attr >= GX_VA_PNMTXIDX && attr < GX_VA_MAX_ATTR && g_gxState.sourceVtxDesc[attr] != type) {
     g_gxState.sourceVtxDesc[attr] = type;
+    ++g_gxVtxStateEpoch;
   }
 }
 
@@ -216,6 +230,7 @@ void GXSetVtxDescv(GXVtxDescList* list) {
       __gx->vcdHi != oldVcdHi || __gx->hasNrms != oldHasNrms || __gx->hasBiNrms != oldHasBiNrms ||
       __gx->nrmType != oldNrmType) {
     __gx->dirtyState |= 8;
+    ++g_gxVtxStateEpoch;
   }
 }
 
@@ -226,7 +241,10 @@ void GXClearVtxDesc() {
   __gx->hasNrms = 0;
   __gx->hasBiNrms = 0;
   __gx->dirtyState |= 8;
+  ++g_gxVtxStateEpoch;
 }
+
+u64 GXAuroraVtxStateEpoch() { return g_gxVtxStateEpoch; }
 
 void GXSetVtxAttrFmt(GXVtxFmt vtxfmt, GXAttr attr, GXCompCnt cnt, GXCompType type, u8 frac) {
   CHECK(vtxfmt >= GX_VTXFMT0 && vtxfmt < GX_MAX_VTXFMT, "invalid vtxfmt {}", underlying(vtxfmt));
@@ -243,6 +261,7 @@ void GXSetVtxAttrFmt(GXVtxFmt vtxfmt, GXAttr attr, GXCompCnt cnt, GXCompType typ
   if (aurora::gx::fifo::in_display_list() || auroraStateChanged || *va != oldVa || *vb != oldVb ||
       *vc != oldVc) {
     __gx->dirtyState |= 0x10;
+    ++g_gxVtxStateEpoch;
     __gx->dirtyVAT |= static_cast<u8>(1 << vtxfmt);
   }
 }
@@ -269,6 +288,7 @@ void GXSetVtxAttrFmtv(GXVtxFmt vtxfmt, const GXVtxAttrFmtList* list) {
   if (aurora::gx::fifo::in_display_list() || auroraStateChanged || *va != oldVa || *vb != oldVb ||
       *vc != oldVc) {
     __gx->dirtyState |= 0x10;
+    ++g_gxVtxStateEpoch;
     __gx->dirtyVAT |= static_cast<u8>(1 << vtxfmt);
   }
 }
@@ -290,6 +310,23 @@ void GXSetArray(GXAttr attr, const void* data, u32 size, u8 stride, bool le) {
 
   // Write array stride
   GX_WRITE_CP_REG(CP_REG_ARRAYSTRIDE_ID | cpIdx, stride);
+}
+
+bool GXSetArrayCopy(GXAttr attr, const void* data, u32 size, u8 stride) {
+  namespace fifo = aurora::gx::fifo;
+  constexpr u32 kMaxCopyBytes = 256 * 1024;
+  if (!fifo::async_enabled() || fifo::on_decoder_thread() || fifo::in_display_list() || fifo::in_begin() ||
+      data == nullptr || size == 0 || size > kMaxCopyBytes)
+    return false;
+  const GXAttr cpAttr = attr == GX_VA_NBT ? GX_VA_NRM : attr;
+  const u32 cpIdx = cpAttr - GX_VA_POS;
+  if ((cpIdx & ~0xFu) != 0) return false;
+  GX_WRITE_AURORA(GX_LOAD_AURORA_ARRAYDATA | cpIdx);
+  GX_WRITE_U32(size);
+  GX_WRITE_U8(0);
+  fifo::write_data(data, size);
+  GX_WRITE_CP_REG(CP_REG_ARRAYSTRIDE_ID | cpIdx, stride);
+  return true;
 }
 
 void GXSetTexCoordGen2(GXTexCoordID dst, GXTexGenType type, GXTexGenSrc src, u32 mtx, GXBool normalize, u32 postMtx) {

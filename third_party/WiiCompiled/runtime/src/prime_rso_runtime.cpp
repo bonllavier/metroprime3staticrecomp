@@ -6,6 +6,8 @@
 #include "runtime_log.h"
 #include "hle/prime_video_trace.h"
 #include <array>
+#include <atomic>
+#include <cstring>
 #include <cstdio>
 #include <memory>
 #include <stdexcept>
@@ -14,6 +16,11 @@
 #include <vector>
 #include <windows.h>
 #include <bcrypt.h>
+
+// Title / file-select front end (its RSO is bound while the menus run): host
+// overlays that belong to gameplay stay hidden meanwhile.
+namespace { std::atomic<int> g_primeFrontEndModules{0}; }
+bool PrimeFrontEndActive() { return g_primeFrontEndModules.load(std::memory_order_relaxed) > 0; }
 
 extern const PrimeRsoModule* const g_primeRuntimeRsoModules[];
 extern const size_t g_primeRuntimeRsoModuleCount;
@@ -138,6 +145,7 @@ std::unique_ptr<Binding> Bind(uint32_t prolog, const PrimeRsoModule& module) {
     }
     if (!value->functions.count(value->epilog))
         throw std::runtime_error("SDK RSO epilog is outside the verified translated entries");
+    if (std::strcmp(module.name, "ScriptGUIScreenFrontEndUI") == 0) g_primeFrontEndModules.fetch_add(1, std::memory_order_relaxed);
     RT_LOG(RT_TAG_RUNTIME) << "[prime-rso-bind] module=" << module.name << " base=0x" << std::hex << base
         << " prolog=0x" << prolog << std::dec << " relocations=" << module.relocationCount
         << " functions=" << module.functionCount << " thunks=" << value->thunks.size()
@@ -184,9 +192,46 @@ extern "C" void PPC_RsoImportCall(CpuContext* cpu, uint32_t moduleId, uint32_t i
         <<" result=0x"<<cpu->gpr[3]<<" r29=0x"<<cpu->gpr[29]<<" r30=0x"<<cpu->gpr[30]<<" r31=0x"<<cpu->gpr[31]<<std::dec<<std::endl;
 }
 
+namespace PrimeRsoRuntime {
+// Calls into RSO module code are frequent (much of the game logic lives in modules): every one used
+// to scan each loaded module's function and thunk maps, look the function up again and bump a
+// per-target hit counter. A direct-mapped memo of the resolved (binding, record) pair skips all of
+// that after the first call of a target. Any change to the binding set (a module bound, replaced or
+// retired) bumps the generation and invalidates every entry; module epilogs are never memoised, and
+// the two per-call traces (front-end bind, movie gate) are kept as flags.
+struct RsoCallMemo {
+    uint32_t target = 0;
+    uint32_t generation = 0;
+    Binding* binding = nullptr;
+    const RawDispatchRecord* record = nullptr;
+    uint8_t flags = 0;
+};
+constexpr uint8_t kRsoMemoFrontEnd = 1, kRsoMemoMovieGate = 2;
+constexpr unsigned kRsoMemoBits = 10;
+std::array<RsoCallMemo, 1u << kRsoMemoBits> g_rsoCallMemo{};
+uint32_t g_rsoBindingGeneration = 1;
+inline RsoCallMemo& RsoMemoSlot(uint32_t target) {
+    return g_rsoCallMemo[((target >> 2) * 2654435761u) >> (32 - kRsoMemoBits)];
+}
+void TraceMovieGate(const CpuContext* cpu) {
+    if (!std::getenv("WII_COMPILED_TRACE_PRIME_MOVIE_CONTROL")) return;
+    static uint32_t gateCalls=0;
+    const uint32_t n=gateCalls++;
+    if(n<8 || (n<4800 && n%120==0)) RT_LOG(RT_TAG_RUNTIME)<<"[prime-front-gate] call="<<n<<" result="<<cpu->gpr[3]<<std::endl;
+}
+}  // namespace PrimeRsoRuntime
+
 bool PRIME_RSO_TryInvoke(uint32_t target, CpuContext* cpu) {
     using namespace PrimeRsoRuntime;
     if (!cpu || !GuestRam(target)) return false;
+    if (auto& memo = RsoMemoSlot(target); memo.target == target && memo.generation == g_rsoBindingGeneration) {
+        struct Guard { Binding& value; Guard(Binding& b) : value(b) { ++value.calls; } ~Guard() { --value.calls; } } guard(*memo.binding);
+        const uint8_t flags = memo.flags;
+        if (flags & kRsoMemoFrontEnd) PrimeTraceFrontEnd(cpu);
+        const bool dispatched = TryDispatchRawCpuTarget(memo.record, cpu);
+        if (flags & kRsoMemoMovieGate) TraceMovieGate(cpu);
+        return dispatched;
+    }
     Binding* binding = nullptr;
     for (const auto& item : bindings) {
         if (item.second->functions.count(target) || item.second->thunks.count(target)) {
@@ -204,6 +249,7 @@ bool PRIME_RSO_TryInvoke(uint32_t target, CpuContext* cpu) {
                 throw std::runtime_error("Cannot replace an RSO binding while its host code is active");
             binding = candidate.get();
             bindings[module->id] = std::move(candidate);
+            ++g_rsoBindingGeneration;
             break;
         }
         if (!binding) return false;
@@ -218,24 +264,32 @@ bool PRIME_RSO_TryInvoke(uint32_t target, CpuContext* cpu) {
         if (epilog && binding->calls != 1)
             throw std::runtime_error("Cannot unload an RSO while another translated module frame is active");
         const bool dolCaller = cpu->lr >= 0x80000000u && cpu->lr < 0x80590000u;
-        if(module->id==3 && PPC_RsoNominalAddress(3,target)==0x806AB8BCu) PrimeTraceFrontEnd(cpu);
+        const bool frontEndBind = module->id==3 && PPC_RsoNominalAddress(3,target)==0x806AB8BCu;
+        const bool movieGate = module->id==3 && PPC_RsoNominalAddress(3,target)==0x806AB6A0u;
+        if (!epilog) {
+            // Filled before the call: a binding change inside it bumps the generation and drops it.
+            {
+                auto& memo = RsoMemoSlot(target);
+                memo = {target, g_rsoBindingGeneration, binding, &function->second,
+                        static_cast<uint8_t>((frontEndBind ? kRsoMemoFrontEnd : 0) | (movieGate ? kRsoMemoMovieGate : 0))};
+            }
+        }
+        if(frontEndBind) PrimeTraceFrontEnd(cpu);
         const bool trace = binding->hits[target]++ == 0 && (binding->hits.size() <= 32 || dolCaller);
         if (trace) RT_LOG(RT_TAG_RUNTIME) << "[prime-rso-enter] target=0x" << std::hex << target
             << " nominal=0x" << PPC_RsoNominalAddress(binding->module->id, target)
             << " sp=0x" << cpu->gpr[1] << " lr=0x" << cpu->lr << std::dec << std::endl;
         dispatched = TryDispatchRawCpuTarget(&function->second, cpu);
-        if(module->id==3 && PPC_RsoNominalAddress(3,target)==0x806AB6A0u
-            && std::getenv("WII_COMPILED_TRACE_PRIME_MOVIE_CONTROL")) {
-            static uint32_t gateCalls=0;
-            const uint32_t n=gateCalls++;
-            if(n<8 || (n<4800 && n%120==0)) RT_LOG(RT_TAG_RUNTIME)<<"[prime-front-gate] call="<<n<<" result="<<cpu->gpr[3]<<std::endl;
-        }
+        if(movieGate) TraceMovieGate(cpu);
         if (trace) RT_LOG(RT_TAG_RUNTIME) << "[prime-rso-return] target=0x" << std::hex << target
             << " sp=0x" << cpu->gpr[1] << " lr=0x" << cpu->lr << " r3=0x" << cpu->gpr[3]
             << std::dec << " dispatched=" << dispatched << std::endl;
         }
         if (epilog) {
             bindings.erase(module->id);
+            ++g_rsoBindingGeneration;
+            if (std::strcmp(module->name, "ScriptGUIScreenFrontEndUI") == 0 && g_primeFrontEndModules.load() > 0)
+                g_primeFrontEndModules.fetch_sub(1, std::memory_order_relaxed);
             RT_LOG(RT_TAG_RUNTIME) << "[prime-rso-retire] module=" << module->name
                 << " reason=original_epilog_return active_frames=0" << std::endl;
         }

@@ -1,3 +1,5 @@
+#include <cstdlib>
+#include <cstring>
 #include "gx.hpp"
 #include "__gx.h"
 #include "../../gx/fifo.hpp"
@@ -18,13 +20,25 @@ static GXAttr sWriteAttr = GX_VA_NULL;
 static u32 sWriteAttrComps = 0;
 
 namespace aurora::gx::fifo {
+// A chunk must never be cut inside GXBegin..GXEnd (hand_off/commit check this).
+bool in_begin() { return sInBegin; }
+
 void abort_vertex_writer() {
+  if (async_enabled() && !on_decoder_thread()) {
+    // The buffer holds every command since the last hand-off, not just the
+    // open packet: drop only the incomplete GXBegin packet (3-byte header
+    // written before sBeginFifoSize was recorded) and keep the rest in order.
+    if (sInBegin && sBeginFifoSize >= 3 && sBeginFifoSize <= get_buffer_size()) {
+      detail::sBufferSize = sBeginFifoSize - 3;
+    }
+  } else {
+    clear_buffer();
+  }
   sInBegin = false;
   sBeginNVerts = 0;
   sBeginFifoSize = 0;
   sWriteAttr = GX_VA_NULL;
   sWriteAttrComps = 0;
-  clear_buffer();
 }
 } // namespace aurora::gx::fifo
 
@@ -580,8 +594,16 @@ void GXEnd() {
     sWriteAttr = GX_VA_NULL;
     sWriteAttrComps = 0;
   }
+  // Draining after every primitive costs a renderer lock and a decoder pass per
+  // draw. With WII_COMPILED_AURORA_LAZY_END_DRAIN=1 the draw stays queued until
+  // the next state mutation, copy or frame end drains (all of which drain first).
+  static const bool lazyEndDrain = [] {
+    const char* value = std::getenv("WII_COMPILED_AURORA_LAZY_END_DRAIN");
+    return value && std::strcmp(value, "1") == 0;
+  }();
   if (!aurora::gx::fifo::in_display_list()) {
-    aurora::gx::fifo::drain();
+    if (aurora::gx::fifo::async_enabled()) aurora::gx::fifo::commit();
+    else if (!lazyEndDrain) aurora::gx::fifo::drain();
   }
 }
 

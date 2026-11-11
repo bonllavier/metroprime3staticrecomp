@@ -17,6 +17,7 @@
 
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
 void PrimeKeyboardMouseHandleEvent(const SDL_Event&);
+namespace PrimeMouseLook { void ServiceHost(); }
 #endif
 
 extern "C" bool g_dynamicAspectRatioEnabled;
@@ -80,6 +81,9 @@ inline void ProcessAuroraEvents(const AuroraEvent* events) {
     }
 
     bool surfaceChanged = false;
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    PrimeMouseLook::ServiceHost();
+#endif
     for (const AuroraEvent* event = events; event->type != AURORA_NONE; ++event) {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
         if(event->type==AURORA_SDL_EVENT) PrimeKeyboardMouseHandleEvent(event->sdl);

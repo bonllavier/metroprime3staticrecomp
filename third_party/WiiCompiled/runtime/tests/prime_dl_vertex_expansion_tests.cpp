@@ -1,4 +1,5 @@
 #include "hle/prime_dl_vertex_expansion.h"
+#include "hle/prime_deferred_draw.h"
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -24,6 +25,28 @@ int main(){
     publication.Completed(1);Check(publication.NeedsPublish(0));
     publication.Invalidate();Check(publication.NeedsPublish(1));
     PublicationTracker nested;Check(nested.NeedsPublish(1)); // Never inherits a parent's proof.
+    {
+        // Palettes are a separate proof: BP texture/TLUT writes drop only them.
+        PublicationTracker p;
+        Check(p.NeedsPublish(3) && p.NeedsPalettes(3));
+        p.Completed(3);
+        Check(!p.NeedsPublish(3) && !p.NeedsPalettes(3));
+        p.InvalidatePalettes();
+        Check(!p.NeedsPublish(3) && p.NeedsPalettes(3));
+        p.Completed(3);p.Invalidate();
+        Check(p.NeedsPublish(3) && p.NeedsPalettes(3));
+        p.Completed(3);
+        Check(p.NeedsPalettes(4) && p.NeedsPublish(4));  // another format proves nothing
+        // BP registers: texture, TLUT and texture-selection registers touch the
+        // palettes, copies and PE commands everything, colour/blend nothing.
+        Check(BpEffectOf(0x88)==BpEffect::Palettes && BpEffectOf(0xA8)==BpEffect::Palettes);  // image0 slots 0 / 4
+        Check(BpEffectOf(0x98)==BpEffect::Palettes && BpEffectOf(0xBB)==BpEffect::Palettes);  // TLUT words
+        Check(BpEffectOf(0x64)==BpEffect::Palettes && BpEffectOf(0x65)==BpEffect::Palettes);  // TLUT loads
+        Check(BpEffectOf(0x00)==BpEffect::Palettes && BpEffectOf(0x28)==BpEffect::Palettes);  // gen mode, TEV order
+        Check(BpEffectOf(0x52)==BpEffect::All && BpEffectOf(0x45)==BpEffect::All);            // copy, PE done
+        Check(BpEffectOf(0xC0)==BpEffect::None && BpEffectOf(0xE0)==BpEffect::None);          // TEV env, konst
+        Check(BpEffectOf(0x41)==BpEffect::None && BpEffectOf(0x40)==BpEffect::None);          // blend, z mode
+    }
     {
         // Full-domain mappings exercise the strided path; a separate callback
         // path supplies the reference. Include both largest encoded indices,
@@ -147,5 +170,66 @@ int main(){
         Check(parallelOutput==scalarOutput);
         Check(parallelOutput!=previousOutput);
     }
-    std::cout<<"PASS mixed 8/16-bit indices, packed colors, NBT3, IEEE bits and rejected bounds/layouts\n";
+    {
+        // Deferred draws: ExpandCannotFail holds only for fully mapped layouts, and
+        // the decoder's expansion of the decoded payload equals the producer's.
+        std::vector<uint8_t> ram(2u<<20);
+        for(size_t i=0;i<ram.size();++i)ram[i]=uint8_t(i*29+5);
+        const std::vector<Attribute> layout{{12,2,1,0x1000,12,ram.data(),ram.size()},
+                                            {4,0,1,0,0},
+                                            {8,1,1,0x2000,8,ram.data(),ram.size()}};
+        constexpr uint32_t count=37;
+        std::vector<uint8_t> source(count*(2+4+1));
+        for(size_t i=0;i<source.size();++i)source[i]=uint8_t(i*131+17);
+        Check(ExpandCannotFail(source.size(),count,layout,1u<<24));
+        Check(!ExpandCannotFail(source.size()-1,count,layout,1u<<24));      // wrong byte count
+        auto unmapped=layout;unmapped[0].arrayData=nullptr;
+        Check(!ExpandCannotFail(source.size(),count,unmapped,1u<<24));      // per-index reads: stays on the producer
+        auto shortMap=layout;shortMap[2].arrayBytes=255*8;
+        Check(!ExpandCannotFail(source.size(),count,shortMap,1u<<24));      // last index not covered
+        auto grouped=layout;grouped[0].groups=3;
+        Check(!ExpandCannotFail(source.size(),count,grouped,1u<<24));       // NBT3 groups
+        const auto noRead=[](uint32_t,size_t,const uint8_t*&){return false;};
+        std::vector<uint8_t> direct,payload,deferred;
+        Check(Expand(source.data(),source.size(),count,layout,direct,noRead,1u<<24));
+        PrimeDeferredDraw::Encode(0x98|3,count,source.data(),uint32_t(source.size()),layout,payload);
+        PrimeDeferredDraw::View view{};
+        std::vector<Attribute> decoded;
+        Check(PrimeDeferredDraw::Decode(payload.data(),payload.size(),view,decoded));
+        Check(view.command==(0x98|3) && view.count==count && view.sourceBytes==source.size());
+        Check(decoded.size()==layout.size() && decoded[0].arrayData==ram.data() && decoded[2].arrayStride==8);
+        Check(Expand(view.source,view.sourceBytes,view.count,decoded,deferred,noRead,1u<<24));
+        Check(deferred==direct);
+        Check(!PrimeDeferredDraw::Decode(payload.data(),payload.size()-1,view,decoded));   // truncated
+        auto bad=payload;bad[0]^=1;
+        Check(!PrimeDeferredDraw::Decode(bad.data(),bad.size(),view,decoded));             // magic
+
+        // Snapshots: the array bytes the indices read travel in the payload, so the decoder expands
+        // what the producer saw even after the game rewrote the array (Bryyo lava, 2026-11-01).
+        std::vector<PrimeDeferredDraw::Snapshot> snapshots(layout.size());
+        for(size_t a:{size_t(0),size_t(2)}) {
+            const size_t offset=a==0 ? 0 : 2+4;
+            const size_t stride=2+4+1;
+            uint32_t lo=0xFFFFFFFFu,hi=0;
+            for(uint32_t v=0;v<count;++v) {
+                const uint8_t* at=source.data()+v*stride+offset;
+                const uint32_t index=layout[a].indexBytes==2 ? (uint32_t(at[0])<<8|at[1]) : at[0];
+                lo=std::min(lo,index);hi=std::max(hi,index);
+            }
+            snapshots[a]={lo*layout[a].arrayStride,(hi-lo)*layout[a].arrayStride+layout[a].bytes};
+        }
+        std::vector<uint8_t> snapPayload,snapExpanded;
+        PrimeDeferredDraw::Encode(0x98|3,count,source.data(),uint32_t(source.size()),layout,snapPayload,&snapshots);
+        const auto before=ram;
+        for(auto& b:ram)b^=0x5A;                                                          // the game rewrites
+        std::vector<PrimeDeferredDraw::SnapshotUse> uses;
+        Check(PrimeDeferredDraw::Decode(snapPayload.data(),snapPayload.size(),view,decoded,&uses));
+        Check(uses.size()==2);
+        Check(Expand(view.source,view.sourceBytes,view.count,decoded,snapExpanded,noRead,1u<<24));
+        Check(snapExpanded==direct);                                                       // the old values
+        Check(std::memcmp(uses[0].live,uses[0].copy,uses[0].size)!=0);                     // and it can tell
+        ram=before;
+        Check(!PrimeDeferredDraw::Decode(snapPayload.data(),snapPayload.size()-1,view,decoded));
+    }
+    std::cout<<"PASS mixed 8/16-bit indices, packed colors, NBT3, IEEE bits, rejected bounds/layouts, deferred draws\n";
 }

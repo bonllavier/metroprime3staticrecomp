@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-24",
+  "game": "RM3E01_00",
+  "request": "Customizable keyboard/mouse controls in F1 (basic actions), keeping remote push/pull (E/Q)",
+  "implementation": [
+    "runtime/include/hle/prime_key_bindings.h: PrimeKeyBindings API (actions, 2 slots each, capture, reset).",
+    "runtime/src/hle/input/kpad.cpp: 19 actions (A, B, stick 4 directions, Z, C, D-pad 4 directions, +, -, 1, 2, HOME, push, pull) mapped to the existing PrimeKeyboardMouse virtual keys, so the State press/latch semantics and its tests are unchanged. An action is down while any bound input (SDL scancode or mouse button) is down. Capture assigns the next key or mouse button press (F1, F7-F10 ignored) and removes that input from any other slot.",
+    "Defaults equal the previous fixed layout: A = left click / Enter, B = right click / Space, WASD stick, Shift (L/R) = Z, Ctrl (L/R) = C, arrows = D-pad, Esc = +, - = -, 1/2, H = HOME, E = push, Q = pull.",
+    "Config.toml [prime_keys]: action = [\"name\", ...] with SDL scancode names or Mouse Left/Middle/Right/X1/X2; written on every change.",
+    "F1 > Controles: table Accion / Principal / Secundaria; click a cell then press the input, right click clears, buttons to cancel and restore defaults. The mouse always moves the pointer."
+  ],
+  "not_done": "Nunchuk/remote motion gestures beyond push/pull are not mappable yet.",
+  "validation": {
+    "build": "linked 2026-10-24 00:28",
+    "tests": "mkw_prime_wpad_packet_tests and mkw_gx_fifo_storage_tests pass",
+    "user": "pending UI check in F1 > Controles"
+  },
+  "twist_2026-10-24": {
+    "request": "Twist the Wii Remote (roll) for mechanisms such as 'Twist the Wii Remote counterclockwise', keyboard only",
+    "implementation": "PrimeKeyboardMouse Key::TwistLeft/TwistRight (actions twist_left = Z, twist_right = X, remappable in F1). Held: roll moves at 360 deg/s toward +-90 deg; released or both held: returns to level at the same rate; focus loss resets. kpad.cpp: KPAD acc = (sin r, -cos r, 0) (raw WPAD accelerometer encoded from it), horizon (0x34/0x38) = (cos r, sin r), acc_vertical (0x54/0x58) = (sin r, -cos r).",
+    "uncertain": "Sign convention of KPAD roll (counterclockwise positive) is derived from the axis mapping, not observed; if the game turns the wrong way the sign flips in one place.",
+    "validation": {
+      "build": "linked 2026-10-24 03:09",
+      "tests": "prime_wpad_packet_tests twist case passes",
+      "user": "pending: the counterclockwise twist panel"
+    },
+    "first_test": "Not recognised. [prime-twist] log: the virtual remote reached +-90 deg both ways, with and without A held (hold 0x800), acc/horizon/acc_vertical as designed.",
+    "investigation": "Input path: 0x803C2670 calls KPADRead 0x804D9138 (16 entries, copies 132 bytes), WPADGetInfoAsync 0x804F6A2C and KPADGetUnifiedWpadStatus 0x804D9E20 (raw packet, per-sample processing via 0x803C0A24 only for a Nunchuk data format other than 5). The keyboard remote reported dpd_valid_fg = 1 (one mark) and no raw DPD objects, so an IR-pair-based twist/horizon would be unusable.",
+    "second_attempt": "kpad.cpp: dpd_valid_fg = 2 while the pointer is in the window; raw DPD objects carry two sensor-bar marks (centre opposite the pointer, separation 200/distance px, rotated by the twist like the KPAD horizon). Build 03:29, packet tests pass. User test pending."
+  },
+  "gestures_2026-10-24": {
+    "request": "Keyboard triggers for the motion gestures: push/pull, twist, shake, grapple lasso throw/pull, spring ball",
+    "implementation": "PrimeKeyboardMouse gesture generator: lasso_throw (R) and lasso_pull (F) = Nunchuk KPAD z flick +-3 g; spring_jump (T) = Wiimote KPAD y flick -2.5 g (up, since y = -wiiZ); shake (G, held) = Wiimote and Nunchuk x at +-2.5 g, 7 Hz. Flick profile: rise to the peak in 50 ms, reverse to -peak/2 by 100 ms, back to rest at 180 ms; started on the key press and always completed (a quick tap still produces it). Values add to the resting gravity, and the raw WPAD packet and KPAD acc/acc_value/acc_speed (remote and Nunchuk) are written from them. Push/pull (E/Q) keep the existing pointer-depth model; twist (Z/X) unchanged.",
+    "uncertain": "Peak sizes and axis signs are physical estimates, not measured against the game's gesture thresholds; adjust per gesture if one is not recognised.",
+    "validation": {
+      "build": "linked 2026-10-24 03:14",
+      "tests": "prime_wpad_packet_tests gesture cases pass",
+      "user": "pending in game"
+    }
+  },
+  "motion_panel_2026-10-24": {
+    "request": "Toggleable panel (keyboard/mouse mode only) showing the virtual Wiimote/Nunchuk motion",
+    "implementation": "F6 or F1 > Controles checkbox. runtime/include/hle/prime_remote_debug.h snapshot (mutex) published by PrimeInputTryReadKpad: roll, KPAD distance, IR dots and horizon, Wiimote/Nunchuk KPAD acc, stick, pointer, buttons. settings_overlay.cpp DrawRemoteMotionPanel (bottom-left, no inputs). F6 removed from capturable binding keys."
+  },
+  "twist_root_cause_2026-10-24": {
+    "finding": "Game motion analysis (object at input+0xA8C) is fed raw KPADGetUnifiedWpadStatus samples by 0x803C0A24 (dev 1, err 0, fmt 3..5). fn_803BFF80 reads remote acc s16 at +2/+4/+6 and Nunchuk acc s16 at +0x2A/+0x2C/+0x2E, divides by WPADGetAccGravityUnit (0x804F64C4: control block +0x87A-+0x874 remote, +0x894-+0x88E Nunchuk, read by 0x803C19E4 from 0x803C42AC) without a zero check, clamps to +-1 and takes asin; virtual buttons 4/5/8/9 (fn_803C31DC) come from that object. WPAD 0x804FCBF0 stores acc as raw minus the 0 g calibration (signed around 0); KPAD 0x804D8F6C sign-extends the stick bytes at +0x30/+0x31.",
+    "bugs": [
+      "calibration in the WPAD control block was zero for the virtual remote (division by zero)",
+      "raw acc encoded centred at 512 instead of 0",
+      "Nunchuk layout swapped (stick written at +0x2A, acc at +0x2C)",
+      "stick written unsigned centre 128 instead of s8"
+    ],
+    "fix": "prime_wpad_packet.h: acc = g*100 signed; FS acc +0x2A, stick s8 +0x30. kpad.cpp EnsureVirtualAccCalibration: fills 0 g = 0x200, 1 g = 0x264 per axis for remote and Nunchuk when still zero, before the connect callback and on each unified status write; logs [prime-wpad-calibration]. Fixture updated.",
+    "validation": {
+      "build": "linked 2026-10-24",
+      "tests": "mkw_prime_wpad_packet_tests pass",
+      "user": "pending: twist panel, gestures"
+    }
+  }
+}

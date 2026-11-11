@@ -531,6 +531,12 @@ void SetVoicesVolume(float volume) noexcept {
 }
 
 void TickGuest() noexcept {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    // The sound-player chain below is Mario Kart's nw4r::snd layout at fixed
+    // MKW addresses. Prime uses FMOD; following those words through Prime RAM
+    // could rewrite unrelated floats, so the integration is inert here.
+    return;
+#endif
     const bool attenuated = ShouldAttenuate();
     const uint32_t soundPlayerArray = ResolveSoundPlayerArray();
     if (soundPlayerArray == 0) {

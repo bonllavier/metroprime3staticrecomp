@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-26",
+  "version": "0.1.3",
+  "packaged_not_uploaded": true,
+  "zip": "dist/Corruption_3-PC-v0.1.3-win64.zip",
+  "sha256": "a3e8f4380388dfebf436dcba00e0116368b7537f8f0c76deff7580248bb3b78c",
+  "virustotal": {"zip": "0 of 65", "exe": "1 of 69 (Trapmine heuristic ML)", "report": "dist/Corruption_3-PC-v0.1.3-win64.zip.virustotal.md"},
+  "changes": ["ubershader on by default (code fallback, first-run template and shipped Config.default.toml)", "console freeze fix (TranscriptSink)", "purge shader cache button", "file version resource fixed (was stuck at 0.1.0)"],
+  "tooling": {
+    "package_release.ps1": "was missing from the tree and not in the recycle bin; rebuilt from the shipped v0.1.2 package, verified identical 34-entry zip structure",
+    "make_release.ps1": "new: version/changelog/close game/build QA-off/package/verify/VirusTotal/restore QA build, status per step, never uploads",
+    "keys": "GITHUB_TOKEN and VIRUSTOTAL_API_KEY now stored per user (setx); both scripts read the user-scope value"
+  }
+}

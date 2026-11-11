@@ -1,0 +1,121 @@
+{
+    "tested_utc":  "2026-11-11T09:17:47.7115681Z",
+    "revision":  "RM3E01_00",
+    "passed":  true,
+    "executable_sha256":  "5b2c5a7baf47a7929516c3799de006633af8305074697de8d13c3795f8498eb1",
+    "cases":  [
+                  {
+                      "case":  "proton_shell_path",
+                      "passed":  true,
+                      "exited":  true,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "iso_argument",
+                      "passed":  true,
+                      "exited":  false,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "iso_argument_equals",
+                      "passed":  true,
+                      "exited":  false,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "iso_environment",
+                      "passed":  true,
+                      "exited":  false,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "iso_beats_shell_config",
+                      "passed":  true,
+                      "exited":  false,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "config_path",
+                      "passed":  true,
+                      "exited":  false,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "iso_missing_file",
+                      "passed":  true,
+                      "exited":  true,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "iso_folder",
+                      "passed":  true,
+                      "exited":  true,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "iso_not_a_disc",
+                      "passed":  true,
+                      "exited":  true,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "no_image",
+                      "passed":  true,
+                      "exited":  true,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "corruption_pal",
+                      "passed":  true,
+                      "exited":  true,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "trilogy_pal",
+                      "passed":  true,
+                      "exited":  true,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "trilogy_usa_handoff",
+                      "passed":  true,
+                      "exited":  true,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "unknown_argument",
+                      "passed":  true,
+                      "exited":  true,
+                      "problems":  [
+
+                                   ]
+                  }
+              ],
+    "not_covered":  "The file dialogs themselves (Vista IFileOpenDialog with SIGDN_FILESYSPATH, legacy fallback), saving a dialog pick after it opens, the F1 typed path and the Trilogy hand-off need a person at the screen. Wrong-region text is covered by mkw_prime_disc_path_tests (no PAL image here)."
+}

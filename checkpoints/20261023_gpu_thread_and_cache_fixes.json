@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "goal": "Heavy hangar scene performance (user report: 24 FPS, one logical CPU saturated)",
+  "diagnosis": {
+    "tool": "In-process stack sampler (F8 / WII_COMPILED_STACK_PROFILE_AT / _BELOW_FPS), dbghelp StackWalk64 with ReadProcessMemory reads; recomp/tools/summarize_stack_profile.py",
+    "hangar_main_thread_before": {"gx_fifo_and_display_lists": "55.4%", "guest_code": "~21%", "bitdefender_hooks_bdhkm64": "9.0%", "ipc_dsp_poll": "8.2%", "vi_wait": "3.6%"},
+    "frame_sync": "fn_803E9F78 (CGraphics BeginScene) waits for the CP breakpoint callback fn_803E9820: one frame in flight"
+  },
+  "changes": [
+    "Optional dedicated GX consumer thread (WII_COMPILED_PRIME_GPU_THREAD=1): committed gather bursts are queued; HLE FIFO decode, display lists and Aurora submission run on it. Host GX lock for VI/overlay/events; Sync for PI FIFO reset and uncaptured writes. Consumer never runs guest code or pumps SDL events.",
+    "CP breakpoint stall decided at burst submission; breakpoint status/interrupt raised only once the consumer is idle at it (async mode only). Draws spanning bursts are finished before a host section takes the GX lock.",
+    "Aurora: mutex-free sealed-frame encode outside interpolation (WII_COMPILED_AURORA_OVERLAP_ENCODE=1).",
+    "Aurora: GXEnd keeps the draw queued until the next drain (WII_COMPILED_AURORA_LAZY_END_DRAIN=1); raw texture/palette binds drain first.",
+    "Palette snapshot cache: content digest instead of TMEM load counter in the key, hash computed after the full key, 4096 entries/32 MiB, indexed replacement scan. Non-palette snapshot cache 2048 entries/64 MiB.",
+    "Vertex-state republish memo keyed by HLE inputs plus Aurora GXAuroraVtxStateEpoch().",
+    "DSP mailbox poll lock-free peek; IPC/DSP poll skips context scope when nothing is pending.",
+    "DVD: bulk copy into guest RAM when no executable guard applies; ISO SHA-1 group validation off by default (WII_COMPILED_PRIME_VALIDATE_ISO_HASHES=1 restores it).",
+    "Launchers run_prime_keyboard_mouse.ps1 / run_parallel_candidate.ps1 enable the three renderer modes; -SyncRenderer disables them."
+  ],
+  "measurements_unattended_same_build": {
+    "method": "recomp/tools/bench_prime_unattended.ps1, boot without input to the hangar, Aurora 5 s present windows; timeline varies between runs",
+    "sync_heavy_section_fps": "33.6-37.3",
+    "gpu_thread_only": "44.7-49.2",
+    "plus_palette_cache_fix": "50-59",
+    "plus_overlap_encode": "50-56",
+    "plus_lazy_end_drain": "57-58 most windows, ~50 during area streaming",
+    "palette_cache_after": "204031 lookups, 41 misses per 5 s (before: 60% misses, ~200 key probes per lookup)",
+    "user_live_confirmation": "user observed 52-58 FPS and correct 3D in this mode"
+  },
+  "validation": {
+    "platform_tests": "21/21 PASS after cache changes",
+    "partial_draw_warnings": "0 after draw-atomic GX lock (were 16-690 per run before that fix)",
+    "frame_change_check": "consecutive window captures differ over 75 s",
+    "profiler_crash": "RtlVirtualUnwind faulted on a suspended thread's stack once; replaced by StackWalk64 with safe reads, later captures survived"
+  },
+  "staging_capacity_fix": {
+    "cause": "User F8 profile at ~40 FPS: Aurora vertex staging (3 MiB) filled every frame; split_staging_batch encoded, submitted and remapped mid-frame on the GX consumer thread.",
+    "change": "aurora gfx/common.hpp: vertex 16 MiB, index 8 MiB, storage 32 MiB staging (uniform unchanged).",
+    "result": "Unattended hangar run 60.0 FPS in the heavy section; consumer idle ~6 s per 10 s. User confirmed 60 FPS with the F9 overlay hidden. Platform tests 21/21 PASS."
+  },
+  "video_regression_fix": {
+    "symptom": "Boot THP videos corrupted and title/menu background video frozen since ChatGPT commit ad3fcba (generation-skip for raw texture snapshots).",
+    "cause": "THP frames reach MEM2 through locked-cache store DMA (mtspr 923, ppc_helpers.cpp), which did not bump GxGuestWrite generations; the cache trusted an unchanged generation and reused the previous frame. Translated dcbf/dcbst/dcbi are no-ops and the DC/LC HLE overrides sit at Mario Kart addresses, so Prime DCFlushRange (0x804DF8F4) and neighbours do not notify either.",
+    "fix": "LC store DMA now calls GxNotifyGuestRamDmaWrite for the RAM range.",
+    "validation": "Unattended boot captures change frame to frame through the intro and menu video; user confirmed videos play.",
+    "remaining_risk": "Textures written by the CPU without DMA still rely on generations that DCFlushRange does not advance; hooking 0x804DF8C8/0x804DF8F4/0x804DF924/0x804DF954/0x804DF980 through prepare_prime_runtime_hooks.py would close it."
+  },
+  "limits": [
+    "Unattended idle-camera scene only; manual QA of longer gameplay, map, radio, cutscenes pending.",
+    "Bitdefender user-mode hooks remain ~9% of the guest thread in the earlier profile; an exclusion is a user decision.",
+    "Overlay render-stage timers are per thread and mostly describe the consumer only when it records them.",
+    "ISO, DOL and matching tree untouched."
+  ]
+}

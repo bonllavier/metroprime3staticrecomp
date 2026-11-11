@@ -27,6 +27,15 @@ void ServiceDeferredCallbacks();
 // runs __AXOutNewFrame, the two places guest code reads the mix's PB/output/aux data.
 // Cheap when the mix already finished (the normal case).
 void JoinMixWorker();
+// Joins only a pending or running mix that writes PCM into [addr, addr + bytes):
+// the audio DMA reads guest PCM and must never see a frame the worker is writing.
+// Guest code reads it too: the movie player's AI callback mixes THP audio into the
+// output buffer __AXOutNewFrame has just started, after DCInvalidateRange, whose
+// runtime overlay (PrimeBeforeGuestDcInvalidate) calls this.
+void JoinMixWorkerIfWriting(uint32_t addr, uint32_t bytes);
+// Prime (raw mailbox): called on the mix worker once a command list has finished
+// and its DSP->CPU mails are available, so the caller can raise the mailbox IRQ.
+void SetMixCompletionHook(void (*hook)());
 
 // Joins and tears down the mix worker thread. Call before the guest memory map
 // is destroyed or re-created.

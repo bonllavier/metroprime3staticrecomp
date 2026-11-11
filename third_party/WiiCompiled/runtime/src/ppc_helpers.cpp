@@ -45,6 +45,7 @@ std::bitset<2048> g_warnedSprWrite{};
 std::array<uint32_t, 2048> g_sprShadow{};
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
 PrimeLockedCacheDma::Registers g_primeDma;
+extern "C" void GxNotifyGuestRamDmaWrite(uint32_t addr, uint32_t size);
 #endif
 uint32_t g_reservationAddr = 0;
 bool g_hasReservation = false;
@@ -563,6 +564,10 @@ extern "C" void PPC_WriteSpr(uint32_t spr, uint32_t value)
                 void* ram=Memory::GetPointer(transfer.memory,transfer.bytes);
                 void* cache=Memory::GetPointer(transfer.cache,transfer.bytes);
                 std::memmove(transfer.load ? cache : ram,transfer.load ? ram : cache,transfer.bytes);
+                // A store DMA rewrites main RAM behind the CPU (THP frames are
+                // delivered this way). GX source caches validate by write
+                // generation, so this must count as a guest RAM write.
+                if(!transfer.load)GxNotifyGuestRamDmaWrite(transfer.memory,transfer.bytes);
                 static unsigned traces=0;
                 if(traces++<32)RT_LOG(RT_TAG_RUNTIME)<<"[prime-locked-cache-dma] memory=0x"<<std::hex<<transfer.memory
                     <<" cache=0x"<<transfer.cache<<std::dec<<" bytes="<<transfer.bytes<<" load="<<transfer.load<<std::endl;

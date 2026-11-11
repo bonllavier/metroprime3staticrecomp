@@ -33,7 +33,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['probe','capture','checkpoint']:p.add_argument('--'+name,type=Path,required=True)
     a=p.parse_args();probe=json.loads(a.probe.read_text(encoding='utf-8-sig'));log=Path(probe['log'])
-    exe=ROOT/'recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe'
+    exe=ROOT/'recomp/build/RM3E01_00_runtime_link_probe/Corruption_3 PC.exe'
     assert sha(exe)==probe['executable_sha256'] and sha(log)==probe['log_sha256']
     assert probe['alive_at_deadline'] and not probe['failure_logged'] and probe['gpu_validation_requested'] and probe['keyboard_exercise_requested']
     receipts=probe['keyboard_message_receipts'];messages=[r for r in receipts if 'message' in r]

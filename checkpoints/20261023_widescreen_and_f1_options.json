@@ -1,0 +1,20 @@
+﻿{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "request": "16:9 output, native/monitor internal resolution, F1 options panel by area",
+  "cause_4_3": "NAND had no /shared2/sys/SYSCONF; Prime's own SC library fell back to defaults (IPL.AR=0 -> 4:3). The SCGetAspectRatio HLE override sits at a Mario Kart address and never applied to Prime.",
+  "changes": [
+    "wii_sysconf.h: SYSCONF writer (SCv0, offsets, typed entries, SCed). prime_host_options.cpp writes IPL.AR, IPL.SND and IPL.LNG at startup from Config.toml (video.widescreen, prime.sound_mode).",
+    "Prime widescreen presents through AURORA_VIEWPORT_16_9 (anamorphic 640x456 image shown at 16:9 with a 16:9 EFB); 4:3 uses FIT with a 4:3 lock.",
+    "Config [prime]: sound_mode, hide_cursor, gpu_thread, overlap_encode, lazy_end_drain, present_on_copy, host_audio_resampler. Exported to the existing environment switches at startup unless already set; launchers only force 0 with -SyncRenderer.",
+    "F1 panel (settings_overlay.cpp): Video (aspect, internal resolution incl. monitor-native, display mode, graphics API, copy filter, FPS), Controles (hide OS cursor, sensitivity note, key map), Audio (volume, console sound mode, host resampler, AX worker), Rendimiento (renderer options), Diagnostico.",
+    "Resolution labels clarified: 0 = monitor/window native, 1x = original Wii 640x456."
+  ],
+  "validation": {
+    "log": "[prime-sysconf] aspect=16:9 sound=stereo; IOS IPC open /shared2/sys/SYSCONF -> fd 4; [prime-presentation] aspect=16:9",
+    "visual": "hangar and strap screen fill a 16:9 rectangle with widescreen HUD and round holograms",
+    "panel": "F1 panel rendered (Audio tab captured)",
+    "build": "PASS"
+  },
+  "pending": "User QA: 4:3 toggle after restart, sound mode surround, Vulkan via F1, hide-cursor behaviour in menus."
+}

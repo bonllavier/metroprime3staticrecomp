@@ -20,9 +20,12 @@
 #include "hle/prime_ai_registers.h"
 #include "hle/prime_trace_budget.h"
 #include "hle/prime_ipc_reply_queue.h"
+#include "runtime_config.h"
 #include "hle/prime_cp_fifo.h"
 #include "hle/prime_cpu_fifo_capture.h"
 #include "hle/prime_dsp_boot_registers.h"
+#include "hle/gx_gpu_thread.h"
+#include <aurora/aurora.h>
 #include "hle_stubs.h"
 #include "hle/audio/ax_dsp.h"
 #include <mutex>
@@ -31,6 +34,10 @@
 
 extern "C" int32_t NAND_IOS_Open_HLE(uint32_t pathPtr, uint32_t mode);
 extern "C" bool DVD_HLE_ReadPrimePartition(uint32_t buffer, uint32_t length, uint64_t byteOffset);
+extern "C" bool DVD_HLE_SubmitPrimePartitionRead(uint32_t request, uint32_t buffer, uint32_t length,
+                                                 uint64_t byteOffset, uint64_t minDelayMicros);
+extern "C" uint32_t DVD_HLE_PrimeCompletedReadCount();
+extern "C" bool DVD_HLE_TakeCompletedPrimeRead(uint32_t* request, bool* ok, uint64_t* remainingDelayMicros);
 extern "C" void GX_HLE_PrimeResetFifo();
 extern "C" bool GX_HLE_PrimeFifoAtBoundary();
 extern "C" void GX_HLE_PrimeResumeFifo();
@@ -167,6 +174,13 @@ std::atomic<uint32_t>& PrimeIpcPpcInterruptFlags() {
 std::mutex g_primeReplyMutex;
 PrimeIpcReplyQueue g_primeReplies;
 std::atomic<uint32_t> g_primeReplyCount{0};
+// Guest progress: interrupt polls of the game thread (single writer). A disc
+// read reply waits kDiscReplyProgress of them past its submission, see
+// PrimeIpcReplyQueue::Push. The window it covers (submit to OSSuspendThread in
+// FMOD's wrapper) is a few dozen call boundaries.
+std::atomic<uint64_t> g_primeGuestProgress{0};
+constexpr uint64_t kDiscReplyProgress = 256;
+std::unordered_map<uint32_t, uint64_t> g_primeDiscSubmitProgress;  // request -> progress at submit
 
 uint64_t PrimeIpcNowMicros() {
     return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
@@ -178,8 +192,19 @@ void QueuePrimeIpcReply(uint32_t request, uint32_t command, uint64_t delayMicros
     Memory::Write32(request + 8u, command);
     Memory::Write32(request, 8u);
     std::lock_guard<std::mutex> lock(g_primeReplyMutex);
-    g_primeReplies.Push(request, PrimeIpcNowMicros() + delayMicros);
+    uint64_t readyProgress = 0;
+    if (const auto it = g_primeDiscSubmitProgress.find(request); it != g_primeDiscSubmitProgress.end()) {
+        readyProgress = it->second + kDiscReplyProgress;
+        g_primeDiscSubmitProgress.erase(it);
+    }
+    g_primeReplies.Push(request, PrimeIpcNowMicros() + delayMicros, readyProgress);
     g_primeReplyCount.fetch_add(1, std::memory_order_release);
+}
+
+// Game thread, at a disc read submission: its reply waits for guest progress.
+void NotePrimeDiscReadSubmitted(uint32_t request) {
+    std::lock_guard<std::mutex> lock(g_primeReplyMutex);
+    g_primeDiscSubmitProgress[request] = g_primeGuestProgress.load(std::memory_order_relaxed);
 }
 
 void PublishNextPrimeIpcReply() {
@@ -188,7 +213,8 @@ void PublishNextPrimeIpcReply() {
     if (g_primeReplyCount.load(std::memory_order_acquire) == 0) return;
     std::lock_guard<std::mutex> lock(g_primeReplyMutex);
     if ((PrimeIpcPpcControl().load() & 4u) != 0) return;
-    const auto request = g_primeReplies.PopReady(PrimeIpcNowMicros());
+    const auto request = g_primeReplies.PopReady(PrimeIpcNowMicros(),
+                                                 g_primeGuestProgress.load(std::memory_order_relaxed));
     if (!request) return;
     g_primeReplyCount.fetch_sub(1, std::memory_order_release);
     PrimeIpcArmMessage().store(*request, std::memory_order_release);
@@ -284,6 +310,29 @@ void SetPrimeIpcDiDescriptor(uint32_t guestFd) {
     table.diGuestFd = static_cast<int32_t>(guestFd);
 }
 
+// Fast disc reads: a short fixed delay instead of the drive timing model. Room
+// streaming issues ~150 serialized reads in under a second, and the model's
+// 600 us + 32 MiB/s landed inside the game's frames (30-55 ms frames). A nonzero
+// delay keeps a reply off the submission stack (see QueuePrimeIpcReply's caller).
+uint64_t PrimeDiscReplyDelayMicros(uint32_t bytes) {
+    static constexpr uint64_t kFastReadDelayMicros = 200;
+    return RuntimeConfigFile::PrimeOption(&RuntimeUserConfig::primeFastDiscReads, "WII_COMPILED_PRIME_FAST_DISC_READS", true)
+               ? kFastReadDelayMicros
+               : PrimeIpcReplyQueue::ReadDelayMicros(bytes);
+}
+
+// Guest thread: replies for disc reads the worker has finished.
+void CompletePrimeAsyncDiscReads() {
+    uint32_t request = 0;
+    bool ok = false;
+    uint64_t remainingDelay = 0;
+    while (DVD_HLE_TakeCompletedPrimeRead(&request, &ok, &remainingDelay)) {
+        if (!ok) RT_LOG(RT_TAG_OS) << "IOS /dev/di read failed request=0x" << std::hex << request << std::dec << std::endl;
+        Memory::Write32(request + 4u, ok ? 1u : 2u);  // DVDLowRead: 1 = success, 2 = drive error
+        QueuePrimeIpcReply(request, 6u, remainingDelay);
+    }
+}
+
 bool SubmitPrimeIpcRequest(uint32_t request, bool& replyReady) {
     const uint32_t command = Memory::Read32(request);
     static std::atomic<uint32_t> requestTraceCount{0};
@@ -367,7 +416,7 @@ bool SubmitPrimeIpcRequest(uint32_t request, bool& replyReady) {
                 // no pending cover-change event. Hot eject is not implemented.
                 Memory::Write32(output, 0u);
                 Memory::Write32(request + 4u, 1u);
-                RT_LOG(RT_TAG_OS) << "IOS /dev/di cover-register -> closed, no cover IRQ" << std::endl;
+                { static std::atomic<uint32_t> seen; if (RtLogRepeated(seen)) RT_LOG(RT_TAG_OS) << "IOS /dev/di cover-register -> closed, no cover IRQ" << std::endl; }
                 return true;
             }
             if (ioctl == 0x71u) { // DVDLowRead: lengths in bytes, positions in four-byte words.
@@ -378,7 +427,14 @@ bool SubmitPrimeIpcRequest(uint32_t request, bool& replyReady) {
                 const uint64_t byteOffset = static_cast<uint64_t>(Memory::Read32(input + 8u)) * 4u;
                 const uint32_t output = Memory::Read32(request + 24u);
                 const uint32_t outputLength = Memory::Read32(request + 28u);
-                if (outputLength < length || !DVD_HLE_ReadPrimePartition(output, length, byteOffset)) return false;
+                if (outputLength < length) return false;
+                // The read runs on the disc worker; its reply is queued when the bytes land.
+                if (DVD_HLE_SubmitPrimePartitionRead(request, output, length, byteOffset,
+                                                     PrimeDiscReplyDelayMicros(length))) {
+                    replyReady = false;
+                    return true;
+                }
+                if (!DVD_HLE_ReadPrimePartition(output, length, byteOffset)) return false;
                 Memory::Write32(request + 4u, 1u);
                 return true;
             }
@@ -406,7 +462,7 @@ bool SubmitPrimeIpcRequest(uint32_t request, bool& replyReady) {
                 return false;
             }
             Memory::Write32(request + 4u, 1u);
-            RT_LOG(RT_TAG_OS) << "IOS /dev/di clear-cover-interrupt -> DI success" << std::endl;
+            { static std::atomic<uint32_t> seen; if (RtLogRepeated(seen)) RT_LOG(RT_TAG_OS) << "IOS /dev/di clear-cover-interrupt -> DI success" << std::endl; }
             return true;
         }
         const int32_t backendFd = ResolvePrimeIpcBackendFd(fd);
@@ -415,7 +471,7 @@ bool SubmitPrimeIpcRequest(uint32_t request, bool& replyReady) {
             Memory::Read32(request + 16u), Memory::Read32(request + 20u),
             Memory::Read32(request + 24u), Memory::Read32(request + 28u));
         Memory::Write32(request + 4u, static_cast<uint32_t>(result));
-        RT_LOG(RT_TAG_OS) << "IOS ioctl fd=" << fd << " cmd=" << ioctl << " -> " << result << std::endl;
+        { static std::atomic<uint32_t> seen; if (RtLogRepeated(seen)) RT_LOG(RT_TAG_OS) << "IOS ioctl fd=" << fd << " cmd=" << ioctl << " -> " << result << std::endl; }
         return true;
     }
     if (command == 7u) { // IOS_IOCTLV
@@ -511,7 +567,7 @@ bool SubmitPrimeIpcRequest(uint32_t request, bool& replyReady) {
     }
 
     Memory::Write32(request + 4u, static_cast<uint32_t>(fd));
-    RT_LOG(RT_TAG_OS) << "IOS IPC open " << path << " -> fd " << fd << std::endl;
+    { static std::atomic<uint32_t> seen; if (RtLogRepeated(seen)) RT_LOG(RT_TAG_OS) << "IOS IPC open " << path << " -> fd " << fd << std::endl; }
     return true;
 }
 
@@ -604,6 +660,14 @@ void PrimeDspCollectAxMails() {
     }
 }
 
+// The AX mix worker finished a command list: collect its SYNC/YIELD mails and
+// raise the DSP mailbox interrupt, as the hardware DSP does when it ends a frame.
+void PrimeDspMixCompleted() {
+    std::lock_guard<std::mutex> lock(g_primeDspMutex);
+    if (g_primeDspRom.axActive) PrimeDspCollectAxMails();
+}
+const bool g_primeDspMixHookRegistered = (AxDspHle::SetMixCompletionHook(&PrimeDspMixCompleted), true);
+
 void PrimeDspSendMail(uint32_t mail) {
     static PrimeTraceBudget mailTrace{64};
     if (mailTrace.Take())
@@ -612,6 +676,12 @@ void PrimeDspSendMail(uint32_t mail) {
     if (rom.axActive) {
         AxDspHle::SendMailToDSP(mail);
         PrimeDspCollectAxMails();
+        // __DSPHandler ended the last task (AXQuit): the DSP is back in its ROM,
+        // which accepts a new upload if the guest starts AX again.
+        if (mail == 0xCDD10002u) {
+            AxDspHle::Stop();
+            rom = {};
+        }
         return;
     }
     if (rom.nextParameter == 0u) {
@@ -684,12 +754,41 @@ uint32_t PrimeCpPair(uint32_t offset) {
     return PrimeCpRegisters()[offset / 2].load() |
         (uint32_t(PrimeCpRegisters()[offset / 2 + 1].load()) << 16);
 }
+// Release, not seq_cst: the FIFO pointer pairs are written and read on the game
+// thread only, and a seq_cst 16-bit store is a locked xchg. The commit path ran
+// two per 32-byte burst, a third of PrimeGpuCaptureCpuFifoFull's samples.
 void PrimeCpSetPair(uint32_t offset, uint32_t value) {
-    PrimeCpRegisters()[offset / 2].store(uint16_t(value));
-    PrimeCpRegisters()[offset / 2 + 1].store(uint16_t(value >> 16));
+    PrimeCpRegisters()[offset / 2].store(uint16_t(value), std::memory_order_release);
+    PrimeCpRegisters()[offset / 2 + 1].store(uint16_t(value >> 16), std::memory_order_release);
 }
+// GX consumer thread only: the guest stream has reached the armed breakpoint.
+// Later bursts stall at once (as the synchronous decoder stalled them), but
+// the GP reports the breakpoint only after decoding everything before it.
+std::atomic<bool> g_primeBreakpointReached{false};
+
 void PrimeCpUpdateStatus() {
     const uint16_t control = PrimeCpRegisters()[1].load();
+    if (GxGpuThread::Enabled()) {
+        const uint32_t breakpoint = PrimeCpPair(0x3C);
+        bool reached = g_primeBreakpointReached.load(std::memory_order_acquire) &&
+            (control & 2u) != 0 && PrimeCpPair(0x38) == breakpoint;
+        if ((control & 0x11u) == 0x11u && !reached) {
+            PrimeCpSetPair(0x38, PrimeCpPair(0x34));
+            PrimeCpSetPair(0x30, 0);
+        }
+        if (!reached && (control & 3u) == 3u && PrimeCpPair(0x38) == breakpoint) reached = true;
+        g_primeBreakpointReached.store(reached, std::memory_order_release);
+        // Idle also waits for Aurora's asynchronous decoder: it still reads guest memory (vertex
+        // arrays, matrices, textures) for what the consumer handed it, and the game reuses those
+        // buffers once the GP reports its breakpoint (Bryyo lava patches, 2026-11-01). The consumer
+        // hands its stream to the decoder before it clears `busy`, so the backlog covers it.
+        const bool idle = GxGpuThread::Idle() && GX_HLE_PrimeFifoAtBoundary() &&
+            aurora_stream_decoder_backlog_hint() == 0;
+        const uint16_t status = uint16_t((idle ? 0xCu : 0u) | (reached && idle ? 0x10u : 0u));
+        if ((status & 0x10u) && !(PrimeCpRegisters()[0].load() & 0x10u)) GxGpuThread::NoteBreakpointReported();
+        PrimeCpRegisters()[0].store(status);
+        return;
+    }
     // All guest bytes before this safe point have passed the synchronous FIFO
     // decoder. Linked read/write pointers converge when GP reads are enabled.
     const bool retained = PrimeCpFifo::RetainBreakpoint(control, PrimeCpRegisters()[0].load(),
@@ -874,8 +973,9 @@ bool WritePrimePiMmio32(uint32_t addr, uint32_t value) {
                 Memory::Read32(request + 12u) == 0x71u) {
                 const uint32_t input = Memory::Read32(request + 16u);
                 if (input && Memory::Contains(input, 12u)) {
-                    replyDelayMicros = PrimeIpcReplyQueue::ReadDelayMicros(Memory::Read32(input + 4u));
+                    replyDelayMicros = PrimeDiscReplyDelayMicros(Memory::Read32(input + 4u));
                 }
+                NotePrimeDiscReadSubmitted(request);
             }
             bool replyReady = false;
             if (!SubmitPrimeIpcRequest(request, replyReady)) {
@@ -941,6 +1041,7 @@ bool WritePrimePiMmio32(uint32_t addr, uint32_t value) {
                     << " read=0x" << PrimeCpPair(0x38) << " breakpoint=0x" << PrimeCpPair(0x3C)
                     << " frame_state=" << Memory::Read32(0x8067DECCu) << std::dec << std::endl;
             }
+            GxGpuThread::Sync gpuSync;
             PrimeGatherBytes() = 0;
             g_primeCpuFifoCapture = {};
             GX_HLE_PrimeResetFifo();
@@ -1030,6 +1131,11 @@ bool ReadPrimeMmio16(uint32_t addr, uint16_t& value) {
         return true;
     }
     if (addr >= 0xCC001000u && addr <= 0xCC0010FEu && (addr & 1u) == 0) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        // Without the consumer thread the guest thread is the GX producer: a
+        // token poll is its signal that no more commands follow for now.
+        if (addr == 0xCC00100Eu && !GxGpuThread::Enabled()) aurora_stream_flush();
+#endif
         value = PrimePeRegisters()[(addr - 0xCC001000u) / 2u].load(std::memory_order_acquire);
         return true;
     }
@@ -1087,6 +1193,8 @@ bool ReadPrimeMmio16(uint32_t addr, uint16_t& value) {
 
 bool WritePrimeMmio16(uint32_t addr, uint16_t value) {
     if (addr >= 0xCC000000u && addr <= 0xCC00007Eu && (addr & 1u) == 0) {
+        // The GX consumer never reads CP registers: breakpoint stalls are
+        // decided on this thread when bursts are submitted (PrimeGpuCpReadBlocked).
         const uint32_t index = (addr - 0xCC000000u) / 2u;
         if (addr == 0xCC000002u) {
             PrimeCpRegisters()[index].store(static_cast<uint16_t>(value & 0x003Fu),
@@ -1278,7 +1386,16 @@ void ClearPageTable() {
 
 extern "C" uint32_t MemoryPrimeIpcPollControl()
 {
-    PublishNextPrimeIpcReply();
+    // Single writer (the game thread): no locked increment on this hot path.
+    g_primeGuestProgress.store(g_primeGuestProgress.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
+    if (DVD_HLE_PrimeCompletedReadCount() != 0) CompletePrimeAsyncDiscReads();
+    // Polled at every translated call boundary. While disc replies wait out
+    // their delay, look at the clock and queue only every 16th poll (tens of
+    // nanoseconds apart) instead of locking the queue at each call.
+    if (g_primeReplyCount.load(std::memory_order_acquire) != 0) {
+        static thread_local uint32_t polls = 0;
+        if ((++polls & 15u) == 0) PublishNextPrimeIpcReply();
+    }
     return PrimeIpcPpcControl().load(std::memory_order_acquire);
 }
 
@@ -1286,6 +1403,12 @@ extern "C" uint16_t MemoryPrimeDspPollControl()
 {
     // Same register and lock as MMIO, avoiding the generic address decoder
     // at every translated call. The clock matters only during DSP init.
+    // Lock-free peek first: polls only act on a pending mailbox IRQ, and a
+    // value raised concurrently is observed at the next call boundary.
+    if (__atomic_load_n(&g_primeDspControl.initClearAt, __ATOMIC_ACQUIRE) == 0) {
+        const uint16_t control = __atomic_load_n(&g_primeDspControl.control, __ATOMIC_ACQUIRE);
+        if ((control & 0x180u) != 0x180u || (control & 4u)) return control;
+    }
     std::lock_guard<std::mutex> lock(g_primeDspMutex);
     return g_primeDspControl.initClearAt ? g_primeDspControl.Read(PrimeAiNow())
                                        : g_primeDspControl.control;
@@ -1823,8 +1946,23 @@ namespace {
 }
 } // namespace
 
+// Cheap gate for the call-boundary poll: the GP may be parked at an armed
+// breakpoint whose interrupt is enabled (CP control read + breakpoint +
+// breakpoint interrupt). The full status/ISR test runs only then.
+extern "C" bool MemoryPrimeCpBreakpointPollReady() {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    if ((PrimeCpRegisters()[1].load(std::memory_order_relaxed) & 0x23u) != 0x23u) return false;
+    return !GxGpuThread::Enabled() || g_primeBreakpointReached.load(std::memory_order_acquire);
+#else
+    return false;
+#endif
+}
+
 extern "C" bool PrimeGpuCpReadBlocked() {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
+    if (GxGpuThread::Enabled())
+        return g_primeBreakpointReached.load(std::memory_order_acquire) &&
+            (PrimeCpRegisters()[1].load() & 2u) != 0;
     return (PrimeCpRegisters()[0].load() & 0x10u) != 0 &&
         (PrimeCpRegisters()[1].load() & 2u) != 0;
 #else
@@ -1832,14 +1970,123 @@ extern "C" bool PrimeGpuCpReadBlocked() {
 #endif
 }
 
+static bool PrimeGpuCaptureCpuFifoFull(uint32_t value, unsigned width);
+
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+extern bool g_primeFifoReplaying;  // gx_fifo.cpp: HleFifoWrite skips the capture while it is set
+
+// Called for every word the game writes to the GPU. A store that does not complete the 32-byte
+// burst only appends to it: same checks as Capture::Push (valid aligned pointer inside
+// [base, end]), no stack frame for the commit path, and the PI write pointer does not move.
+// Byte and halfword stores (command opcodes, vertex counts, indices) take the same path. Inline so
+// the gather-pipe stores below reach it without the GX_HLE_FIFO_Write* -> HleFifoWrite ->
+// PrimeGpuTryCaptureCpuFifo chain (three calls per word); false falls back to that chain.
+static inline bool PrimeGatherAppendFast(uint32_t value, unsigned width) {
+    auto& capture = g_primeCpuFifoCapture;
+    if ((width == 4 || width == 2 || width == 1) && capture.count + width < capture.pending.size()) {
+        const uint32_t base = PrimePiFifoRegister(0xCC00300Cu).load(std::memory_order_acquire);
+        const uint32_t end = PrimePiFifoRegister(0xCC003010u).load(std::memory_order_acquire);
+        const uint32_t address = PrimePiFifoRegister(0xCC003014u).load(std::memory_order_acquire) & ~0x20000000u;
+        if (end > base && address >= base && address <= end && ((base | end | address) & 31u) == 0) {
+            auto* bytes = capture.pending.data() + capture.count;
+            if (width == 4) {
+                bytes[0] = uint8_t(value >> 24); bytes[1] = uint8_t(value >> 16);
+                bytes[2] = uint8_t(value >> 8); bytes[3] = uint8_t(value);
+            } else if (width == 2) {
+                bytes[0] = uint8_t(value >> 8); bytes[1] = uint8_t(value);
+            } else {
+                bytes[0] = uint8_t(value);
+            }
+            capture.count += width;
+            return true;
+        }
+    }
+    return false;
+}
+
+// The gather-pipe store paths below: identical to HleFifoWrite's first step.
+static inline bool PrimeGatherStoreFast(uint32_t value, unsigned width) {
+    return !g_primeFifoReplaying && PrimeGatherAppendFast(value, width);
+}
+#endif
+
 extern "C" bool PrimeGpuTryCaptureCpuFifo(uint32_t value, unsigned width) {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
-    if (!PrimeCpuFifoCaptureActive()) return false;
-    const uint32_t base = PrimePiFifoRegister(0xCC00300Cu).load();
-    const uint32_t end = PrimePiFifoRegister(0xCC003010u).load();
-    const uint32_t pointer = PrimePiFifoRegister(0xCC003014u).load();
-    const bool linked = (PrimeCpRegisters()[1].load() & 0x10u) != 0;
-    std::array<uint8_t, 32> completed{};
+    if (PrimeGatherAppendFast(value, width)) return true;
+#endif
+    return PrimeGpuCaptureCpuFifoFull(value, width);
+}
+
+// A translated run of consecutive gather-pipe stores (GX_HLE_FIFO_WriteBurst): copies the bytes
+// that stay inside the open 32-byte burst in one go, and sends each byte that completes a burst
+// through the commit path. The pipe is a byte stream, so this equals pushing the run word by word.
+// Same capture checks as PrimeGatherAppendFast; returns the bytes taken, fewer than `size` only
+// when capture is off (the caller sends the rest through the ordered producer).
+extern "C" uint32_t PrimeGpuGatherWriteBulk(const uint8_t* data, uint32_t size) {
+    uint32_t offset = 0;
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    auto& capture = g_primeCpuFifoCapture;
+    while (offset < size) {
+        const uint32_t base = PrimePiFifoRegister(0xCC00300Cu).load(std::memory_order_acquire);
+        const uint32_t end = PrimePiFifoRegister(0xCC003010u).load(std::memory_order_acquire);
+        const uint32_t address = PrimePiFifoRegister(0xCC003014u).load(std::memory_order_acquire) & ~0x20000000u;
+        if (!(end > base && address >= base && address <= end && ((base | end | address) & 31u) == 0)) break;
+        offset += static_cast<uint32_t>(capture.AppendWithinBurst(data + offset, size - offset));
+        if (offset == size) break;
+        if (!PrimeGpuCaptureCpuFifoFull(data[offset], 1)) break;
+        ++offset;
+    }
+#else
+    (void)data;
+    (void)size;
+#endif
+    return offset;
+}
+
+// Entry points the translated code calls for gather-pipe stores it recognizes. The append that
+// stays inside a burst is inlined here instead of going through HleFifoWrite and
+// PrimeGpuTryCaptureCpuFifo; HleFifoWrite (gx_fifo.cpp) is unchanged for everything else.
+void HleFifoWrite(uint32_t val, uint32_t sizeBytes);
+
+extern "C" void GX_HLE_FIFO_WriteFloat(float val) {
+    uint32_t raw;
+    std::memcpy(&raw, &val, 4);
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    if (PrimeGatherStoreFast(raw, 4)) return;
+#endif
+    try { HleFifoWrite(raw, 4); } catch (...) { RT_LOGF(RT_TAG_GX, "FIFO write float failed\n"); }
+}
+
+extern "C" void GX_HLE_FIFO_Write32(uint32_t val) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    if (PrimeGatherStoreFast(val, 4)) return;
+#endif
+    HleFifoWrite(val, 4);
+}
+
+extern "C" void GX_HLE_FIFO_Write16(uint16_t val) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    if (PrimeGatherStoreFast(val, 2)) return;
+#endif
+    HleFifoWrite(static_cast<uint32_t>(val), 2);
+}
+
+extern "C" void GX_HLE_FIFO_Write8(uint8_t val) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    if (PrimeGatherStoreFast(val, 1)) return;
+#endif
+    HleFifoWrite(static_cast<uint32_t>(val), 1);
+}
+
+[[gnu::noinline]] static bool PrimeGpuCaptureCpuFifoFull(uint32_t value, unsigned width) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    // Plain acquire loads (the PI/CP registers are written by this thread or with release).
+    const uint32_t base = PrimePiFifoRegister(0xCC00300Cu).load(std::memory_order_acquire);
+    const uint32_t end = PrimePiFifoRegister(0xCC003010u).load(std::memory_order_acquire);
+    if (end <= base) return false;  // PrimeCpuFifoCaptureActive()
+    const uint32_t pointer = PrimePiFifoRegister(0xCC003014u).load(std::memory_order_acquire);
+    const bool linked = (PrimeCpRegisters()[1].load(std::memory_order_acquire) & 0x10u) != 0;
+    std::array<uint8_t, 32> completed;
     bool committed = false;
     const uint32_t next = g_primeCpuFifoCapture.Push(base, end, pointer, value, width,
         [&](uint32_t address, const uint8_t* bytes, size_t size) {
@@ -1855,10 +2102,11 @@ extern "C" bool PrimeGpuTryCaptureCpuFifo(uint32_t value, unsigned width) {
                     << address << " base=0x" << base << " end=0x" << end << " linked=" << linked
                     << " word0=0x" << BigEndian::Read32(bytes) << std::dec << std::endl;
         });
-    PrimePiFifoRegister(0xCC003014u).store(next);
+    // Release, not seq_cst: this runs for every word the game writes to the GPU.
+    PrimePiFifoRegister(0xCC003014u).store(next, std::memory_order_release);
     if (committed && linked) {
         PrimeCpSetPair(0x34, next & ~0x20000000u);
-        GX_HLE_PrimeConsumeGatherBurst(completed.data());
+        GxGpuThread::SubmitBurst(completed.data());
     }
     return true;
 #else
@@ -1940,6 +2188,9 @@ double MemoryInline::ReadFloat64Slow(uint32_t addr) {
 
 void MemoryInline::Write8Slow(uint32_t addr, uint8_t val) {
     if (IsGpuFifoAddress(addr)) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        if (PrimeGatherStoreFast(val, 1)) return;
+#endif
         GX_HLE_FIFO_Write8(val);
         return;
     }
@@ -1951,6 +2202,9 @@ void MemoryInline::Write8Slow(uint32_t addr, uint8_t val) {
 
 void MemoryInline::Write16Slow(uint32_t addr, uint16_t val) {
     if (IsGpuFifoAddress(addr)) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        if (PrimeGatherStoreFast(val, 2)) return;
+#endif
         GX_HLE_FIFO_Write16(val);
         return;
     }
@@ -1965,6 +2219,9 @@ void MemoryInline::Write16Slow(uint32_t addr, uint16_t val) {
 
 void MemoryInline::Write32Slow(uint32_t addr, uint32_t val) {
     if (IsGpuFifoAddress(addr)) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        if (PrimeGatherStoreFast(val, 4)) return;
+#endif
         GX_HLE_FIFO_Write32(val);
         return;
     }
@@ -1983,7 +2240,7 @@ void MemoryInline::Write64Slow(uint32_t addr, uint64_t val) {
         // 32-bit pushes, high word first. Without this arm the write fell through
         // to WriteScalar, which found no mapped region behind 0xCC008000 and threw
         // "no mapped region" instead of reaching GX.
-        GX_HLE_FIFO_Write32(static_cast<uint32_t>(val >> 32));
+        GX_HLE_FIFO_Write32(static_cast<uint32_t>(val >> 32));  // both take the inline append first
         GX_HLE_FIFO_Write32(static_cast<uint32_t>(val));
         return;
     }
@@ -1998,6 +2255,9 @@ void MemoryInline::WriteFloat32Slow(uint32_t addr, double val) {
     // truncated integer.
     const uint32_t bits = ConvertPpcDoubleToSingleBits(val);
     if (IsGpuFifoAddress(addr)) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        if (PrimeGatherStoreFast(bits, 4)) return;
+#endif
         GX_HLE_FIFO_WriteFloat(PpcSingleBitsToFloat(bits));
         return;
     }

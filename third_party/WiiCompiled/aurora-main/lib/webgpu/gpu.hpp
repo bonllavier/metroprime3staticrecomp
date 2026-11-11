@@ -16,6 +16,7 @@ struct GraphicsConfig {
   wgpu::TextureFormat depthFormat;
   uint32_t msaaSamples;
   uint16_t textureAnisotropy;
+  uint16_t forceTextureAnisotropy; // 0 = per texture object
   uint32_t maxTextureDimension2D;
 };
 struct TextureWithSampler {
@@ -66,6 +67,9 @@ void shutdown();
 void fail_if_device_lost() noexcept;
 void release_surface() noexcept;
 bool refresh_surface(bool recreate = true);
+// Asks for a present mode that never blocks (see g_nonBlockingPresent). True when the surface has to
+// be reconfigured for it to apply.
+bool set_non_blocking_present(bool enabled) noexcept;
 void resize_swapchain(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                       bool force = false);
 TextureWithSampler create_render_texture(uint32_t width, uint32_t height, bool multisampled);
@@ -94,6 +98,10 @@ struct BlobCacheStats {
   uint64_t hitBytes;
 };
 BlobCacheStats blob_cache_stats() noexcept;
+// Call once the boot prewarm has finished. On the first launch of a new cache generation
+// it deletes the blobs this launch never loaded or stored (they belong to the previous
+// build) and schedules a compaction for shutdown. No-op otherwise.
+void blob_cache_finish_boot_sweep() noexcept;
 // Persists the monolithic Vulkan pipeline cache into the blob cache (no-op elsewhere).
 void serialize_pipeline_caches() noexcept;
 

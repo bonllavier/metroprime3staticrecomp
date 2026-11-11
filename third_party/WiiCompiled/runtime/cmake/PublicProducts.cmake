@@ -71,13 +71,20 @@ else()
     mkw_add_runtime_library(mkw_runtime_common OBJECT ${SOURCES})
     if(MKW_GAME_PROFILE_RM3E01_00)
         target_compile_definitions(mkw_runtime_common PRIVATE MKW_GAME_PROFILE_RM3E01_00=1)
+        if(MKW_PRIME_QA_TOOLS)
+            target_compile_definitions(mkw_runtime_common PRIVATE MKW_PRIME_QA_TOOLS=1)
+        endif()
         set(MKW_PRIME_RSO_DIR "" CACHE PATH "Private verified runtime-relocatable RSO translation")
         if(MKW_PRIME_RSO_DIR)
             get_filename_component(MKW_PRIME_RSO_ROOT "${MKW_PRIME_RSO_DIR}" DIRECTORY)
             set(MKW_PRIME_RSO_ALL_SOURCES "")
             set(MKW_PRIME_RSO_DECLARATIONS "#include \"hle/prime_rso_runtime.h\"\n")
             set(MKW_PRIME_RSO_ENTRIES "")
-            foreach(MKW_PRIME_MODULE_SPEC IN ITEMS "rhbm,g_primeRhbmModule" "Tweaks,g_primeTweaksModule"
+            # The build wrapper writes the full module table next to the translations.
+            if(EXISTS "${MKW_PRIME_RSO_ROOT}/modules.cmake")
+                include("${MKW_PRIME_RSO_ROOT}/modules.cmake")
+            else()
+                set(MKW_PRIME_RSO_MODULE_SPECS "rhbm,g_primeRhbmModule" "Tweaks,g_primeTweaksModule"
                     "ScriptGUIScreenFrontEndUI,g_primeFrontEndUiModule" "ScriptWorldTeleporter,g_primeWorldTeleporterModule" "ScriptAchievement,g_primeAchievementModule"
                     "ScriptContextSensitiveActivator,g_primeContextSensitiveActivatorModule"
                     "ScriptGrapplePoint,g_primeGrapplePointModule"
@@ -86,6 +93,8 @@ else()
                     "ScriptContextActionButtonPressing,g_primeContextActionButtonPressingModule"
                     "Friendly,g_primeFriendlyModule" "GunTurret,g_primeGunTurretModule"
                     "MapScreenWebInterface,g_primeMapScreenWebInterfaceModule")
+            endif()
+            foreach(MKW_PRIME_MODULE_SPEC IN LISTS MKW_PRIME_RSO_MODULE_SPECS)
                 string(REPLACE "," ";" MKW_PRIME_MODULE_PARTS "${MKW_PRIME_MODULE_SPEC}")
                 list(GET MKW_PRIME_MODULE_PARTS 0 MKW_PRIME_MODULE_NAME)
                 list(GET MKW_PRIME_MODULE_PARTS 1 MKW_PRIME_MODULE_SYMBOL)
@@ -119,6 +128,27 @@ else()
             target_include_directories(mkw_runtime_common PRIVATE "${MKW_PRIME_NOD_SOURCE_DIR}/nod-ffi/include")
             target_compile_definitions(mkw_runtime_common PRIVATE MKW_PRIME_NOD_AVAILABLE=1)
         endif()
+        # RetroAchievements client (rcheevos, MIT), pinned checkout: tag v12.5.0,
+        # commit 1433173220a7eaede6a9ed7a18e94117be1821e0. Casual mode only.
+        set(MKW_PRIME_RCHEEVOS_DIR "${MKW_RUNTIME_SOURCE_DIR}/../../../.tools/rcheevos" CACHE PATH "rcheevos checkout (RetroAchievements)")
+        if(EXISTS "${MKW_PRIME_RCHEEVOS_DIR}/include/rc_client.h")
+            file(GLOB MKW_RCHEEVOS_SOURCES
+                "${MKW_PRIME_RCHEEVOS_DIR}/src/rc_client.c" "${MKW_PRIME_RCHEEVOS_DIR}/src/rc_compat.c"
+                "${MKW_PRIME_RCHEEVOS_DIR}/src/rc_util.c" "${MKW_PRIME_RCHEEVOS_DIR}/src/rc_version.c"
+                "${MKW_PRIME_RCHEEVOS_DIR}/src/rcheevos/*.c" "${MKW_PRIME_RCHEEVOS_DIR}/src/rapi/*.c"
+                "${MKW_PRIME_RCHEEVOS_DIR}/src/rhash/*.c")
+            add_library(mkw_rcheevos STATIC ${MKW_RCHEEVOS_SOURCES})
+            set_target_properties(mkw_rcheevos PROPERTIES UNITY_BUILD OFF C_STANDARD 99)
+            target_include_directories(mkw_rcheevos PUBLIC "${MKW_PRIME_RCHEEVOS_DIR}/include")
+            target_compile_definitions(mkw_rcheevos PUBLIC RC_CLIENT_SUPPORTS_HASH)
+            target_compile_options(mkw_rcheevos PRIVATE -w)
+            if(MINGW)
+                # Keep clock_gettime (libwinpthread-1.dll) out of the exe's imports.
+                target_compile_options(mkw_rcheevos PRIVATE -include "${CMAKE_CURRENT_LIST_DIR}/rcheevos_win32_clock.h")
+            endif()
+            target_include_directories(mkw_runtime_common PRIVATE "${MKW_PRIME_RCHEEVOS_DIR}/include")
+            target_compile_definitions(mkw_runtime_common PRIVATE MKW_PRIME_RCHEEVOS_AVAILABLE=1 RC_CLIENT_SUPPORTS_HASH)
+        endif()
     endif()
 endif()
 
@@ -144,6 +174,9 @@ if(MKW_HOST_IS_X86_64)
     add_library(mkw_cpu_baseline OBJECT "${MKW_CPU_BASELINE_SOURCE}")
     target_compile_features(mkw_cpu_baseline PRIVATE cxx_std_17)
     set_target_properties(mkw_cpu_baseline PROPERTIES UNITY_BUILD OFF)
+    if(MKW_GAME_PROFILE_RM3E01_00)
+        target_compile_definitions(mkw_cpu_baseline PRIVATE MKW_GAME_PROFILE_RM3E01_00=1)
+    endif()
     target_compile_options(mkw_cpu_baseline PRIVATE -w)
     if(MKW_X86_CPU_PROFILE STREQUAL "v2")
         target_compile_definitions(mkw_cpu_baseline PRIVATE MKW_X86_CPU_PROFILE_V2=1)
@@ -239,7 +272,10 @@ function(mkw_configure_product target)
     target_link_libraries(${target} PRIVATE
         aurora::gx aurora::pad aurora::si aurora::vi aurora::mtx)
     if(TARGET mkw_prime_nod)
-        target_link_libraries(${target} PRIVATE mkw_prime_nod bcrypt userenv ws2_32 advapi32 user32 kernel32 shell32 ole32 ntdll)
+        target_link_libraries(${target} PRIVATE mkw_prime_nod bcrypt userenv ws2_32 advapi32 user32 kernel32 shell32 ole32 ntdll gdiplus)
+    endif()
+    if(TARGET mkw_rcheevos)
+        target_link_libraries(${target} PRIVATE mkw_rcheevos)
     endif()
     if(MKW_PLATFORM_MACOS)
         target_link_libraries(${target} PRIVATE
@@ -263,7 +299,7 @@ function(mkw_configure_product target)
 
     if(MKW_PLATFORM_WINDOWS)
         target_link_libraries(${target} PRIVATE
-            dbghelp user32 winmm ws2_32 iphlpapi secur32 crypt32 windowsapp)
+            dbghelp user32 winmm ws2_32 iphlpapi secur32 crypt32 windowsapp dxgi gdiplus comdlg32 winhttp version)
 
         set_target_properties(${target} PROPERTIES WIN32_EXECUTABLE TRUE)
     elseif(MKW_PLATFORM_LINUX OR MKW_PLATFORM_MACOS_X86_64)
@@ -320,6 +356,12 @@ function(mkw_configure_product target)
     # lookup works without application-specific configuration.
     set(MKW_INITIAL_PIPELINE_CACHE
         "${MKW_RUNTIME_SOURCE_DIR}/assets/pipeline/initial_pipeline_cache.db")
+    if(MKW_GAME_PROFILE_RM3E01_00)
+        # Metroid Prime 3's own recipes, accumulated from play sessions by
+        # recomp/tools/prime_pipeline_seed.py. The default seed is Mario Kart's.
+        set(MKW_INITIAL_PIPELINE_CACHE
+            "${MKW_RUNTIME_SOURCE_DIR}/assets/pipeline/RM3E01_00/initial_pipeline_cache.db")
+    endif()
     if(NOT EXISTS "${MKW_INITIAL_PIPELINE_CACHE}")
         message(FATAL_ERROR "Missing transferable Aurora pipeline cache: ${MKW_INITIAL_PIPELINE_CACHE}")
     endif()
@@ -348,6 +390,25 @@ mkw_configure_product(WiiCompiled)
 target_sources(WiiCompiled PRIVATE $<TARGET_OBJECTS:mkw_base_registration>)
 target_precompile_headers(WiiCompiled PRIVATE
     "${MKW_RUNTIME_SOURCE_DIR}/include/mkw_pch.h")
+if(MKW_GAME_PROFILE_RM3E01_00)
+    # The Metroid Prime 3 PC Port product: its own name, icon and version block.
+    # The CMake target keeps the WiiCompiled name so build scripts do not change.
+    target_compile_definitions(WiiCompiled PRIVATE MKW_GAME_PROFILE_RM3E01_00=1)
+    if(MKW_PRIME_QA_TOOLS)
+        target_compile_definitions(WiiCompiled PRIVATE MKW_PRIME_QA_TOOLS=1)
+    endif()
+    set_target_properties(WiiCompiled PROPERTIES OUTPUT_NAME "Corruption_3 PC")
+    if(MKW_PLATFORM_WINDOWS)
+        enable_language(RC)
+        set(MKW_PRIME_PORT_RC "${MKW_RUNTIME_SOURCE_DIR}/assets/windows/prime_port.rc")
+        set_source_files_properties("${MKW_PRIME_PORT_RC}" PROPERTIES
+            SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON
+            OBJECT_DEPENDS "${MKW_RUNTIME_SOURCE_DIR}/assets/windows/MetroidPrime3PCPort.ico;${MKW_RUNTIME_SOURCE_DIR}/include/prime_port_version.h")
+        target_sources(WiiCompiled PRIVATE "${MKW_PRIME_PORT_RC}")
+        # windres needs the version header on its include path.
+        set_property(SOURCE "${MKW_PRIME_PORT_RC}" APPEND PROPERTY COMPILE_OPTIONS "-I${MKW_RUNTIME_SOURCE_DIR}/include")
+    endif()
+endif()
 if(TARGET mkw_base_sensitive)
     target_sources(WiiCompiled PRIVATE $<TARGET_OBJECTS:mkw_base_sensitive>)
 endif()

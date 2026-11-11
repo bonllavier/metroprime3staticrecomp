@@ -27,9 +27,9 @@ def main():
     matches=list(re.finditer(pattern,text,re.MULTILINE))
     if len(matches)!=1:raise RuntimeError('Expected one canonical EXE link edge')
     match=matches[0];edge=match.group()
-    if edge.count('  TARGET_FILE = WiiCompiled.exe\n')!=1:
+    if edge.count('  TARGET_FILE = Corruption_3 PC.exe\n')!=1:
         raise RuntimeError('Unexpected target-file definition')
-    candidate=edge.replace('WiiCompiled.exe','WiiCompiled.candidate.exe')
+    candidate=edge.replace('Corruption_3 PC.exe','WiiCompiled.candidate.exe')
     candidate=candidate.replace('libWiiCompiled.dll.a','libWiiCompiled.candidate.dll.a')
     candidate=candidate.replace('WiiCompiled.rsp','WiiCompiled.candidate.rsp')
     candidate,count=re.subn(r'^  POST_BUILD = [^\n]*$', '  POST_BUILD = cd .',candidate,flags=re.MULTILINE)

@@ -10,6 +10,10 @@
 #include "runtime_log.h"
 #include "hle/prime_xfb_ready.h"
 #include "hle/prime_performance.h"
+#include "hle/prime_fov.h"
+#include "hle/prime_achievements.h"
+#include "hle/gx_gpu_thread.h"
+#include "hle/prime_input_latency.h"
 
 #include <dolphin/vi.h>
 
@@ -19,6 +23,8 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -31,6 +37,7 @@
 #endif
 
 #include <aurora/aurora.h>
+#include <aurora/gfx.h>
 
 // Forward declaration for OSWakeupThread - used to wake threads on VI retrace queue
 extern "C" void OSWakeupThread_HLE_801aaaa4(CpuContext* ctx);
@@ -41,6 +48,11 @@ extern "C" void PrimeInputServiceEvents();
 #endif
 extern "C" bool GXSelectTrackedDisplayCopy(const void*);
 void* GuestToHostPtr(uint32_t, size_t);
+
+static void DispatchPrimeCpInterrupt(CpuContext* interrupted);
+// Call-boundary entry (OS_HLE_PollPendingPrimeIpcInterrupt): a guest loop that
+// waits on a PE token behind the breakpoint never reaches the VI/idle polls.
+extern "C" void VI_HLE_DispatchPrimeCpInterrupt(CpuContext* interrupted) { DispatchPrimeCpInterrupt(interrupted); }
 
 static void DispatchPrimeCpInterrupt(CpuContext* interrupted) {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
@@ -312,6 +324,12 @@ void AdvanceRetrace(CpuContext* ctx, Clock::time_point retraceStamp, bool servic
     }
 
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
+    // RetroAchievements: rc_client evaluates its conditions once per frame
+    // (hle/prime_achievements.h); first, so the FOV option sees its block.
+    PrimeAchievements::Frame();
+    // First-person FOV option: once per retrace on the game thread, as PrimeHack
+    // rewrites it every frame (hle/prime_fov.h).
+    PrimeFov::Frame();
     // Observation only: compare delivered VI events with wall time, including
     // late catch-up bursts and accidental future delivery. Do not change either
     // the guest clock or the retrace schedule to hide slow rendering.
@@ -329,6 +347,28 @@ void AdvanceRetrace(CpuContext* ctx, Clock::time_point retraceStamp, bool servic
             RT_LOG(RT_TAG_VI) << "[prime-vi-cadence] wall_seconds=" << seconds
                 << " delivered=" << delivered << " delivered_hz=" << double(delivered) / seconds
                 << " max_late_ms=" << maxLateMs << " max_early_ms=" << maxEarlyMs << std::endl;
+#if defined(MKW_PRIME_QA_TOOLS)
+            {
+                AuroraFrameInterpolationDiagnostics interp{};
+                aurora_get_frame_interpolation_diagnostics(&interp);
+                AuroraPresentTiming present{};
+                aurora_get_present_timing(&present);
+                RT_LOG(RT_TAG_VI) << "[prime-interp] target=" << interp.targetFps
+                    << " slots=" << interp.activeSamples << "/" << interp.targetSamples
+                    << " candidates=" << interp.candidates << " matchable=" << interp.matchable
+                    << " matches=" << interp.matches << " replay_safe=" << interp.replaySafe
+                    << " sealed=" << interp.framesSealed << " low_match=" << interp.framesLowMatch
+                    << " unsafe=" << interp.framesReplayUnsafe << " reductions=" << interp.slotReductions
+                    << " late_drops=" << interp.lateSealDrops
+                    << " with_copy=" << interp.sealsWithBoundary << " multi_copy=" << interp.multiBoundary
+                    << " carried=" << interp.sealsCarried << " complete=" << interp.sealsComplete
+                    << " carried_draws=" << interp.carriedDraws << " replayed=" << interp.sealsReplayed
+                    << " cuts=" << interp.cameraCuts << " borrowed=" << interp.borrowedDraws << " probe_restores=" << interp.probeRestores
+                    << " camera_estimates=" << interp.cameraEstimates
+                    << " presents_per_s=" << present.framesPerSecond
+                    << " effective_per_s=" << present.effectiveFramesPerSecond << std::endl;
+            }
+#endif
             windowStart = now;
             delivered = 0;
             maxLateMs = maxEarlyMs = 0;
@@ -471,13 +511,23 @@ void AdvanceRetrace(CpuContext* ctx, Clock::time_point retraceStamp, bool servic
 #endif
 
     if (serviceAurora) {
-        // Process window events (but don't present - that happens in GXCopyDisp)
-        UpdateAuroraAndProcessEvents();
-
-        // Start a new Aurora frame if one isn't already active
-        if (!g_auroraFrameActive.load(std::memory_order_acquire)) {
-            if (BeginAuroraFrame()) {
-                g_auroraFrameActive.store(true, std::memory_order_release);
+        // Window events touch neither GX nor decoder state, so with a frame
+        // already begun they need only the HostLock: draining the decoder here
+        // on every retrace kept the game thread waiting ~3 % of its time (F8
+        // 2026-10-31 00:07). Beginning a frame mutates renderer state and keeps
+        // the full Lock.
+        if (g_auroraFrameActive.load(std::memory_order_acquire)) {
+            GxGpuThread::HostLock hostLock;
+            // Process window events (but don't present - that happens in GXCopyDisp)
+            UpdateAuroraAndProcessEvents();
+        } else {
+            GxGpuThread::Lock gpuLock;
+            UpdateAuroraAndProcessEvents();
+            // Start a new Aurora frame if one isn't already active
+            if (!g_auroraFrameActive.load(std::memory_order_acquire)) {
+                if (BeginAuroraFrame()) {
+                    g_auroraFrameActive.store(true, std::memory_order_release);
+                }
             }
         }
     }
@@ -500,7 +550,25 @@ void AdvanceRetrace(CpuContext* ctx, Clock::time_point retraceStamp, bool servic
     // VISetBlack(TRUE) keeps frame submission running but shows only the clear color: GX render work is
     // skipped and Aurora's end_frame() clears to black, matching the hardware manual's "signal continues,
     // pixels go black" behavior. When not black, submission waits for hasXfbReady (GXCopyDisp done).
-    if (serviceAurora && !s_presentSequenceActive.load(std::memory_order_acquire)) {
+    // Only a retrace that may submit needs the full Lock (the decoder drained
+    // for GXSelectTrackedDisplayCopy and the present). The rest only pumps
+    // window events. Every input below except the GX selection is VI state
+    // this thread already copied.
+    const bool mayPresentXfb = hasXfbReady && !isBlack && readyXfb != 0 && readyXfb == currentFb;
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    const bool mayPresentBlack = false;
+#else
+    const bool mayPresentBlack = isBlack;
+#endif
+    if (serviceAurora && !s_presentSequenceActive.load(std::memory_order_acquire) &&
+        !(g_auroraFrameActive.load(std::memory_order_acquire) && (mayPresentXfb || mayPresentBlack))) {
+        if (g_auroraFrameHadWork.load(std::memory_order_acquire) && !mayPresentXfb && !isBlack) {
+            // GX work is in progress but frame not complete - just poll window events
+            GxGpuThread::HostLock hostLock;
+            UpdateAuroraAndProcessEvents();
+        }
+    } else if (serviceAurora && !s_presentSequenceActive.load(std::memory_order_acquire)) {
+        GxGpuThread::Lock gpuLock;
         const bool frameActive = g_auroraFrameActive.load(std::memory_order_acquire);
         const bool xfbMatches = (readyXfb != 0 && readyXfb == currentFb);
         bool shouldPresentXfb = hasXfbReady && !isBlack && xfbMatches;
@@ -536,6 +604,7 @@ void AdvanceRetrace(CpuContext* ctx, Clock::time_point retraceStamp, bool servic
             }
             // Outside startup, VI black remains a pure black presentation.
             // Unpaced: this present already runs in retrace context.
+            if (shouldPresentXfb) PrimeInputLatency::NoteHandoff();
             VI_HLE_PresentFrame(shouldPresentXfb, false);
         } else if (g_auroraFrameHadWork.load(std::memory_order_acquire) && !shouldPresentXfb && !isBlack) {
             // GX work is in progress but frame not complete - just poll window events
@@ -613,6 +682,8 @@ void VI_HLE_PollRetrace(CpuContext* ctx) {
 // VI clock from that path using an isolated guest interrupt context. The caller
 // checks the guest MSR.EE bit before reaching this helper, so it remains faithful
 // to the guest's interrupt mask while still delivering the registered VI ISR.
+namespace { void PresentPrimeCopyEarly(); }
+
 extern "C" void VI_HLE_PollRetraceGuestSpin(CpuContext* interruptedCtx) {
     static std::atomic<uint32_t> diagnosticCalls{0};
     static std::atomic<uint32_t> eligibleCalls{0};
@@ -633,6 +704,9 @@ extern "C" void VI_HLE_PollRetraceGuestSpin(CpuContext* interruptedCtx) {
     if (interruptedCtx == nullptr || (interruptedCtx->msr & 0x00008000u) == 0) {
         return;
     }
+    // Not rate-limited: a finished frame should reach the screen as soon as
+    // the guest reaches a safe point, not at the next 1 ms poll.
+    PresentPrimeCopyEarly();
 
     // OSInit can enter its idle loop before Prime's VI driver is installed.
     // Do not start the title's VI clock until its private ISR slot is populated
@@ -776,6 +850,31 @@ uint32_t s_lastPacedRetraceCount = ~0u;
 // comment at the stamping site). Producer-thread only, like the memo above.
 uint64_t s_lastPresentAnchorNanos = 0;
 
+// Tells Aurora how the frame about to be sealed relates to the VI timeline. Producer-thread only.
+void StampInterpolationSchedule(uint64_t baseNanos, uint64_t intervalNanos, bool retraceOnTime) {
+    // Prime waits for its own retrace, so a frame quantized to two periods still sees one boundary:
+    // the wall clock between frames is what tells it was late.
+    const auto now = Clock::now();
+    static Clock::time_point s_lastFrame{};
+    const bool wallClockOnTime = s_lastFrame == Clock::time_point{} ||
+        now - s_lastFrame < std::chrono::nanoseconds(intervalNanos + intervalNanos / 2);
+    s_lastFrame = now;
+    aurora_report_producer_paced(retraceOnTime && wallClockOnTime);
+    // Stamp the sealed frame's presentation schedule so Aurora paces interpolated slots against
+    // this same VI timeline. Anchor to the NEXT retrace boundary, not the period just produced,
+    // since slots anchored to the current period would already be expired by seal time. Encoding
+    // overruns are corrected by sliding the whole slot group forward onto a later boundary of this
+    // same grid, so this stays the single cadence authority. Anchors must also be strictly
+    // monotonic: two frames sealed before lastRetrace advances would collide on one boundary and
+    // burst-present, so a colliding anchor steps onto the next grid point instead of repeating it.
+    uint64_t anchorNanos = baseNanos + intervalNanos;
+    if (s_lastPresentAnchorNanos != 0 && anchorNanos <= s_lastPresentAnchorNanos) {
+        anchorNanos = s_lastPresentAnchorNanos + intervalNanos;
+    }
+    s_lastPresentAnchorNanos = anchorNanos;
+    aurora_set_present_schedule(anchorNanos, intervalNanos);
+}
+
 // Sleeps to the same VI retrace boundary VIWaitForRetrace targets, servicing alarms every 1 ms so audio
 // DMA and timers keep running, then delivers that retrace so guest logic starts exactly on the grid.
 void PaceToRetraceBoundary(Clock::time_point deadline) {
@@ -845,20 +944,24 @@ void VI_HLE_PresentFrame(bool presentedXfb, bool paceToRetrace) {
         // cadence, and zero only happens when production outruns VI. "Kept up" means <=1 retrace
         // elapsed; 2+ means a boundary was missed, so Aurora seals that frame without its interpolated
         // slots (a windowed backstop lowers the slot target only under sustained overload).
-        aurora_report_producer_paced(retracesElapsed <= 1);
-        // Stamp the sealed frame's presentation schedule so Aurora paces interpolated slots against
-        // this same VI timeline. Anchor to the NEXT retrace boundary, not the period just produced,
-        // since slots anchored to the current period would already be expired by seal time. Encoding
-        // overruns are corrected by sliding the whole slot group forward onto a later boundary of this
-        // same grid, so this stays the single cadence authority. Anchors must also be strictly
-        // monotonic: two frames sealed before lastRetrace advances would collide on one boundary and
-        // burst-present, so a colliding anchor steps onto the next grid point instead of repeating it.
-        uint64_t anchorNanos = baseNanos + intervalNanos;
-        if (s_lastPresentAnchorNanos != 0 && anchorNanos <= s_lastPresentAnchorNanos) {
-            anchorNanos = s_lastPresentAnchorNanos + intervalNanos;
+        StampInterpolationSchedule(baseNanos, intervalNanos, retracesElapsed <= 1);
+    } else if (aurora_get_frame_interpolation_fps() != 0) {
+        // Prime presents from the retrace itself, with nothing to pace, but its inserted images need
+        // the same timeline as any other frame.
+        uint64_t baseNanos = 0;
+        uint64_t intervalNanos = 0;
+        {
+            std::lock_guard<std::mutex> lock(g_viMutex);
+            EnsureInitializedLocked();
+            baseNanos = static_cast<uint64_t>(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    g_vi.lastRetrace.time_since_epoch())
+                    .count());
+            intervalNanos = static_cast<uint64_t>(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(g_vi.retraceInterval)
+                    .count());
         }
-        s_lastPresentAnchorNanos = anchorNanos;
-        aurora_set_present_schedule(anchorNanos, intervalNanos);
+        StampInterpolationSchedule(baseNanos, intervalNanos, true);
     } else {
         // Retrace-context presents (VI black, boot) have no display period of
         // their own to subdivide; present as soon as the frame is ready. The
@@ -868,30 +971,93 @@ void VI_HLE_PresentFrame(bool presentedXfb, bool paceToRetrace) {
         aurora_set_present_schedule(0, 0);
     }
 
-    aurora_end_frame();
+    const auto finishPresent = [presentedXfb] {
+        settings_overlay::AdvancePresentedFrame();
+        g_auroraFrameActive.store(false, std::memory_order_release);
+        g_auroraFrameHadWork.store(false, std::memory_order_release);
+        if (presentedXfb) {
+            std::lock_guard<std::mutex> lock(g_viMutex);
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+            g_vi.primeReadyXfbs.Presented(g_vi.primeSelectedXfb, g_vi.primeSelectedRevision);
+#endif
+            g_vi.hasValidXfb = false;
+            g_vi.readyXfb = 0;
+        }
+        // Pre-warm the next frame so subsequent GX work has a valid frame context.
+        UpdateAuroraAndProcessEvents();
+        if (BeginAuroraFrame()) {
+            g_auroraFrameActive.store(true, std::memory_order_release);
+        }
+    };
+    // With the GX consumer thread, begin the next frame before pacing and
+    // without releasing the GX lock: a consumer drain waits for the frame
+    // worker's SEALED phase, which needs this begin, so releasing the lock
+    // between end and begin could deadlock both threads.
+    const bool beginBeforePacing = GxGpuThread::Enabled();
+    {
+        GxGpuThread::Lock gpuLock;
+        aurora_end_frame();
+        if (beginBeforePacing) finishPresent();
+    }
     if (paceThisFrame) {
         PaceToRetraceBoundary(paceDeadline);
         std::lock_guard<std::mutex> lock(g_viMutex);
         s_lastPacedRetraceCount = g_vi.retraceCount;
     }
-    settings_overlay::AdvancePresentedFrame();
-    g_auroraFrameActive.store(false, std::memory_order_release);
-    g_auroraFrameHadWork.store(false, std::memory_order_release);
-    if (presentedXfb) {
-        std::lock_guard<std::mutex> lock(g_viMutex);
+    if (!beginBeforePacing) finishPresent();
+}
+
+namespace {
+std::atomic<bool> g_primeEarlyPresentPending{false};
+std::atomic<uint32_t> g_primeEarlyPresentFb{0};
+
+bool PrimePresentOnCopyEnabled() {
+    static const bool enabled = [] {
+        const char* value = std::getenv("WII_COMPILED_PRIME_PRESENT_ON_COPY");
+        return value && std::strcmp(value, "1") == 0;
+    }();
+    return enabled;
+}
+
+// Prime flips to a finished frame only from its GPU-done callback, so the copy
+// is displayed at the retrace after next: about one display period after the
+// image exists. Presenting the finished copy at the guest's next safe poll point
+// shows the same frame ~a period sooner. The tracker then has nothing pending
+// for that XFB, so the retrace does not present it twice.
+void PresentPrimeCopyEarly() {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
-        g_vi.primeReadyXfbs.Presented(g_vi.primeSelectedXfb, g_vi.primeSelectedRevision);
-#endif
-        g_vi.hasValidXfb = false;
-        g_vi.readyXfb = 0;
-    }
-    // Pre-warm the next frame so subsequent GX work has a valid frame context.
+    if (!g_primeEarlyPresentPending.load(std::memory_order_acquire)) return;
+    if (s_presentSequenceActive.load(std::memory_order_acquire) ||
+        s_inAdvanceRetrace.load(std::memory_order_acquire)) return;  // retried at the next poll
+    g_primeEarlyPresentPending.store(false, std::memory_order_release);
+    const uint32_t framebuffer = g_primeEarlyPresentFb.load(std::memory_order_acquire);
+    const bool isBlack = (Memory::Read16(0xCC002002u) & 1u) == 0 ||
+        (Memory::Read16(0xCC002000u) & 0x3FF0u) == 0;
+    if (framebuffer == 0 || isBlack) return;
+    GxGpuThread::Lock gpuLock;
+    if (!g_auroraFrameActive.load(std::memory_order_acquire)) return;
+    uint64_t revision = 0;
     {
-        UpdateAuroraAndProcessEvents();
-        if (BeginAuroraFrame()) {
-            g_auroraFrameActive.store(true, std::memory_order_release);
-        }
+        std::lock_guard<std::mutex> lock(g_viMutex);
+        revision = g_vi.primeReadyXfbs.Revision(framebuffer);
     }
+    if (revision == 0 || !GXSelectTrackedDisplayCopy(GuestToHostPtr(framebuffer, 0))) return;
+    {
+        std::lock_guard<std::mutex> lock(g_viMutex);
+        g_vi.primeSelectedXfb = framebuffer;
+        g_vi.primeSelectedRevision = revision;
+    }
+    settings_overlay::Draw();
+    PrimeInputLatency::NoteHandoff();
+    VI_HLE_PresentFrame(true, false);
+#endif
+}
+}  // namespace
+
+void VI_HLE_NotePrimeXfbCopied(uint32_t xfbAddr) {
+    if (!PrimePresentOnCopyEnabled()) return;
+    g_primeEarlyPresentFb.store(xfbAddr, std::memory_order_release);
+    g_primeEarlyPresentPending.store(true, std::memory_order_release);
 }
 
 // -----------------------------------------------------------------------------

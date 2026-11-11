@@ -1,4 +1,5 @@
 #include "../../aurora-main/lib/gx/raw_texture_snapshot_cache.hpp"
+#include "../include/hle/prime_tlut_memory.h"
 #include <array>
 #include <memory>
 #include <stdexcept>
@@ -19,6 +20,26 @@ struct CountedKey {
   bool operator==(const CountedKey& other) const {++comparisons;return value==other.value;}
 };
 int main(){
+  {
+    PrimeTlutMemory tmem;
+    std::array<uint8_t,16> first{},second{};
+    const auto untouched=tmem.RangeGeneration(512,16);
+    tmem.Load(0,first.data(),first.size());
+    const auto firstGeneration=tmem.RangeGeneration(0,16);
+    Check(tmem.RangeGeneration(0,16)==firstGeneration);
+    tmem.Load(0,first.data(),first.size());
+    Check(tmem.RangeGeneration(0,16)==firstGeneration); // Repeating identical TMEM content does not invalidate it.
+    Check(tmem.RangeGeneration(512,16)==untouched);
+    tmem.Load(512,second.data(),second.size());
+    Check(tmem.RangeGeneration(0,16)==firstGeneration);
+    Check(tmem.RangeGeneration(512,16)!=untouched);
+    const auto secondGeneration=tmem.RangeGeneration(512,16);
+    tmem.Load(512,second.data(),second.size());
+    Check(tmem.RangeGeneration(512,16)==secondGeneration); // Repeating identical bytes preserves the range version.
+    second[0]=1;
+    tmem.Load(512,second.data(),second.size());
+    Check(tmem.RangeGeneration(512,16)!=secondGeneration); // Changed bytes invalidate the range.
+  }
 #ifdef _WIN32
   {
     SYSTEM_INFO info;GetSystemInfo(&info);const size_t page=info.dwPageSize;

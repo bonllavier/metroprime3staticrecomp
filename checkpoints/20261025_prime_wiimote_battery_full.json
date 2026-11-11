@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "request": "Remove the permanent low-battery warning: report the Wii Remote battery as full at all times.",
+  "analysis": {
+    "game_caller": "FUN_803c2670 calls WPADGetInfoAsync(0, manager+0xB8C, 0x803C4884) on a timer (+0xBF0); only direct caller besides WPADGetInfo (DOL bl scan).",
+    "callback": "0x803C4884: if manager and result==0, copies WPADInfo +0xB8C..+0xBA3 to +0xB28..+0xB3F (0x803C4830).",
+    "consumer": "FUN_801c50c0 (HUD): getter 0x803C47E4 returns the committed info; battery = byte +0xB3C (0..4), lights model_battery1..4, warning string at levels 0/1.",
+    "root_cause": "Virtual keyboard/mouse remote: WPAD library has no device, request fails (-2), info never committed, battery stays 0."
+  },
+  "implementation": {
+    "hook": "prepare_prime_runtime_hooks.py: 0x804F6A2C (prologue 9421ff70) -> PrimeInputTryGetInfoAsync(ctx) in runtime/src/hle/input/kpad.cpp",
+    "info_written": "dpd=1 speaker=0 attach=(nunchuk/classic) lowBat=0 nearempty=0 battery=4 led=1<<chan protocol=1 firmware=0; returns 0; invokes callback(chan,0) via GuestInterruptCallbackContext/InvokeIndirectCpu",
+    "config": "[prime] wiimote_battery_full (default true), env WII_COMPILED_PRIME_WIIMOTE_BATTERY_FULL; overlay checkbox in F1 > Controles",
+    "build": "prepare_prime_runtime_hooks.py + Translator.Cli emit-build-shards + cmake reconfigure (shard names changed) + build with --parallel 2 (6 jobs ran out of memory)"
+  },
+  "validation": {
+    "run_pid": 16704,
+    "hook_calls_in_85s": 4,
+    "errors": 0,
+    "user": "four battery segments visible in Samus's HUD, no warning"
+  },
+  "related_fixes_same_session": [
+    "texture_upscale output capped at 4M texels and bad_alloc caught (crash pid 18576 at 4x/1024)",
+    "textures rewritten every few frames excluded from upscaling"
+  ],
+  "iso": "untouched",
+  "matching": "decomp/ untouched",
+  "final_executable_sha256": "a2d864d9baceaeb0ee1953f1f96c3861ae1dc5658bef4a8438a38918087a8811",
+  "final_run": {
+    "pid": 1284,
+    "hook_calls_in_75s": 4,
+    "errors": 0,
+    "frames_per_10s": 596,
+    "dynamic_textures_excluded": [
+      "640x448 I8",
+      "320x224 I8",
+      "64x80 C4 keyboard icons"
+    ],
+    "note": "texture_upscale=4x leaves a long worker backlog (259 pending at 75 s); originals are shown until each upscaled version arrives."
+  }
+}

@@ -4,8 +4,10 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 #include <SDL3/SDL_init.h>
@@ -37,6 +39,14 @@ void AudioBackend::SetMuted(bool muted) {
     ApplyGainLocked();
 }
 
+double AudioBackend::QueuedSeconds() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (!m_stream || m_spec.freq <= 0) return -1.0;
+    const int queued = SDL_GetAudioStreamQueued(m_stream);
+    if (queued < 0) return -1.0;
+    return static_cast<double>(queued) / (static_cast<double>(m_spec.freq) * SDL_AUDIO_FRAMESIZE(m_spec));
+}
+
 bool AudioBackend::EnsureInitializedLocked(uint32_t sampleRate, uint32_t channels) {
     if (m_initialized && m_sampleRate == sampleRate && m_channels == channels) {
         return true;
@@ -57,7 +67,23 @@ bool AudioBackend::EnsureInitializedLocked(uint32_t sampleRate, uint32_t channel
     spec.channels = static_cast<int>(channels);
     spec.freq = static_cast<int>(sampleRate);
 
-    SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
+    // Feed the device its own rate in float so SDL converts nothing: the only
+    // host processing left is this band-limited resample of the AI stream.
+    // WII_COMPILED_AUDIO_SDL_RESAMPLER=1 restores SDL's own conversion.
+    const char* sdlResampler = std::getenv("WII_COMPILED_AUDIO_SDL_RESAMPLER");
+    m_hostResample = false;
+    SDL_AudioSpec preferred{};
+    int preferredFrames = 0;
+    if (!(sdlResampler && std::strcmp(sdlResampler, "1") == 0) && channels == 2 &&
+        SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &preferred, &preferredFrames) &&
+        preferred.freq > 0 && m_resampler.Configure(sampleRate, static_cast<uint32_t>(preferred.freq))) {
+        spec.format = SDL_AUDIO_F32;
+        spec.freq = preferred.freq;
+        m_hostResample = true;
+    }
+
+    SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec,
+                                                        nullptr, nullptr);
     if (!stream) {
         RT_LOG(RT_TAG_AUDIO) << "SDL_OpenAudioDeviceStream failed: " << SDL_GetError() << std::endl;
         return false;
@@ -75,6 +101,7 @@ bool AudioBackend::EnsureInitializedLocked(uint32_t sampleRate, uint32_t channel
         return false;
     }
 
+    SDL_SetAudioStreamGetCallback(stream, &AudioBackend::CountUnderruns, this);
     m_stream = stream;
     m_spec = spec;
     m_sampleRate = sampleRate;
@@ -89,7 +116,52 @@ bool AudioBackend::EnsureInitializedLocked(uint32_t sampleRate, uint32_t channel
                          << " device=" << SDL_GetAudioDeviceName(SDL_GetAudioStreamDevice(stream))
                          << " output_rate=" << deviceSpec.freq << " output_channels=" << deviceSpec.channels
                          << " output_format=" << deviceSpec.format << " device_frames=" << deviceFrames
+                         << " stream_rate=" << spec.freq << " stream_format=" << spec.format
+                         << " host_resampler=" << (m_hostResample ? "polyphase-kaiser-128" : "sdl")
                          << std::endl;
+    return true;
+}
+
+namespace {
+std::atomic<bool> g_audioStarted{false};
+std::atomic<uint64_t> g_underruns{0};
+}
+
+// Runs on SDL's audio thread whenever the device pulls; a positive shortfall
+// means the device asked for more than was queued (an audible gap).
+void SDLCALL AudioBackend::CountUnderruns(void*, SDL_AudioStream*, int additional, int) {
+    if (additional > 0 && g_audioStarted.load(std::memory_order_relaxed))
+        g_underruns.fetch_add(1, std::memory_order_relaxed);
+}
+
+bool AudioBackend::QueueFramesLocked(const int16_t* interleaved, size_t frames) {
+    const void* data = interleaved;
+    size_t bytes = frames * m_channels * sizeof(int16_t);
+    if (m_hostResample) {
+        m_floatInput.resize(frames * 2);
+        for (size_t i = 0; i < frames * 2; ++i) m_floatInput[i] = interleaved[i] * (1.0f / 32768.0f);
+        m_floatOutput.clear();
+        m_resampler.Process(m_floatInput.data(), frames, m_floatOutput);
+        if (m_floatOutput.empty()) return true;
+        data = m_floatOutput.data();
+        bytes = m_floatOutput.size() * sizeof(float);
+    }
+    if (!QueueHasCapacityLocked(static_cast<int>(bytes))) {
+        return true;
+    }
+    if (!SDL_PutAudioStreamData(m_stream, data, static_cast<int>(bytes))) {
+        RT_LOG(RT_TAG_AUDIO) << "SDL_PutAudioStreamData failed: " << SDL_GetError() << std::endl;
+        return false;
+    }
+    g_audioStarted.store(true, std::memory_order_relaxed);
+    static auto nextReport = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    const auto now = std::chrono::steady_clock::now();
+    if (now >= nextReport) {
+        nextReport = now + std::chrono::seconds(10);
+        const uint64_t underruns = g_underruns.exchange(0, std::memory_order_relaxed);
+        RT_LOG(RT_TAG_AUDIO) << "[audio-backend] last_10s underruns=" << underruns
+                             << " queued_bytes=" << SDL_GetAudioStreamQueued(m_stream) << std::endl;
+    }
     return true;
 }
 
@@ -118,8 +190,7 @@ uint32_t AudioBackend::QueueLimitBytesLocked() const {
     constexpr uint32_t queueMs = 120;
 
     const uint64_t bytesPerSecond = static_cast<uint64_t>(m_spec.freq) *
-                                    static_cast<uint64_t>(m_spec.channels) *
-                                    sizeof(int16_t);
+                                    static_cast<uint64_t>(SDL_AUDIO_FRAMESIZE(m_spec));
     return static_cast<uint32_t>((bytesPerSecond * queueMs) / 1000u);
 }
 
@@ -180,11 +251,7 @@ bool AudioBackend::PushWiiAiSamplesBE16(const uint8_t* data, size_t bytes) {
     }
 
     const int lenBytes = static_cast<int>(frameCount * 2 * sizeof(int16_t));
-    if (!QueueHasCapacityLocked(lenBytes)) {
-        return true;
-    }
-    if (!SDL_PutAudioStreamData(m_stream, m_convertBuffer.data(), lenBytes)) {
-        RT_LOG(RT_TAG_AUDIO) << "SDL_PutAudioStreamData failed: " << SDL_GetError() << std::endl;
+    if (!QueueFramesLocked(m_convertBuffer.data(), frameCount)) {
         return false;
     }
 
@@ -239,11 +306,7 @@ bool AudioBackend::PushSamplesLE16(const int16_t* samples, size_t sampleCount) {
     }
 
     const int lenBytes = static_cast<int>(sampleCount * sizeof(int16_t));
-    if (!QueueHasCapacityLocked(lenBytes)) {
-        return true;
-    }
-    if (!SDL_PutAudioStreamData(m_stream, samples, lenBytes)) {
-        RT_LOG(RT_TAG_AUDIO) << "SDL_PutAudioStreamData failed: " << SDL_GetError() << std::endl;
+    if (!QueueFramesLocked(samples, sampleCount / std::max<uint32_t>(m_channels, 1))) {
         return false;
     }
 

@@ -19,5 +19,16 @@ int main() {
     Check(!replies.PopReady(100 + delay), "each callback delivered once");
     Check(PrimeIpcReplyQueue::ReadDelayMicros(0xffffffffu) > 128000000u,
           "large transfer must not overflow");
-    std::cout << "PASS Prime IPC reply deadlines and ordering\n";
+    // Guest progress gate: due by wall time, held until the guest ran on.
+    PrimeIpcReplyQueue gated;
+    gated.Push(0x3000, 100, 500);
+    Check(!gated.PopReady(100, 499), "held until the guest progressed");
+    Check(gated.PopReady(100, 500) == 0x3000, "released once the guest progressed");
+    gated.Push(0x4000, 100, 500);
+    gated.Push(0x5000, 100);
+    Check(!gated.PopReady(100 + PrimeIpcReplyQueue::kProgressFallbackMicros - 1, 0), "fallback not reached");
+    Check(gated.PopReady(100 + PrimeIpcReplyQueue::kProgressFallbackMicros, 0) == 0x4000,
+          "wall-clock fallback releases a stalled guest");
+    Check(gated.PopReady(100 + PrimeIpcReplyQueue::kProgressFallbackMicros, 0) == 0x5000, "order kept after the gate");
+    std::cout << "PASS Prime IPC reply deadlines, ordering and guest progress gate\n";
 }

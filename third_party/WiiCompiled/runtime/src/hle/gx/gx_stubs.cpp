@@ -1,5 +1,8 @@
 #include "gx_internal.h"
 #include "runtime_log.h"
+#include "hle/gx_gpu_thread.h"
+
+#include <aurora/aurora.h>
 
 extern "C" void __GXSetSUTexRegs();
 
@@ -7,14 +10,7 @@ extern "C" void __GXSetSUTexRegs();
 // FIFO Write Helpers
 // ============================================================================
 
-extern "C" void GX_HLE_FIFO_WriteFloat(float val) {
-    u32 raw; std::memcpy(&raw, &val, 4);
-    try { HleFifoWrite(raw, 4); } catch (...) { RT_LOGF(RT_TAG_GX, "FIFO write float failed\n"); }
-}
-
-extern "C" void GX_HLE_FIFO_Write32(uint32_t val) { HleFifoWrite(val, 4); }
-extern "C" void GX_HLE_FIFO_Write16(uint16_t val) { HleFifoWrite(static_cast<u32>(val), 2); }
-extern "C" void GX_HLE_FIFO_Write8(uint8_t val) { HleFifoWrite(static_cast<u32>(val), 1); }
+// GX_HLE_FIFO_Write8/16/32/Float live in memory.cpp, next to the inline gather-pipe append.
 
 extern "C" void GX__SetDrawSync_8016ed08(uint32_t token) {
     (void)token;
@@ -48,7 +44,13 @@ PPC_NATIVE_OVERRIDE_VOID(8016eab0, GX__DrawDone_8016eab0, (), ());
 extern "C" void GX_HLE_PrimeDrawDone(CpuContext*) {
     constexpr uint32_t kPrimeDrawDoneFlagAddr = 0x8067E3E0u;
     Memory::Write8(kPrimeDrawDoneFlagAddr, 0);
-    GXDrawDone();
+    {
+        // Guest thread: finish the queued gather bursts under the GX lock, then
+        // wait for the asynchronous decoder to apply everything they produced.
+        GxGpuThread::Sync gpuSync;
+        aurora_stream_sync();
+        GXDrawDone();
+    }
     Memory::Write8(kPrimeDrawDoneFlagAddr, 1);
 }
 

@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "recording": "UserData/Logs/profiles/stack_profile_20261025_020320.txt (120 s, 5 threads: game, gx, decoder, frame_worker, presenter), session base_1792911378_pid3216, asynchronous Aurora decoder enabled",
+  "user_goal": "stable 60 FPS; 58-59 acceptable at most",
+  "fps_timeline": {
+    "below_52": "s3-5 (44/32/47), s8 (49), s17-18 (46/51), s71 (49), s106 (47)",
+    "55_59": "s15-16, s34, s41, s45-46, s48, s50, s54, s56-58, s61-62, s64, s69-70, s72, s74, s77-78, s80, s82, s92, s94, s102-103, s112-113, s119",
+    "idle_60": "s35-39, s86-91 (menus/loads: game thread 14-25%)"
+  },
+  "slow_frame_budget": {
+    "tool": "scratchpad hitch_budget.py",
+    "count": {"cpu/none": 207, "textures": 3, "disc": 7},
+    "lost_ms_above_16.7": {"cpu/none": 2364, "textures": 43, "disc": 54},
+    "histogram_ms": {"20-34": 184, "34-80": 33, ">=80": 0},
+    "shader_compiles": "11 in-game [pipeline-compile] events (120-250 ms each) with draw skipping: no >=80 ms frame, not the cause"
+  },
+  "thread_profile_slow_vs_good": {
+    "seconds": {"slow": [3, 4, 5, 8, 17, 18, 71], "good": [20, 21, 22, 23, 24, 25, 26]},
+    "sample_rate_per_thread_per_s": 294,
+    "game": {"busy_per_s": "286 vs 210 (97% vs 71%)", "guest_code_share_of_busy": "~83% (whole recording 71%)", "top_chains": "func_800E1298/800E1478/800D7358 (actor list update, 115 vs 49/s), func_801AEE3C/801AF4B4 (renderer frame, 100 vs 35/s)", "leaf_flatness": "top-40 leaves = 44% of busy, 675 distinct leaves; hottest guest leaf func_804C299C 3.4%", "runtime_glue_per_s": {"ipc_poll_fast+full+control": 16, "cpu_fifo_capture_try+full+HleFifoWrite+WriteBurst+SubmitBurst+Push": 20, "indirect_dispatch_TryDispatchRaw+InvokeIndirect+memo_miss": 11, "fpr_guards_misc": 2, "total": "~49/s = ~17% of game-thread busy"}},
+    "gx": {"busy_per_s": "206 vs 89 (70% vs 30%)", "top": "HleFifoConsume -> DL walk (DlInterpretVisitor::OnDraw self 35/s, ExpandMappedAttribute<2> 45/s = indexed attribute expansion for display lists, WalkDisplayList self 16/s)"},
+    "decoder": {"busy_per_s": "7 vs 32", "note": "nearly idle in the slow seconds: the GX thread, not Aurora decoding, is the heavy consumer now"},
+    "frame_worker": "11-18%", "presenter": "1-6% in slow seconds (no present wait)"
+  },
+  "codegen_sample": "func_804C299C (shard_a6f75c7dfb3740db15f54f53.cpp): FlatRead32/FlatReadFloat32 inline, PpcFmulsInline, PpcForceSingleValueInline, WriteResolvedPair32 with scalar fallback branches, SetCRResident; translated code is already flat-memory inline, no obvious per-op helper calls",
+  "conclusion": "Every slow frame is CPU-bound on the game thread running the game's own logic (97% busy, flat profile). At 32 FPS a frame costs ~31 ms of which ~26 ms is translated guest code and ~5 ms runtime glue. Removing all glue fixes the 46-51 FPS dips (21 ms frames -> ~17.5 ms) but not the 32-44 FPS dips, which need the translated code itself ~30-45% faster (recompiler-level work or native HLE of heavy subsystems). Thread priorities are already set (Game/Gx ABOVE_NORMAL via HostThreads::SetCurrentRole).",
+  "plan": [
+    {"stage": "A - runtime glue on the game thread (days)", "items": ["IPC/CP/DSP boundary poll: replace the per-return counter+full check with a producer-set 'something pending' hint (keep the delayed-reply publisher cadence)", "CPU FIFO capture: cache the PI base/end/pointer validity instead of 3 acquire loads per word; batch bursts into the GX ring (one timestamp and one push per group) ", "indirect dispatch: per-call-site inline cache ahead of TranslatedFunctionRegistry::FindRawByAddressPtr (memo misses 0.9%)"], "expected": "5-8% of game-thread time (~1.5-2.5 ms at 30 ms frames)"},
+    {"stage": "B - translated code speed (weeks)", "items": ["measure host instructions per guest instruction on the hot chains (func_800D7358 actor update, func_801AF4B4 renderer, func_804C299C)", "cut call-boundary cost: ctx spill/reload of GPR/FPR sets, CR recomputation (SetCRResident), WriteResolvedPair32 fallback branches, nonvolatile FPR guards", "evaluate native HLE for self-contained heavy guest subsystems once identified (candidates from the chains above, verified against Ghidra)"], "expected": "the only path to 60 FPS in the 32-44 FPS scenes"},
+    {"stage": "C - GX thread stage 2", "items": ["move indexed-attribute expansion off the GX thread: forward display lists with INDEX8/16 attributes through GXSetArray to the Aurora decoder thread (currently idle in heavy scenes)", "DL walk cost (OnDraw self 12%)"], "expected": "GX thread 70% -> ~45% in heavy rooms; needed once the game thread gets faster"}
+  ],
+  "side_findings": [
+    "8x 'sync() inside GXBegin..GXEnd: 17306 bytes stay queued until GXEnd' around the map screen (MapScreenWebInterface RSO): the host present took the GX lock while a multi-burst draw stayed open; the bytes before it are not decoded until GXEnd. Harmless for correctness, may drop late draws from one presented frame; revisit in stage C.",
+    "No stream misalignment, no 'no position attribute', no invalid pipeline rows in this session."
+  ]
+}

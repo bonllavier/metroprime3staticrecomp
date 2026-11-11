@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-27",
+  "game": "RM3E01, disc 0, revision 0",
+  "version": "0.1.4",
+  "changes": [
+    "SSAO exclusion mask by texture (TagNoSsao): render_impl segments world passes around flagged draws, post::face_before/face_after/finalize build an R8 mask; kSsaoApply sets ao=1 there. Option [effects] ssao_skip_face (default true). docs ssao_aurora.md #19.",
+    "Samus out of the suit added to the SSAO list (12 textures, post_effects.cpp kNoSsao).",
+    "Enhanced metal skipped on skin (TagNoMetal, 5 textures, kSkin) via per-draw uniform strength 0; no pipeline key change.",
+    "Enhanced materials: material classes per texture (bits 2-4 of the texture tag byte), enhancedMetal variant forced for lit per-pixel draws through material_pipeline_state (own table), per-draw class params in the uniform header. Class 1 ship hull (25 textures), class 2 gunship paint (1). Option [video] enhanced_materials (default true). docs mejoras_graficas.md.",
+    "F7 draw dump: saves every sampled texture as DDS named by content hash under <capture>.textures/ and adds a 'mat' line (ppl, metal, lit, light masks, texgen sources).",
+    "gx_fifo_tests link fixed (missing post/enhanced-metal stubs predating these changes); 268 tests pass."
+  ],
+  "evidence": {
+    "f7_captures": ["capture_20261027_213811/213812 (suit close-up)", "capture_20261027_224913/224916/224924 (Samus without suit)", "capture_20261027_225157/225246 and 231613-231750 (fleet, gunship, Olympus)"],
+    "user_qa": "face mask confirmed; skin metal and suitless SSAO confirmed visually by the user; enhanced materials pending QA"
+  }
+}

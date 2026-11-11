@@ -69,7 +69,56 @@ int main() {
                     Require(address == 0x14000000u, "upper MEM2 address lost"); highWrites++;
                 });
         Require(highWrites == 1 && pointer == 0x14000020u, "upper MEM2 burst");
-        std::cout << "PASS CPU FIFO: byte order, partial bursts, mixed widths, wrap, bounds, invalid inputs\n";
+        // A store run copied with AppendWithinBurst, completing each burst with a one-byte Push
+        // (PrimeGpuGatherWriteBulk), publishes exactly what pushing the run word by word does.
+        {
+            std::vector<uint8_t> stream(300);
+            for (size_t i = 0; i < stream.size(); ++i) stream[i] = uint8_t(i * 37u + 11u);
+            const size_t runs[] = {1, 3, 30, 31, 32, 33, 2, 64, 5, 99};
+            struct Sink {
+                std::array<uint8_t, 160> ram{};
+                unsigned bursts = 0;
+            };
+            auto run = [&](bool bulk, Sink& sink, PrimeCpuFifo::Capture& fifo) {
+                uint32_t at = 32;
+                auto commit = [&](uint32_t address, const uint8_t* data, size_t size) {
+                    std::copy(data, data + size, sink.ram.begin() + address);
+                    sink.bursts++;
+                };
+                size_t offset = 0;
+                for (const size_t length : runs) {
+                    const size_t end = offset + length;
+                    if (bulk) {
+                        while (offset < end) {
+                            offset += fifo.AppendWithinBurst(stream.data() + offset, end - offset);
+                            if (offset == end) break;
+                            at = fifo.Push(32, 96, at, stream[offset], 1, commit);
+                            ++offset;
+                        }
+                    } else {
+                        for (; offset + 4 <= end; offset += 4) {
+                            const uint32_t word = uint32_t(stream[offset]) << 24 | uint32_t(stream[offset + 1]) << 16 |
+                                                  uint32_t(stream[offset + 2]) << 8 | stream[offset + 3];
+                            at = fifo.Push(32, 96, at, word, 4, commit);
+                        }
+                        for (; offset < end; ++offset) at = fifo.Push(32, 96, at, stream[offset], 1, commit);
+                    }
+                }
+                return at;
+            };
+            Sink words, blocks;
+            PrimeCpuFifo::Capture wordFifo, blockFifo;
+            const uint32_t wordPointer = run(false, words, wordFifo);
+            const uint32_t blockPointer = run(true, blocks, blockFifo);
+            Require(wordPointer == blockPointer && words.bursts == blocks.bursts && words.bursts == 9,
+                    "bulk append pointer or burst count differs");
+            Require(wordFifo.count == blockFifo.count &&
+                        std::equal(wordFifo.pending.begin(), wordFifo.pending.begin() + wordFifo.count,
+                                   blockFifo.pending.begin()),
+                    "bulk append pending bytes differ");
+            Require(words.ram == blocks.ram, "bulk append published bytes differ");
+        }
+        std::cout << "PASS CPU FIFO: byte order, partial bursts, mixed widths, wrap, bounds, invalid inputs, bulk runs\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

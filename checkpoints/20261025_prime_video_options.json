@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "request": "Expose antialiasing, anisotropic filtering and the other renderer settings Aurora or the game allow.",
+  "aurora_inventory": {
+    "msaa": "AuroraConfig.msaa -> webgpu::GraphicsConfig.msaaSamples; pipelines (lib/gx/gx.cpp PipelineConfig.msaaSamples, part of the pipeline cache config blob), render textures (gpu.cpp create_render_texture), clear/copy passes and depth_peek resolve when > 1. Read once at aurora_initialize; validated to 1/2/4/8 (pipeline.hpp validSamples). The runtime never set it before (default 1).",
+    "anisotropy": "AuroraConfig.maxTextureAnisotropy (default 16) only caps what the GX texture object requests (GX_ANISO_2 -> cap/2, GX_ANISO_4 -> cap, GX_ANISO_1 -> 1). The game's texture objects request GX_ANISO_1 (gx_texture.cpp HLE passes the game's value), so anisotropy never engaged. New GraphicsConfig.forceTextureAnisotropy / aurora_set_texture_anisotropy overrides wgpu_aniso for trilinear samplers; samplers are cached by descriptor hash (common.cpp sampler_ref) so a live change just creates new samplers.",
+    "already_exposed": "aspect, internal resolution (0 = window), display mode, graphics API, copy filter, FPS counter.",
+    "exposed_now": "texture_replacements and texture_dumps (Dolphin-style, indexed once at startup; folder <UserData>/texture_replacements, dumps in Cache/texture_dumps).",
+    "deliberately_not_exposed": "metalfx (macOS only), efb persistence and async decoder knobs (performance tab / experimental)."
+  },
+  "implementation": {
+    "config": "[video] msaa (1,2,4,8; default 1) and anisotropic_filtering (0,2,4,8,16; default 0) in runtime_config.h with getters/setters; SetTextureReplacements/SetTextureDumps added.",
+    "main.cpp": "auroraConfig.msaa and auroraConfig.forceTextureAnisotropy filled before aurora_initialize.",
+    "overlay": "settings_overlay.cpp DrawPrimeVideoOptions: Antialiasing combo (restart note, shows active samples when different), Filtrado anisotropico combo (live), custom textures and dump checkboxes (restart).",
+    "aurora": "aurora.h forceTextureAnisotropy field + aurora_set/get_texture_anisotropy + aurora_get_msaa_samples; aurora.cpp validates msaa; gpu.hpp/gpu.cpp carry the field; gx.cpp wgpu_aniso honours the override."
+  },
+  "risks": [
+    "MSAA changes every pipeline key: the shipped seed (1x) does not cover 2x/4x/8x, so the first session at a new level recompiles shaders (stutter) until the cache fills.",
+    "EFB copies from a multisampled framebuffer go through Aurora's resolve path (common.cpp resolveView/resolveTarget); less exercised in this project than 1x. User QA pending.",
+    "Forced anisotropy only applies to samplers with linear min/mag/mip filters (WebGPU requirement); textures without mipmaps are unaffected."
+  ],
+  "validation": {
+    "build": "WiiCompiled.exe 161,282,048 bytes, 2026-10-25 06:14 (video options + interpolation combo)",
+    "in_game": "pending user QA"
+  },
+  "frame_interpolation_2026-10-25": {
+    "decision": "User allowed it the same day since only the host layer changes (AGENTS.md policy amended).",
+    "mechanism": "lib/gx/frame_interpolation.cpp records a transform snapshot per perspective draw, matches draws with the previous frame (identity + predicted position), and at seal time interpolates model/projection uniforms for N inserted slots (120 -> 1, 180 -> 2); aurora.cpp encodes each slot and presents them at base + k*interval/(N+1), the native frame last. Frames split by a CPU-visible EFB readback are marked replay-unsafe and duplicated instead. Guest logic and VI are untouched.",
+    "costs": "Monitor must refresh above 60 Hz (user's reports 59 Hz only); native image presented about a frame later than without interpolation; extra encode/GPU work per frame; 6x/8x internal resolution limited to 4x.",
+    "ui": "F1 > Video combo with live diagnostics (matched draws percent, replay safe); off by default; user's Config.toml left at 0 because of the monitor."
+  }
+}

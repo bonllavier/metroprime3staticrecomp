@@ -32,7 +32,7 @@ def main():
         assert 'Runtime error: Prime raw GX vertex layout disagrees with its verified packet size' in log.read_text(errors='replace')
     else:
         assert probe['alive_at_deadline'] and not probe['failure_logged']
-    assert sha(ROOT/'recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe')==probe['executable_sha256']
+    assert sha(ROOT/'recomp/build/RM3E01_00_runtime_link_probe/Corruption_3 PC.exe')==probe['executable_sha256']
     assert f'[prime-video-reference-capture] prefix={prefix} call={capture["call"]}' in log.read_text(errors='replace')
     thp=ROOT/'recomp/.tools/disc-extraction-rm3e01/files/Video/FrontEnd/Mp3_Title_Sequence.thp'
     data=thp.read_bytes();word=lambda at:int.from_bytes(data[at:at+4],'big')

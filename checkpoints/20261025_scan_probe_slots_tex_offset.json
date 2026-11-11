@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01",
+  "scanner": {
+    "report": "After hours of play (around the PED/Phazon suit) the scan visor still drew outlines but could not scan anything, in every area and planet, until the game was restarted.",
+    "mechanism": "Scan targeting reads small CPU-visible EFB copies around the reticle (A8 object IDs ~768 B, Z16 2048 B, Z8L 1024 B; see 20261024_scan_visor_depth_copy.json). Aurora reads them back asynchronously through per-destination slots in lib/gfx/efb_ram_copy.cpp.",
+    "cause": "Slots were never released and capped at 32. Every new guest destination address (lens-flare probes per area, scan probe buffers reallocated when the HUD/visor is rebuilt) took a new slot; once all 32 were used, new destinations fell back to the lazy download path, which the game never triggers, so guest RAM stayed stale: the same 'outlines but no scan' state as the 2026-10-24 bug, persisting for the rest of the process.",
+    "evidence_status": "Strong match of symptom and persistence; slot exhaustion was not logged before this change, so it is not proven from the user's session.",
+    "fix": "When the table is full, recycle the least recently scheduled idle slot (lastScheduled clock) instead of dropping the readback; log '[efb-ram-async] slots full ... recycled' (first 16, then every 256). Test hook WII_COMPILED_AURORA_ASYNC_READBACK_SLOTS=<1..32>.",
+    "validation": "Gameplay run with 1 slot: continuous recycling logged, no errors, game kept running. User QA pending: long session and scanning after the suit upgrade."
+  },
+  "tex_offset": {
+    "report": "Fatal 'invalid tex offset 6' (session base_1792973605_pid19716).",
+    "cause": "BP SU_LPSIZE line/point texture offset fields are 3 bits (command_processor.cpp bits 16-18 / 19-21); Aurora's tex_offset() aborted on values 6-7.",
+    "fix": "lib/gx/shader_info.cpp: values beyond GX_TO_ONE map to 1.0 (hardware/Dolphin behaviour) with a one-time warning."
+  },
+  "copy_budget_observation": "Long session base_1792965241_pid22044: EFB copy textures normally ~20 MiB but bursts to 541-838 MiB lasting a few seconds; the budget's evictions freed almost nothing there (the bytes are in active copies). Worth tracing which scene produces the bursts if the VRAM crash returns.",
+  "build": "Corruption_3 PC.exe 2026-10-25 19:3x"
+}

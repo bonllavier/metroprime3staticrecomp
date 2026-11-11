@@ -3,12 +3,17 @@
 #include "../internal.hpp"
 #include "../webgpu/gpu.hpp"
 #include "gx.hpp"
+#include "uber.hpp"
 #include "gx_fmt.hpp"
 #include "shader_info.hpp"
 
 #include <dolphin/gx/GXEnum.h>
 
 #include <array>
+#include <set>
+#include <atomic>
+#include <memory>
+#include <string>
 #include <mutex>
 #include <string_view>
 #include <utility>
@@ -172,6 +177,8 @@ static std::string color_arg_reg(GXTevColorArg arg, size_t stageIdx, const Shade
   case GX_CC_HALF:
     return "vec3f(0.5)";
   case GX_CC_KONST: {
+    // The selected value is per-draw uniform state (version 22, normalize_konst_key).
+    return fmt::format("ubuf.konst{}.rgb", stageIdx);
     switch (stage.kcSel) {
       DEFAULT_FATAL("invalid kcSel {}", underlying(stage.kcSel));
     // Unsourced encodings evaluate to zero in hardware.
@@ -279,6 +286,7 @@ static std::string alpha_arg_reg(GXTevAlphaArg arg, size_t stageIdx, const Shade
     return fmt::format("rast{}.{}", idx, chan_comp(swap.alpha));
   }
   case GX_CA_KONST: {
+    return fmt::format("ubuf.konst{}.a", stageIdx);
     switch (stage.kaSel) {
       DEFAULT_FATAL("invalid kaSel {}", underlying(stage.kaSel));
     // Unsourced encodings evaluate to zero in hardware.
@@ -785,6 +793,7 @@ auto attr_load(const ShaderConfig& config, GXAttr attr, std::string_view vidx) -
 }
 
 auto lighting_func(const ShaderConfig& config, const ColorChannelConfig& cc, u8 i, bool alpha) -> std::string {
+  const bool UsePerPixelLighting = config.perPixelLighting != 0;
   std::string_view swizzle = alpha ? ".a"sv : ".rgb"sv;
   std::string_view intType = alpha ? "i32"sv : "vec3i"sv;
   std::string_view floatType = alpha ? "f32"sv : "vec3f"sv;
@@ -839,7 +848,7 @@ auto lighting_func(const ShaderConfig& config, const ColorChannelConfig& cc, u8 
           var dist_attn = dot(light.dist_att, vec3f(1.0, dist, dist2));
           attn = max(0.0, cos_attn / dist_attn);)""");
   } else if (cc.attnFn == GX_AF_SPEC) {
-    std::string_view normal = UsePerPixelLighting ? "in.mv_nrm"sv : "mv_nrm"sv;
+    std::string_view normal = UsePerPixelLighting ? "ppl_nrm"sv : "mv_nrm"sv;
     std::string dist_attn = diffFn != GX_DF_NONE
                                 ? "dot(normalize(light.dist_att), vec3f(1.0, attn, attn * attn))"
                                 : "dot(light.dist_att, vec3f(1.0, attn, attn * attn))";
@@ -850,7 +859,7 @@ auto lighting_func(const ShaderConfig& config, const ColorChannelConfig& cc, u8 
           attn = select(select(0.0, 1.0, cos_attn > 0.0), max(0.0, cos_attn / dist_attn), dist_attn != 0.0);)""",
                               normal, dist_attn);
   }
-  std::string_view normal = UsePerPixelLighting ? "in.mv_nrm"sv : "mv_nrm"sv;
+  std::string_view normal = UsePerPixelLighting ? "ppl_nrm"sv : "mv_nrm"sv;
   std::string lightDirSetup;
   if (cc.attnFn == GX_AF_NONE) {
     lightDirSetup = fmt::format(R"""(
@@ -867,21 +876,13 @@ auto lighting_func(const ShaderConfig& config, const ColorChannelConfig& cc, u8 
           ldir = ldir / dist;)""",
                            posVar);
   }
-  std::string_view lightDiffFn;
+  std::string lightDiffFn;
   if (diffFn == GX_DF_NONE) {
-    lightDiffFn = "1.0"sv;
+    lightDiffFn = "1.0";
   } else if (diffFn == GX_DF_SIGN) {
-    if (UsePerPixelLighting) {
-      lightDiffFn = "dot(ldir, in.mv_nrm)"sv;
-    } else {
-      lightDiffFn = "dot(ldir, mv_nrm)"sv;
-    }
+    lightDiffFn = fmt::format("dot(ldir, {})", normal);
   } else if (diffFn == GX_DF_CLAMP) {
-    if (UsePerPixelLighting) {
-      lightDiffFn = "max(0.0, dot(ldir, in.mv_nrm))"sv;
-    } else {
-      lightDiffFn = "max(0.0, dot(ldir, mv_nrm))"sv;
-    }
+    lightDiffFn = fmt::format("max(0.0, dot(ldir, {}))", normal);
   }
   const auto outputTarget = alpha ? fmt::format("{}.a", outVar) : outVar;
   const auto outputValue =
@@ -908,10 +909,367 @@ auto lighting_func(const ShaderConfig& config, const ColorChannelConfig& cc, u8 
                      outputValue);
 }
 
-wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
+
+// ---------------------------------------------------------------------------------------------
+// Ubershader (docs/ubershader_diseno.md). The TEV program is read from the uniform buffer instead of
+// being baked into the source. Every rule below mirrors the specialised generator above it.
+static std::string uber_helper_functions(const ShaderInfo& info, const ShaderConfig& config) {
+  std::string out = R"WGSL(
+struct UberCtx {
+    prev: vec4f,
+    r0: vec4f,
+    r1: vec4f,
+    r2: vec4f,
+    texc: vec3f,
+    texa: f32,
+    rasc: vec3f,
+    rasa: f32,
+    konst: vec4f,
+};
+fn uber_color_arg(sel: u32, t: UberCtx) -> vec3f {
+  switch (sel) {
+    case 0u: { return t.prev.rgb; }
+    case 1u: { return vec3f(t.prev.a); }
+    case 2u: { return t.r0.rgb; }
+    case 3u: { return vec3f(t.r0.a); }
+    case 4u: { return t.r1.rgb; }
+    case 5u: { return vec3f(t.r1.a); }
+    case 6u: { return t.r2.rgb; }
+    case 7u: { return vec3f(t.r2.a); }
+    case 8u: { return t.texc; }
+    case 9u: { return vec3f(t.texa); }
+    case 10u: { return t.rasc; }
+    case 11u: { return vec3f(t.rasa); }
+    case 12u: { return vec3f(1.0); }
+    case 13u: { return vec3f(0.5); }
+    case 14u: { return t.konst.rgb; }
+    default: { return vec3f(0.0); }
+  }
+}
+fn uber_alpha_arg(sel: u32, t: UberCtx) -> f32 {
+  switch (sel) {
+    case 0u: { return t.prev.a; }
+    case 1u: { return t.r0.a; }
+    case 2u: { return t.r1.a; }
+    case 3u: { return t.r2.a; }
+    case 4u: { return t.texa; }
+    case 5u: { return t.rasa; }
+    case 6u: { return t.konst.a; }
+    default: { return 0.0; }
+  }
+}
+fn uber_bias(b: u32) -> i32 {
+  if (b == 1u) { return 128; }
+  if (b == 2u) { return -128; }
+  return 0;
+}
+fn uber_color_op(op: u32, bias: i32, scale: u32, clamp_out: bool, a: vec3f, b: vec3f, c: vec3f, d: vec3f) -> vec3f {
+  let oa = tev_overflow_vec3f(a);
+  let ob = tev_overflow_vec3f(b);
+  let oc = tev_overflow_vec3f(c);
+  var r = vec3f(0.0);
+  switch (op) {
+    case 0u, 1u: { r = tev_regular_vec3f(oa, ob, oc, d, bias, scale, op == 1u); }
+    case 8u: { r = select(vec3f(0.0), oc, round(oa.r * 255.0) > round(ob.r * 255.0)) + d; }
+    case 9u: { r = select(vec3f(0.0), oc, round(oa.r * 255.0) == round(ob.r * 255.0)) + d; }
+    case 10u: { r = select(vec3f(0.0), oc, round(dot(oa.rg * 255.0, vec2(1.0, 256.0))) > round(dot(ob.rg * 255.0, vec2(1.0, 256.0)))) + d; }
+    case 11u: { r = select(vec3f(0.0), oc, round(dot(oa.rg * 255.0, vec2(1.0, 256.0))) == round(dot(ob.rg * 255.0, vec2(1.0, 256.0)))) + d; }
+    case 12u: { r = select(vec3f(0.0), oc, round(dot(oa.rgb * 255.0, vec3(1.0, 256.0, 65536.0))) > round(dot(ob.rgb * 255.0, vec3(1.0, 256.0, 65536.0)))) + d; }
+    case 13u: { r = select(vec3f(0.0), oc, round(dot(oa.rgb * 255.0, vec3(1.0, 256.0, 65536.0))) == round(dot(ob.rgb * 255.0, vec3(1.0, 256.0, 65536.0)))) + d; }
+    case 14u: { r = select(vec3f(0.0), oc, round(oa * 255.0) > round(ob * 255.0)) + d; }
+    case 15u: { r = select(vec3f(0.0), oc, round(oa * 255.0) == round(ob * 255.0)) + d; }
+    default: {}
+  }
+  if (clamp_out) { return clamp(r, vec3f(0.0), vec3f(1.0)); }
+  return clamp(r, vec3f(-1024.0 / 255.0), vec3f(1023.0 / 255.0));
+}
+fn uber_alpha_op(op: u32, bias: i32, scale: u32, clamp_out: bool, a: f32, b: f32, c: f32, d: f32, ca: vec3f, cb: vec3f) -> f32 {
+  let oa = tev_overflow_f32(a);
+  let ob = tev_overflow_f32(b);
+  let oc = tev_overflow_f32(c);
+  let coa = tev_overflow_vec3f(ca);
+  let cob = tev_overflow_vec3f(cb);
+  var r = 0.0;
+  switch (op) {
+    case 0u, 1u: { r = tev_regular_f32(oa, ob, oc, d, bias, scale, op == 1u); }
+    case 8u: { r = select(0.0, oc, round(coa.r * 255.0) > round(cob.r * 255.0)) + d; }
+    case 9u: { r = select(0.0, oc, round(coa.r * 255.0) == round(cob.r * 255.0)) + d; }
+    case 10u: { r = select(0.0, oc, round(dot(coa.rg * 255.0, vec2(1.0, 256.0))) > round(dot(cob.rg * 255.0, vec2(1.0, 256.0)))) + d; }
+    case 11u: { r = select(0.0, oc, round(dot(coa.rg * 255.0, vec2(1.0, 256.0))) == round(dot(cob.rg * 255.0, vec2(1.0, 256.0)))) + d; }
+    case 12u: { r = select(0.0, oc, round(dot(coa.rgb * 255.0, vec3(1.0, 256.0, 65536.0))) > round(dot(cob.rgb * 255.0, vec3(1.0, 256.0, 65536.0)))) + d; }
+    case 13u: { r = select(0.0, oc, round(dot(coa.rgb * 255.0, vec3(1.0, 256.0, 65536.0))) == round(dot(cob.rgb * 255.0, vec3(1.0, 256.0, 65536.0)))) + d; }
+    case 14u: { r = select(0.0, oc, round(oa * 255.0) > round(ob * 255.0)) + d; }
+    case 15u: { r = select(0.0, oc, round(oa * 255.0) == round(ob * 255.0)) + d; }
+    default: {}
+  }
+  if (clamp_out) { return clamp(r, 0.0, 1.0); }
+  return clamp(r, -1024.0 / 255.0, 1023.0 / 255.0);
+}
+fn uber_swz(v: vec4f, sw: u32) -> vec4f {
+  return vec4f(v[sw & 3u], v[(sw >> 2u) & 3u], v[(sw >> 4u) & 3u], v[(sw >> 6u) & 3u]);
+}
+fn uber_wrap_mask(code: u32) -> i32 {
+  switch (code) {
+    case 0u: { return -1; }
+    case 1u: { return 32767; }
+    case 2u: { return 16383; }
+    case 3u: { return 8191; }
+    case 4u: { return 4095; }
+    case 5u: { return 2047; }
+    default: { return 0; }
+  }
+}
+fn uber_cmp(code: u32, a: u32, r: u32) -> bool {
+  switch (code) {
+    case 0u: { return false; }
+    case 1u: { return a < r; }
+    case 2u: { return a == r; }
+    case 3u: { return a <= r; }
+    case 4u: { return a > r; }
+    case 5u: { return a != r; }
+    case 6u: { return a >= r; }
+    default: { return true; }
+  }
+}
+)WGSL";
+  out += "fn uber_sample(tm: u32, uv: vec2f) -> vec4f {\n  switch (tm) {\n";
+  for (u32 i = 0; i < MaxTextures; ++i) {
+    if (info.sampledTextures.test(i)) {
+      out += fmt::format("    case {0}u: {{ return textureSampleBias(tex{0}, tex{0}_samp, uv, ubuf.tex{0}_size_bias.z); }}\n", i);
+    }
+  }
+  out += "    default: { return vec4f(0.0); }\n  }\n}\n";
+  out += "fn uber_tex_size(tm: u32) -> vec2f {\n  switch (tm) {\n";
+  for (u32 i = 0; i < MaxTextures; ++i) {
+    if (info.sampledTextures.test(i)) {
+      out += fmt::format("    case {0}u: {{ return ubuf.tex{0}_size_bias.xy; }}\n", i);
+    }
+  }
+  out += "    default: { return vec2f(1.0); }\n  }\n}\n";
+  (void)config;
+  return out;
+}
+
+static std::string uber_tev_body(const ShaderInfo& info, const ShaderConfig& config) {
+  std::string pre = "\n    // Ubershader TEV: the material is read from the uniform buffer";
+  pre += "\n    var uber_rast = array<vec4f, 2>(";
+  for (int i = 0; i < 2; ++i) {
+    pre += fmt::format("{}{}", i ? ", " : "", info.sampledColorChannels.test(i) ? fmt::format("rast{}", i) : "vec4f(0.0)"s);
+  }
+  pre += ");\n    var uber_uv = array<vec2f, 8>(";
+  for (u32 i = 0; i < 8; ++i) {
+    pre += fmt::format("{}{}", i ? ", " : "", info.sampledTexCoords.test(i) ? fmt::format("tex{}_uv", i) : "vec2f(0.0)"s);
+  }
+  pre += ");\n    var uber_scale = array<vec2f, 8>(";
+  for (u32 i = 0; i < 8; ++i) {
+    pre += fmt::format("{}{}", i ? ", " : "",
+                       info.sampledTexCoords.test(i) ? fmt::format("ubuf.texcoord{}_scale.xy", i) : "vec2f(1.0)"s);
+  }
+  pre += ");";
+  const std::string noTexC = config.numTexGens == 0 ? "0.0" : "1.0";
+  std::string body = R"WGSL(
+    var tev = array<vec4f, 4>(prev, tevreg0, tevreg1, tevreg2);
+    var t_TexCoord = vec2i(0);
+    var sampled_z = vec4f(0.0);
+    var ind_tc = array<vec3i, 4>(vec3i(0), vec3i(0), vec3i(0), vec3i(0));
+    for (var k = 0u; k < 4u; k = k + 1u) {
+      if (((ubuf.uber_misc1.x >> k) & 1u) == 0u) { continue; }
+      let ind = ubuf.uber_ind[k];
+      var ind_base = vec2i(0);
+      if (ind.x != 0u) {
+        ind_base = vec2i(uber_uv[ind.x - 1u] * uber_scale[ind.x - 1u] * 128.0);
+      }
+      let ind_fixed = ind_base >> vec2u(ind.z, ind.w);
+      if (ind.y != 0u) {
+        let ind_smp = uber_sample(ind.y - 1u, vec2f(ind_fixed) / (uber_tex_size(ind.y - 1u) * 128.0));
+        ind_tc[k] = tev_byte_vec3f(ind_smp.abg);
+      }
+    }
+    let uber_stage_count = ubuf.uber_misc0.x;
+    for (var s = 0u; s < uber_stage_count; s = s + 1u) {
+      let v0 = ubuf.uber_stages[s];
+      let w0 = v0.x;
+      let w1 = v0.y & 0x7FFu;
+      let w2 = (v0.y >> 11u) & 0x7FFu;
+      let w3 = v0.z;
+      let w4 = v0.w;
+      let tc = i32(w3 & 15u) - 1;
+      let tm = i32((w3 >> 4u) & 15u) - 1;
+      let kind = (w3 >> 8u) & 7u;
+      let can_sample = ((w3 >> 16u) & 1u) != 0u;
+      let needs_fixed = ((w3 >> 17u) & 1u) != 0u;
+      let will_sample = ((w3 >> 18u) & 1u) != 0u;
+      let has_ind = ((w3 >> 19u) & 1u) != 0u;
+      let add_prev = ((w3 >> 20u) & 1u) != 0u;
+      let has_ind_stage = ((w3 >> 21u) & 1u) != 0u;
+      let ist = w4 & 3u;
+      let ifmt = (w4 >> 2u) & 3u;
+
+      var sampled = vec4f(0.0);
+      if (needs_fixed || will_sample) {
+        var base_fixed = vec2i(0);
+        if (tc >= 0) {
+          base_fixed = vec2i(uber_uv[u32(tc)] * uber_scale[u32(tc)] * 128.0);
+        }
+        var uv_in = vec2f(0.0);
+        if (needs_fixed) {
+          var ind_off = vec2i(0);
+          var has_off = false;
+          //@IND_BEGIN
+          if (has_ind) {
+            var c = ind_tc[ist];
+            if (ifmt != 0u) { c = c >> vec3u(ifmt + 2u); }
+            let bsel = (w4 >> 4u) & 7u;
+            if (bsel != 0u) {
+              let bias = select(1, -128, ifmt == 0u);
+              c = c + vec3i(i32(bsel & 1u), i32((bsel >> 1u) & 1u), i32((bsel >> 2u) & 1u)) * bias;
+            }
+            let mtx = (w4 >> 9u) & 15u;
+            var mi = 0u;
+            if (mtx >= 1u && mtx <= 3u) {
+              mi = mtx - 1u;
+              let c0 = ubuf.ind_mtx[mi * 2u];
+              let c1 = ubuf.ind_mtx[mi * 2u + 1u];
+              ind_off = vec2i((c0.x * c.x + c0.z * c.y + c1.x * c.z) >> 3u,
+                              (c0.y * c.x + c0.w * c.y + c1.y * c.z) >> 3u);
+              has_off = true;
+            } else if (mtx >= 5u && mtx <= 7u && tc >= 0) {
+              mi = mtx - 5u;
+              ind_off = (base_fixed * vec2i(c.x)) >> vec2u(8u);
+              has_off = true;
+            } else if (mtx >= 9u && mtx <= 11u && tc >= 0) {
+              mi = mtx - 9u;
+              ind_off = (base_fixed * vec2i(c.y)) >> vec2u(8u);
+              has_off = true;
+            }
+            if (has_off) {
+              let ind_shift = ubuf.ind_mtx[mi * 2u + 1u].z;
+              if (ind_shift >= 0) {
+                ind_off = ind_off >> vec2u(u32(ind_shift));
+              } else {
+                ind_off = ind_off << vec2u(u32(-ind_shift));
+              }
+            }
+          }
+          //@IND_END
+          var final_c = vec2i(base_fixed.x & uber_wrap_mask((w4 >> 13u) & 7u), base_fixed.y & uber_wrap_mask((w4 >> 16u) & 7u));
+          if (has_off) { final_c = final_c + ind_off; }
+          if (add_prev) { t_TexCoord = t_TexCoord + final_c; } else { t_TexCoord = final_c; }
+          t_TexCoord = tev_s24_fixed_vec2i(t_TexCoord);
+          if (will_sample) {
+            uv_in = vec2f(t_TexCoord) / (uber_tex_size(u32(tm)) * 128.0);
+          }
+        } else {
+          uv_in = vec2f(tev_s24_fixed_vec2i(base_fixed)) / (uber_tex_size(u32(tm)) * 128.0);
+        }
+        if (will_sample) {
+          sampled = uber_sample(u32(tm), uv_in);
+        }
+      }
+      if (s + 1u == ubuf.uber_misc0.z) { sampled_z = sampled; }
+
+      let sw_ras = ubuf.uber_swaps[(w3 >> 12u) & 3u];
+      let sw_tex = ubuf.uber_swaps[(w3 >> 14u) & 3u];
+      var t: UberCtx;
+      t.prev = tev[0];
+      t.r0 = tev[1];
+      t.r1 = tev[2];
+      t.r2 = tev[3];
+      if (can_sample) {
+        let tex_sw = uber_swz(sampled, sw_tex);
+        t.texc = tex_sw.rgb;
+        t.texa = tex_sw.a;
+      } else {
+        t.texc = vec3f(@NOTEX@);
+        t.texa = @NOTEX@;
+      }
+      if (kind == 1u || kind == 2u) {
+        let ras_sw = uber_swz(uber_rast[kind - 1u], sw_ras);
+        t.rasc = ras_sw.rgb;
+        t.rasa = ras_sw.a;
+      } else if (kind >= 3u) {
+        var bump = 0.0;
+        let asel = (w4 >> 7u) & 3u;
+        if (has_ind_stage && asel != 0u) {
+          var bmask = 0xF8u;
+          if (ifmt == 1u) { bmask = 0xE0u; } else if (ifmt == 2u) { bmask = 0xF0u; }
+          bump = f32(u32(ind_tc[ist][asel - 1u]) & bmask) / 255.0;
+          if (kind == 4u) { bump = bump * (255.0 / 248.0); }
+        }
+        t.rasc = vec3f(bump);
+        t.rasa = bump;
+      }
+      t.konst = ubuf.uber_konst[s];
+
+      let ca = uber_color_arg(w0 & 15u, t);
+      let cb = uber_color_arg((w0 >> 4u) & 15u, t);
+      let cc = uber_color_arg((w0 >> 8u) & 15u, t);
+      let cd = uber_color_arg((w0 >> 12u) & 15u, t);
+      let aa = uber_alpha_arg((w0 >> 16u) & 7u, t);
+      let ab = uber_alpha_arg((w0 >> 19u) & 7u, t);
+      let ac = uber_alpha_arg((w0 >> 22u) & 7u, t);
+      let ad = uber_alpha_arg((w0 >> 25u) & 7u, t);
+      let cres = uber_color_op(w1 & 15u, uber_bias((w1 >> 4u) & 3u), (w1 >> 6u) & 3u, ((w1 >> 8u) & 1u) != 0u, ca, cb, cc, cd);
+      let ares = uber_alpha_op(w2 & 15u, uber_bias((w2 >> 4u) & 3u), (w2 >> 6u) & 3u, ((w2 >> 8u) & 1u) != 0u, aa, ab, ac, ad, ca, cb);
+      let cout = (w1 >> 9u) & 3u;
+      let aout = (w2 >> 9u) & 3u;
+      tev[cout] = vec4f(cres, tev[cout].a);
+      tev[aout].a = ares;
+    }
+    prev = tev[0];
+    let uber_last_c = ubuf.uber_misc0.w & 15u;
+    let uber_last_a = (ubuf.uber_misc0.w >> 4u) & 15u;
+    if (uber_last_c != 0u) { prev = vec4f(tev[uber_last_c].rgb, prev.a); }
+    if (uber_last_a != 0u) { prev.a = tev[uber_last_a].a; }
+)WGSL";
+  if (!info.usedIndTexMtxs.any()) {
+    // No indirect matrix in this material's uniform layout: drop the code that reads it.
+    const auto begin = body.find("//@IND_BEGIN");
+    const auto end = body.find("//@IND_END");
+    if (begin != std::string::npos && end != std::string::npos && end > begin) {
+      body.erase(begin, end - begin);
+    }
+  }
+  const std::string marker = "@NOTEX@";
+  for (size_t at = body.find(marker); at != std::string::npos; at = body.find(marker, at)) {
+    body.replace(at, marker.size(), noTexC);
+  }
+  return pre + body;
+}
+
+static const char* const UberAlphaCompareWgsl = R"WGSL(
+    // Alpha compare (uniform-driven)
+    let alphaCompare = u32(round(clamp(prev.a, 0.0, 1.0) * 255.0));
+    let acp0 = uber_cmp(ubuf.uber_acmp.x, alphaCompare, ubuf.uber_acmp.y);
+    let acp1 = uber_cmp(ubuf.uber_acmp.z, alphaCompare, ubuf.uber_acmp.w);
+    var acpass = acp0 && acp1;
+    switch (ubuf.uber_misc1.y) {
+      case 1u: { acpass = acp0 || acp1; }
+      case 2u: { acpass = acp0 != acp1; }
+      case 3u: { acpass = acp0 == acp1; }
+      default: {}
+    }
+    if (!acpass) { discard; }
+)WGSL";
+
+static const char* const UberUniformFields = R"WGSL(
+    uber_misc0: vec4u,
+    uber_misc1: vec4u,
+    uber_swaps: vec4u,
+    uber_acmp: vec4u,
+    uber_ind: array<vec4u, 4>,
+    uber_konst: array<vec4f, 16>,
+    uber_stages: array<vec4u, 16>,)WGSL";
+
+
+// The WGSL of one specialised GX shader. Pure function of the config (no device, no GPU): the shader
+// golden test (tests/shader_golden_test.cpp) hashes its output for a fixed set of recipes, so any
+// change to the generator is visible in review before it reaches a cache or a player.
+static std::string build_shader_source_impl(const ShaderConfig& config, const UberConfig* uber) noexcept {
   ZoneScoped;
+  const bool UsePerPixelLighting = config.perPixelLighting != 0;
   const auto hash = xxh3_hash(config);
-  const auto info = build_shader_info(config);
+  const auto info = uber != nullptr ? build_uber_shader_info(*uber) : build_shader_info(config);
 
   std::string uniformPre;
   std::string uniBufAttrs;
@@ -1045,7 +1403,7 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
   };
 
   static std::array regName{"prev"sv, "tevreg0"sv, "tevreg1"sv, "tevreg2"sv};
-  for (u32 idx = 0; idx < config.tevStageCount; ++idx) {
+  if (uber == nullptr) for (u32 idx = 0; idx < config.tevStageCount; ++idx) {
     const auto& stage = config.tevStages[idx];
     std::string colorA = color_arg_reg(stage.colorPass.a, idx, config, stage);
     std::string colorB = color_arg_reg(stage.colorPass.b, idx, config, stage);
@@ -1076,7 +1434,7 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
     }
   }
 
-  {
+  if (uber == nullptr) {
     const auto& lastStage = config.tevStages[config.tevStageCount - 1];
     if (lastStage.colorOp.outReg != 0) {
       fragmentFn += fmt::format("\n    prev = vec4f({0}.rgb, prev.a);", regName[lastStage.colorOp.outReg]);
@@ -1086,6 +1444,10 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
     }
   }
 
+  if (uber != nullptr) {
+    fragmentFn += uber_tev_body(info, config);
+    uniformPre += uber_helper_functions(info, config);
+  }
   const auto loadsTevRegs = info.loadsTevRegRgb | info.loadsTevRegAlpha;
   const auto writesTevRegs = info.writesTevRegRgb | info.writesTevRegAlpha;
   if (loadsTevRegs.test(0)) {
@@ -1103,6 +1465,13 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
     }
   }
 
+  // Enhanced metal needs the per-pixel normal and position, which only exist when this shader
+  // evaluates lighting itself (a lit material whose TEV never reads the colour channel does not).
+  const bool metalActive = config.enhancedMetal != 0 && config.perPixelLighting != 0 && info.lightingEnabled;
+  // Environment material (unlit lightmapped world surface): the enhanced-metal block with the
+  // lightmap as the surroundings' light and borrowed lights (shader_info sets usesEnvLights).
+  const bool envActive = info.usesEnvLights && uber == nullptr;
+  const int envLightmapStage = envActive ? env_lightmap_stage(config) : -1;
   if (info.lightingEnabled) {
     uniBufAttrs += fmt::format(FMT_STRING(R"""(
     lights: array<Light, {}>,
@@ -1126,7 +1495,64 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
       vtxXfrAttrs += fmt::format(FMT_STRING(R"""(
     out.mv_pos = mv_pos;
     out.mv_nrm = mv_nrm;)"""));
+      // The interpolated normal shrinks across a triangle; renormalize unless it is
+      // the zero vector a draw without normals produces (mirrors the vertex guard).
+      fragmentFnPre += "\n    let ppl_nrm = select(in.mv_nrm, normalize(in.mv_nrm), dot(in.mv_nrm, in.mv_nrm) > 1e-10);";
+      if (metalActive) {
+        // Enhanced metal: strength from the uniform header pad, view vector and Fresnel term.
+        fragmentFnPre +=
+            "\n    let metal_k = bitcast<f32>(ubuf.pad.x);"
+            "\n    let metal_pk = ubuf.pad.y;"
+            "\n    let metal_edge = f32((metal_pk >> 16u) & 255u) / 255.0 * 4.0;"
+            "\n    let metal_v = normalize(-in.mv_pos);"
+            "\n    let metal_fres = pow(1.0 - clamp(abs(dot(ppl_nrm, metal_v)), 0.0, 1.0), 3.0);";
+      }
     }
+  }
+  if (envActive) {
+    if (!info.lightingEnabled) {
+      uniformPre +=
+          "\n"
+          "struct Light {\n"
+          "    pos: vec3f,\n"
+          "    dir: vec3f,\n"
+          "    color: vec4f,\n"
+          "    cos_att: vec3f,\n"
+          "    dist_att: vec3f,\n"
+          "};";
+    }
+    // GX spot/distance attenuation of a borrowed light at a surface point (same terms as the XF
+    // lighting above), capped so a light right next to a wall does not blow out.
+    uniformPre +=
+        "\nfn env_att(l: Light, p: vec3f) -> f32 {"
+        "\n    let d = l.pos - p;"
+        "\n    let dist2 = max(dot(d, d), 1e-8);"
+        "\n    let dist = sqrt(dist2);"
+        "\n    let ldir = d / dist;"
+        "\n    let cosine = max(0.0, dot(ldir, l.dir));"
+        "\n    let ca = dot(l.cos_att, vec3f(1.0, cosine, cosine * cosine));"
+        "\n    let da = dot(l.dist_att, vec3f(1.0, dist, dist2));"
+        "\n    return clamp(select(1.0, max(0.0, ca / da), abs(da) > 1e-6), 0.0, 4.0);"
+        "\n}"
+        // Which highlights a light may give here. Borrowed lights (env_light_mask.y = 0): only where the
+        // lightmap is lit, exactly as before. Engine lights (modern lighting): color.a holds the range,
+        // + for a static light (baked into the lightmap, so the same lightmap gate) and - for a dynamic
+        // one (shots, explosions: not in the lightmap, no gate); both fade out smoothly at that range.
+        "\nfn env_gate(l: Light, p: vec3f, shadow: f32, mode: u32) -> f32 {"
+        "\n    if (mode == 0u) { return shadow; }"
+        "\n    let range = max(abs(l.color.a), 1e-3);"
+        "\n    let x = length(l.pos - p) / range;"
+        "\n    let fall = clamp(1.0 - x * x * x * x, 0.0, 1.0);"
+        "\n    return fall * fall * select(1.0, shadow, l.color.a >= 0.0);"
+        "\n}";
+    vtxOutAttrs += fmt::format("\n    @location({}) mv_pos: vec3f,", vtxOutIdx++);
+    vtxOutAttrs += fmt::format("\n    @location({}) mv_nrm: vec3f,", vtxOutIdx++);
+    vtxXfrAttrs += "\n    out.mv_pos = mv_pos;\n    out.mv_nrm = mv_nrm;";
+    fragmentFnPre +=
+        "\n    let ppl_nrm = select(in.mv_nrm, normalize(in.mv_nrm), dot(in.mv_nrm, in.mv_nrm) > 1e-10);"
+        "\n    let metal_k = bitcast<f32>(ubuf.pad.x);"
+        "\n    let metal_pk = ubuf.pad.y;"
+        "\n    let metal_v = normalize(-in.mv_pos);";
   }
 
   for (int i = 0; i < info.sampledColorChannels.size(); ++i) {
@@ -1174,6 +1600,11 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
       uniBufAttrs += fmt::format("\n    kcolor{}: vec4f,", i);
     }
   }
+  for (int i = 0; i < info.konstStages.size(); ++i) {
+    if (info.konstStages.test(i)) {
+      uniBufAttrs += fmt::format("\n    konst{}: vec4f,", i);
+    }
+  }
   for (int i = 0; i < info.sampledTexCoords.size(); ++i) {
     if (!info.sampledTexCoords.test(i)) {
       continue;
@@ -1201,9 +1632,11 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
       // GX source row 4 is Dolphin's binormal group in NBT normal arrays.
       vtxXfrAttrs += fmt::format("\n    var tc{} = vec4f({}, 1.0);", i, normal_group_load(config, 2, vidxAttr));
     } else if (tcg.src == GX_TG_COLOR0) {
-      vtxXfrAttrs += fmt::format("\n    var tc{} = vec4f({}.rgb, 1.0);", i, vtx_attr(config, GX_VA_CLR0));
+      // The texgen colour source is the colour channel output, not the raw vertex
+      // attribute (upstream aurora e938637c; Dolphin agrees).
+      vtxXfrAttrs += fmt::format("\n    var tc{} = vec4f(out.cc0.rgb, 1.0);", i);
     } else if (tcg.src == GX_TG_COLOR1) {
-      vtxXfrAttrs += fmt::format("\n    var tc{} = vec4f({}.rgb, 1.0);", i, vtx_attr(config, GX_VA_CLR1));
+      vtxXfrAttrs += fmt::format("\n    var tc{} = vec4f(out.cc1.rgb, 1.0);", i);
     } else
       UNLIKELY FATAL("unhandled tcg src {}", underlying(tcg.src));
     if (tcg.inputFormAB11) {
@@ -1275,7 +1708,58 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
       vtxXfrAttrs += fmt::format("\n    out.tex{0}_uv = tc{0}_proj.xy;", i);
       fragmentFnPre += fmt::format("\n    var tex{0}_uv = in.tex{0}_uv.xy;", i);
     }
+    // Enhanced metal: evaluate the normal-based (environment) texgen per pixel from the interpolated
+    // normal instead of interpolating per-vertex texture coordinates, so reflections follow the
+    // curvature instead of smearing across large polygons. Same matrices as the vertex path.
+    const bool texMtxPerVertex = info.indexAttr.test(GX_VA_TEX0MTXIDX + i);
+    if (metalActive && tcg.src == GX_TG_NRM && config.lineMode == 0 && !texMtxPerVertex &&
+        (tcg.type == GX_TG_MTX2x4 || tcg.type == GX_TG_MTX3x4)) {
+      vtxOutAttrs += fmt::format("\n    @location({}) tex{}_srcnrm: vec3f,", vtxOutIdx++, i);
+      vtxXfrAttrs += fmt::format("\n    out.tex{0}_srcnrm = tc{0}.xyz;", i);
+      std::string mtxExpr;
+      if (tcg.mtx == GX_IDENTITY) {
+        mtxExpr = fmt::format("metal_tc{0}.xyz", i);
+      } else {
+        const u32 texMtxSlot = (tcg.mtx) / 3;
+        const u32 texMtxIdx = texMtxSlot < MaxPostexMtx ? info.matrixLayout.postexRemap[texMtxSlot] : texMtxSlot;
+        mtxExpr = fmt::format("metal_tc{0} * ubuf.postex_mtx[{1}]", i, texMtxIdx);
+      }
+      fragmentFnPre += fmt::format(
+          "\n    {{"
+          "\n      let metal_n{0} = in.tex{0}_srcnrm;"
+          "\n      let metal_tc{0} = vec4f(select(metal_n{0}, normalize(metal_n{0}), dot(metal_n{0}, metal_n{0}) > 1e-10), 1.0);"
+          "\n      var metal_tmp{0} = {1};",
+          i, mtxExpr);
+      if (tcg.type == GX_TG_MTX2x4) {
+        fragmentFnPre += fmt::format("\n      metal_tmp{0}.z = 1.0f;", i);
+      }
+      if (config.dualTexEnabled && tcg.normalize) {
+        fragmentFnPre += fmt::format("\n      metal_tmp{0} = normalize(metal_tmp{0});", i);
+      }
+      if (!config.dualTexEnabled || tcg.postMtx == GX_PTIDENTITY) {
+        fragmentFnPre += fmt::format("\n      var metal_proj{0} = metal_tmp{0};", i);
+      } else {
+        const u32 postMtxIdx = (tcg.postMtx - GX_PTTEXMTX0) / 3;
+        fragmentFnPre += fmt::format(
+            "\n      var metal_proj{0} = vec4f(metal_tmp{0}.xyz, 1.0) * ubuf.postmtx[{1}];", i, postMtxIdx);
+      }
+      fragmentFnPre += fmt::format(
+          "\n      if (metal_proj{0}.z == 0.0) {{"
+          "\n        metal_proj{0}.x = clamp(metal_proj{0}.x / 2.0, -1.0, 1.0);"
+          "\n        metal_proj{0}.y = clamp(metal_proj{0}.y / 2.0, -1.0, 1.0);"
+          "\n      }}",
+          i);
+      if (tcg.type == GX_TG_MTX3x4) {
+        fragmentFnPre += fmt::format(
+            "\n      tex{0}_uv = select(metal_proj{0}.xy, metal_proj{0}.xy / metal_proj{0}.z, metal_proj{0}.z != 0.0);",
+            i);
+      } else {
+        fragmentFnPre += fmt::format("\n      tex{0}_uv = metal_proj{0}.xy;", i);
+      }
+      fragmentFnPre += "\n    }";
+    }
   }
+  if (uber == nullptr) {
   // Multiple TEV stages may reference the same indirect stage,
   // so we sample each indirect texture only once.
   const auto ind_scale_shift = [](const GXIndTexScale s) -> u32 {
@@ -1472,17 +1956,62 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
     if (!willSampleTexture) {
       continue;
     }
+    bool plainUv = false;
     if (uvIn.empty()) {
       // No indirect texturing
       const auto fixedUv = fixed_texcoord_name(static_cast<u32>(textureDependency.texCoordId));
       uvIn = fmt::format("vec2f(tev_s24_fixed_vec2i({0})) / (ubuf.tex{1}_size_bias.xy * 128.0)", fixedUv,
                          textureDependency.texMapId);
+      plainUv = true;
     }
-    fragmentFnPre +=
-        fmt::format("\n    var sampled{0} = textureSampleBias(tex{1}, tex{1}_samp, {2}, ubuf.tex{1}_size_bias.z);", i,
-                    textureDependency.texMapId, uvIn);
+    if (plainUv && envActive && static_cast<int>(i) == envLightmapStage) {
+      // Smoothed lightmap filtering (lit_ext[0].w): the texel fraction goes through smoothstep before
+      // the bilinear tap, which removes the diamond and stair artefacts of the low-resolution
+      // lightmaps with the same single sample (no wider footprint: atlas padding does not bleed).
+      fragmentFnPre += fmt::format(
+          "\n    var sampled{0}_uv = {2};"
+          "\n    if (ubuf.lit_ext[0].w > 0.5) {{"
+          "\n      let lm{0}_p = sampled{0}_uv * ubuf.tex{1}_size_bias.xy + vec2f(0.5);"
+          "\n      let lm{0}_f = fract(lm{0}_p);"
+          "\n      sampled{0}_uv = (floor(lm{0}_p) + lm{0}_f * lm{0}_f * (3.0 - 2.0 * lm{0}_f) - vec2f(0.5)) / ubuf.tex{1}_size_bias.xy;"
+          "\n    }}"
+          "\n    var sampled{0} = textureSampleBias(tex{1}, tex{1}_samp, sampled{0}_uv, ubuf.tex{1}_size_bias.z);"
+          // Lightmap dither (modern lighting, env_light_mask.w bit 0): triangular noise of one 8-bit step
+          // from two interleaved-gradient patterns, so the doubled lightmap no longer shows bands.
+          "\n    if ((ubuf.env_light_mask.w & 1u) != 0u) {{"
+          "\n      let lm{0}_n1 = fract(52.9829189 * fract(dot(in.pos.xy, vec2f(0.06711056, 0.00583715))));"
+          "\n      let lm{0}_n2 = fract(52.9829189 * fract(dot(in.pos.xy + vec2f(47.0, 17.0), vec2f(0.06711056, 0.00583715))));"
+          "\n      sampled{0} = vec4f(clamp(sampled{0}.rgb + vec3f((lm{0}_n1 + lm{0}_n2 - 1.0) / 255.0), vec3f(0.0), vec3f(1.0)), sampled{0}.a);"
+          "\n    }}",
+          i, textureDependency.texMapId, uvIn);
+    } else if (plainUv && shader_soft_shadow(config) && uber == nullptr && static_cast<int>(i) == shadow_projection_stage(config)) {
+      // Soft projected shadow: centre plus four diagonal bilinear taps one texel away (about a 3x3
+      // filter), so the edge of the game's small shadow texture is no longer a hard, stepped line.
+      fragmentFnPre += fmt::format(
+          "\n    let sh{0}_uv = {2};"
+          "\n    let sh{0}_t = vec2f(1.0) / max(ubuf.tex{1}_size_bias.xy, vec2f(1.0));"
+          "\n    var sampled{0} = textureSampleBias(tex{1}, tex{1}_samp, sh{0}_uv, ubuf.tex{1}_size_bias.z) * 0.25 +"
+          "\n        (textureSampleBias(tex{1}, tex{1}_samp, sh{0}_uv + sh{0}_t * vec2f(1.0, 1.0), ubuf.tex{1}_size_bias.z) +"
+          "\n         textureSampleBias(tex{1}, tex{1}_samp, sh{0}_uv + sh{0}_t * vec2f(-1.0, 1.0), ubuf.tex{1}_size_bias.z) +"
+          "\n         textureSampleBias(tex{1}, tex{1}_samp, sh{0}_uv + sh{0}_t * vec2f(1.0, -1.0), ubuf.tex{1}_size_bias.z) +"
+          "\n         textureSampleBias(tex{1}, tex{1}_samp, sh{0}_uv + sh{0}_t * vec2f(-1.0, -1.0), ubuf.tex{1}_size_bias.z)) * 0.1875;",
+          i, textureDependency.texMapId, uvIn);
+    } else {
+      fragmentFnPre +=
+          fmt::format("\n    var sampled{0} = textureSampleBias(tex{1}, tex{1}_samp, {2}, ubuf.tex{1}_size_bias.z);", i,
+                      textureDependency.texMapId, uvIn);
+    }
+    if (metalActive && textureDependency.texCoordId >= 0 &&
+        static_cast<u32>(textureDependency.texCoordId) < MaxTexCoord &&
+        config.tcgs[static_cast<u32>(textureDependency.texCoordId)].src == GX_TG_NRM) {
+      // Enhanced metal: stronger environment reflection at grazing angles (Fresnel).
+      fragmentFnPre += fmt::format(
+          "\n    sampled{0} = vec4f(min(sampled{0}.rgb * (1.0 + metal_k * metal_edge * metal_fres), vec3f(1.0)), sampled{0}.a);",
+          i);
+    }
   }
 
+  }
   // in.pos.z is the host NDC z (forward: 0=near/1=far; reversed: 1=near/0=far post-fix), but this
   // expression needs to produce GX's own native distance term (always 0=near/1=far, matching how
   // g_gxState.clearDepth/clear_depth_value() are interpreted before their own UseReversedZ
@@ -1497,7 +2026,8 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
     const u32 zTexBias = config.zTexture & 0x00FFFFFFu;
     const u32 zTexFmt = (config.zTexture >> 24) & 0x3u;
     const u32 zTexOp = (config.zTexture >> 26) & 0x3u;
-    const std::string zTexSample = zTexStage >= 0 ? fmt::format("sampled{}", zTexStage) : "vec4f(0.0)";
+    const std::string zTexSample = uber != nullptr ? "sampled_z"s
+                                   : zTexStage >= 0 ? fmt::format("sampled{}", zTexStage) : "vec4f(0.0)"s;
 
     fragmentFn += fmt::format(
         "\n    // Z texture"
@@ -1623,7 +2153,9 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
         i, i * 2, i * 2 + 1);
   }
   fragmentFn += "\n    prev = tev_overflow_vec4f(prev);";
-  if (config.alphaCompare) {
+  if (uber != nullptr) {
+    fragmentFn += UberAlphaCompareWgsl;
+  } else if (config.alphaCompare) {
     const auto comp0 = alpha_compare(config.alphaCompare.comp0, config.alphaCompare.ref0);
     const auto comp1 = alpha_compare(config.alphaCompare.comp1, config.alphaCompare.ref1);
     AlphaCompareExpr pass;
@@ -1654,6 +2186,308 @@ wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
     }
   }
 
+  if (config.dstAlpha != UINT32_MAX) {
+    // Destination alpha replaces the alpha written to the EFB, after the alpha compare. The value
+    // is a uniform (the last field, as build_uniform appends it) so animated values share a pipeline.
+    uniBufAttrs += "\n    dst_alpha: vec4f,";
+    fragmentFn += "\n    prev.a = ubuf.dst_alpha.x;";
+  }
+  if ((metalActive || envActive) && uber == nullptr) {
+    // Material parameters (AuroraMaterialExt + time), appended after dst_alpha like build_uniform.
+    uniBufAttrs += "\n    mat_ext: array<vec4f, 8>,";
+    // Global lighting flags and the frame's measured colours (LitExtFloats, build_uniform).
+    uniBufAttrs += "\n    lit_ext: array<vec4f, 3>,";
+  }
+  if (envActive) {
+    uniBufAttrs += fmt::format("\n    env_lights: array<Light, {}>,\n    env_light_mask: vec4u,", MaxEnvLights);
+  }
+  if (uber != nullptr) {
+    uniBufAttrs += UberUniformFields;
+  }
+  if ((metalActive || envActive) && uber == nullptr) {
+    int litChannel = -1;
+    for (int c = 0; c < 2 && litChannel < 0 && metalActive; ++c)
+      if (config.colorChannels[c].lightingEnabled) litChannel = c;
+    // Lights of the block: the draw's own GX lights (channel litChannel), or for the environment
+    // material the borrowed ones, attenuated by distance and suppressed where the lightmap is dark
+    // (baked shadow). The surroundings' light (metal_lc) is the draw's lights or the lightmap.
+    const std::string lightsExpr = envActive ? "ubuf.env_lights"s : "ubuf.lights"s;
+    const std::string maskExpr =
+        envActive ? "ubuf.env_light_mask.x"s : fmt::format("ubuf.lightState{}", std::max(litChannel, 0));
+    const u32 lightCount = envActive ? static_cast<u32>(MaxEnvLights) : static_cast<u32>(GX::MaxLights);
+    const std::string attMetal =
+        envActive ? "env_att(metal_light, in.mv_pos) * env_gate(metal_light, in.mv_pos, env_shadow, ubuf.env_light_mask.y)"s
+                  : "1.0"s;
+    const std::string attCoat =
+        envActive ? "env_att(cc_light, in.mv_pos) * env_gate(cc_light, in.mv_pos, env_shadow, ubuf.env_light_mask.y)"s
+                  : "1.0"s;
+    const std::string lcExpr = envActive ? "clamp(env_lm * 1.6, vec3f(0.0), vec3f(1.5))"s
+                                         : "clamp(metal_lsum, vec3f(0.0), vec3f(1.5))"s;
+    if (envActive) {
+      // Lightmap texel of this fragment (the TEV stage sampling the second UV set).
+      fragmentFn += fmt::format("\n    let env_lm = sampled{}.rgb;"
+                                "\n    let env_shadow = smoothstep(0.03, 0.35, dot(env_lm, vec3f(0.299, 0.587, 0.114)));",
+                                envLightmapStage);
+    }
+    // Material sparkle needs texture coordinates fixed to the surface: the first texcoord generated
+    // from a vertex texture attribute (environment texgens from the normal would make flakes swim).
+    std::string sparkleUv;
+    for (int i = 0; i < info.sampledTexCoords.size() && sparkleUv.empty(); ++i) {
+      if (!info.sampledTexCoords.test(i)) continue;
+      const auto& tcg = config.tcgs[i];
+      const bool fromVertexUv = (tcg.src >= GX_TG_TEX0 && tcg.src <= GX_TG_TEX7) || tcg.src == GX_MAX_TEXGENSRC;
+      if (fromVertexUv && (tcg.type == GX_TG_MTX2x4 || tcg.type == GX_TG_MTX3x4)) sparkleUv = fmt::format("tex{}_uv", i);
+    }
+    if (litChannel >= 0 || envActive) {
+      fragmentFn += fmt::format(R"""(
+    // Enhanced metal (PBR-style): GGX specular with Schlick Fresnel from the GX lights of channel {0},
+    // metal-tinted reflectance, a procedural environment reflection lit by the scene's lights, less
+    // diffuse for metal, and a detail normal derived from the colour gradient (panel lines, seams).
+    {{
+      var metal_rough = max(f32(metal_pk & 255u) / 255.0, 0.04);
+      var metal_metallic = f32((metal_pk >> 8u) & 255u) / 255.0;
+      // Clear coat and paint/bare-metal split (AuroraMaterialExt coat*, paintSplit, bare*): mat_ext[6].w
+      // and mat_ext[7]. Zero for every class that does not use them, so the rest is unchanged.
+      let mat_e6 = ubuf.mat_ext[6];
+      let mat_e7 = ubuf.mat_ext[7];
+      // lit_ext: x soft highlights, y linear blending, z area colours valid; [1] / [2] the frame's
+      // average colour above / below the screen centre (a few frames late, smoothed).
+      let lit_e0 = ubuf.lit_ext[0];
+      let lit_area = lit_e0.z > 0.5;
+      let lit_up = ubuf.lit_ext[1].rgb;
+      let lit_down = ubuf.lit_ext[2].rgb;
+      var metal_paint = 1.0;
+      if (mat_e7.y > 0.0) {{
+        // Saturated colour = paint; grey or very dark texels = bare metal. Saturation does not depend
+        // on how brightly the texel is lit.
+        let metal_cmax = max(prev.r, max(prev.g, prev.b));
+        let metal_sat = (metal_cmax - min(prev.r, min(prev.g, prev.b))) / max(metal_cmax, 1e-4);
+        let metal_isPaint = smoothstep(0.22, 0.45, metal_sat) * smoothstep(0.02, 0.06, metal_cmax);
+        metal_paint = mix(1.0, metal_isPaint, clamp(mat_e7.y, 0.0, 1.0));
+        metal_rough = mix(max(mat_e7.w, 0.04), metal_rough, metal_paint);
+        metal_metallic = mix(mat_e7.z, metal_metallic, metal_paint);
+      }}
+      let metal_detail = f32((metal_pk >> 24u) & 255u) / 255.0;
+      // Detail normal: surface-gradient bump from the luminance of the shaded colour, treated as a
+      // height of a few millimetres at most (Prime units are metres); larger scales turn texture noise
+      // into sparkles.
+      let metal_lum = dot(prev.rgb, vec3f(0.299, 0.587, 0.114));
+      let metal_dpx = dpdx(in.mv_pos);
+      let metal_dpy = dpdy(in.mv_pos);
+      let metal_dlx = dpdx(metal_lum);
+      let metal_dly = dpdy(metal_lum);
+      let metal_r1 = cross(metal_dpy, ppl_nrm);
+      let metal_r2 = cross(ppl_nrm, metal_dpx);
+      let metal_det = dot(metal_dpx, metal_r1);
+      let metal_grad = sign(metal_det) * (metal_dlx * metal_r1 + metal_dly * metal_r2);
+      var metal_n = ppl_nrm;
+      if (abs(metal_det) > 1e-12 && metal_detail > 0.0) {{
+        // Fine, subtle relief: small amplitude, and the gradient is capped so single noisy texels
+        // cannot tilt the normal enough to produce sparkles.
+        let metal_gl = length(metal_grad);
+        let metal_gcap = abs(metal_det) * 0.55;
+        let metal_g = select(metal_grad, metal_grad * (metal_gcap / metal_gl), metal_gl > metal_gcap);
+        metal_n = normalize(abs(metal_det) * ppl_nrm - metal_g * metal_detail * 0.0045);
+      }}
+      // Highlights use a normal only halfway towards the relief (sharp GGX peaks on tilted texels read
+      // as glitter); the environment reflection uses the full relief.
+      let metal_ns = normalize(mix(ppl_nrm, metal_n, 0.5));
+      let metal_ndv = max(dot(metal_n, metal_v), 1e-3);
+      let metal_albedo = clamp(prev.rgb * 1.25, vec3f(0.0), vec3f(1.0));
+      let metal_f0 = mix(vec3f(0.04), metal_albedo, metal_metallic);
+      let metal_a = metal_rough * metal_rough;
+      let metal_a2 = metal_a * metal_a;
+      let metal_kg = (metal_rough + 1.0) * (metal_rough + 1.0) / 8.0;
+      var metal_spec = vec3f(0.0);
+      var metal_lsum = vec3f(0.0);
+      for (var li = 0u; li < {1}u; li++) {{
+        if (({4} & (1u << li)) == 0u) {{ continue; }}
+        let metal_light = {3}[li];
+        metal_lsum += metal_light.color.rgb;
+        let metal_ld = normalize(metal_light.pos - in.mv_pos);
+        let metal_h = normalize(metal_ld + metal_v);
+        let metal_ndl = max(dot(metal_ns, metal_ld), 0.0);
+        let metal_ndh = max(dot(metal_ns, metal_h), 0.0);
+        let metal_vdh = max(dot(metal_v, metal_h), 0.0);
+        let metal_dd = metal_ndh * metal_ndh * (metal_a2 - 1.0) + 1.0;
+        let metal_D = metal_a2 / (3.14159265 * metal_dd * metal_dd);
+        let metal_G = (metal_ndl / (metal_ndl * (1.0 - metal_kg) + metal_kg)) *
+                      (metal_ndv / (metal_ndv * (1.0 - metal_kg) + metal_kg));
+        let metal_F = metal_f0 + (vec3f(1.0) - metal_f0) * pow(1.0 - metal_vdh, 5.0);
+        metal_spec += metal_D * metal_G * metal_F / (4.0 * metal_ndv + 1e-4) * metal_light.color.rgb * ({5});
+      }}
+      // Procedural environment: brighter above, dark below, tinted by the scene's lights; roughness
+      // flattens it towards its average (a blurrier reflection).
+      let metal_r = reflect(-metal_v, metal_n);
+      let metal_up = clamp(0.5 + 0.5 * metal_r.y, 0.0, 1.0);
+      let metal_lc = {6};
+      var metal_env_sharp = mix(metal_lc * 0.12, metal_lc * 0.9, metal_up * metal_up) +
+                            metal_lc * 0.35 * exp(-abs(metal_r.y) * 12.0);
+      var metal_env_dull = metal_lc * 0.4;
+      if (lit_area) {{
+        // Reflect the area's own colours: what is above and below in this frame, keeping the lights'
+        // bright horizon band.
+        let area_sharp = mix(lit_down * 0.7, lit_up * 1.5, metal_up * metal_up) + metal_lc * 0.25 * exp(-abs(metal_r.y) * 12.0);
+        metal_env_sharp = mix(metal_env_sharp, area_sharp, 0.7);
+        metal_env_dull = mix(metal_env_dull, (lit_up + lit_down) * 0.6, 0.7);
+      }}
+      let metal_env = mix(metal_env_sharp, metal_env_dull, metal_rough);
+      let metal_fv = metal_f0 + (vec3f(1.0) - metal_f0) * pow(1.0 - metal_ndv, 5.0) * (1.0 - metal_rough);
+      // No change on glowing surfaces (Prime writes the glow amount in alpha: visor glass, energy).
+      let metal_glow = 1.0 - smoothstep(0.6, 0.9, prev.a);
+      let metal_w = metal_k * metal_glow;
+      // Material parameters (AuroraMaterialExt): colour and highlight multipliers.
+      let mat_e0 = ubuf.mat_ext[0];
+      let mat_e1 = ubuf.mat_ext[1];
+      let metal_base = prev.rgb * (1.0 - metal_metallic * 0.45 * min(metal_w, 1.0));
+      let metal_luma = dot(metal_base, vec3f(0.299, 0.587, 0.114));
+      let metal_diffuse = max(mix(vec3f(metal_luma), metal_base, mat_e0.y), vec3f(0.0)) * mat_e0.x * mat_e1.xyz;
+      let metal_refl = metal_env * metal_fv * metal_metallic * 0.8 * mat_e0.w;
+      var metal_spark = vec3f(0.0);
+      var metal_tint = vec3f(1.0);{2}
+      // Clear coat over the paint: smooth (geometric normal, not the relief), untinted f0 = 0.04.
+      var metal_coat = vec3f(0.0);
+      var metal_coatDim = 1.0;
+      let metal_cc = clamp(mat_e6.w, 0.0, 1.0) * metal_paint * min(metal_w, 1.0);
+      if (metal_cc > 0.0) {{
+        let cc_rough = max(mat_e7.x, 0.03);
+        let cc_a2 = cc_rough * cc_rough * cc_rough * cc_rough;
+        let cc_ndv = max(dot(ppl_nrm, metal_v), 1e-3);
+        var cc_spec = vec3f(0.0);
+        for (var li = 0u; li < {1}u; li++) {{
+          if (({4} & (1u << li)) == 0u) {{ continue; }}
+          let cc_light = {3}[li];
+          let cc_ld = normalize(cc_light.pos - in.mv_pos);
+          let cc_h = normalize(cc_ld + metal_v);
+          let cc_ndl = max(dot(ppl_nrm, cc_ld), 0.0);
+          let cc_ndh = max(dot(ppl_nrm, cc_h), 0.0);
+          let cc_dd = cc_ndh * cc_ndh * (cc_a2 - 1.0) + 1.0;
+          let cc_D = cc_a2 / (3.14159265 * cc_dd * cc_dd);
+          let cc_F = 0.04 + 0.96 * pow(1.0 - max(dot(metal_v, cc_h), 0.0), 5.0);
+          // Kelemen visibility, the usual cheap term for a clear coat.
+          let cc_vis = 0.25 / max(dot(cc_ld + metal_v, cc_ld + metal_v) * 0.25, 1e-3);
+          cc_spec += cc_D * cc_F * cc_vis * cc_ndl * cc_light.color.rgb * ({7});
+        }}
+        // Same procedural environment as the metal, from the smooth normal and the coat roughness.
+        let cc_r = reflect(-metal_v, ppl_nrm);
+        let cc_up = clamp(0.5 + 0.5 * cc_r.y, 0.0, 1.0);
+        var cc_env_sharp = mix(metal_lc * 0.12, metal_lc * 0.9, cc_up * cc_up) + metal_lc * 0.35 * exp(-abs(cc_r.y) * 12.0);
+        var cc_env_dull = metal_lc * 0.4;
+        if (lit_area) {{
+          let cc_area = mix(lit_down * 0.7, lit_up * 1.5, cc_up * cc_up) + metal_lc * 0.25 * exp(-abs(cc_r.y) * 12.0);
+          cc_env_sharp = mix(cc_env_sharp, cc_area, 0.7);
+          cc_env_dull = mix(cc_env_dull, (lit_up + lit_down) * 0.6, 0.7);
+        }}
+        let cc_env = mix(cc_env_sharp, cc_env_dull, cc_rough);
+        let cc_fv = 0.04 + 0.96 * pow(1.0 - cc_ndv, 5.0) * (1.0 - cc_rough);
+        metal_coat = (min(cc_spec, vec3f(4.0)) * 0.35 * mat_e0.z + cc_env * cc_fv * mat_e0.w) * metal_cc;
+        // Light the coat reflects does not reach the paint under it.
+        metal_coatDim = 1.0 - cc_fv * metal_cc;
+      }}
+      let metal_base_out = metal_diffuse * metal_tint * metal_coatDim;
+      let metal_add = max((metal_spec * 0.35 * mat_e0.z + metal_refl) * metal_w + metal_coat + metal_spark, vec3f(0.0));
+      var metal_out = metal_base_out + metal_add;
+      if (lit_e0.y > 0.5) {{
+        // Linear blending: the added light is summed with the base in linear space.
+        let lin_base = pow(max(metal_base_out, vec3f(0.0)), vec3f(2.2));
+        var lin_out = lin_base + metal_add;
+        if (lit_e0.x > 0.5) {{
+          lin_out = lin_base + metal_add / (vec3f(1.0) + metal_add / max(vec3f(1.0) - lin_base, vec3f(0.02)));
+        }}
+        metal_out = pow(max(lin_out, vec3f(0.0)), vec3f(1.0 / 2.2));
+      }} else if (lit_e0.x > 0.5) {{
+        // Soft highlights: the added light approaches white smoothly instead of clipping flat.
+        metal_out = metal_base_out + metal_add / (vec3f(1.0) + metal_add / max(vec3f(1.0) - metal_base_out, vec3f(0.02)));
+      }}
+      prev = vec4f(min(metal_out, vec3f(1.0)), prev.a);
+    }})""",
+                                litChannel, lightCount, sparkleUv.empty() ? std::string() : fmt::format(R"""(
+      // Star dust (AuroraMaterialExt dust*/nebula*): two layers of tiny flakes fixed to the surface's
+      // texture coordinates drift across it, each twinkling at its own rhythm, glowing faintly and
+      // glinting when a light's half vector meets its tilted normal; a slow nebula tints the shading.
+      // Flakes fade out below dustMinPixels. Time (mat_ext[1].w) is continuous wall time.
+      let dust_e2 = ubuf.mat_ext[2];
+      let dust_e3 = ubuf.mat_ext[3];
+      let dust_e4 = ubuf.mat_ext[4];
+      let dust_e5 = ubuf.mat_ext[5];
+      let dust_e6 = ubuf.mat_ext[6];
+      let dust_time = mat_e1.w;
+      let dust_duv = max(length(dpdx({0})), length(dpdy({0})));
+      if (dust_e2.x > 0.0) {{
+        let dust_gate = mix(metal_glow, 1.0, clamp(dust_e6.y, 0.0, 1.0));
+        let dust_up = select(vec3f(0.0, 1.0, 0.0), vec3f(1.0, 0.0, 0.0), abs(ppl_nrm.y) > 0.9);
+        let dust_tu = normalize(cross(ppl_nrm, dust_up));
+        let dust_tv = cross(ppl_nrm, dust_tu);
+        var dust_lsum = 0.0;
+        for (var li = 0u; li < {2}u; li++) {{
+          if (({1} & (1u << li)) == 0u) {{ continue; }}
+          dust_lsum += max(dot(ppl_nrm, normalize({3}[li].pos - in.mv_pos)), 0.0) *
+                       dot({3}[li].color.rgb, vec3f(0.333));
+        }}
+        if (dust_e5.z > 0.0) {{
+          // Nebula: smooth value noise drifting at nebulaSpeed lattice steps per second.
+          let dust_np = {0} * dust_e5.w + vec2f(1.0, 0.5) * dust_time * dust_e6.x;
+          let dust_ni = floor(dust_np);
+          let dust_nu = fract(dust_np) * fract(dust_np) * (3.0 - 2.0 * fract(dust_np));
+          var dust_corner = vec4f(0.0);
+          for (var ci = 0u; ci < 4u; ci++) {{
+            let dust_cc = bitcast<vec2u>(vec2i(dust_ni) + vec2i(i32(ci & 1u), i32(ci >> 1u)));
+            var dust_hn = dust_cc.x * 0x27d4eb2du + dust_cc.y * 0x165667b1u + 0x3c6ef372u;
+            dust_hn ^= dust_hn >> 15u; dust_hn *= 0x85ebca6bu; dust_hn ^= dust_hn >> 13u;
+            dust_corner[ci] = f32(dust_hn & 1023u) / 1023.0;
+          }}
+          let dust_neb = mix(mix(dust_corner.x, dust_corner.y, dust_nu.x), mix(dust_corner.z, dust_corner.w, dust_nu.x), dust_nu.y);
+          let dust_nh0 = clamp(abs(fract(vec3f(dust_e4.z - 0.06) + vec3f(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, vec3f(0.0), vec3f(1.0));
+          let dust_nh1 = clamp(abs(fract(vec3f(dust_e4.z + 0.06) + vec3f(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, vec3f(0.0), vec3f(1.0));
+          let dust_neb_tint = mix(vec3f(0.85), vec3f(1.2), mix(dust_nh0, dust_nh1, dust_neb));
+          metal_tint = mix(vec3f(1.0), dust_neb_tint, clamp(dust_e5.z, 0.0, 1.0) * dust_gate);
+        }}
+        let dust_layers = select(1u, 2u, dust_e3.x > 0.0);
+        for (var sl = 0u; sl < dust_layers; sl++) {{
+          let dust_cells = dust_e2.y * select(1.0, dust_e3.x, sl == 1u);
+          let dust_fw = dust_duv * dust_cells;
+          let dust_px = 2.0 * 0.11 * dust_e2.z / max(dust_fw, 1e-6);
+          let dust_vis = smoothstep(dust_e6.z * 0.5, max(dust_e6.z, 1e-3), dust_px);
+          if (dust_vis <= 0.0) {{ continue; }}
+          let dust_dir = select(vec2f(0.83, 0.55), vec2f(-0.62, 0.78) * 1.3, sl == 1u);
+          let dust_p = {0} * dust_cells + dust_dir * dust_time * dust_e3.y;
+          let dust_c = bitcast<vec2u>(vec2i(floor(dust_p)));
+          var dust_s = dust_c.x * 1664525u + dust_c.y * 1013904223u + 0x9E3779B9u + sl * 0x51ed27u;
+          dust_s ^= dust_s >> 16u; dust_s *= 0x7feb352du; dust_s ^= dust_s >> 15u; dust_s *= 0x846ca68bu; dust_s ^= dust_s >> 16u;
+          var dust_t = dust_s * 0x27d4eb2du;
+          dust_t ^= dust_t >> 15u; dust_t *= 0x2c1b3c6du; dust_t ^= dust_t >> 12u;
+          let dust_r0 = f32(dust_s & 1023u) / 1023.0;
+          let dust_r1 = f32((dust_s >> 10u) & 1023u) / 1023.0;
+          let dust_r2 = f32((dust_s >> 20u) & 1023u) / 1023.0;
+          let dust_r3 = f32(dust_t & 1023u) / 1023.0;
+          let dust_r4 = f32((dust_t >> 10u) & 1023u) / 1023.0;
+          let dust_r5 = f32((dust_t >> 20u) & 1023u) / 1023.0;
+          let dust_d = length(fract(dust_p) - (vec2f(0.2) + 0.6 * vec2f(dust_r1, dust_r2)));
+          let dust_rad = dust_e2.z * (0.07 + 0.08 * dust_r3);
+          let dust_shape = (1.0 - smoothstep(dust_rad * 0.2, max(dust_rad, 1e-4), dust_d)) * step(dust_r0, dust_e2.w) * dust_vis;
+          if (dust_shape <= 0.0) {{ continue; }}
+          let dust_tw = 0.5 + 0.5 * sin(6.2831853 * (dust_time * dust_e3.z * (0.6 + 0.8 * dust_r3) + dust_r5));
+          let dust_n = normalize(ppl_nrm + (dust_tu * (dust_r4 * 2.0 - 1.0) + dust_tv * (dust_r5 * 2.0 - 1.0)) * 0.6);
+          let dust_exp = max(dust_e4.y, 1.0) * (0.6 + 0.8 * dust_r3);
+          var dust_glint = vec3f(0.0);
+          for (var li = 0u; li < {2}u; li++) {{
+            if (({1} & (1u << li)) == 0u) {{ continue; }}
+            let dust_ld = normalize({3}[li].pos - in.mv_pos);
+            let dust_hv = normalize(dust_ld + metal_v);
+            dust_glint += pow(max(dot(dust_n, dust_hv), 0.0), dust_exp) * max(dot(ppl_nrm, dust_ld), 0.0) * {3}[li].color.rgb;
+          }}
+          let dust_h = fract(dust_e4.z + (dust_r2 - 0.5) * dust_e4.w);
+          let dust_rgb = clamp(abs(fract(vec3f(dust_h) + vec3f(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, vec3f(0.0), vec3f(1.0));
+          let dust_core = smoothstep(0.55, 1.0, dust_shape);
+          let dust_tint = mix(mix(vec3f(1.0), dust_rgb, clamp(dust_e5.x * (0.7 + 0.3 * dust_r4), 0.0, 1.0)), vec3f(1.0), dust_core * dust_e5.y);
+          let dust_own = dust_e3.w * (0.4 + 0.6 * min(dust_lsum, 1.0)) * (0.25 + 0.75 * dust_tw * dust_tw);
+          metal_spark += dust_tint * (vec3f(dust_own) + min(dust_glint, vec3f(2.0)) * dust_e4.x * (0.5 + 0.5 * dust_tw)) *
+                         dust_shape * dust_e2.x * dust_gate * select(1.0, 0.7, sl == 1u);
+        }}
+      }})""", sparkleUv, maskExpr, lightCount, lightsExpr),
+                                lightsExpr, maskExpr, attMetal, lcExpr, attCoat);
+    }
+  }
   std::string fragmentReturnType = "@location(0) vec4f";
   std::string fragmentReturn = "    return prev;";
   if (usesZTextureDepth) {
@@ -2078,7 +2912,11 @@ var<storage, read> abuf: array<u32>;
 var<uniform> ubuf: Uniform;{1}
 
 struct VertexOutput {{
-    @builtin(position) pos: vec4f,{2}
+    // Invariant: Prime redraws geometry it has just drawn (same vertices and
+    // matrix, different TEV/lighting) with an LEQUAL test and relies on equal
+    // depth; without it the HLSL compiler may contract the transform differently
+    // per shader and the second draw fails the test by an ulp.
+    @invariant @builtin(position) pos: vec4f,{2}
 }};
 
 @vertex
@@ -2114,7 +2952,6 @@ fn fs_main(in: VertexOutput) -> {9} {{{6}{5}
         "    atomicMax(&diagnostic_raster[diagnostic_slot+6u], bitcast<u32>(1.0-in.tex0_uv.x));\n"
         "    atomicMax(&diagnostic_raster[diagnostic_slot+7u], bitcast<u32>(1.0-in.tex0_uv.y));\n");
   }
-  wgpu::ShaderSourceWGSL wgslDescriptor{};
   if (const char* path = std::getenv("WII_COMPILED_GX_SHADER_DUMP")) {
     if ((config.vtxStride == 24 || config.vtxStride == 20) && config.tevStageCount == 1) {
       const auto filename = fmt::format("{}_{:016X}.wgsl", path, hash);
@@ -2124,6 +2961,71 @@ fn fs_main(in: VertexOutput) -> {9} {{{6}{5}
       }
     }
   }
+  return shaderSource;
+}
+
+std::string build_shader_source(const ShaderConfig& config) noexcept { return build_shader_source_impl(config, nullptr); }
+
+std::string build_uber_shader_source(const UberConfig& config) noexcept {
+  return build_shader_source_impl(config.pipeline.shaderConfig, &config);
+}
+
+wgpu::ShaderModule build_uber_shader(const UberConfig& config) noexcept {
+  ZoneScoped;
+  const auto source = build_uber_shader_source(config);
+  wgpu::ShaderSourceWGSL wgslDescriptor{};
+  wgslDescriptor.code = source.c_str();
+  const auto label = fmt::format("GX Uber Shader {:x}", xxh3_hash(config));
+  const auto shaderDescriptor = wgpu::ShaderModuleDescriptor{
+      .nextInChain = &wgslDescriptor,
+      .label = label.c_str(),
+  };
+  // A WGSL error in an ubershader must not reach Aurora's fatal uncaptured-error callback: the material
+  // simply keeps waiting for its specialised pipeline. The scope captures validation errors of this module.
+  webgpu::g_device.PushErrorScope(wgpu::ErrorFilter::Validation);
+  auto module = webgpu::g_device.CreateShaderModule(&shaderDescriptor);
+  auto message = std::make_shared<std::string>();
+  auto future = webgpu::g_device.PopErrorScope(
+      wgpu::CallbackMode::WaitAnyOnly, [message](wgpu::PopErrorScopeStatus status, wgpu::ErrorType type, wgpu::StringView text) {
+        if (status == wgpu::PopErrorScopeStatus::Success && type != wgpu::ErrorType::NoError) {
+          const std::string_view detail{text};
+          *message = detail.empty() ? "unknown validation error"s : std::string(detail);
+        }
+      });
+  webgpu::g_instance.WaitAny(future, 10'000'000'000ull);
+  if (!message->empty()) {
+    // One log line per distinct message (the line:column text differs per key, so strip it).
+    static std::mutex reportMutex;
+    static std::set<std::string> seen;
+    std::string signature = *message;
+    for (auto& c : signature) if (c >= '0' && c <= '9') c = '#';
+    bool first = false;
+    {
+      std::lock_guard lock{reportMutex};
+      first = seen.size() < 40 && seen.insert(signature).second;
+    }
+    static std::atomic<int> reported{0};
+    if (first) {
+      reported.fetch_add(1);
+      Log.error("[uber] ubershader {} rejected by the shader compiler; the material waits for its specialised pipeline: {}",
+                label, *message);
+      if (const char* dump = std::getenv("WII_COMPILED_UBER_DUMP_FAILED")) {
+        if (auto* file = std::fopen(fmt::format("{}_{}.wgsl", dump, reported.load()).c_str(), "wb")) {
+          std::fwrite(source.data(), 1, source.size(), file);
+          std::fclose(file);
+        }
+      }
+    }
+    return {};
+  }
+  return module;
+}
+
+wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept {
+  ZoneScoped;
+  const auto hash = xxh3_hash(config);
+  const auto shaderSource = build_shader_source(config);
+  wgpu::ShaderSourceWGSL wgslDescriptor{};
   wgslDescriptor.code = shaderSource.c_str();
   const auto label = fmt::format("GX Shader {:x}", hash);
   const auto shaderDescriptor = wgpu::ShaderModuleDescriptor{

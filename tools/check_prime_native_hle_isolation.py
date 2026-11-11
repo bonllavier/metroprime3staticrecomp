@@ -24,7 +24,7 @@ def sha(path: Path) -> str:
 
 def main() -> int:
     dol = ROOT / "decomp/orig/RM3E01_00/sys/main.dol"
-    exe = BUILD / "WiiCompiled.exe"
+    exe = BUILD / "Corruption_3 PC.exe"
     crash = RUN / "crash_missing_jump_target.txt"
     console = RUN / "console.log"
     audit = json.loads(AUDIT.read_text(encoding="utf-8"))
@@ -87,7 +87,7 @@ def main() -> int:
         "executable_sha256": sha(exe),
         "build": {
             "directory": BUILD.relative_to(ROOT).as_posix(),
-            "command": "ninja -C recomp/build/RM3E01_00_runtime_link_probe WiiCompiled.exe",
+            "command": "ninja -C recomp/build/RM3E01_00_runtime_link_probe Corruption_3 PC.exe",
             "result": "pass",
         },
         "native_hle_isolation": {

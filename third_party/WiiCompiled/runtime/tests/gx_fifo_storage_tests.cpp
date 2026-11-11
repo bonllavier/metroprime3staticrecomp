@@ -177,6 +177,43 @@ int main() {
         copy.Write(0x49,0);copy.Write(0x43,3);
         failed=false;try{copy.DecodeColorCopy();}catch(const std::runtime_error&){failed=true;}
         require(failed); // Depth-source copies are not color RGB565 copies.
+        // Scan visor: 32x32 depth copy at (278,126) as GX_TF_Z16 (SDK nibble 0xB).
+        PrimeRawBp::Registers depth;
+        depth.Write(0x43,3);depth.Write(0x49,0x1F916);depth.Write(0x4A,0x7C1F);depth.Write(0x4D,0x8);
+        depth.Write(0x52,0x1003B);
+        const auto z16=depth.DecodeColorCopy();
+        require(z16.format==0x13 && z16.width==32 && z16.height==32 && z16.bytes==2048 && !z16.halfScale);
+        depth.Write(0x52,0x10013); // GX_TF_Z8: 8x4 blocks, 128-byte stride at 32 texels.
+        depth.Write(0x4D,0x4);
+        require(depth.DecodeColorCopy().format==0x11 && depth.DecodeColorCopy().bytes==1024);
+        depth.Write(0x52,0x1002B); // Scan visor's second copy: GX_CTF_Z8L (nibble 0xA).
+        require(depth.DecodeColorCopy().format==0x3A && depth.DecodeColorCopy().bytes==1024);
+        depth.Write(0x52,0x1001B); // GX_CTF_Z8M (nibble 9).
+        require(depth.DecodeColorCopy().format==0x39);
+        depth.Write(0x52,0x10003); // GX_CTF_Z4 (nibble 0): 8x8 blocks, 4 bpp -> 128 bytes at 32x32.
+        require(depth.DecodeColorCopy().format==0x30 && depth.DecodeColorCopy().bytes==512);
+        // Scan visor: whole EFB, half scale, as GX_TF_I8 (BP bit 15 = intensity).
+        PrimeRawBp::Registers intensity;
+        intensity.Write(0x43,0x41);intensity.Write(0x49,0);intensity.Write(0x4A,0x6FE7F);intensity.Write(0x4D,0x28);
+        intensity.Write(0x52,0x18213);
+        const auto i8=intensity.DecodeColorCopy();
+        require(i8.format==0x1 && i8.width==320 && i8.height==224 && i8.halfScale && i8.bytes==1280u*56u);
+        // Colour channel copies: GX_CTF_R8 (nibble 8, 8x4 blocks) and GX_CTF_RG8 (0xB, 4x4 blocks).
+        PrimeRawBp::Registers channel;
+        channel.Write(0x43,0x41);channel.Write(0x49,0);channel.Write(0x4A,0x7C1F);channel.Write(0x4D,0x4);
+        channel.Write(0x52,0x1000B); // nibble 8: bits 4-6 = 0, bit 3 set
+        require(channel.DecodeColorCopy().format==0x28 && channel.DecodeColorCopy().bytes==1024);
+        channel.Write(0x52,0x1003B);channel.Write(0x4D,0x8); // nibble 0xB
+        require(channel.DecodeColorCopy().format==0x2B && channel.DecodeColorCopy().bytes==2048);
+        channel.Write(0x52,0x10013); // nibble 1 is not a colour copy format
+        failed=false;try{channel.DecodeColorCopy();}catch(const std::runtime_error&){failed=true;}
+        require(failed);
+        intensity.Write(0x52,0x18243); // Nibble 4 has no intensity format.
+        failed=false;try{intensity.DecodeColorCopy();}catch(const std::runtime_error&){failed=true;}
+        require(failed);
+        depth.Write(0x52,0x10023); // Nibble 2 is not a depth copy format.
+        failed=false;try{depth.DecodeColorCopy();}catch(const std::runtime_error&){failed=true;}
+        require(failed);
     }
     bp.Write(0xFE,1); bp.Write(0x52,0);
     require(bp.values[0x52]==0x4802 && bp.mask==0xFFFFFF);

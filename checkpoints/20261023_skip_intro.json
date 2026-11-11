@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "request": "Option to skip the intro and reach the title screen quickly (for faster testing)",
+  "implementation": [
+    "runtime/src/hle/storage/dvd.cpp: partition reads of /Video/FrontEnd/Mp3_Title_Sequence.thp or /Video/FrontEnd/attract01.thp stamp a timestamp; PrimeIntroVideoState() reports before-video / video (read within 750 ms) / video-ended.",
+    "runtime/src/hle/input/kpad.cpp: SkipIntroButtons() ORs WPAD A (0x0800) into the KPAD sample every other 8 retraces (counter 0x8067E754) during the wrist-strap screen (before any video, capped at 90 s) and while an intro/attract THP streams. Applied to both the keyboard/mouse path and the real Wii Remote path. The game ends each screen itself; no game code or state is patched.",
+    "Enable with: WiiCompiled.exe --skip-intro (the only accepted argument), [prime] skip_intro = true in Config.toml, the F1 > Diagnostico checkbox 'Saltar la intro al iniciar' (takes effect on restart), or WII_COMPILED_PRIME_SKIP_INTRO=1."
+  ],
+  "validation": {
+    "baseline_without_option": "video still playing at 35 s, title screen at 45 s",
+    "with_option": "title screen 'PRESS A TO START' at 15 s; log [prime-skip-intro] before-video t=0, video t=3.5 s, video-ended t=6.4 s (seconds since first KPAD read)",
+    "user": "pending"
+  },
+  "not_done": "Loading a specific save directly (quick-load) was not implemented; the option stops at the title screen."
+}

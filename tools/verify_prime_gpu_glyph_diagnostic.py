@@ -18,7 +18,7 @@ def main():
     parser.add_argument('--single-glyph',action='store_true')
     args=parser.parse_args()
     probe=json.loads(args.probe.read_text(encoding='utf-8-sig'))
-    exe=ROOT/'recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe'
+    exe=ROOT/'recomp/build/RM3E01_00_runtime_link_probe/Corruption_3 PC.exe'
     assert sha(exe)==probe['executable_sha256'], 'Executable changed since diagnostic'
     log=Path(probe['log']); assert sha(log)==probe['log_sha256']
     text=log.read_text(encoding='utf-8',errors='replace')

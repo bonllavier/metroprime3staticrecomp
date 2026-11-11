@@ -9,7 +9,7 @@ $taskRoot=(Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $taskProcess=Get-Process -Id $TargetProcessId -ErrorAction SilentlyContinue
 if(-not $taskProcess){exit 0}
 $taskExe=$taskProcess.MainModule.FileName
-if([IO.Path]::GetFileName($taskExe) -ne 'WiiCompiled.exe'){throw 'Unexpected target'}
+if([IO.Path]::GetFileName($taskExe) -ne 'Corruption_3 PC.exe'){throw 'Unexpected target'}
 $taskHash=(Get-FileHash -LiteralPath $taskExe -Algorithm SHA256).Hash.ToLowerInvariant()
 if($taskHash -ne $ExpectedExecutableSha256.ToLowerInvariant()){throw 'Executable hash differs'}
 $taskStarted=$taskProcess.StartTime.ToUniversalTime()

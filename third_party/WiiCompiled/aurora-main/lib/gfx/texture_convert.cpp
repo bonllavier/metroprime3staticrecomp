@@ -1,14 +1,35 @@
 #include "texture_convert.hpp"
+#include "tex_cmpr_decode.hpp"
 
 #include "../internal.hpp"
 #include "../gx/gx_fmt.hpp"
 
 #include <algorithm>
+#include <atomic>
+#include <condition_variable>
+#include <cstdlib>
+#include <deque>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <string_view>
+#include <thread>
 #include <array>
 #include <cmath>
 #include <limits>
 #include <optional>
 #include <vector>
+
+#if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <aurora/host_cores.h>
+#endif
 
 namespace aurora::gfx {
 static Module Log("aurora::gfx");
@@ -23,6 +44,117 @@ struct RGBA8 {
 namespace {
 constexpr float kArbMipThreshold = 15.0f;
 
+// Texture decoding splits a large image by rows of blocks across a small
+// persistent pool; every row reads and writes its own bytes, so the result is
+// identical to the serial loop. Small images stay on the calling thread.
+constexpr size_t kParallelDecodeMinTexels = 128 * 128;
+
+class DecodePool {
+public:
+  static DecodePool& instance() {
+    static DecodePool pool;
+    return pool;
+  }
+
+  // Runs fn(begin, end) over [0, count) split into chunks; the caller takes
+  // part and returns when every chunk is done. Queued helpers that start after
+  // that find no chunk left: the counters they touch are shared-owned, and fn
+  // is only called for a chunk the caller is still waiting on.
+  template <typename F>
+  void run(uint32_t count, F&& fn) {
+    struct State {
+      std::atomic<uint32_t> next{0};
+      std::atomic<uint32_t> remaining{0};
+      uint32_t chunks = 0;
+      uint32_t count = 0;
+      std::function<void(uint32_t, uint32_t)> fn;
+      std::mutex doneMutex;
+      std::condition_variable done;
+    };
+    auto state = std::make_shared<State>();
+    state->chunks = static_cast<uint32_t>(std::min<size_t>(count, m_threads.size() + 1));
+    state->remaining.store(state->chunks, std::memory_order_relaxed);
+    state->count = count;
+    state->fn = [&fn](uint32_t begin, uint32_t end) { fn(begin, end); };
+    const auto work = [state] {
+      for (uint32_t chunk; (chunk = state->next.fetch_add(1, std::memory_order_relaxed)) < state->chunks;) {
+        state->fn(state->count * chunk / state->chunks, state->count * (chunk + 1) / state->chunks);
+        if (state->remaining.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+          std::lock_guard lock{state->doneMutex};
+          state->done.notify_all();
+        }
+      }
+    };
+    {
+      std::lock_guard lock{m_mutex};
+      for (uint32_t i = 1; i < state->chunks; ++i) m_jobs.emplace_back(work);
+    }
+    m_cv.notify_all();
+    work();
+    std::unique_lock lock{state->doneMutex};
+    state->done.wait(lock, [&] { return state->remaining.load(std::memory_order_acquire) == 0; });
+  }
+
+private:
+  DecodePool() {
+    const unsigned hardware = std::max(std::thread::hardware_concurrency(), 2u);
+    // Leave room for the game, GX and presentation threads.
+    const unsigned count = std::clamp(hardware / 2, 1u, 6u);
+    for (unsigned i = 0; i < count; ++i) {
+      m_threads.emplace_back([this] {
+#if defined(_WIN32)
+        aurora::host_cores::keep_off_game_core();
+#endif
+        for (;;) {
+          std::function<void()> job;
+          {
+            std::unique_lock lock{m_mutex};
+            m_cv.wait(lock, [this] { return m_stop || !m_jobs.empty(); });
+            if (m_stop && m_jobs.empty()) return;
+            job = std::move(m_jobs.front());
+            m_jobs.pop_front();
+          }
+          job();
+        }
+      });
+    }
+  }
+  ~DecodePool() {
+    {
+      std::lock_guard lock{m_mutex};
+      m_stop = true;
+    }
+    m_cv.notify_all();
+    for (auto& thread : m_threads) thread.join();
+  }
+
+  std::vector<std::thread> m_threads;
+  std::deque<std::function<void()>> m_jobs;
+  std::mutex m_mutex;
+  std::condition_variable m_cv;
+  bool m_stop = false;
+};
+
+std::atomic<bool> g_parallelTextureDecode{[] {
+  const char* value = std::getenv("WII_COMPILED_AURORA_PARALLEL_TEXTURE_DECODE");
+  return value == nullptr || std::string_view{value} != "0";
+}()};
+
+// Set while WII_COMPILED_AURORA_TEXTURE_DECODE_VERIFY re-decodes serially.
+thread_local bool t_serialDecode = false;
+thread_local bool t_verifyParallelOnly = false;
+
+// Decodes block rows [0, rows) of one mip level, in parallel when it is large.
+template <typename F>
+void for_block_rows(uint32_t rows, size_t texels, F&& fn) {
+  if (rows > 1 && texels >= kParallelDecodeMinTexels && !t_serialDecode &&
+      g_parallelTextureDecode.load(std::memory_order_relaxed)) {
+    DecodePool::instance().run(rows, fn);
+  } else {
+    fn(0u, rows);
+  }
+}
+
 size_t calc_size_rgba8(uint32_t width, uint32_t height) {
   return static_cast<size_t>(width) * static_cast<size_t>(height) * sizeof(RGBA8);
 }
@@ -32,45 +164,54 @@ size_t calc_offset_rgba8(uint32_t x, uint32_t y, uint32_t width) {
 }
 
 /**
- * Downscales RGBA8 data using a simple box filter.
+ * Downscales RGBA8 data using a simple box filter. Rows are independent, so
+ * large levels are split across the decode pool with identical output.
  */
 ByteBuffer downscale(const uint8_t* src, uint32_t srcWidth, uint32_t srcHeight, uint32_t dstWidth, uint32_t dstHeight) {
   ByteBuffer dst{calc_size_rgba8(dstWidth, dstHeight)};
   auto* dstPixels = dst.data();
-  for (uint32_t y = 0; y < dstHeight; ++y) {
-    const uint32_t srcY0 = std::min(y * 2, srcHeight - 1);
-    const uint32_t srcY1 = std::min(srcY0 + 1, srcHeight - 1);
-    for (uint32_t x = 0; x < dstWidth; ++x) {
-      const uint32_t srcX0 = std::min(x * 2, srcWidth - 1);
-      const uint32_t srcX1 = std::min(srcX0 + 1, srcWidth - 1);
-      const size_t sampleOffsets[4] = {
-          calc_offset_rgba8(srcX0, srcY0, srcWidth),
-          calc_offset_rgba8(srcX1, srcY0, srcWidth),
-          calc_offset_rgba8(srcX0, srcY1, srcWidth),
-          calc_offset_rgba8(srcX1, srcY1, srcWidth),
-      };
-      uint8_t* out = dstPixels + calc_offset_rgba8(x, y, dstWidth);
-      for (size_t channel = 0; channel < 4; ++channel) {
-        uint32_t sum = 0;
-        for (const size_t offset : sampleOffsets) {
-          sum += src[offset + channel];
+  for_block_rows(dstHeight, size_t{dstWidth} * dstHeight, [&](uint32_t firstRow, uint32_t lastRow) {
+    for (uint32_t y = firstRow; y < lastRow; ++y) {
+      const uint32_t srcY0 = std::min(y * 2, srcHeight - 1);
+      const uint32_t srcY1 = std::min(srcY0 + 1, srcHeight - 1);
+      for (uint32_t x = 0; x < dstWidth; ++x) {
+        const uint32_t srcX0 = std::min(x * 2, srcWidth - 1);
+        const uint32_t srcX1 = std::min(srcX0 + 1, srcWidth - 1);
+        const size_t sampleOffsets[4] = {
+            calc_offset_rgba8(srcX0, srcY0, srcWidth),
+            calc_offset_rgba8(srcX1, srcY0, srcWidth),
+            calc_offset_rgba8(srcX0, srcY1, srcWidth),
+            calc_offset_rgba8(srcX1, srcY1, srcWidth),
+        };
+        uint8_t* out = dstPixels + calc_offset_rgba8(x, y, dstWidth);
+        for (size_t channel = 0; channel < 4; ++channel) {
+          uint32_t sum = 0;
+          for (const size_t offset : sampleOffsets) {
+            sum += src[offset + channel];
+          }
+          out[channel] = static_cast<uint8_t>((sum + 2) / 4);
         }
-        out[channel] = static_cast<uint8_t>((sum + 2) / 4);
       }
     }
-  }
+  });
   return dst;
 }
 
 float avg_diff(const uint8_t* lhs, const uint8_t* rhs, uint32_t width, uint32_t height) {
-  double diffSum = 0.0;
-  const size_t byteCount = calc_size_rgba8(width, height);
-  for (size_t i = 0; i < byteCount; ++i) {
-    const int diff = static_cast<int>(lhs[i]) - static_cast<int>(rhs[i]);
-    diffSum += static_cast<double>(diff * diff);
-  }
+  // Integer squared differences: the total is exact (far below 2^53), so the
+  // split sum equals the serial double accumulation bit for bit.
+  std::atomic<uint64_t> diffSum{0};
+  const size_t rowBytes = calc_size_rgba8(width, 1);
+  for_block_rows(height, size_t{width} * height, [&](uint32_t firstRow, uint32_t lastRow) {
+    uint64_t partial = 0;
+    for (size_t i = firstRow * rowBytes, end = lastRow * rowBytes; i < end; ++i) {
+      const int diff = static_cast<int>(lhs[i]) - static_cast<int>(rhs[i]);
+      partial += static_cast<uint64_t>(diff * diff);
+    }
+    diffSum.fetch_add(partial, std::memory_order_relaxed);
+  });
   const double sampleCount = static_cast<double>(width) * static_cast<double>(height) * 4.0;
-  return static_cast<float>(std::sqrt(diffSum / sampleCount) / 2.56);
+  return static_cast<float>(std::sqrt(static_cast<double>(diffSum.load()) / sampleCount) / 2.56);
 }
 
 /**
@@ -237,26 +378,31 @@ static ByteBuffer DecodeTiled(uint32_t width, uint32_t height, uint32_t mips, Ar
   uint32_t h = height;
   auto* targetMip = reinterpret_cast<typename T::Target*>(buf.data());
   const auto* in = reinterpret_cast<const typename T::Source*>(data.data());
+  constexpr size_t blockUnits = T::BlockWidth * T::BlockHeight / T::Frac;
   for (uint32_t mip = 0; mip < mips; ++mip) {
     const uint32_t bwidth = (w + (T::BlockWidth - 1)) / T::BlockWidth;
     const uint32_t bheight = (h + (T::BlockHeight - 1)) / T::BlockHeight;
-    for (uint32_t by = 0; by < bheight; ++by) {
-      const uint32_t baseY = by * T::BlockHeight;
-      const uint32_t numRows = std::min(h - baseY, T::BlockHeight);
-      for (uint32_t bx = 0; bx < bwidth; ++bx) {
-        const uint32_t baseX = bx * T::BlockWidth;
-        for (uint32_t y = 0; y < numRows; ++y) {
-          auto* target = targetMip + (baseY + y) * w + baseX;
-          const auto n = std::min(w - baseX, T::BlockWidth);
-          for (uint32_t x = 0; x < n; ++x) {
-            T::decode_texel(target, in, x);
+    for_block_rows(bheight, size_t{w} * h, [&, w, h, targetMip, mipIn = in](uint32_t first, uint32_t last) {
+      const auto* in = mipIn + size_t{first} * bwidth * blockUnits;
+      for (uint32_t by = first; by < last; ++by) {
+        const uint32_t baseY = by * T::BlockHeight;
+        const uint32_t numRows = std::min(h - baseY, T::BlockHeight);
+        for (uint32_t bx = 0; bx < bwidth; ++bx) {
+          const uint32_t baseX = bx * T::BlockWidth;
+          for (uint32_t y = 0; y < numRows; ++y) {
+            auto* target = targetMip + (baseY + y) * w + baseX;
+            const auto n = std::min(w - baseX, T::BlockWidth);
+            for (uint32_t x = 0; x < n; ++x) {
+              T::decode_texel(target, in, x);
+            }
+            in += T::BlockWidth / T::Frac;
           }
-          in += T::BlockWidth / T::Frac;
+          const uint32_t extraY = T::BlockHeight - numRows;
+          in += T::BlockWidth * extraY / T::Frac;
         }
-        const uint32_t extraY = T::BlockHeight - numRows;
-        in += T::BlockWidth * extraY / T::Frac;
       }
-    }
+    });
+    in += size_t{bheight} * bwidth * blockUnits;
     targetMip += w * h;
     if (w > 1) {
       w /= 2;
@@ -435,30 +581,34 @@ static ByteBuffer BuildRGBA8FromGCN(uint32_t width, uint32_t height, uint32_t mi
   for (uint32_t mip = 0; mip < mips; ++mip) {
     const uint32_t bwidth = (w + 3) / 4;
     const uint32_t bheight = (h + 3) / 4;
-    for (uint32_t by = 0; by < bheight; ++by) {
-      const uint32_t baseY = by * 4;
-      for (uint32_t bx = 0; bx < bwidth; ++bx) {
-        const uint32_t baseX = bx * 4;
-        for (uint32_t c = 0; c < 2; ++c) {
-          for (uint32_t y = 0; y < 4; ++y) {
-            for (size_t x = 0; x < 4; ++x) {
-              if (baseX + x >= w || baseY + y >= h) {
-                continue;
+    for_block_rows(bheight, size_t{w} * h, [&, w, h, targetMip, mipIn = in](uint32_t first, uint32_t last) {
+      const uint8_t* in = mipIn + size_t{first} * bwidth * 64;
+      for (uint32_t by = first; by < last; ++by) {
+        const uint32_t baseY = by * 4;
+        for (uint32_t bx = 0; bx < bwidth; ++bx) {
+          const uint32_t baseX = bx * 4;
+          for (uint32_t c = 0; c < 2; ++c) {
+            for (uint32_t y = 0; y < 4; ++y) {
+              for (size_t x = 0; x < 4; ++x) {
+                if (baseX + x >= w || baseY + y >= h) {
+                  continue;
+                }
+                RGBA8* target = targetMip + (baseY + y) * w + baseX;
+                if (c != 0) {
+                  target[x].g = in[x * 2];
+                  target[x].b = in[x * 2 + 1];
+                } else {
+                  target[x].a = in[x * 2];
+                  target[x].r = in[x * 2 + 1];
+                }
               }
-              RGBA8* target = targetMip + (baseY + y) * w + baseX;
-              if (c != 0) {
-                target[x].g = in[x * 2];
-                target[x].b = in[x * 2 + 1];
-              } else {
-                target[x].a = in[x * 2];
-                target[x].r = in[x * 2 + 1];
-              }
+              in += 8;
             }
-            in += 8;
           }
         }
       }
-    }
+    });
+    in += size_t{bheight} * bwidth * 64;
     targetMip += w * h;
     if (w > 1) {
       w /= 2;
@@ -480,68 +630,74 @@ static ByteBuffer BuildRGBA8FromCMPR(uint32_t width, uint32_t height, uint32_t m
   uint8_t* dst = buf.data();
   const uint8_t* src = data.data();
   for (uint32_t mip = 0; mip < mips; ++mip) {
-    for (uint32_t yy = 0; yy < h; yy += 8) {
-      for (uint32_t xx = 0; xx < w; xx += 8) {
-        for (uint32_t yb = 0; yb < 8; yb += 4) {
-          for (uint32_t xb = 0; xb < 8; xb += 4) {
-            // CMPR difference: Big-endian color1/2
-            const uint16_t color1 = bswap(*reinterpret_cast<const uint16_t*>(src));
-            const uint16_t color2 = bswap(*reinterpret_cast<const uint16_t*>(src + 2));
-            src += 4;
+    const uint32_t bwidth = (w + 7) / 8;
+    const uint32_t bheight = (h + 7) / 8;
+    for_block_rows(bheight, size_t{w} * h, [&, w, h, dst, mipSrc = src](uint32_t first, uint32_t last) {
+      const uint8_t* src = mipSrc + size_t{first} * bwidth * 32;
+      for (uint32_t yy = first * 8; yy < last * 8 && yy < h; yy += 8) {
+        for (uint32_t xx = 0; xx < w; xx += 8) {
+          for (uint32_t yb = 0; yb < 8; yb += 4) {
+            for (uint32_t xb = 0; xb < 8; xb += 4) {
+              // CMPR difference: Big-endian color1/2
+              const uint16_t color1 = bswap(*reinterpret_cast<const uint16_t*>(src));
+              const uint16_t color2 = bswap(*reinterpret_cast<const uint16_t*>(src + 2));
+              src += 4;
 
-            // Fill in first two colors in color table.
-            std::array<uint8_t, 16> color_table{};
+              // Fill in first two colors in color table.
+              std::array<uint8_t, 16> color_table{};
 
-            color_table[0] = ExpandTo8<5>(static_cast<uint8_t>((color1 >> 11) & 0x1F));
-            color_table[1] = ExpandTo8<6>(static_cast<uint8_t>((color1 >> 5) & 0x3F));
-            color_table[2] = ExpandTo8<5>(static_cast<uint8_t>(color1 & 0x1F));
-            color_table[3] = 0xFF;
+              color_table[0] = ExpandTo8<5>(static_cast<uint8_t>((color1 >> 11) & 0x1F));
+              color_table[1] = ExpandTo8<6>(static_cast<uint8_t>((color1 >> 5) & 0x3F));
+              color_table[2] = ExpandTo8<5>(static_cast<uint8_t>(color1 & 0x1F));
+              color_table[3] = 0xFF;
 
-            color_table[4] = ExpandTo8<5>(static_cast<uint8_t>((color2 >> 11) & 0x1F));
-            color_table[5] = ExpandTo8<6>(static_cast<uint8_t>((color2 >> 5) & 0x3F));
-            color_table[6] = ExpandTo8<5>(static_cast<uint8_t>(color2 & 0x1F));
-            color_table[7] = 0xFF;
-            if (color1 > color2) {
-              // Predict gradients.
-              color_table[8] = S3TCBlend(color_table[4], color_table[0]);
-              color_table[9] = S3TCBlend(color_table[5], color_table[1]);
-              color_table[10] = S3TCBlend(color_table[6], color_table[2]);
-              color_table[11] = 0xFF;
+              color_table[4] = ExpandTo8<5>(static_cast<uint8_t>((color2 >> 11) & 0x1F));
+              color_table[5] = ExpandTo8<6>(static_cast<uint8_t>((color2 >> 5) & 0x3F));
+              color_table[6] = ExpandTo8<5>(static_cast<uint8_t>(color2 & 0x1F));
+              color_table[7] = 0xFF;
+              if (color1 > color2) {
+                // Predict gradients.
+                color_table[8] = S3TCBlend(color_table[4], color_table[0]);
+                color_table[9] = S3TCBlend(color_table[5], color_table[1]);
+                color_table[10] = S3TCBlend(color_table[6], color_table[2]);
+                color_table[11] = 0xFF;
 
-              color_table[12] = S3TCBlend(color_table[0], color_table[4]);
-              color_table[13] = S3TCBlend(color_table[1], color_table[5]);
-              color_table[14] = S3TCBlend(color_table[2], color_table[6]);
-              color_table[15] = 0xFF;
-            } else {
-              color_table[8] = HalfBlend(color_table[0], color_table[4]);
-              color_table[9] = HalfBlend(color_table[1], color_table[5]);
-              color_table[10] = HalfBlend(color_table[2], color_table[6]);
-              color_table[11] = 0xFF;
+                color_table[12] = S3TCBlend(color_table[0], color_table[4]);
+                color_table[13] = S3TCBlend(color_table[1], color_table[5]);
+                color_table[14] = S3TCBlend(color_table[2], color_table[6]);
+                color_table[15] = 0xFF;
+              } else {
+                color_table[8] = HalfBlend(color_table[0], color_table[4]);
+                color_table[9] = HalfBlend(color_table[1], color_table[5]);
+                color_table[10] = HalfBlend(color_table[2], color_table[6]);
+                color_table[11] = 0xFF;
 
-              // CMPR difference: GX fills with an alpha 0 midway point here.
-              color_table[12] = color_table[8];
-              color_table[13] = color_table[9];
-              color_table[14] = color_table[10];
-              color_table[15] = 0;
-            }
-
-            for (uint32_t y = 0; y < 4; ++y) {
-              uint8_t bits = src[y];
-              for (uint32_t x = 0; x < 4; ++x) {
-                if (xx + xb + x >= w || yy + yb + y >= h) {
-                  continue;
-                }
-                uint8_t* dstOffs = dst + ((yy + yb + y) * w + (xx + xb + x)) * 4;
-                const uint8_t* colorTableOffs = &color_table[static_cast<size_t>((bits >> 6) & 3) * 4];
-                memcpy(dstOffs, colorTableOffs, 4);
-                bits <<= 2;
+                // CMPR difference: GX fills with an alpha 0 midway point here.
+                color_table[12] = color_table[8];
+                color_table[13] = color_table[9];
+                color_table[14] = color_table[10];
+                color_table[15] = 0;
               }
+
+              for (uint32_t y = 0; y < 4; ++y) {
+                uint8_t bits = src[y];
+                for (uint32_t x = 0; x < 4; ++x) {
+                  if (xx + xb + x >= w || yy + yb + y >= h) {
+                    continue;
+                  }
+                  uint8_t* dstOffs = dst + ((yy + yb + y) * w + (xx + xb + x)) * 4;
+                  const uint8_t* colorTableOffs = &color_table[static_cast<size_t>((bits >> 6) & 3) * 4];
+                  memcpy(dstOffs, colorTableOffs, 4);
+                  bits <<= 2;
+                }
+              }
+              src += 4;
             }
-            src += 4;
           }
         }
       }
-    }
+    });
+    src += size_t{bheight} * bwidth * 32;
     dst += w * h * 4;
     if (w > 1) {
       w /= 2;
@@ -618,6 +774,28 @@ ConvertedTexture convert_texture(u32 format, uint32_t width, uint32_t height, ui
   case GX_TF_CMPR:
     converted = BuildRGBA8FromCMPR(width, height, mips, data);
     break;
+  }
+  static const bool verifyParallel = std::getenv("WII_COMPILED_AURORA_TEXTURE_DECODE_VERIFY") != nullptr;
+  if (verifyParallel && !t_serialDecode && !t_verifyParallelOnly && size_t{width} * height >= kParallelDecodeMinTexels &&
+      g_parallelTextureDecode.load(std::memory_order_relaxed)) {
+    static std::atomic<uint32_t> checked{0}, mismatched{0};
+    // Decode both ways from one snapshot: guest memory (EFB copies) can change
+    // between two reads of the live source.
+    const std::vector<uint8_t> snapshot(data.data(), data.data() + data.size());
+    const ArrayRef<uint8_t> stable{snapshot.data(), snapshot.size()};
+    t_serialDecode = true;
+    const auto serial = convert_texture(format, width, height, mips, stable);
+    t_serialDecode = false;
+    t_verifyParallelOnly = true;
+    const auto parallel = convert_texture(format, width, height, mips, stable);
+    t_verifyParallelOnly = false;
+    const bool same = serial.data.size() == parallel.data.size() &&
+                      std::equal(parallel.data.data(), parallel.data.data() + parallel.data.size(), serial.data.data());
+    if (!same) mismatched.fetch_add(1, std::memory_order_relaxed);
+    const uint32_t count = checked.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (!same || count % 64 == 1)
+      Log.info("[texture-decode-verify] checked={} mismatched={} last={}x{} format={} mips={}", count,
+               mismatched.load(std::memory_order_relaxed), width, height, format, mips);
   }
   const auto wgpuFormat = to_wgpu(format);
   bool hasArbitraryMips = false;
@@ -722,5 +900,88 @@ ConvertedTexture convert_texture_palette(u32 textureFormat, uint32_t width, uint
       .data = std::move(pixels),
       .hasArbitraryMips = hasArbitraryMips,
   };
+}
+} // namespace aurora::gfx
+
+namespace aurora::gfx {
+namespace {
+// One low-priority worker: the check only refines LOD bias/filtering of textures
+// with hand-authored mips, so it must never compete with frame work.
+class ArbitraryMipChecker {
+public:
+  static ArbitraryMipChecker& instance() {
+    static ArbitraryMipChecker checker;
+    return checker;
+  }
+  void push(std::weak_ptr<TextureRef> texture, std::vector<uint8_t> data, uint32_t width, uint32_t height,
+            uint32_t mips) {
+    {
+      std::lock_guard lock{m_mutex};
+      m_jobs.push_back({std::move(texture), std::move(data), width, height, mips});
+    }
+    m_cv.notify_one();
+  }
+
+private:
+  struct Job {
+    std::weak_ptr<TextureRef> texture;
+    std::vector<uint8_t> data;
+    uint32_t width, height, mips;
+  };
+  ArbitraryMipChecker() {
+    m_thread = std::thread([this] {
+#if defined(_WIN32)
+      SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+      aurora::host_cores::keep_off_game_core();
+#endif
+      t_serialDecode = true;
+      for (;;) {
+        Job job;
+        {
+          std::unique_lock lock{m_mutex};
+          m_cv.wait(lock, [this] { return m_stop || !m_jobs.empty(); });
+          if (m_jobs.empty()) return;
+          job = std::move(m_jobs.front());
+          m_jobs.pop_front();
+        }
+        if (job.texture.expired()) continue;
+        const auto converted =
+            convert_texture(GX_TF_CMPR, job.width, job.height, job.mips, {job.data.data(), job.data.size()});
+        if (auto texture = job.texture.lock()) texture->hasArbitraryMips.store(converted.hasArbitraryMips);
+      }
+    });
+  }
+  ~ArbitraryMipChecker() {
+    {
+      std::lock_guard lock{m_mutex};
+      m_stop = true;
+      m_jobs.clear();
+    }
+    m_cv.notify_all();
+    m_thread.join();
+  }
+  std::thread m_thread;
+  std::deque<Job> m_jobs;
+  std::mutex m_mutex;
+  std::condition_variable m_cv;
+  bool m_stop = false;
+};
+} // namespace
+
+void schedule_arbitrary_mip_check(const TextureHandle& texture, ArrayRef<uint8_t> data) {
+  ArbitraryMipChecker::instance().push(texture, std::vector<uint8_t>(data.data(), data.data() + data.size()),
+                                       texture->size.width, texture->size.height, texture->mipCount);
+}
+} // namespace aurora::gfx
+
+extern "C" void aurora_set_gpu_cmpr_decode(bool enabled) { aurora::gfx::tex_cmpr_decode::set_enabled(enabled); }
+
+extern "C" void aurora_set_parallel_texture_decode(bool enabled) {
+  aurora::gfx::g_parallelTextureDecode.store(enabled, std::memory_order_relaxed);
+}
+
+namespace aurora::gfx {
+void parallel_for_rows(uint32_t rows, size_t texels, const std::function<void(uint32_t, uint32_t)>& fn) {
+  for_block_rows(rows, texels, [&](uint32_t firstRow, uint32_t lastRow) { fn(firstRow, lastRow); });
 }
 } // namespace aurora::gfx

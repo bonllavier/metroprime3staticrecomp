@@ -7,6 +7,8 @@
 
 #include <SDL3/SDL_audio.h>
 
+#include "audio_resampler.h"
+
 class AudioBackend {
 public:
     static AudioBackend& Instance();
@@ -22,6 +24,8 @@ public:
     // Applied to the final host output, covering both AX and direct AI DMA.
     void SetMasterVolume(float volume);
     void SetMuted(bool muted);
+    // Seconds of audio waiting for the device, or -1 before the stream opens.
+    double QueuedSeconds() const;
 
 private:
     AudioBackend() = default;
@@ -34,6 +38,8 @@ private:
     uint32_t QueueLimitBytesLocked() const;
     float EffectiveGainLocked() const;
     void ApplyGainLocked();
+    bool QueueFramesLocked(const int16_t* interleaved, size_t frames);
+    static void SDLCALL CountUnderruns(void* userdata, SDL_AudioStream* stream, int additional, int total);
 
     mutable std::mutex m_mutex;
     SDL_AudioStream* m_stream = nullptr;
@@ -45,4 +51,8 @@ private:
     bool m_muted = false;
     bool m_reportedDroppedBlock = false;
     std::vector<int16_t> m_convertBuffer;
+    // Host resampling to the device rate (see EnsureInitializedLocked).
+    AudioResampler m_resampler;
+    bool m_hostResample = false;
+    std::vector<float> m_floatInput, m_floatOutput;
 };

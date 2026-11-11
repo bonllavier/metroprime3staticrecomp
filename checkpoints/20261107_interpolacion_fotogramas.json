@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-07",
+  "revision": "RM3E01_00",
+  "topic": "Aurora frame interpolation: flicker and missing textures fixed, NVIDIA frame limiter detection, optional low-latency mode",
+  "doc": "recomp/docs/fps_altos.md",
+  "report": "User and a friend saw flicker and vanishing textures with interpolation; user now has a 120 Hz primary monitor.",
+  "root_causes": [
+    "Every sealed batch held the end of game frame k, its display copy and the start of frame k+1 (36 draws on average in the hangar replay). Slot replays drew the k+1 head into the EFB the native image continued from, so the native image mixed two game frames; slots mixed an uninterpolated head with an interpolated tail; matching per batch lost or swapped partners when the cut moved.",
+    "SSAO (default on), floor reflections and light shafts were applied to the native image only, alternating every other image at 120 Hz.",
+    "CMPR decodes and palette conversions ran only in the native render, which is encoded after the slots.",
+    "User PC: NVIDIA global profile Max Frame Rate = 60 (user set) and Low Latency On. Present slept ~10 ms per call with the GPU at 14 %, so nothing above 60 could ever reach the screen."
+  ],
+  "changes": [
+    "gfx/common.cpp: with interpolation on, passes after the last display copy are carried to the next batch and drawn first by all its images; two alternating GPU buffer sets (80 MB extra, created on first carry), RenderPass::bufferSet; scene effects in slots of self-contained frames; decodes in the first image of a group, palette conversions in every image.",
+    "gx/frame_interpolation.cpp: matching and cadence per game frame (boundary = display copy), head and tail of a frame matched against the same previous frame with claims kept across seals; camera cut detection (>=40 % of >=16 static pairs jump >35 deg or >5 m).",
+    "aurora.cpp: slots replay only when the sealed batch starts a game frame; optional low-latency path (native encoded and published first, slots extrapolated at weight 1 + w).",
+    "runtime dxgi_frame_latency.cpp: read-only NvAPI DRS read of Max Frame Rate for this executable ([frame-limit] log); settings_overlay.cpp keeps interpolation off at <=61 and caps the target otherwise, with an F1 note; new F1 checkbox and [video] frame_interpolation_low_latency.",
+    "QA-only switches: WII_COMPILED_QA_INTERP_WEIGHT_ONE, _COMPARE_EVERY, _NO_CARRY; _IGNORE_MONITOR also ignores the driver cap.",
+    "recomp/tools/nvidia_game_profile.py check|create|delete: per-executable NVIDIA profile with the limiter off. create was NOT run (blocked by the permission classifier; the user decides)."
+  ],
+  "evidence": {
+    "pixel_equality_weight_one": {"new": "694/694 identical", "old_no_carry": "385/699 identical, worst 48 % of pixels strongly different, 73 groups above 1 %"},
+    "pixel_equality_low_latency": "681/681 identical",
+    "simulated_120": "119.5 images/s mean, min 115, 0 reductions",
+    "simulated_144": "141.2 images/s mean",
+    "simulated_120_low_latency": "119.3 images/s mean",
+    "real_120_with_driver_cap_60": "59.95 images/s, Present ~10 ms, GPU 14 %",
+    "default_run_with_driver_cap": "[frame-limit] 60 FPS (global profile); interpolation stays off; 59.96 FPS",
+    "camera_cuts_detected_4_min": 7,
+    "tests": "test_graphics.ps1 all passed: gx_fifo_tests (3 new interpolation tests), blob_cache_policy_tests, render_policy_tests, runtime ctest 29, python"
+  },
+  "runs": "recomp/qa/runs/hangar_i120/20261107_*, hangar_i144/20261107_*, hangar_i120_lowlat/20261107_* (private)",
+  "executables": {
+    "build/RM3E01_00_runtime_link_probe/Corruption_3 PC.exe": "QA build (MKW_PRIME_QA_TOOLS on); previous copy kept as Corruption_3 PC.before_interp_frames.exe",
+    "Trilogy": "regenerated with make_title_tree.py and installed; previous copies kept as *.before_interp_frames.exe"
+  },
+  "pending": [
+    "Real presentation above 60 on the user's monitor needs the NVIDIA Max Frame Rate limit lifted for Corruption_3 PC.exe.",
+    "Perceived smoothness, latency and tearing at 120/144 on a real fast monitor.",
+    "No public release built."
+  ]
+}

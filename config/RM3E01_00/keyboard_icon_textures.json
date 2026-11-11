@@ -1,0 +1,1777 @@
+[
+ {
+  "id": "1d5ec8f5abcc9014",
+  "name": "AButtonIn",
+  "pak": "FrontEnd.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_bb21e8755f36b2f0_5.png",
+  "context": []
+ },
+ {
+  "id": "426c5cb6cfede558",
+  "name": "RevZButtonOn",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_64x32_7f6a3b8dbc4a2cde_6.png",
+  "context": []
+ },
+ {
+  "id": "4a1f6e6e2db7fbd5",
+  "name": "RevCButtonOff",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_64x32_ec3484d92632b1af_6.png",
+  "context": []
+ },
+ {
+  "id": "623028787bb5e3a6",
+  "name": "BButtonIn",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 9,
+  "file": "tex1_32x32_e6dbfd18d4666ee7_5.png",
+  "context": [
+   "AB07101E7F8CF492; Siguiente    \"&image=0xAB07101E7F8CF492; Avanti    -&image=SI,0.70,0.68,0x623028787BB5E3A6; Back    0&",
+   "7F8CF492; Avanti    -&image=SI,0.70,0.68,0x623028787BB5E3A6; Back    0&image=SI,0.70,0.68,0x623028787BB5E3A6; Zur  ck   ",
+   "BB5E3A6; Back    0&image=SI,0.70,0.68,0x623028787BB5E3A6; Zur  ck    /&image=SI,0.70,0.68,0x623028787BB5E3A6; Retour    "
+  ]
+ },
+ {
+  "id": "64cd167cb5945f61",
+  "name": "XButtonOut",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 7,
+  "file": "tex1_32x32_818890ce3f3a949b_5.png",
+  "context": [
+   "!Aiuto &image=0x8C8369B90A73AA2A;     &image=0xAB07101E7F8CF492;    (&image=SI,0.70,1.0,0x64CD167CB5945F61;     '&image=",
+   "e=0xAB07101E7F8CF492;    (&image=SI,0.70,1.0,0x64CD167CB5945F61;     '&image=SI,0.70,1.0,0x64CD167CB5945F61;    '&image=",
+   "0,0x64CD167CB5945F61;     '&image=SI,0.70,1.0,0x64CD167CB5945F61;    '&image=SI,0.70,1.0,0x64CD167CB5945F61;    '&image="
+  ]
+ },
+ {
+  "id": "678fec175f10f9c6",
+  "name": "StartButtonOut",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 5,
+  "file": "tex1_32x32_b73270565c4c808d_5.png",
+  "context": [
+   "age=0x5FC17B1F30BAA7AE; Salir     &image=0x5FC17B1F30BAA7AE; Esci     &image=0x678FEC175F10F9C6; Exit    #&image=0x678FE",
+   "mage=0x5FC17B1F30BAA7AE; Esci     &image=0x678FEC175F10F9C6; Exit    #&image=0x678FEC175F10F9C6; Beenden    #&image=0x67",
+   "e=0x678FEC175F10F9C6; Exit    #&image=0x678FEC175F10F9C6; Beenden    #&image=0x678FEC175F10F9C6; Quitter    !&image=0x67"
+  ]
+ },
+ {
+  "id": "9a6556b2af2bd87c",
+  "name": "RevCButtonOn",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_64x32_645dc2a0c6e63da4_6.png",
+  "context": []
+ },
+ {
+  "id": "b5c4b29356f4f170",
+  "name": "YButtonOut",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_281ae5aa517797ed_5.png",
+  "context": []
+ },
+ {
+  "id": "d7e627d1c0da9def",
+  "name": "RevZButtonOff",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_64x32_ec3484d92632b1af_6.png",
+  "context": []
+ },
+ {
+  "id": "22bb106b40d30c50",
+  "name": "TXTR_IconE",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_3f14706c308bf712_14.png",
+  "context": []
+ },
+ {
+  "id": "2900a7e048f5889e",
+  "name": "TXTR_IconS",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_3f14706c308bf712_14.png",
+  "context": []
+ },
+ {
+  "id": "599d2653356b9161",
+  "name": "TXTR_IconR",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_3f14706c308bf712_14.png",
+  "context": []
+ },
+ {
+  "id": "67e306e5055ad34f",
+  "name": "TXTR_IconVisorSelectButton",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 85,
+  "file": "tex1_32x32_9af2d52683113ecc_6.png",
+  "context": [
+   ", lock on reticules, energy gauge, and Missile count.   Push and hold &image=0x67E306E5055AD34F; to bring up Visor Selec",
+   "ing up Visor Select. Move the cursor into the middle zone and release &image=0x67E306E5055AD34F; to enter Combat Visor. ",
+   "iche Objekte, Energieanzeige und den Vorrat an Missiles einblendet.   &image=0x67E306E5055AD34F; gedr  ckt halten, um di"
+  ]
+ },
+ {
+  "id": "73d7d39637c18c27",
+  "name": "TXTR_IconG",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_3f14706c308bf712_14.png",
+  "context": []
+ },
+ {
+  "id": "9a5c38f61c32950a",
+  "name": "TXTR_IconJumpButton",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 73,
+  "file": "tex1_32x32_43be3d9c0c2e2dbd_6.png",
+  "context": [
+   "a mobile ball of deadly energy.   After executing a Space Jump, press &image=0x9A5C38F61C32950A; repeatedly to initiate ",
+   "Nach erfolgtem Space Jump l  sst sich durch wiederholtes Dr  cken von &image=0x9A5C38F61C32950A; die Screw Attack einlei",
+   "Apr  s avoir ex  cut   un Saut Spatial, appuyez plusieurs fois sur &image=0x9A5C38F61C32950A; pour r  aliser une Attaque"
+  ]
+ },
+ {
+  "id": "9d22ef04c5e1e936",
+  "name": "TXTR_IconL",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_3f14706c308bf712_14.png",
+  "context": []
+ },
+ {
+  "id": "b4736726d0c1f305",
+  "name": "TXTR_IconA",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_3f14706c308bf712_14.png",
+  "context": []
+ },
+ {
+  "id": "ce6469fe7e203475",
+  "name": "TXTR_IconHyperButton",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 30,
+  "file": "tex1_32x32_96342171475066ab_6.png",
+  "context": [
+   "ged state that enhances your offensive capabilities.   Press and hold &image=0xCE6469FE7E203475; to enter Hypermode.   &",
+   "r   berladungsszustand mit enorm gesteigerten Offensivf  higkeiten.   &image=0xCE6469FE7E203475; gedr  ckt halten, um in",
+   "rcharge temporaire qui am  liore vos capacit  s d'attaque.  Maintenez &image=0xCE6469FE7E203475; enfonc   pour entrer en"
+  ]
+ },
+ {
+  "id": "d0705ae4c7e3db98",
+  "name": "TXTR_IconU",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_3f14706c308bf712_14.png",
+  "context": []
+ },
+ {
+  "id": "e15ba218bc67c381",
+  "name": "TXTR_IconFireButton",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 88,
+  "file": "tex1_32x32_f00e0e837140250a_6.png",
+  "context": [
+   "Beam is the default Arm Cannon. It has the best rate of fire.  Press &image=0xE15BA218BC67C381; to shoot the Power Beam.",
+   "ss &image=0xE15BA218BC67C381; to shoot the Power Beam. Press and hold &image=0xE15BA218BC67C381; to charge the Arm Canno",
+   "tung des Waffenarms. Er verf  gt   ber die h  chste Schussfrequenz.   &image=0xE15BA218BC67C381; dr  cken, um den Power "
+  ]
+ },
+ {
+  "id": "f599f10781d70848",
+  "name": "TXTR_IconM",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_3f14706c308bf712_14.png",
+  "context": []
+ },
+ {
+  "id": "f65e60ec6c211110",
+  "name": "TXTR_IconT",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_3f14706c308bf712_14.png",
+  "context": []
+ },
+ {
+  "id": "e5a8dfed24b2f64b",
+  "name": "TXTR_Z_Default",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 262,
+  "file": "tex1_32x32_8a3e8ec9d97c84f7_6.png",
+  "context": [
+   "&image=0xE2FA972549E5A08C;&lookup=string:AreaMapHelpRotate;&space;&image=SI,1.0,0.68,0xE5A8DFED24B2F64B;&image=0xE2FA972",
+   "r Ball Track&pop; &just=left;While in Morph Ball mode, press and hold &image=SI,1.0,0.68,0xE5A8DFED24B2F64B; when close ",
+   "&image=0xE2FA972549E5A08C; to move the Ball along the track. Release &image=SI,1.0,0.68,0xE5A8DFED24B2F64B; to disengage"
+  ]
+ },
+ {
+  "id": "ab07101e7f8cf492",
+  "name": "",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 175,
+  "file": "tex1_32x32_b0c321687c7a410b_5.png",
+  "context": [
+   "lery&gallery=Bonus;&endif;&special=backlink;[ Indietro ]&endlink;    3&image=0xAB07101E7F8CF492;&main-color=#FFFFFF; Pan",
+   "]&endlink;    3&image=0xAB07101E7F8CF492;&main-color=#FFFFFF; Pan    8&image=0xAB07101E7F8CF492;&main-color=#FFFFFF; Scr",
+   "; Pan    8&image=0xAB07101E7F8CF492;&main-color=#FFFFFF; Scrollen    8&image=0xAB07101E7F8CF492;&main-color=#FFFFFF; D  "
+  ]
+ },
+ {
+  "id": "5fc17b1f30baa7ae",
+  "name": "TXTR_B_Default",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 158,
+  "file": "tex1_32x32_43be3d9c0c2e2dbd_6.png",
+  "context": [
+   "VETERAN     VETERANA     ESPERTO     HYPER     HIPER     IPER    \"&image=0x5FC17B1F30BAA7AE; Cancel    %&image=0x5FC17B1",
+   "HYPER     HIPER     IPER    \"&image=0x5FC17B1F30BAA7AE; Cancel    %&image=0x5FC17B1F30BAA7AE; Abbrechen    #&image=0x5FC",
+   "5FC17B1F30BAA7AE; Cancel    %&image=0x5FC17B1F30BAA7AE; Abbrechen    #&image=0x5FC17B1F30BAA7AE; Annuler    $&image=0x5F"
+  ]
+ },
+ {
+  "id": "e8d9fb7a41321ce6",
+  "name": "TXTR_GoldCredit",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 128,
+  "file": "tex1_32x32_d7a7e299f225aacd_6.png",
+  "context": [
+   "mage=0x49D40FCB49D7BFD9;&lookup=credits:Blue;    D&main-color=#000000;&image=0xE8D9FB7A41321CE6;&lookup=credits:Gold;   ",
+   "15     &image=0x6D2E2BCD8AC45CD0;     &image=0x49D40FCB49D7BFD9;     &image=0xE8D9FB7A41321CE6;     &image=0xF76434386E7",
+   "R   w   V&just=center;&main-color=#FFFFFFFF;Berserker Lord Defeated &image=0xE8D9FB7A41321CE6;    X&just=center;&main-co"
+  ]
+ },
+ {
+  "id": "669de4b24cc08fff",
+  "name": "TXTR_CreditVoucher",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 64,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 99,
+  "file": "tex1_64x64_8354393ab6c78d25_6.png",
+  "context": [
+   "r_rollover_left_5_group;[ Indietro ]&endlink;    /&main-color=#000000;&image=0x669DE4B24CC08FFF;     &lookup=vouchers;  ",
+   "g       Q   n   O&just=center;&main-color=#FFFFFFFF;GF Trooper Saved &image=0x669DE4B24CC08FFF;    Q&just=center;&main-c",
+   "B24CC08FFF;    Q&just=center;&main-color=#FFFFFFFF;GF-Soldat gerettet &image=0x669DE4B24CC08FFF;    W&just=center;&main-"
+  ]
+ },
+ {
+  "id": "b37f161d2fdb6d7f",
+  "name": "",
+  "pak": "Logbook.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 80,
+  "file": "tex1_32x32_eec8650f925c092a_5.png",
+  "context": [
+   "ust=left;To use the Grapple Swing, lock on to the Grapple Swing Point &image=0xB37F161D2FDB6D7F; with &image=SI,1.0,0.68",
+   "op; &just=left;Zum Einsatz des Grapple Swings einen Verankerungspunkt &image=0xB37F161D2FDB6D7F; durch Dr  cken von &ima",
+   "4B2F64B; pour verrouiller un point d'attache Grappin lorsque l'ic  ne &image=0xB37F161D2FDB6D7F; appara  t. Rel  chez &i"
+  ]
+ },
+ {
+  "id": "a634ad4c42f5f476",
+  "name": "TXTR_ListEntryBlank",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 79,
+  "file": "tex1_16x16_15b212bf9282c81d_6.png",
+  "context": [
+   "Pause/LogBook/Creatures/FederationCreatures/Article;&drawrolloverfill;&image=SI,1.0,1.0,0xA634AD4C42F5F476,0x8BE4672D127",
+   "federation; &lookup=lorescanned:SCROLL_FederationCreaturesList;&space;&image=SI,1.0,1.0,0xA634AD4C42F5F476,0x572AC50ADB4",
+   "link=Pause/LogBook/Creatures/BryyoCreatures/Article;&drawrolloverfill;&image=SI,1.0,1.0,0xA634AD4C42F5F476,0x8BE4672D127"
+  ]
+ },
+ {
+  "id": "e2fa972549e5a08c",
+  "name": "LStickN",
+  "pak": "GuiDVD.pak",
+  "w": 40,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 68,
+  "file": "tex1_40x32_4c3b4cc767632866_6.png",
+  "context": [
+   "F; Mover    5&image=0xAB07101E7F8CF492;&main-color=#FFFFFF;Sposta    6&image=0xE2FA972549E5A08C;&main-color=#FFFFFF; Rot",
+   ";Sposta    6&image=0xE2FA972549E5A08C;&main-color=#FFFFFF; Rotate    8&image=0xE2FA972549E5A08C;&main-color=#FFFFFF; Rot",
+   "otate    8&image=0xE2FA972549E5A08C;&main-color=#FFFFFF; Rotieren    7&image=0xE2FA972549E5A08C;&main-color=#FFFFFF; Tou"
+  ]
+ },
+ {
+  "id": "1f1348cc4ab1f639",
+  "name": "TXTR_DPadDefault",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 46,
+  "file": "tex1_32x32_e81f99c205eb24d0_6.png",
+  "context": [
+   "ple targets simultaneously with the Missile Launcher.  Press and hold &image=A,3.0,0x1F1348CC4AB1F639,0x508E395D70AD8A3C",
+   "rlaubt es, mit dem Raketenwerfer mehrere Ziele zugleich zu erfassen.  &image=A,3.0,0x1F1348CC4AB1F639,0x508E395D70AD8A3C",
+   "r plusieurs cibles en m  me temps avec le Lance-missiles.   Maintenez &image=A,3.0,0x1F1348CC4AB1F639,0x508E395D70AD8A3C"
+  ]
+ },
+ {
+  "id": "508e395d70ad8a3c",
+  "name": "TXTR_DPadDown",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 46,
+  "file": "tex1_32x32_975e1a31b02a2a68_6.png",
+  "context": [
+   "ple targets simultaneously with the Missile Launcher.  Press and hold &image=A,3.0,0x1F1348CC4AB1F639,0x508E395D70AD8A3C",
+   "rlaubt es, mit dem Raketenwerfer mehrere Ziele zugleich zu erfassen.  &image=A,3.0,0x1F1348CC4AB1F639,0x508E395D70AD8A3C",
+   "r plusieurs cibles en m  me temps avec le Lance-missiles.   Maintenez &image=A,3.0,0x1F1348CC4AB1F639,0x508E395D70AD8A3C"
+  ]
+ },
+ {
+  "id": "572ac50adb483cc1",
+  "name": "TXTR_ListEntryLeftArrow",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 40,
+  "file": "tex1_16x16_f9342d010c2ad881_6.png",
+  "context": [
+   "federation; &lookup=lorescanned:SCROLL_FederationCreaturesList;&space;&image=SI,1.0,1.0,0xA634AD4C42F5F476,0x572AC50ADB4",
+   "_category_bryyo; &lookup=lorescanned:SCROLL_BryyoCreaturesList;&space;&image=SI,1.0,1.0,0xA634AD4C42F5F476,0x572AC50ADB4",
+   "egory_skytown; &lookup=lorescanned:SCROLL_SkytownCreaturesList;&space;&image=SI,1.0,1.0,0xA634AD4C42F5F476,0x572AC50ADB4"
+  ]
+ },
+ {
+  "id": "8be4672d127923e0",
+  "name": "TXTR_ListEntryRightArrow",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 39,
+  "file": "tex1_16x16_5d9704c80bbc8bee_6.png",
+  "context": [
+   "Pause/LogBook/Creatures/FederationCreatures/Article;&drawrolloverfill;&image=SI,1.0,1.0,0xA634AD4C42F5F476,0x8BE4672D127",
+   "link=Pause/LogBook/Creatures/BryyoCreatures/Article;&drawrolloverfill;&image=SI,1.0,1.0,0xA634AD4C42F5F476,0x8BE4672D127",
+   "nk=Pause/LogBook/Creatures/SkytownCreatures/Article;&drawrolloverfill;&image=SI,1.0,1.0,0xA634AD4C42F5F476,0x8BE4672D127"
+  ]
+ },
+ {
+  "id": "9ac06e2a6558139f",
+  "name": "LStickD",
+  "pak": "GuiDVD.pak",
+  "w": 40,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 20,
+  "file": "tex1_40x32_e65a03d74465035d_6.png",
+  "context": [
+   "FDB6D7F; to attach. While still attached, pull the Control Stick down &image=0x9AC06E2A6558139F; to siphon energy and pu",
+   "tellen. Bei stehender Verbindung den Control Stick nach unten bewegen &image=0x9AC06E2A6558139F;, um Energie abzuzapfen ",
+   "rocher le Grappin. Inclinez ensuite le stick directionnel vers le bas &image=0x9AC06E2A6558139F; pour drainer de l'  ner"
+  ]
+ },
+ {
+  "id": "5fa0456e0433d828",
+  "name": "",
+  "pak": "Logbook.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 20,
+  "file": "tex1_32x32_52bc65cd8d4b0905_6.png",
+  "context": [
+   "e Morph Ball changes your suit into a compact, mobile sphere.   Press &image=SI,1.0,0.68,0x5FA0456E0433D828; to enter Mo",
+   "image=SI,1.0,0.68,0x5FA0456E0433D828; to enter Morph Ball mode. Press &image=SI,1.0,0.68,0x5FA0456E0433D828; again to le",
+   "sst sich der Anzug in eine kompakte, mobile Kugelform verwandeln.   &image=SI,1.0,0.68,0x5FA0456E0433D828; dr  cken, um "
+  ]
+ },
+ {
+  "id": "49d40fcb49d7bfd9",
+  "name": "TXTR_BlueCredit",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 18,
+  "file": "tex1_32x32_132e8f18e8f28216_6.png",
+  "context": [
+   "Pack Samus     Samus     Pacchetto Samus    D&main-color=#000000;&image=0x49D40FCB49D7BFD9;&lookup=credits:Blue;    D&ma",
+   "Piste 15     Pista 15     Brano 15     &image=0x6D2E2BCD8AC45CD0;     &image=0x49D40FCB49D7BFD9;     &image=0xE8D9FB7A41",
+   "k       Q   w   P&just=center;&main-color=#FFFFFFFF;GF Troopers Saved &image=0x49D40FCB49D7BFD9;    S&just=center;&main-"
+  ]
+ },
+ {
+  "id": "9c1864e4963c9195",
+  "name": "TXTR_Rev_Minus",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 16,
+  "file": "tex1_32x32_9af2d52683113ecc_6.png",
+  "context": [
+   "FF;Rotar    5&image=0xE2FA972549E5A08C;&main-color=#FFFFFF; Ruota    M&image=0x9C1864E4963C9195;&image=0x2773B4F8A4344C9",
+   "1864E4963C9195;&image=0x2773B4F8A4344C9F;&main-color=#FFFFFF;Zoom    P&image=0x9C1864E4963C9195;&image=0x2773B4F8A4344C9",
+   "4E4963C9195;&image=0x2773B4F8A4344C9F;&main-color=#FFFFFF; Zoomer    N&image=0x9C1864E4963C9195;&image=0x2773B4F8A4344C9"
+  ]
+ },
+ {
+  "id": "8c8369b90a73aa2a",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 16,
+  "file": "tex1_32x32_877ac67dc3c23f97_6.png",
+  "context": [
+   "a       a       a   e   r       m   @   ]       a&just=center;Press &image=A, 3.0,0x8C8369B90A73AA2A,0x6D1D065D232A4865;",
+   "A73AA2A,0x6D1D065D232A4865; to go to the Map Screen.    a&just=center;&image=A, 3.0,0x8C8369B90A73AA2A,0x6D1D065D232A486",
+   "232A4865; dr  cken, um Karte aufzurufen.    r&just=center;Appuyez sur &image=A, 3.0,0x8C8369B90A73AA2A,0x6D1D065D232A486"
+  ]
+ },
+ {
+  "id": "dacf5ed82c5c4cc9",
+  "name": "LStickR",
+  "pak": "GuiDVD.pak",
+  "w": 40,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 15,
+  "file": "tex1_40x32_bf0e66339a12f23a_6.png",
+  "context": [
+   "0xE5A8DFED24B2F64B; down to stay connected and let go to release. Use &image=A,3.0,0xE2FA972549E5A08C,0xDACF5ED82C5C4CC9",
+   "bindung aufrecht zu erhalten und loslassen, um sie zu l  sen. Mittels &image=A,3.0,0xE2FA972549E5A08C,0xDACF5ED82C5C4CC9",
+   "pour rester accroch   et rel  chez le bouton pour retomber. Inclinez &image=A,3.0,0xE2FA972549E5A08C,0xDACF5ED82C5C4CC9,"
+  ]
+ },
+ {
+  "id": "1b24d85f3e2c5759",
+  "name": "LStickL",
+  "pak": "GuiDVD.pak",
+  "w": 40,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 15,
+  "file": "tex1_40x32_a60e7e0eac9a75e7_6.png",
+  "context": [
+   "0xE5A8DFED24B2F64B; down to stay connected and let go to release. Use &image=A,3.0,0xE2FA972549E5A08C,0xDACF5ED82C5C4CC9",
+   "bindung aufrecht zu erhalten und loslassen, um sie zu l  sen. Mittels &image=A,3.0,0xE2FA972549E5A08C,0xDACF5ED82C5C4CC9",
+   "pour rester accroch   et rel  chez le bouton pour retomber. Inclinez &image=A,3.0,0xE2FA972549E5A08C,0xDACF5ED82C5C4CC9,"
+  ]
+ },
+ {
+  "id": "fc02572963e5c9d5",
+  "name": "TXTR_Thumbstick_Up",
+  "pak": "GuiNAND.pak",
+  "w": 40,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 15,
+  "file": "tex1_40x32_970859e57fe24761_6.png",
+  "context": [
+   "ge=0x9AC06E2A6558139F; to siphon energy and push the Control Stick up &image=0xFC02572963E5C9D5; to send energy.  &just=",
+   "8139F;, um Energie abzuzapfen und den Control Stick nach oben bewegen &image=0xFC02572963E5C9D5;, um Energie einzuspeise",
+   "&image=0x9AC06E2A6558139F; pour drainer de l'  nergie et vers le haut &image=0xFC02572963E5C9D5; pour en fournir.  &just"
+  ]
+ },
+ {
+  "id": "6d2e2bcd8ac45cd0",
+  "name": "TXTR_RedCredit",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 13,
+  "file": "tex1_32x32_bbcf252538f3fa25_6.png",
+  "context": [
+   "r_rollover_left_5_group;[ Indietro ]&endlink;    C&main-color=#000000;&image=0x6D2E2BCD8AC45CD0;&lookup=credits:Red;    ",
+   "Brano 14     Track 15     Piste 15     Pista 15     Brano 15     &image=0x6D2E2BCD8AC45CD0;     &image=0x49D40FCB49D7BFD",
+   "NITAL   (       (       (       (       (       (       (&just=center;&image=0x6D2E2BCD8AC45CD0;"
+  ]
+ },
+ {
+  "id": "6a74653492612ba7",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 12,
+  "file": "tex1_32x32_8a7f05b131e2133f_6.png",
+  "context": [
+   "rollover=abutton;&rollover=abuttontext:abuttontext_roll;&if=selected0;&image=0x6A74653492612BA7;&lookup=choice0;&image=0",
+   "ttontext_roll;&if=selected0;&image=0x6A74653492612BA7;&lookup=choice0;&image=0x6A74653492612BA7;&else;&lookup=choice0;&e",
+   "rollover=abutton;&rollover=abuttontext:abuttontext_roll;&if=selected1;&image=0x6A74653492612BA7;&lookup=choice1;&image=0"
+  ]
+ },
+ {
+  "id": "9011bff186ce04ed",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 11,
+  "file": "tex1_32x32_2d9b5d2d0a406a63_6.png",
+  "context": [
+   "hack;          2&lookup=string:pickups;: &lookup=percentcomplete;    0&image=0x9011BFF186CE04ED; &lookup=string:help;   ",
+   "s can be viewed in this window, if available, by pressing and holding &image=0x9011BFF186CE04ED;.    vFalls verf  gbar, ",
+   "gbar, lassen sich in diesem Fenster Spielhinweise durch Dr  cken von &image=0x9011BFF186CE04ED; anzeigen.    }S'ils sont"
+  ]
+ },
+ {
+  "id": "63f53ba4c0593e31",
+  "name": "TXTR_RevASmaller",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 10,
+  "file": "tex1_32x32_47002754133e4ff5_6.png",
+  "context": [
+   "ambiar botones de salto y disparo.     Scambia Salta e Spara    @Fire &image=0x63F53BA4C0593E31; Jump &image=0x9FE6B499D",
+   "&image=0x63F53BA4C0593E31; Jump &image=0x9FE6B499DEA8423B;    FFeuern &image=0x63F53BA4C0593E31; Springen &image=0x9FE6B",
+   "image=0x63F53BA4C0593E31; Springen &image=0x9FE6B499DEA8423B;    ?Tir &image=0x63F53BA4C0593E31; Saut &image=0x9FE6B499D"
+  ]
+ },
+ {
+  "id": "9fe6b499dea8423b",
+  "name": "TXTR_RevBSmaller",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 10,
+  "file": "tex1_32x32_ce9f9d8116478553_6.png",
+  "context": [
+   "o.     Scambia Salta e Spara    @Fire &image=0x63F53BA4C0593E31; Jump &image=0x9FE6B499DEA8423B;    FFeuern &image=0x63F",
+   "ge=0x9FE6B499DEA8423B;    FFeuern &image=0x63F53BA4C0593E31; Springen &image=0x9FE6B499DEA8423B;    ?Tir &image=0x63F53B",
+   "en &image=0x9FE6B499DEA8423B;    ?Tir &image=0x63F53BA4C0593E31; Saut &image=0x9FE6B499DEA8423B;    FDisparar &image=0x6"
+  ]
+ },
+ {
+  "id": "4c5a8d95481854cc",
+  "name": "TXTR_MinusSmaller",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 10,
+  "file": "tex1_32x32_889e80824c922249_6.png",
+  "context": [
+   "botones del visor y el hiperestado.     Scambia Visore/Iper    BVisor &image=0x4C5A8D95481854CC; Hyper &image=0x86C75362",
+   "&image=0x4C5A8D95481854CC; Hyper &image=0x86C75362426B6BF1;    GVisor &image=0x4C5A8D95481854CC; Hypermodus &image=0x86C",
+   "=0x4C5A8D95481854CC; Hypermodus &image=0x86C75362426B6BF1;    GViseur &image=0x4C5A8D95481854CC; Hypermode &image=0x86C7"
+  ]
+ },
+ {
+  "id": "86c75362426b6bf1",
+  "name": "TXTR_PlusSmaller",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 10,
+  "file": "tex1_32x32_c3af34349deab463_6.png",
+  "context": [
+   "o.     Scambia Visore/Iper    BVisor &image=0x4C5A8D95481854CC; Hyper &image=0x86C75362426B6BF1;    GVisor &image=0x4C5A",
+   "e=0x86C75362426B6BF1;    GVisor &image=0x4C5A8D95481854CC; Hypermodus &image=0x86C75362426B6BF1;    GViseur &image=0x4C5",
+   "e=0x86C75362426B6BF1;    GViseur &image=0x4C5A8D95481854CC; Hypermode &image=0x86C75362426B6BF1;    HVisor &image=0x4C5A"
+  ]
+ },
+ {
+  "id": "f76434386e7d8b5c",
+  "name": "TXTR_FriendCredit",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 8,
+  "file": "tex1_32x32_7a0fa43c22bd5084_6.png",
+  "context": [
+   "werentry:Diorama 6?model?SCAN_Diorama6?Bonus;    F&main-color=#000000;&image=0xF76434386E7D8B5C;&lookup=credits:Friend; ",
+   "D0;     &image=0x49D40FCB49D7BFD9;     &image=0xE8D9FB7A41321CE6;     &image=0xF76434386E7D8B5C;           &image=0xDC71",
+   "e &image=0x669DE4B24CC08FFF;    k&just=center;&main-color=#FFFFFFFF;&image=0xF76434386E7D8B5C;Verduga con estilo.&image="
+  ]
+ },
+ {
+  "id": "49d2d48815a6deeb",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 2,
+  "mips": 3,
+  "tag_uses": 8,
+  "file": "tex1_32x32_2c6e32a7c3263999_2.png",
+  "context": [
+   ",0xCD201374A46E4508; Gigabomba          ]&line-extra-space=4;Elevator &image=SI, 0.8125,0.8125,0x49D2D48815A6DEEB; Trans",
+   ".8125,0.8125,0x116D7B5AA6781567;     q&line-extra-space=4;Transporter &image=SI, 0.8125,0.8125,0x49D2D48815A6DEEB;   ber",
+   "0.8125,0.8125,0x116D7B5AA6781567;     z&line-extra-space=4;Ascenseur &image=SI, 0.8125,0.8125,0x49D2D48815A6DEEB; Module"
+  ]
+ },
+ {
+  "id": "f81dc15226da644b",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 2,
+  "mips": 3,
+  "tag_uses": 8,
+  "file": "tex1_32x32_0b3494aed7656323_2.png",
+  "context": [
+   "ce=4;Elevator &image=SI, 0.8125,0.8125,0x49D2D48815A6DEEB; Translator &image=SI,0.8125,0.8125,0xF81DC15226DA644B; Portal",
+   "orter &image=SI, 0.8125,0.8125,0x49D2D48815A6DEEB;   bersetzungsmodul &image=SI,0.8125,0.8125,0xF81DC15226DA644B; Portal",
+   "eur &image=SI, 0.8125,0.8125,0x49D2D48815A6DEEB; Module de traduction &image=SI,0.8125,0.8125,0xF81DC15226DA644B; Portai"
+  ]
+ },
+ {
+  "id": "3ff9ff8a2c280853",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 2,
+  "mips": 3,
+  "tag_uses": 8,
+  "file": "tex1_32x32_443852a758395e1d_2.png",
+  "context": [
+   "A6DEEB; Translator &image=SI,0.8125,0.8125,0xF81DC15226DA644B; Portal &image=SI, 0.8125,0.8125,0x3FF9FF8A2C280853; Ammo ",
+   "bersetzungsmodul &image=SI,0.8125,0.8125,0xF81DC15226DA644B; Portal &image=SI, 0.8125,0.8125,0x3FF9FF8A2C280853; Munitio",
+   "ule de traduction &image=SI,0.8125,0.8125,0xF81DC15226DA644B; Portail &image=SI, 0.8125,0.8125,0x3FF9FF8A2C280853; Recha"
+  ]
+ },
+ {
+  "id": "2d0ac63f01ab6f16",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 2,
+  "mips": 3,
+  "tag_uses": 8,
+  "file": "tex1_32x32_8704367b737c9151_2.png",
+  "context": [
+   "4B; Portal &image=SI, 0.8125,0.8125,0x3FF9FF8A2C280853; Ammo Recharge &image=SI, 0.8125,0.8125,0x2D0AC63F01AB6F16; Save ",
+   "Portal &image=SI, 0.8125,0.8125,0x3FF9FF8A2C280853; Munitionsstation &image=SI, 0.8125,0.8125,0x2D0AC63F01AB6F16; Speich",
+   "il &image=SI, 0.8125,0.8125,0x3FF9FF8A2C280853; Recharge de munitions &image=SI, 0.8125,0.8125,0x2D0AC63F01AB6F16; Unit "
+  ]
+ },
+ {
+  "id": "7f5e19ea6eb96a64",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 2,
+  "mips": 3,
+  "tag_uses": 8,
+  "file": "tex1_32x32_45c5449278ef0393_2.png",
+  "context": [
+   "mo Recharge &image=SI, 0.8125,0.8125,0x2D0AC63F01AB6F16; Save Station &image=SI, 0.8125,0.8125,0x7F5E19EA6EB96A64; Hint ",
+   "sstation &image=SI, 0.8125,0.8125,0x2D0AC63F01AB6F16; Speicherstation &image=SI, 0.8125,0.8125,0x7F5E19EA6EB96A64; Hinwe",
+   "ons &image=SI, 0.8125,0.8125,0x2D0AC63F01AB6F16; Unit   de Sauvegarde &image=SI, 0.8125,0.8125,0x7F5E19EA6EB96A64; Indic"
+  ]
+ },
+ {
+  "id": "116d7b5aa6781567",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 8,
+  "file": "tex1_32x32_a20c24cb1b433fab_5.png",
+  "context": [
+   "B6F16; Save Station &image=SI, 0.8125,0.8125,0x7F5E19EA6EB96A64; Hint &image=SI, 0.8125,0.8125,0x116D7B5AA6781567;     q",
+   "Speicherstation &image=SI, 0.8125,0.8125,0x7F5E19EA6EB96A64; Hinweis &image=SI, 0.8125,0.8125,0x116D7B5AA6781567;     z&",
+   "t   de Sauvegarde &image=SI, 0.8125,0.8125,0x7F5E19EA6EB96A64; Indice &image=SI, 0.8125,0.8125,0x116D7B5AA6781567;    c&"
+  ]
+ },
+ {
+  "id": "2773b4f8a4344c9f",
+  "name": "TXTR_Rev_Plus",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 7,
+  "file": "tex1_32x32_96342171475066ab_6.png",
+  "context": [
+   "972549E5A08C;&main-color=#FFFFFF; Ruota    M&image=0x9C1864E4963C9195;&image=0x2773B4F8A4344C9F;&main-color=#FFFFFF;Zoom",
+   "73B4F8A4344C9F;&main-color=#FFFFFF;Zoom    P&image=0x9C1864E4963C9195;&image=0x2773B4F8A4344C9F;&main-color=#FFFFFF; Zoo",
+   "4F8A4344C9F;&main-color=#FFFFFF; Zoomer    N&image=0x9C1864E4963C9195;&image=0x2773B4F8A4344C9F;&main-color=#FFFFFF; Zoo"
+  ]
+ },
+ {
+  "id": "74167382868a9aeb",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 7,
+  "file": "tex1_32x32_5f902a2fdd0555e0_14.png",
+  "context": [
+   "ssile    8&image=SI, 0.8125,0.8125,0x07F875DBB0759431; Supermisil    2&image=SI, 0.8125,0.8125,0x74167382868A9AEB; ???? ",
+   "Supermisil    2&image=SI, 0.8125,0.8125,0x74167382868A9AEB; ????    3&image=SI, 0.8125,0.8125,0x74167382868A9AEB; ????? ",
+   "9AEB; ????    3&image=SI, 0.8125,0.8125,0x74167382868A9AEB; ?????    <&image=SI, 0.8125,0.8125,0x74167382868A9AEB; Seeke"
+  ]
+ },
+ {
+  "id": "cd201374a46e4508",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 7,
+  "file": "tex1_32x32_cd6fc4053d4e92fd_14.png",
+  "context": [
+   "&image=SI, 0.8125,0.8125,0x74167382868A9AEB; Missile Autocercante    1&image=SI,0.8125,0.8125,0xCD201374A46E4508; ????  ",
+   "Autocercante    1&image=SI,0.8125,0.8125,0xCD201374A46E4508; ????    2&image=SI,0.8125,0.8125,0xCD201374A46E4508; ????? ",
+   "E4508; ????    2&image=SI,0.8125,0.8125,0xCD201374A46E4508; ?????    7&image=SI,0.8125,0.8125,0xCD201374A46E4508; Power "
+  ]
+ },
+ {
+  "id": "661fbc3005be8218",
+  "name": "",
+  "pak": "Metroid1.pak",
+  "w": 128,
+  "h": 115,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 6,
+  "file": "tex1_128x115_7e4beb5a915f6b06_6.png",
+  "context": [
+   "NITAL   A       A       A       A       A       A       A&just=center;&image=A,3.0,0x661FBC3005BE8218,0x33A1A2BF228E293A",
+   "8&just=center;Sei congelata. Piazza bombe per liberarti.    RPress &image=A,3.0,0x661FBC3005BE8218,0x33A1A2BF228E293A; t",
+   "F228E293A; to exit the Scan Visor.    ]Zum Verlassen des Scan Visors  &image=A,3.0,0x661FBC3005BE8218,0x33A1A2BF228E293A"
+  ]
+ },
+ {
+  "id": "33a1a2bf228e293a",
+  "name": "",
+  "pak": "Metroid1.pak",
+  "w": 128,
+  "h": 115,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 6,
+  "file": "tex1_128x115_223f7fb39403d23e_6.png",
+  "context": [
+   "NITAL   A       A       A       A       A       A       A&just=center;&image=A,3.0,0x661FBC3005BE8218,0x33A1A2BF228E293A",
+   "8&just=center;Sei congelata. Piazza bombe per liberarti.    RPress &image=A,3.0,0x661FBC3005BE8218,0x33A1A2BF228E293A; t",
+   "F228E293A; to exit the Scan Visor.    ]Zum Verlassen des Scan Visors  &image=A,3.0,0x661FBC3005BE8218,0x33A1A2BF228E293A"
+  ]
+ },
+ {
+  "id": "6d1d065d232a4865",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 6,
+  "file": "tex1_32x32_b7bcef92f3f7378d_6.png",
+  "context": [
+   "a       a       a   e   r       m   @   ]       a&just=center;Press &image=A, 3.0,0x8C8369B90A73AA2A,0x6D1D065D232A4865;",
+   "A73AA2A,0x6D1D065D232A4865; to go to the Map Screen.    a&just=center;&image=A, 3.0,0x8C8369B90A73AA2A,0x6D1D065D232A486",
+   "232A4865; dr  cken, um Karte aufzurufen.    r&just=center;Appuyez sur &image=A, 3.0,0x8C8369B90A73AA2A,0x6D1D065D232A486"
+  ]
+ },
+ {
+  "id": "1bbaadc0dfc5d6f4",
+  "name": "",
+  "pak": "FrontEnd.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 5,
+  "file": "tex1_32x32_173f3a24d9dd4a66_6.png",
+  "context": [
+   "7       7       ;   ;   C   z   :       ;       7&just=center;PRESS &image=0x1BBAADC0DFC5D6F4; TO START    ;&just=center",
+   ";PRESS &image=0x1BBAADC0DFC5D6F4; TO START    ;&just=center;ZUM START &image=0x1BBAADC0DFC5D6F4; DR  CKEN    C&just=cent",
+   "TART &image=0x1BBAADC0DFC5D6F4; DR  CKEN    C&just=center;APPUYEZ SUR &image=0x1BBAADC0DFC5D6F4; POUR COMMENCER    :&jus"
+  ]
+ },
+ {
+  "id": "04a4c81e965b0a50",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 5,
+  "file": "tex1_32x32_b01e0bcf7ebc95e2_6.png",
+  "context": [
+   "=#FF6705B3;Objectives&pop; tab. Objectives will appear on your map as &image=0x04A4C81E965B0A50;.     Aktuelle Vorgaben ",
+   "F6705B3;Vorgaben&pop; abgelegt. Vorgaben erscheinen auf der Karte als &image=0x04A4C81E965B0A50;.     Les objectifs    a",
+   "in-color=#FF6705B3;Objectifs&pop;. Les objectifs seront indiqu  s par &image=0x04A4C81E965B0A50; sur votre carte.     Co"
+  ]
+ },
+ {
+  "id": "0735d4310a8962e8",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 5,
+  "file": "tex1_32x32_fbf82e504ece9086_14.png",
+  "context": [
+   "&image=SI,0.70,1.0,0x64CD167CB5945F61; Zoomer    J&line-extra-space=4;&image=SI, 0.8125,0.8125,0x0735D4310A8962E8; Any B",
+   "I, 0.8125,0.8125,0x0735D4310A8962E8; Any Beam    Q&line-extra-space=4;&image=SI, 0.8125,0.8125,0x0735D4310A8962E8; Belie",
+   "25,0.8125,0x0735D4310A8962E8; Beliebiger Beam    N&line-extra-space=4;&image=SI, 0.8125,0.8125,0x0735D4310A8962E8; Acc  "
+  ]
+ },
+ {
+  "id": "324b4a53334f0033",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 5,
+  "file": "tex1_32x32_8ee492926728f579_14.png",
+  "context": [
+   "A&image=SI,0.8125,0.8125,0xDAAE6033FDC6A9A9; Rayon d'annihilation    2&image=SI, 0.8125,0.8125,0x324B4A53334F0033; ???? ",
+   "nnihilation    2&image=SI, 0.8125,0.8125,0x324B4A53334F0033; ????    3&image=SI, 0.8125,0.8125,0x324B4A53334F0033; ?????",
+   "0033; ????    3&image=SI, 0.8125,0.8125,0x324B4A53334F0033; ?????    5&image=SI, 0.8125,0.8125,0x324B4A53334F0033; Missi"
+  ]
+ },
+ {
+  "id": "6ce97adc84c24277",
+  "name": "TXTR_FrontEndAsterisk",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 4,
+  "file": "tex1_32x32_bae4aca1751b7115_6.png",
+  "context": [
+   "etoption]?choice=0;&wholepane;&rollover=linear_rollover_right_1_group;&image=0x6CE97ADC84C24277; &lookup=choice0;&endlin",
+   "etoption]?choice=1;&wholepane;&rollover=linear_rollover_right_2_group;&image=0x6CE97ADC84C24277; &lookup=choice1;&endlin",
+   "etoption]?choice=2;&wholepane;&rollover=linear_rollover_right_3_group;&image=0x6CE97ADC84C24277; &lookup=choice2;&endlin"
+  ]
+ },
+ {
+  "id": "e5efd69ce37a4114",
+  "name": "",
+  "pak": "Metroid1.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 4,
+  "file": "tex1_32x32_380a4ed102753a91_6.png",
+  "context": [
+   "PNGERMFRENSPANITAL   5       5       5       5       5       5       5&image=A, 3.0,0xAB07101E7F8CF492,0xE5EFD69CE37A411",
+   "PNGERMFRENSPANITAL   5       5       5       5       5       5       5&image=A, 3.0,0xAB07101E7F8CF492,0xE5EFD69CE37A411",
+   "PNGERMFRENSPANITAL   5       5       5       5       5       5       5&image=A, 3.0,0xAB07101E7F8CF492,0xE5EFD69CE37A411"
+  ]
+ },
+ {
+  "id": "3ca6bbec10614fb6",
+  "name": "",
+  "pak": "Metroid1.pak",
+  "w": 128,
+  "h": 115,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 4,
+  "file": "tex1_128x115_2431e9dab051193f_6.png",
+  "context": [
+   "NITAL                                                    &just=center;&image=A,6.0,0x3CA6BBEC10614FB6,0x3CA6BBEC10614FB6",
+   "NITAL                                                    &just=center;&image=A,6.0,0x3CA6BBEC10614FB6,0x3CA6BBEC10614FB6",
+   "NITAL                                                    &just=center;&image=A,6.0,0x3CA6BBEC10614FB6,0x3CA6BBEC10614FB6"
+  ]
+ },
+ {
+  "id": "75f445b494736232",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 4,
+  "file": "tex1_32x32_10d5e0c332fc3d43_14.png",
+  "context": [
+   "e=4;&image=SI, 0.8125,0.8125,0x0735D4310A8962E8; Qualsiasi raggio    1&image=SI,0.8125,0.8125,0x75F445B494736232; ????  ",
+   "siasi raggio    1&image=SI,0.8125,0.8125,0x75F445B494736232; ????    2&image=SI,0.8125,0.8125,0x75F445B494736232; ????? ",
+   "36232; ????    2&image=SI,0.8125,0.8125,0x75F445B494736232; ?????    6&image=SI,0.8125,0.8125,0x75F445B494736232; Dark B"
+  ]
+ },
+ {
+  "id": "c028ec3ecd9bf7f2",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 3,
+  "tag_uses": 4,
+  "file": "tex1_32x32_c3439656d7a84e8e_14.png",
+  "context": [
+   "Beam    9&image=SI,0.8125,0.8125,0x75F445B494736232; Rayon sombre    2&image=SI, 0.8125,0.8125,0xC028EC3ECD9BF7F2; ???? ",
+   "ayon sombre    2&image=SI, 0.8125,0.8125,0xC028EC3ECD9BF7F2; ????    3&image=SI, 0.8125,0.8125,0xC028EC3ECD9BF7F2; ?????",
+   "F7F2; ????    3&image=SI, 0.8125,0.8125,0xC028EC3ECD9BF7F2; ?????    8&image=SI, 0.8125,0.8125,0xC028EC3ECD9BF7F2; Light"
+  ]
+ },
+ {
+  "id": "daae6033fdc6a9a9",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 4,
+  "file": "tex1_32x32_44eaba53000560fd_14.png",
+  "context": [
+   "?&image=SI, 0.8125,0.8125,0xC028EC3ECD9BF7F2; Rayon de lumi  re    1&image=SI,0.8125,0.8125,0xDAAE6033FDC6A9A9; ????    ",
+   "de lumi  re    1&image=SI,0.8125,0.8125,0xDAAE6033FDC6A9A9; ????    2&image=SI,0.8125,0.8125,0xDAAE6033FDC6A9A9; ?????  ",
+   "6A9A9; ????    2&image=SI,0.8125,0.8125,0xDAAE6033FDC6A9A9; ?????    =&image=SI,0.8125,0.8125,0xDAAE6033FDC6A9A9; Annihi"
+  ]
+ },
+ {
+  "id": "07f875dbb0759431",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 4,
+  "file": "tex1_32x32_3f14706c308bf712_14.png",
+  "context": [
+   "33; Misil    4&image=SI, 0.8125,0.8125,0x324B4A53334F0033;Missile    2&image=SI, 0.8125,0.8125,0x07F875DBB0759431; ???? ",
+   "033;Missile    2&image=SI, 0.8125,0.8125,0x07F875DBB0759431; ????    3&image=SI, 0.8125,0.8125,0x07F875DBB0759431; ?????",
+   "9431; ????    3&image=SI, 0.8125,0.8125,0x07F875DBB0759431; ?????    ;&image=SI, 0.8125,0.8125,0x07F875DBB0759431; Super"
+  ]
+ },
+ {
+  "id": "bb765973b489791b",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 4,
+  "file": "tex1_32x32_94a70e93bf0d10c8_5.png",
+  "context": [
+   "a de armamento infectado por virus de rezbit. Antivirus activado.    t&image=0xBB765973B489791B; + &image=0x3EDDF4ACFF57",
+   "FD27; + &image=SI,0.70,0.68,0x623028787BB5E3A6; to reboot system.    |&image=0xBB765973B489791B; + &image=0x3EDDF4ACFF57",
+   "&image=SI,0.70,0.68,0x623028787BB5E3A6; zum Neustart des Systems.    }&image=0xBB765973B489791B; + &image=0x3EDDF4ACFF57"
+  ]
+ },
+ {
+  "id": "3eddf4acff57fd27",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 4,
+  "file": "tex1_32x32_43c4d16234f3c55c_5.png",
+  "context": [
+   "virus de rezbit. Antivirus activado.    t&image=0xBB765973B489791B; + &image=0x3EDDF4ACFF57FD27; + &image=SI,0.70,0.68,0",
+   "x623028787BB5E3A6; to reboot system.    |&image=0xBB765973B489791B; + &image=0x3EDDF4ACFF57FD27; + &image=SI,0.70,0.68,0",
+   "87BB5E3A6; zum Neustart des Systems.    }&image=0xBB765973B489791B; + &image=0x3EDDF4ACFF57FD27; + &image=SI,0.70,0.68,0"
+  ]
+ },
+ {
+  "id": "51c4940001a7d7cd",
+  "name": "TXTR_Rev_ShakeBoth_Up",
+  "pak": "GuiNAND.pak",
+  "w": 128,
+  "h": 128,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 3,
+  "file": "tex1_128x128_62ae16454d4083a4_6.png",
+  "context": [
+   "PNGERMFRENSPANITAL   4       4       4       4       4       4       4&image=A,6.0,0x51C4940001A7D7CD,0xD8BC216277903B1E",
+   "PNGERMFRENSPANITAL   4       4       4       4       4       4       4&image=A,6.0,0x51C4940001A7D7CD,0xD8BC216277903B1E",
+   "PNGERMFRENSPANITAL   4       4       4       4       4       4       4&image=A,6.0,0x51C4940001A7D7CD,0xD8BC216277903B1E"
+  ]
+ },
+ {
+  "id": "d8bc216277903b1e",
+  "name": "TXTR_Rev_ShakeBoth_Down",
+  "pak": "GuiNAND.pak",
+  "w": 128,
+  "h": 128,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 3,
+  "file": "tex1_128x128_f181b6e30ad22338_6.png",
+  "context": [
+   "PNGERMFRENSPANITAL   4       4       4       4       4       4       4&image=A,6.0,0x51C4940001A7D7CD,0xD8BC216277903B1E",
+   "PNGERMFRENSPANITAL   4       4       4       4       4       4       4&image=A,6.0,0x51C4940001A7D7CD,0xD8BC216277903B1E",
+   "PNGERMFRENSPANITAL   4       4       4       4       4       4       4&image=A,6.0,0x51C4940001A7D7CD,0xD8BC216277903B1E"
+  ]
+ },
+ {
+  "id": "7e8ea20368119dc9",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 2,
+  "file": "tex1_32x32_d8a3ef25d749f0e0_6.png",
+  "context": [
+   "&image=0x9F69593BE3C77202; &lookup=string:LegendPickupFound;&endif;  &image=0x7E8EA20368119DC9; &lookup=string:LegendLan",
+   "&image=0x8D3277AEA4135714; &lookup=string:GalaxyHelpLandingMapped;  &image=0x7E8EA20368119DC9; &lookup=string:GalaxyHelp"
+  ]
+ },
+ {
+  "id": "dc7115e95dc41122",
+  "name": "TXTR_RedCreditHalf",
+  "pak": "GuiDVD.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_da62a50482053386_6.png",
+  "context": [
+   "&image=0xE8D9FB7A41321CE6;     &image=0xF76434386E7D8B5C;           &image=0xDC7115E95DC41122;     &image=0xAD00224B2212"
+  ]
+ },
+ {
+  "id": "ad00224b221221b0",
+  "name": "TXTR_BlueCreditHalf",
+  "pak": "GuiDVD.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_e70911396092edde_6.png",
+  "context": [
+   "&image=0xF76434386E7D8B5C;           &image=0xDC7115E95DC41122;     &image=0xAD00224B221221B0;     &image=0xDF5EB2AA9863"
+  ]
+ },
+ {
+  "id": "df5eb2aa98634bfb",
+  "name": "TXTR_GoldCreditHalf",
+  "pak": "GuiDVD.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_e09c5e42f2971138_6.png",
+  "context": [
+   "&image=0xDC7115E95DC41122;     &image=0xAD00224B221221B0;     &image=0xDF5EB2AA98634BFB;     &image=0x7A505498F9306606; "
+  ]
+ },
+ {
+  "id": "7a505498f9306606",
+  "name": "TXTR_FriendCreditHalf",
+  "pak": "GuiDVD.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_da1c67aba8c2f464_6.png",
+  "context": [
+   "22;     &image=0xAD00224B221221B0;     &image=0xDF5EB2AA98634BFB;     &image=0x7A505498F9306606;           Game Start   "
+  ]
+ },
+ {
+  "id": "77304c998a988955",
+  "name": "TXTR_BookmarkIcon0",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_32x32_07cc1d261cc77552_6.png",
+  "context": [
+   "0   G   ^   u                               -   D   [    &image=0x77304C998A988955;     &drawrolloverfill;&image=SI,1.0,"
+  ]
+ },
+ {
+  "id": "0a6cf105d19c122f",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_f11d4cb6e7eadd8b_6.png",
+  "context": [
+   "0xA634AD4C42F5F476,0x572AC50ADB483CC1;&endlink;                      d&image=0x0A6CF105D19C122F; &if=haspower:PowerBeam;"
+  ]
+ },
+ {
+  "id": "a9d1398867d58b7f",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_1bb6429b7b89ca76_6.png",
+  "context": [
+   "aspower:PowerBeam;&lookup=string:LegendPowerBeamDoor;&else;???&endif; &image=0xA9D1398867D58B7F; &if=haspower:Missile;&l"
+  ]
+ },
+ {
+  "id": "5b2751d9a8311e24",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_61a1e3efa06865c0_6.png",
+  "context": [
+   "if=haspower:Missile;&lookup=string:LegendMissileDoor;&else;???&endif; &image=0x5B2751D9A8311E24; &if=haspower:IceMissile"
+  ]
+ },
+ {
+  "id": "60c2a677559aefcc",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_353382a5071189fe_6.png",
+  "context": [
+   "power:IceMissile;&lookup=string:LegendIceMissileDoor;&else;???&endif; &image=0x60C2A677559AEFCC; &if=haspower:PlasmaBeam"
+  ]
+ },
+ {
+  "id": "0abcdf33e463f29c",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_5f576d927ac11c8d_6.png",
+  "context": [
+   "power:PlasmaBeam;&lookup=string:LegendPlasmaBeamDoor;&else;???&endif; &image=0x0ABCDF33E463F29C; &if=haspower:SeekerMiss"
+  ]
+ },
+ {
+  "id": "dbf3ba3c0b0609e1",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_0dfa673553f6411a_6.png",
+  "context": [
+   "SeekerMissile;&lookup=string:LegendSeekerMissileDoor;&else;???&endif; &image=0xDBF3BA3C0B0609E1; &if=haspower:GrappleBea"
+  ]
+ },
+ {
+  "id": "fb5d2f54aa10d72a",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_c371d3ef74f08e1b_6.png",
+  "context": [
+   "eBeamVoltage;&lookup=string:LegendGrappleVoltageDoor;&else;???&endif; &image=0xFB5D2F54AA10D72A; &if=haspower:NovaBeam;&"
+  ]
+ },
+ {
+  "id": "469ad8eaab91f045",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_336e3f40992f82f8_6.png",
+  "context": [
+   "haspower:NovaBeam;&lookup=string:LegendNovaBeamDoor;&else;???&endif;  &image=0x469AD8EAAB91F045; &lookup=string:LegendSa"
+  ]
+ },
+ {
+  "id": "22bb3f13d8a6af9a",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_0808ee6c9ecc7763_6.png",
+  "context": [
+   "&endif;  &image=0x469AD8EAAB91F045; &lookup=string:LegendSaveStation; &image=0x22BB3F13D8A6AF9A; &lookup=string:LegendMa"
+  ]
+ },
+ {
+  "id": "2857787e58e91e01",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_e1d2b286d12b7449_6.png",
+  "context": [
+   "eStation; &image=0x22BB3F13D8A6AF9A; &lookup=string:LegendMapStation; &image=0x2857787E58E91E01; &lookup=string:LegendHi"
+  ]
+ },
+ {
+  "id": "9b0f128f01df4ae8",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_fd180430f129bc65_6.png",
+  "context": [
+   "ge=0x2857787E58E91E01; &lookup=string:LegendHint;&if=canshow:pickups; &image=0x9B0F128F01DF4AE8; &lookup=string:LegendPi"
+  ]
+ },
+ {
+  "id": "9f69593be3c77202",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 16,
+  "h": 16,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_16x16_3267c1de67f87119_6.png",
+  "context": [
+   "kups; &image=0x9B0F128F01DF4AE8; &lookup=string:LegendPickupNotFound; &image=0x9F69593BE3C77202; &lookup=string:LegendPi"
+  ]
+ },
+ {
+  "id": "7482fc780a225b34",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_32x32_4644e67234a76242_6.png",
+  "context": [
+   "if;  &image=0x7E8EA20368119DC9; &lookup=string:LegendLandingSite;    n&image=0x7482FC780A225B34; &lookup=string:GalaxyHe"
+  ]
+ },
+ {
+  "id": "8d3277aea4135714",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_32x32_a473898dd842b9c4_6.png",
+  "context": [
+   "Site;    n&image=0x7482FC780A225B34; &lookup=string:GalaxyHelpSamus;  &image=0x8D3277AEA4135714; &lookup=string:GalaxyHe"
+  ]
+ },
+ {
+  "id": "844fa70ba630a5a2",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_32x32_2740f9c64044a42d_6.png",
+  "context": [
+   "&image=0x7E8EA20368119DC9; &lookup=string:GalaxyHelpLandingVisited;  &image=0x844FA70BA630A5A2; &lookup=string:GalaxyHel"
+  ]
+ },
+ {
+  "id": "37f79987573e5a1a",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_32x32_7fae628dd9f19984_6.png",
+  "context": [
+   "kup=string:GalaxyHelpLandingInactive;&if=var:PirateResearch_Trooper;  &image=0x37F79987573E5A1A; &lookup=string:GalaxyHe"
+  ]
+ },
+ {
+  "id": "ab5cd44647d26e30",
+  "name": "",
+  "pak": "Metroid1.pak",
+  "w": 128,
+  "h": 115,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_128x115_05ace719b52918bb_6.png",
+  "context": [
+   "NITAL   A       A       A       A       A       A       A&just=center;&image=A,3.0,0xAB5CD44647D26E30,0x851333195E74A9EF"
+  ]
+ },
+ {
+  "id": "851333195e74a9ef",
+  "name": "",
+  "pak": "Metroid1.pak",
+  "w": 128,
+  "h": 115,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_128x115_40ea01bf6f2aceae_6.png",
+  "context": [
+   "NITAL   A       A       A       A       A       A       A&just=center;&image=A,3.0,0xAB5CD44647D26E30,0x851333195E74A9EF"
+  ]
+ },
+ {
+  "id": "c3cbfe3f4b392fe2",
+  "name": "",
+  "pak": "Metroid1.pak",
+  "w": 128,
+  "h": 115,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_128x115_9f7fc8df609fe538_6.png",
+  "context": [
+   "NITAL                                                    &just=center;&image=A,6.0,0x3CA6BBEC10614FB6,0x3CA6BBEC10614FB6"
+  ]
+ },
+ {
+  "id": "42580f4cde41d440",
+  "name": "",
+  "pak": "Metroid1.pak",
+  "w": 128,
+  "h": 115,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_128x115_8f8f7f42a0fd97ec_6.png",
+  "context": [
+   "NITAL                                                    &just=center;&image=A,6.0,0x3CA6BBEC10614FB6,0x3CA6BBEC10614FB6"
+  ]
+ },
+ {
+  "id": "f4dcd3d318c1156c",
+  "name": "",
+  "pak": "Metroid5.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_32x32_049d2ae3a7ce67e9_5.png",
+  "context": [
+   "NITAL   )       )       )       )       )       )   -   )&just=center;&image=0xF4DCD3D318C1156C;     )&just=center;&imag"
+  ]
+ },
+ {
+  "id": "03ee76e9770da113",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_32x32_e4e50ee875586892_5.png",
+  "context": [
+   "Clefs du Sanctuaire      Llaves del Santuario     Sanctuary Keys    &&image=SI,1.0,1.0,0x03EE76E9770DA113;    &&image=SI"
+  ]
+ },
+ {
+  "id": "b9c85070d546f54e",
+  "name": "",
+  "pak": "MiscData.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 1,
+  "file": "tex1_32x32_e968270b0d7470b4_5.png",
+  "context": [
+   "ario     Sanctuary Keys    &&image=SI,1.0,1.0,0x03EE76E9770DA113;    &&image=SI,1.0,1.0,0xB9C85070D546F54E;     Select T"
+  ]
+ },
+ {
+  "id": "01be413838c5a1ef",
+  "name": "LstickU",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_64x32_54e47b41b25b4651_5.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "12926787f64d6d76",
+  "name": "LStickDL",
+  "pak": "GuiDVD.pak",
+  "w": 40,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_40x32_ad10120cce78bfe8_6.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "22661937d5ed8afa",
+  "name": "LStickUL",
+  "pak": "GuiDVD.pak",
+  "w": 40,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_40x32_c919255101f089a5_6.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "24b5f6c9aece3a43",
+  "name": "",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 4,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_10ca6dca25531ce9_4.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "2d980a2d07cd0ac8",
+  "name": "DPadD",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_64x32_443f9c67227a5b2b_5.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "7c51cfc159c9a724",
+  "name": "LStickUR",
+  "pak": "GuiDVD.pak",
+  "w": 40,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_40x32_fae180a397790a33_6.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "9c0ae992ac47edbe",
+  "name": "DPadL",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_64x32_70185cb70118dc7e_5.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "ae333ec80652555a",
+  "name": "DPadR",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_64x32_ca3b3e2e642b4171_5.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "b171d47e6fd08608",
+  "name": "LStickDR",
+  "pak": "GuiDVD.pak",
+  "w": 40,
+  "h": 32,
+  "gx_format": 6,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_40x32_8824feb269d64f77_6.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "b77306e6e5f82047",
+  "name": "",
+  "pak": "GuiDVD.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 4,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_4eb90bb511d2b10e_4.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "c61ddc43f7752253",
+  "name": "DPadU",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_64x32_4d6e8ff9d2d981de_5.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "dcd1de8b0ed254a6",
+  "name": "DPadN",
+  "pak": "GuiDVD.pak",
+  "w": 64,
+  "h": 32,
+  "gx_format": 5,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_64x32_c52fa5e1704a2b4c_5.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "07acf1d06d7411bb",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_00901119431a3e6a_14.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ },
+ {
+  "id": "e2373ab1abe5d8e9",
+  "name": "",
+  "pak": "GuiNAND.pak",
+  "w": 32,
+  "h": 32,
+  "gx_format": 14,
+  "mips": 1,
+  "tag_uses": 0,
+  "file": "tex1_32x32_fd38631c4cfd1732_14.png",
+  "context": [
+   "found by sweep_small.py / pick_candidates.py"
+  ]
+ }
+]

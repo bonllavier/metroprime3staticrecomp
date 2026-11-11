@@ -26,11 +26,15 @@ struct State {
 };
 inline State& state() {static thread_local State value;return value;}
 inline bool enabled() {
+#if !defined(MKW_PRIME_QA_TOOLS)
+  return false;  // test builds only
+#else
   static const bool value=[] {
     const auto* text=std::getenv("WII_COMPILED_PRIME_PERFORMANCE_TRACE");
     return text && std::strcmp(text,"1")==0;
   }();
   return value || overlayEnabled.load(std::memory_order_relaxed);
+#endif
 }
 class Scope {
   Stage stage;

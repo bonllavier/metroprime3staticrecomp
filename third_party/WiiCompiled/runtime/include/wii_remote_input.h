@@ -54,6 +54,11 @@ struct KpadSample {
     int16_t clRStickRaw[2] = {};
     uint8_t clTriggerL = 0;      // 0..255; SDL only exposes the digital click
     uint8_t clTriggerR = 0;
+    // IR camera view of the sensor bar (raw WPAD DPD objects, camera pixels
+    // 0..1023 x 0..767). Only the keyboard/mouse remote fills it; when false the
+    // packet reports no IR objects, as before.
+    bool irValid = false;
+    float irDots[2][2] = {};
 };
 
 // What the game should see on `chan`: the controller SDL has there right now,

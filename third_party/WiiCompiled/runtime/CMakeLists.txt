@@ -67,6 +67,9 @@ endif()
 set(MKW_SETUP_VERSION "" CACHE STRING "WiiCompiled version recorded in the runtime log")
 
 option(MKW_PLATFORM_TESTS_ONLY "Build host-platform tests without graphics dependencies or game assets" OFF)
+# Local QA only: input recording/replay and a separate data directory. Never for a published build;
+# recomp/tools/package_release.ps1 refuses an executable that carries its marker.
+option(MKW_PRIME_QA_TOOLS "Build the private QA tools (input record/replay) into the runtime" OFF)
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/HostLibraries.cmake")
 if(MKW_PLATFORM_TESTS_ONLY)
     if(MKW_BUILD_PRODUCTS)
@@ -215,6 +218,13 @@ set_source_files_properties(${MKW_PPC_SEMANTIC_RUNTIME_SOURCES} PROPERTIES
 # Match the optimization policy of the translated callers as well as their FP policy.
 set_property(SOURCE "${CMAKE_CURRENT_LIST_DIR}/src/ppc_quantized.cpp" APPEND PROPERTY
     COMPILE_OPTIONS -O2 -fno-slp-vectorize)
+# RetroAchievements: Windows/GDI+ headers and ImGui internals, kept out of the
+# unity chunks (ReShade's overlay header pins a different ImGui version).
+set_source_files_properties(
+    "${CMAKE_CURRENT_LIST_DIR}/src/hle/prime_achievements.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/hle/prime_achievements_ui.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/hle/prime_materials.cpp"
+    PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 # ----------------------------------------------------------------------
 # Third-party: aurora-main (provides SDL3 + GPU backends)
@@ -286,6 +296,10 @@ else()
         if(TARGET ${t})
             set_target_properties(${t} PROPERTIES UNITY_BUILD OFF)
             target_compile_options(${t} PRIVATE -O3 -ffast-math -w -pipe)
+            # Diagnostics (draw dumps, GPU timing, profiling, debug logs) exist only in test builds.
+            if(MKW_PRIME_QA_TOOLS)
+                target_compile_definitions(${t} PRIVATE MKW_PRIME_QA_TOOLS=1)
+            endif()
             if(MKW_PLATFORM_WINDOWS)
                 target_include_directories(${t} PRIVATE ${MKW_DX_STUB_DIR})
             endif()

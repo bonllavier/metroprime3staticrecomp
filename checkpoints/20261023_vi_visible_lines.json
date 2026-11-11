@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "request": "Black band below the game image and at the sides in a maximized window",
+  "findings": [
+    "Bottom band: Prime copies a 640x480 XFB but programs VI with VTR=0x0E06 (ACV 224 per field, interlaced, DCR NIN=0) = 448 scanned lines. The 32 unscanned rows never reach a TV; presenting the whole copy showed them as a band (image ended at row 957 of a 1026-row viewport = 448/480).",
+    "Side bands: maximized window client area 1920x1027 is wider than 16:9; the 16:9 viewport is 1824x1026, leaving ~48 px per side. Borderless/exclusive fullscreen at 1920x1080 removes them (Alt+Enter or F1 > Video > Modo de pantalla)."
+  ],
+  "changes": [
+    "aurora-main/lib/dolphin/gx/GXFrameBuffer.cpp: GXCopyDispTracked(dest, clear, visibleLines) samples only the top visibleLines of the source rect into the display-copy texture; the EFB clear still covers the full rectangle the game requested. GXCopyDisp unchanged (0 = whole copy).",
+    "runtime/src/hle/gx/gx_fifo.cpp: PrimeViVisibleLines derives the scanned lines from VI VTR.ACV and DCR.NIN (x2 when interlaced), falls back to the whole copy if unprogrammed or larger than the copy; logs [prime-vi-visible] when VI registers or copy height change."
+  ],
+  "validation": {
+    "build": "RM3E01_00_runtime_link_probe links",
+    "unattended_hangar": "content rows 0..1026 of 1027 (band removed), 60.0 FPS, no fatal log lines",
+    "log": "[prime-vi-visible] vtr=0xe06 dcr=0x1 -> 448 lines of a 480-line copy"
+  },
+  "pending": "User QA: reticle alignment under the cursor; top offset (TFBL panning) not applied since Prime's VI starts at the XFB top."
+}

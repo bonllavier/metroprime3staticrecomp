@@ -115,6 +115,12 @@ RenderTargetSize clamp_frame_buffer_size(uint32_t width, uint32_t height) noexce
 
 // V-Sync is never enabled: the guest drives its own pacing, and blocking in Present() couples the
 // whole machine to the monitor (a 120 FPS target on a 75 Hz display runs in slow motion).
+// With frame interpolation on, images are presented faster than a composited window flips, and
+// Immediate then blocks in Present() until the next refresh with the device lock held, which stalls
+// encoding and through it the game: the output stays at the refresh rate and the game's own frames
+// drop by half. Mailbox never blocks and shows the newest image at each refresh, without tearing.
+std::atomic_bool g_nonBlockingPresent{false};
+
 wgpu::PresentMode best_present_mode() {
   const auto supports = [](const wgpu::PresentMode candidate) {
     for (size_t i = 0; i < g_surfaceCapabilities.presentModeCount; ++i) {
@@ -124,9 +130,19 @@ wgpu::PresentMode best_present_mode() {
     }
     return false;
   };
+  // Diagnostics/latency tuning: WII_COMPILED_AURORA_PRESENT_MODE=immediate|mailbox|fifo, when offered.
+  if (const char* forced = std::getenv("WII_COMPILED_AURORA_PRESENT_MODE")) {
+    const std::string_view mode{forced};
+    const auto requested = mode == "mailbox" ? wgpu::PresentMode::Mailbox
+                           : mode == "fifo"  ? wgpu::PresentMode::Fifo
+                                             : wgpu::PresentMode::Immediate;
+    if (supports(requested)) return requested;
+    Log.warn("Requested present mode {} is not offered by this surface", forced);
+  }
   // Vulkan prefers Mailbox, every other backend Immediate. Under window capture the Vulkan driver
   // cannot flip and Immediate leaks about a megabyte per present until the device is lost.
-  const bool preferMailbox = g_backendType == wgpu::BackendType::Vulkan;
+  const bool preferMailbox =
+      g_backendType == wgpu::BackendType::Vulkan || g_nonBlockingPresent.load(std::memory_order_acquire);
   if (preferMailbox && supports(wgpu::PresentMode::Mailbox)) {
     return wgpu::PresentMode::Mailbox;
   }
@@ -664,6 +680,21 @@ bool initialize(AuroraBackend auroraBackend) {
       if (feature == wgpu::FeatureName::ImplicitDeviceSynchronization) {
         implicitDeviceSynchronizationSupported = true;
         requiredFeatures.push_back(feature);
+      }    }
+    // Diagnostic GPU timing (gfx/gpu_timing.hpp): only when asked for, so the normal device and its
+    // pipeline caches are not affected.
+    const bool gpuTimingRequested = [] {
+#if defined(MKW_PRIME_QA_TOOLS)
+      const char* v = std::getenv("WII_COMPILED_GPU_TIMING");
+      return v != nullptr && v[0] != '\0' && v[0] != '0';
+#else
+      return false;
+#endif
+    }();
+    if (gpuTimingRequested) {
+      if (g_adapter.HasFeature(wgpu::FeatureName::TimestampQuery)) {
+        requiredFeatures.push_back(wgpu::FeatureName::TimestampQuery);
+      } else {
       }
     }
     if (!implicitDeviceSynchronizationSupported) {
@@ -705,10 +736,15 @@ bool initialize(AuroraBackend auroraBackend) {
     if (g_backendType == wgpu::BackendType::Vulkan) {
       enableToggles.push_back("vulkan_monolithic_pipeline_cache");
     }
+    // Exact timestamps for the diagnostic GPU timing (quantized to 100 us otherwise).
+    std::vector<const char*> disableToggles;
+    if (gpuTimingRequested) disableToggles.push_back("timestamp_quantization");
     const wgpu::DawnTogglesDescriptor togglesDescriptor({
         .nextInChain = &cacheDescriptor,
         .enabledToggleCount = enableToggles.size(),
         .enabledToggles = enableToggles.data(),
+        .disabledToggleCount = disableToggles.size(),
+        .disabledToggles = disableToggles.data(),
     });
 #endif
     wgpu::DeviceDescriptor deviceDescriptor;
@@ -805,6 +841,9 @@ bool initialize(AuroraBackend auroraBackend) {
     return false;
   }
   auto surfaceFormat = best_surface_format();
+  for (size_t i = 0; i < g_surfaceCapabilities.presentModeCount; ++i) {
+    Log.info("Surface offers present mode {}", magic_enum::enum_name(g_surfaceCapabilities.presentModes[i]));
+  }
   auto presentMode = best_present_mode();
   Log.info("Using surface format {}, present mode {}", magic_enum::enum_name(surfaceFormat),
            magic_enum::enum_name(presentMode));
@@ -821,6 +860,7 @@ bool initialize(AuroraBackend auroraBackend) {
       .depthFormat = wgpu::TextureFormat::Depth32Float,
       .msaaSamples = g_config.msaa,
       .textureAnisotropy = g_config.maxTextureAnisotropy,
+      .forceTextureAnisotropy = g_config.forceTextureAnisotropy,
       .maxTextureDimension2D = maxTextureDimension2D,
   };
   create_copy_pipeline();
@@ -908,9 +948,21 @@ void release_surface() noexcept {
   }
 }
 
+bool set_non_blocking_present(bool enabled) noexcept {
+  const bool previous = g_nonBlockingPresent.exchange(enabled, std::memory_order_acq_rel);
+  return previous != enabled && g_initialized.load(std::memory_order_acquire);
+}
+
 bool refresh_surface(bool recreate) {
   if (!g_instance || !g_device) {
     return false;
+  }
+  if (g_surface && g_surfaceCapabilities.presentModeCount != 0) {
+    const auto presentMode = best_present_mode();
+    if (presentMode != g_graphicsConfig.surfaceConfiguration.presentMode) {
+      Log.info("Switching present mode to {}", magic_enum::enum_name(presentMode));
+      g_graphicsConfig.surfaceConfiguration.presentMode = presentMode;
+    }
   }
   if (!window::is_presentable()) {
     release_surface();

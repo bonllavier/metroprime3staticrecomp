@@ -1,0 +1,37 @@
+schema_version: 1
+workspace_root: .
+
+project:
+  id: r3me01-mp3
+  display_name: Metroid Prime 3 from Metroid Prime Trilogy USA
+  game_id: R3ME01
+  region: E
+
+memory:
+  base: 0x80000000
+  size: 0x00700000
+  sda_base: 0x80672260
+  sda2_base: 0x80678B00
+
+inputs:
+  dol:
+    path: extract/sys/main.dol
+    sha256: d7576b53113ac275053fc100df574ce31acd22f7b73b1d0932fd137e6e02bd6d
+
+translation:
+  entry_points:
+    - 0x800060A4
+  function_map:
+    path: functions.txt
+  allow_unsupported_instructions: false
+  enable_state_free_abi: false
+
+runtime:
+  native_abi_directories: []
+
+output:
+  root: generated
+  functions: functions
+  runtime_config: RuntimeConfig.h
+  data_initializer: data_sections_init.cpp
+  base_manifest: generated/base_manifest.json

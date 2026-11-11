@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "request": "Perceptible lag between mouse motion and the pointer/Samus reacting, in menus and in first person; reduce it to the minimum, patching game instructions if needed.",
+  "measured_before": {
+    "source": "UserData/Logs/base_1792917767_pid9364/console.log [prime-input-latency] and [present-latency]",
+    "input_to_copy_avg_ms": 20.8,
+    "copy_to_vi_avg_ms": 2.1,
+    "vi_to_present_avg_ms": 16.2,
+    "input_to_present_avg_ms": 39.1,
+    "input_to_present_worst_ms": 65,
+    "present_call_ms": 15.1,
+    "note": "The chain does not include the game's own pointer smoothing nor the time the image waits in the DXGI queue/DWM after Present()."
+  },
+  "causes_found": [
+    {
+      "id": "game-pointer-smoothing",
+      "where": "0x803C2A74 (pointer state machine of the input object gpController 0x8067DC18), filter objects per channel at +0xC54 (x) and +0xC68 (y), class vtable 0x8059C1E0, ctor 0x8036B57C(0.1, obj, type 2, 3, 0), step 0x8036BC98 -> type 2 = 0x8036BA70",
+      "mechanism": "y = alpha*x + (1-alpha)*y_prev with alpha = |x - mean(last 10 samples)| / 0.25 (0x8036B848), capped at 0.3 (FLOAT_80683028; 1-alpha floor 0.7). A slow precise motion gets alpha near 0 (dozens of frames of lag); a fast one a ~3-frame time constant. The filtered value feeds KPAD pos +0x28/+0x2C and from there CFinalInput (menus, map, aim, GUI cursor).",
+      "fix": "Post-hook on 0x8036BC98 (prepare_prime_runtime_hooks.py, runtime/src/hle/input/prime_pointer_filter.cpp): when keyboard/mouse mode is on and [prime] raw_pointer (default true), the step returns its input for those two objects only. Other instances (free-look pitch filter at CPlayer +0x784, type 0) keep smoothing. F1 > Controles checkbox."
+    },
+    {
+      "id": "mouse-look-event-pump-delay",
+      "where": "runtime/src/hle/input/prime_mouse_look.cpp",
+      "mechanism": "SDL relative-mouse deltas arrive through the event pump once per host frame, so a look delta could be up to one frame old at the KPAD read.",
+      "fix": "The capture now parks the OS cursor at the window centre (ClipCursor + SetCursorPos); the game thread reads GetCursorPos at every KPAD read, converts the offset to look input and parks the cursor again. Same immediacy as the absolute pointer, which already sampled GetCursorPos at read time. Caveat: Windows pointer acceleration ('Enhance pointer precision') applies to cursor deltas."
+    },
+    {
+      "id": "dxgi-present-queue",
+      "where": "runtime/src/dxgi_frame_latency.cpp, installed from main.cpp before aurora_initialize",
+      "mechanism": "Present() blocked ~15 ms every frame: Dawn's D3D12 flip-model swap chain is created without DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT, so DXGI queues up to three frames and the shown image trails the rendered one by two or three periods.",
+      "fix": "Hook of IDXGIFactory2::CreateSwapChainForHwnd (shared vtable): adds the waitable flag, IDXGISwapChain2::SetMaximumFrameLatency(1), keeps the flag in Dawn's ResizeBuffers, and waits on the latency object right before Present/Present1. [prime] present_queue_limit (default true), env WII_COMPILED_PRIME_PRESENT_QUEUE_LIMIT, F1 > Rendimiento. Logs [dxgi-frame-latency]. If creation with the flag fails it falls back to Dawn's original request."
+    }
+  ],
+  "unchanged_inherent": [
+    "Game frame: input read at frame start, XFB copy about one frame later (input_to_copy ~20 ms) as on the Wii.",
+    "Windowed mode: DWM composes at the next vblank (~1 frame). Borderless fullscreen (F1 > Display mode) allows independent flip and removes that stage.",
+    "Monitor scanout and the mouse's own report rate."
+  ],
+  "validation": {
+    "build": "WiiCompiled.exe 161,271,296 bytes, 2026-10-25 04:03 (hooks regenerated: 0x8036BC98 added)",
+    "tests_pass": ["mkw_prime_mouse_look_tests", "mkw_prime_lasso_gesture_tests", "mkw_prime_wpad_packet_tests"],
+    "in_game": "pending: compare [present-latency] present_ms (expect ~0-2 ms), [prime-input-latency] vi_to_present, and the feel of the pointer in menus; confirm [dxgi-frame-latency] 'swap chain queue limited to 1 frame(s)' and 'vtable_hooked=1' in console.log"
+  }
+}

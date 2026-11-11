@@ -26,6 +26,12 @@ static inline void GXSetArray(GXAttr attr, const void* data, u32 size, u8 stride
   GXSetArray(attr, data, size, stride, false);
 }
 #define GXSETARRAY(attr, data, size, stride, le) GXSetArray((attr), (data), (size), (stride), (le))
+/**
+ * Writer, asynchronous decoder only: sets the array with its bytes copied into the stream
+ * (GX_LOAD_AURORA_ARRAYDATA) instead of a pointer the decoder dereferences later. False when the
+ * decoder is synchronous, a display list is being recorded or the array is too large: then use GXSetArray.
+ */
+bool GXSetArrayCopy(GXAttr attr, const void* data, u32 size, u8 stride);
 #else
 void GXSetArray(GXAttr attr, const void* data, u8 stride);
 #define GXSETARRAY(attr, data, size, stride, le) GXSetArray((attr), (data), (stride))

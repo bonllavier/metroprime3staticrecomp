@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "request": "Keyboard mode could not fire the grapple lasso ('Cast Nunchuk forward'); also a held modifier to slow the twist/push motions.",
+  "root_cause": "The synthesized Nunchuk thrust (0.18 s flick on raw Y, the pointing axis) was not what the game's motion analyser measures. The lasso commands read gesture table A entry 10, which is the Nunchuk bit 0x40000: the low-passed Nunchuk Z accelerometer must swing by more than 0.45 * 512 raw units within the 15 ring entries before the current one.",
+  "recovered_pipeline": {
+    "input_reader": "0x803C2670 (KPADRead 0x804D9138 via HLE, WPADRead 0x804D9E20; one 0x803C0A24 call per sample; 0x803C2E04 publishes gestures)",
+    "ring": "0x803C0A24: 301 entries of 0xB8 bytes; entry = remote record (0x5C bytes) + Nunchuk record (0x803BF22C): raw * 1/512 (0x803BF358), |a|, biquad set 1 outputs at words 3-6 (x, y, z, |a|), set 2 at words 7-10",
+    "biquad": "0x803BEFAC direct form 1: y = b0 x + b1 x1 + b2 x2 - a1 y1 - a2 y2; 0x803BEFF4 warms 100 steps on first use. 0x803C19E4: k = 1/tan(w), D = 1/(1+sqrt2 k+k^2); set 1 low-pass w = 0.15707963705062866 (DAT_80586038): b = D, 2D, D; a1 = 2D(1-k^2); a2 = D(1-sqrt2 k+k^2). Set 2 high-pass w = 0.7853981852531433 (DAT_80586040): b = D, -2D, D; a1 = -2D(1-k^2)",
+    "gesture_bits_0x803C11D8": "|hp x| > 0.02 (FLOAT_80683428) -> bit 1 / 0x10000, hold 0.416667 s; range over 15 previous entries of lp x -> bit 2 / 0x20000 and of lp z -> bit 4 / 0x40000 when > 0.25 (remote) / 0.45 (Nunchuk), hold 0.25 s",
+    "other_bits": "0x803C0E40 deadband detectors (raw minus 50+gravity unit, /gravity, clamp +-1 g) with 0x803BFD7C axis/sign detectors -> bits 8,0x10,0x20,0x40 and Nunchuk 0x80000..0x400000 (none mapped by commands); 0x803C11AC any-motion bits 0x80 / 0x800000; 0x803BE890 orientation windows -> table B (+0xEF00)",
+    "tables": "0x803C3B94: table A (16 entries, 3 bytes held/pressed/released) from bits via DAT_8059D678 = bit i (0..7 remote bits 1..0x80, 8..15 Nunchuk 0x10000..0x800000); 0x803C3C7C: table B (12) via DAT_8059D6B8. CFinalInput copies them to +0x1B8 / +0x1EC (0x8036D148); CControlMapper::GetAnalogInput 0x80061BA8 mapping type 3/4 reads A, type 6 reads B",
+    "control_mapper_data": "CTweakPlayerControl (gpTweakPlayerControl = r13-10808 = 0x8067D788, SDA1 0x806801C0; command offsets from 0x802E88C4, inputs 0x802E87F0): type-3/4/6 commands in live dumps: 28 -> A[10], 29 -> A[10], 42 -> A[7] alt 15, 50 -> A[2]; 20-23 type 5. Command 28 is queried by CPlayer code 0x80175B54/0x80175BC4/0x8017F124 (grapple), 29 by CLassoPoint 0x800DF758 (lasso pull)",
+    "globals": "gpController = r13-9640 = 0x8067DC18 (motion input object; per-channel block 0x20C at +0x230, analyser pointer at +0xA8C; remote analyser +0xDB20, Nunchuk +0xE4A0, gravity units +0xEF04/+0xEF10)"
+  },
+  "evidence_dumps": ["UserData/Logs/base_1792824444_pid19688/mem1.bin", "base_1792813624_pid20692/mem1.bin", "base_1792746349_pid17348/mem1.bin (all predate the 2026-10-24 calibration fix: gravity units 0 there)"],
+  "implementation": {
+    "runtime/include/hle/prime_motion_model.h": "C++ port of the ring, both biquads and the 0x803C11D8 bits (tests)",
+    "runtime/include/hle/prime_keyboard_mouse.h": "CastProfile: half-sine of 0.32 s and 6 g on KPAD y of the Nunchuk (raw Z from +1 g to the -5.12 g clamp) for NunchukThrust and NunchukYank, keeping the Y flick for the panel; Key::Precision scales twist rate and push/pull by kPrecisionScale = 0.35",
+    "runtime/src/hle/input/kpad.cpp": "action 'precision' (Left Alt / Right Alt, remappable in F1), lasso labels",
+    "runtime/tests/prime_lasso_gesture_tests.cpp": "rest -> no bits; R and F fire bit 0x40000 after 9 frames with filtered Z swing 1.13 (threshold 0.45); twist, push and spring flick never set Nunchuk bits; precision scales twist and push",
+    "docs": "docs/controles_y_arranque_pc.md table and 'Lazo de gancho' section"
+  },
+  "validation": {
+    "tests_pass": ["mkw_prime_lasso_gesture_tests", "mkw_prime_wpad_packet_tests", "mkw_aurora_stream_queue_tests", "mkw_gx_fifo_storage_tests", "mkw_prime_dl_vertex_cache_tests", "mkw_prime_cpu_fifo_capture_tests"],
+    "in_game": "pending user QA at the first grapple point (lock with Shift, press R once; F to pull when asked); Alt + Z/X and Alt + E/Q slower"
+  },
+  "limits": "The model follows the analyser as decompiled; the HLE delivers one WPAD sample per retrace (60 Hz), so the game's filter runs at that rate here. Deadband detector thresholds in the dumps are 0 (never set elsewhere); their bits are unmapped. Remote cast gestures (table A entries 0-7) were not re-tuned."
+}

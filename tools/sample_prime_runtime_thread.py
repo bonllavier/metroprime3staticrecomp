@@ -25,7 +25,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     assert c.sizeof(c.c_void_p) == 8, "Use native x64 Python"
-    exe = ROOT / "recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe"
+    exe = ROOT / "recomp/build/RM3E01_00_runtime_link_probe/Corruption_3 PC.exe"
     image = exe.read_bytes()
     pe = struct.unpack_from("<I", image, 0x3C)[0]
     assert image[pe:pe + 4] == b"PE\0\0"

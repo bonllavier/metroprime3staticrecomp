@@ -1,10 +1,16 @@
 #include "pipeline.hpp"
+#include <aurora/gfx.h>
+#include "render_policy.hpp"
+#include "uber.hpp"
 
 #include "../webgpu/gpu.hpp"
+#include "../gfx/pipeline_cache.hpp"
 #include "gx_fmt.hpp"
 #include "shader_info.hpp"
 #include "tracy/Tracy.hpp"
 
+#include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <memory>
 #include <cstdlib>
@@ -48,7 +54,15 @@ struct CachedShaderModule {
 std::mutex sShaderModuleCacheMutex;
 absl::flat_hash_map<ShaderConfig, std::shared_ptr<CachedShaderModule>, ShaderConfigHash> sShaderModuleCache;
 
+// Pipeline compile telemetry: how long each new GX pipeline takes, split into the shader
+// module (WGSL generation + Dawn parse) and the render pipeline (Tint -> HLSL -> DXC -> PSO).
+std::atomic<uint64_t> sCompiledPipelines{0}, sNewModules{0}, sModuleMicros{0}, sPipelineMicros{0}, sSlowPipelines{0};
+std::atomic<uint64_t> sMaxPipelineMicros{0};
+thread_local bool tLastModuleWasNew = false;
+
+wgpu::ShaderModule cached_uber_shader_module(const PipelineConfig& config);
 wgpu::ShaderModule cached_shader_module(const ShaderConfig& config) {
+  tLastModuleWasNew = false;
   std::shared_ptr<CachedShaderModule> entry;
   {
     std::unique_lock lock{sShaderModuleCacheMutex};
@@ -63,6 +77,7 @@ wgpu::ShaderModule cached_shader_module(const ShaderConfig& config) {
     }
   }
 
+  tLastModuleWasNew = true;
   auto module = build_shader(config);
   {
     std::lock_guard lock{sShaderModuleCacheMutex};
@@ -72,7 +87,44 @@ wgpu::ShaderModule cached_shader_module(const ShaderConfig& config) {
   entry->ready.notify_all();
   return module;
 }
+wgpu::ShaderModule cached_uber_shader_module(const PipelineConfig& config) {
+  // Keyed like a specialised module: the encoded shader config is unique (marker bit and masks).
+  tLastModuleWasNew = false;
+  std::shared_ptr<CachedShaderModule> entry;
+  {
+    std::unique_lock lock{sShaderModuleCacheMutex};
+    const auto it = sShaderModuleCache.find(config.shaderConfig);
+    if (it == sShaderModuleCache.end()) {
+      entry = std::make_shared<CachedShaderModule>();
+      sShaderModuleCache.emplace(config.shaderConfig, entry);
+    } else {
+      entry = it->second;
+      entry->ready.wait(lock, [&] { return !entry->compiling; });
+      return entry->module;
+    }
+  }
+  tLastModuleWasNew = true;
+  auto module = build_uber_shader(decode_uber_pipeline(config));
+  {
+    std::lock_guard lock{sShaderModuleCacheMutex};
+    entry->module = module;
+    entry->compiling = false;
+  }
+  entry->ready.notify_all();
+  return module;
+}
+
+std::atomic<bool> sUberHybrid{false};
+std::atomic<uint64_t> sUberDrawsTotal{0};
 } // namespace
+
+void set_uber_hybrid(bool enabled) noexcept { sUberHybrid.store(enabled, std::memory_order_relaxed); }
+bool uber_hybrid_enabled() noexcept { return sUberHybrid.load(std::memory_order_relaxed); }
+uint64_t uber_draws_total() noexcept { return sUberDrawsTotal.load(std::memory_order_relaxed); }
+bool uber_force() noexcept {
+  static const bool force = std::getenv("WII_COMPILED_UBER_FORCE") != nullptr;
+  return force;
+}
 
 wgpu::RenderPipeline create_pipeline(const PipelineConfig& config) {
   ZoneScoped;
@@ -83,8 +135,45 @@ wgpu::RenderPipeline create_pipeline(const PipelineConfig& config) {
              config.shaderConfig.vtxStride,config.shaderConfig.attrs[GX_VA_POS].offset,
              config.shaderConfig.attrs[GX_VA_TEX0].offset,underlying(config.cullMode),config.colorUpdate,
              underlying(config.blendMode),underlying(config.blendFacSrc),underlying(config.blendFacDst));
-  const auto shader = cached_shader_module(config.shaderConfig);
-  return build_pipeline(config, {}, shader, "GX Pipeline");
+  using Clock = std::chrono::steady_clock;
+  const auto start = Clock::now();
+  const auto shader = is_uber_pipeline(config) ? cached_uber_shader_module(config) : cached_shader_module(config.shaderConfig);
+  const bool newModule = tLastModuleWasNew;
+  if (!shader) return {};  // an ubershader the compiler rejected: the draw keeps waiting for the specialised pipeline
+  const auto moduleDone = Clock::now();
+  auto pipeline = build_pipeline(config, {}, shader, "GX Pipeline");
+  const auto done = Clock::now();
+  const auto micros = [](auto d) { return uint64_t(std::chrono::duration_cast<std::chrono::microseconds>(d).count()); };
+  const uint64_t moduleUs = micros(moduleDone - start), pipelineUs = micros(done - moduleDone);
+  sCompiledPipelines.fetch_add(1, std::memory_order_relaxed);
+  sNewModules.fetch_add(newModule, std::memory_order_relaxed);
+  sModuleMicros.fetch_add(moduleUs, std::memory_order_relaxed);
+  sPipelineMicros.fetch_add(pipelineUs, std::memory_order_relaxed);
+  for (uint64_t seen = sMaxPipelineMicros.load(); moduleUs + pipelineUs > seen &&
+       !sMaxPipelineMicros.compare_exchange_weak(seen, moduleUs + pipelineUs);) {}
+  // Detail lines only for compiles met in play: the boot prewarm would use up the budget.
+  const bool inGame = !gfx::pipeline_prewarm_active();
+  if (inGame && moduleUs + pipelineUs >= 20000 && sSlowPipelines.fetch_add(1, std::memory_order_relaxed) < 600) {
+    const auto& sc = config.shaderConfig;
+    Log.info("[pipeline-compile] ms={:.1f} module_ms={:.1f} pipeline_ms={:.1f} new_module={} tev={} texgens={} ind={} "
+             "chans={} fog={} ppl={} metal={} blend={}/{}/{} depth={}/{}/{} dstalpha={} hash={:016X}",
+             (moduleUs + pipelineUs) / 1000.0, moduleUs / 1000.0, pipelineUs / 1000.0, newModule, sc.tevStageCount,
+             sc.numTexGens, sc.numIndStages, unsigned(sc.colorChannels[0].lightingEnabled) + unsigned(sc.colorChannels[1].lightingEnabled),
+             unsigned(sc.fogType), unsigned(sc.perPixelLighting), unsigned(sc.enhancedMetal), unsigned(config.blendMode), unsigned(config.blendFacSrc), unsigned(config.blendFacDst),
+             config.depthCompare, unsigned(config.depthFunc), config.depthUpdate, sc.dstAlpha,
+             xxh3_hash(config, static_cast<HashType>(gfx::ShaderType::GX)));
+  }
+  static std::atomic<int64_t> nextReport{0};
+  const int64_t now = std::chrono::duration_cast<std::chrono::seconds>(done.time_since_epoch()).count();
+  int64_t due = nextReport.load(std::memory_order_relaxed);
+  if (now >= due && nextReport.compare_exchange_strong(due, now + 10)) {
+    const uint64_t n = sCompiledPipelines.load(), mods = sNewModules.load();
+    Log.info("[pipeline-compile-summary] pipelines={} new_modules={} avg_module_ms={:.2f} avg_pipeline_ms={:.2f} "
+             "max_ms={:.1f} slow_ge20ms={}",
+             n, mods, n ? sModuleMicros.load() / 1000.0 / n : 0.0, n ? sPipelineMicros.load() / 1000.0 / n : 0.0,
+             sMaxPipelineMicros.load() / 1000.0, sSlowPipelines.load());
+  }
+  return pipeline;
 }
 
 void clear_shader_module_cache() {
@@ -99,7 +188,68 @@ void render(const DrawData& data, const wgpu::RenderPassEncoder& pass, DrawEncod
     state.boundTextureBindGroup=nullptr;
     state.indexBufferBound=false;
   }
-  const bool bound = gfx::bind_pipeline(data.pipeline, pass, state.currentPipeline, requireReadyPipeline);
+  bool bound = false;
+  bool usingUber = false;
+  // WII_COMPILED_UBER_STATS=1: every 5 s, why draws whose specialised pipeline was not ready did or did not
+  // get the ubershader. Costs a pipeline-map lookup per draw, so it is diagnostic only.
+  static const bool uberStats = std::getenv("WII_COMPILED_UBER_STATS") != nullptr;
+  struct UberStats {
+    std::atomic<uint64_t> waitedNoBridge{0}, used{0}, uberNotReady{0}, specReadyAtEncode{0};
+  };
+  static UberStats stats;
+  if (uberStats) {
+    if (data.uberPipeline == 0) {
+      wgpu::RenderPipeline probe;
+      if (!gfx::try_pipeline(data.pipeline, probe)) stats.waitedNoBridge.fetch_add(1, std::memory_order_relaxed);
+    }
+    static std::atomic<int64_t> nextReport{0};
+    const int64_t now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    int64_t due = nextReport.load(std::memory_order_relaxed);
+    if (now >= due && nextReport.compare_exchange_strong(due, now + 5)) {
+      Log.info("[uber-stats] not-ready draws: bridged_by_uber={} uber_not_ready={} spec_ready_at_encode={} "
+               "no_bridge_recorded={}",
+               stats.used.exchange(0), stats.uberNotReady.exchange(0), stats.specReadyAtEncode.exchange(0),
+               stats.waitedNoBridge.exchange(0));
+    }
+  }
+  if (data.uberPipeline != 0) {
+    // The specialised pipeline was still compiling when this draw was recorded (hybrid ubershader mode).
+    wgpu::RenderPipeline probe;
+    policy::PipelineAvailability availability;
+    availability.specializedReady = gfx::try_pipeline(data.pipeline, probe) && !uber_force();
+    // A rejected ubershader module leaves a null pipeline in the map: never "ready".
+    availability.uberReady = gfx::try_pipeline(data.uberPipeline, probe) && probe.Get() != nullptr;
+    if (uberStats) {
+      if (availability.specializedReady) stats.specReadyAtEncode.fetch_add(1, std::memory_order_relaxed);
+      else if (!availability.uberReady) stats.uberNotReady.fetch_add(1, std::memory_order_relaxed);
+      else stats.used.fetch_add(1, std::memory_order_relaxed);
+    }
+    if (policy::choose_pipeline(policy::UberMode::Hybrid, availability) == policy::PipelineChoice::Uber) {
+      bound = gfx::bind_pipeline(data.uberPipeline, pass, state.currentPipeline, false);
+      usingUber = bound;
+      if (usingUber) {
+        const uint64_t n = sUberDrawsTotal.fetch_add(1, std::memory_order_relaxed) + 1;
+        if (n == 1 || n == 100 || n % 100000 == 0) Log.info("[uber] draws encoded with an ubershader so far: {}", n);
+      }
+    }
+  }
+  if (!bound && data.fallbackPipeline != 0 && data.pipeline != state.currentPipeline) {
+    // Per-pixel lighting / enhanced material still compiling (a 200-500 ms D3D12 compile) while its
+    // vertex-lit fallback is ready: draw with the fallback now instead of waiting (policy::first_bind).
+    wgpu::RenderPipeline probe;
+    policy::DrawPipelines pipelines;
+    pipelines.hasFallback = true;
+    pipelines.primaryReady = gfx::try_pipeline(data.pipeline, probe);
+    pipelines.fallbackReady = !pipelines.primaryReady && gfx::try_pipeline(data.fallbackPipeline, probe);
+    if (policy::first_bind(pipelines) == policy::FirstBind::Fallback) {
+      bound = gfx::bind_pipeline(data.fallbackPipeline, pass, state.currentPipeline, requireReadyPipeline);
+    }
+  }
+  if (!bound) bound = gfx::bind_pipeline(data.pipeline, pass, state.currentPipeline, requireReadyPipeline);
+  if (!bound && data.fallbackPipeline != 0) {
+    // Per-pixel variant still compiling: draw with the per-vertex pipeline this frame.
+    bound = gfx::bind_pipeline(data.fallbackPipeline, pass, state.currentPipeline, requireReadyPipeline);
+  }
   static unsigned primeRenderTrace = 0;
   if (CachedWiiCompiledTracePrimeGx() && primeRenderTrace++ < 128)
     Log.info("[prime-gx-render-encoded] indices={} instances={} pipeline_bound={} required={} uniform={}/{}",
@@ -112,7 +262,8 @@ void render(const DrawData& data, const wgpu::RenderPassEncoder& pass, DrawEncod
   }
 
   // An interpolated presentation slot re-encodes the identical draw with only this range replaced; overriding here avoids copying the whole DrawData per draw per slot.
-  const gfx::Range& uniformRange = uniformRangeOverride != nullptr ? *uniformRangeOverride : data.uniformRange;
+  const gfx::Range& uniformRange = usingUber ? data.uberUniformRange
+                                  : uniformRangeOverride != nullptr ? *uniformRangeOverride : data.uniformRange;
   const std::array offsets{uniformRange.offset};
   if(CachedWiiCompiledDiagnosticUniformGroups()) {
     const wgpu::BindGroupEntry entry{.binding=0,.buffer=gfx::g_uniformBuffer,.offset=uniformRange.offset,.size=MaxUniformSize};
@@ -140,3 +291,9 @@ void render(const DrawData& data, const wgpu::RenderPassEncoder& pass, DrawEncod
                    static_cast<uint32_t>(data.idxRange.offset / sizeof(uint16_t)));
 }
 } // namespace aurora::gx
+
+void aurora_set_ubershader(const bool enabled) { aurora::gx::set_uber_hybrid(enabled); }
+
+bool aurora_get_ubershader() { return aurora::gx::uber_hybrid_enabled(); }
+
+uint64_t aurora_get_ubershader_draws() { return aurora::gx::uber_draws_total(); }

@@ -10,9 +10,8 @@ import json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
-MODULES=('rhbm','Tweaks','ScriptGUIScreenFrontEndUI','ScriptWorldTeleporter',
-         'ScriptAchievement','ScriptContextSensitiveActivator','ScriptGrapplePoint',
-         'ScriptMultiModelActor','ScriptContextSensitiveAction','ScriptContextActionButtonPressing','Friendly','GunTurret')
+MODULES=tuple(row['name'] for row in json.loads(
+    (ROOT/'recomp/config/RM3E01_00/rso_modules.json').read_text())['modules'])
 
 
 def audit():

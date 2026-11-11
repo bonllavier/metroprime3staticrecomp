@@ -1,3 +1,4 @@
+#include <SDL3/SDL_thread.h>
 #include "ax_dsp.h"
 
 #include "ax_internal.h"
@@ -17,6 +18,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <vector>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -55,6 +57,9 @@ std::filesystem::path FindDspCoefficientRom() {
     throw std::runtime_error("Missing bundled Wii DSP coefficient ROM (dsp_coef.bin)");
 }
 
+// Called on the mix worker after a Prime command list completes (see SetMixCompletionHook).
+std::atomic<void (*)()> g_mixCompletionHook{nullptr};
+
 class AXWii {
 public:
     AXWii() {
@@ -71,7 +76,9 @@ public:
         RefreshMixMemoryMap();
         std::lock_guard<std::mutex> lock(m_mutex);
         m_rawMailbox = rawMailbox;
-        m_mixWorkerEnabled = !rawMailbox && RuntimeConfigFile::AudioMixWorkerEnabled(true);
+        // Prime's raw mailbox mixes on the worker too, completing like the
+        // hardware DSP: its mails are delivered only once the mix is done.
+        m_mixWorkerEnabled = RuntimeConfigFile::AudioMixWorkerEnabled(true);
         if (!rawMailbox) {
             MarkDspInitialized();
             ResetDspTaskGlobals();
@@ -106,6 +113,10 @@ public:
         m_compressorPos = 0;
         m_deferredResumeCallbacks = 0;
         m_ucodeCrc = 0;
+        std::lock_guard<std::mutex> mixLock(m_mixMutex);
+        m_mixDoneMails.clear();
+        m_mixCompletionMails.clear();
+        m_mixOutputCount = 0;
     }
 
     void ConfigureFromTask(uint32_t taskPtr) {
@@ -122,6 +133,26 @@ public:
             m_mixIdle.wait(lock, [this] { return !m_mixPending && !m_mixBusy; });
         }
         PublishAuxOutputs();
+    }
+
+    // Waits for a pending or running mix only if it writes PCM into [addr, addr + bytes).
+    void JoinMixIfWriting(uint32_t addr, uint32_t bytes) {
+        if (!m_mixThread.joinable()) {
+            return;
+        }
+        std::unique_lock<std::mutex> lock(m_mixMutex);
+        if (!m_mixPending && !m_mixBusy) {
+            return;
+        }
+        bool overlaps = false;
+        for (uint32_t i = 0; i < m_mixOutputCount; ++i) {
+            const uint32_t start = m_mixOutputs[i] & 0x1FFFFFFFu, end = start + kAxOutputPcmBytes;
+            const uint32_t from = addr & 0x1FFFFFFFu;
+            overlaps = overlaps || (from < end && start < from + bytes);
+        }
+        if (overlaps) {
+            m_mixIdle.wait(lock, [this] { return !m_mixPending && !m_mixBusy; });
+        }
     }
 
     void ShutdownMixWorker() {
@@ -170,13 +201,15 @@ public:
         return m_toDspBusy ? 1u : 0u;
     }
 
-    uint32_t CheckMailFromDSP() const {
+    uint32_t CheckMailFromDSP() {
         std::lock_guard<std::mutex> lock(m_mutex);
+        DrainWorkerMails();
         return m_cpuMails.empty() ? 0u : 1u;
     }
 
     uint32_t ReadMailFromDSP() {
         std::lock_guard<std::mutex> lock(m_mutex);
+        DrainWorkerMails();
         if (m_cpuMails.empty()) {
             return m_lastCpuMail & 0x7fffffffu;
         }
@@ -193,6 +226,9 @@ private:
         uint32_t auxInputCount = 0;
         // Three blocks per MIX_AUX* (x3) plus four per UPL_AUX* (x2) = 17.
         std::array<uint32_t, 24> auxInputAddrs{};
+        // PCM (left/right) destinations of the OUTPUT commands.
+        uint32_t outputCount = 0;
+        std::array<uint32_t, 4> outputAddrs{};
     };
 
     struct AuxBlock {
@@ -264,18 +300,21 @@ private:
                 throw std::runtime_error("Unsupported Prime AX command-list mail");
             }
             break;
-        case MailState::WaitingForCmdListAddress:
+        case MailState::WaitingForCmdListAddress: {
             // The previous mix owns m_cmdList, the mix buses and the PB chain
             // until it finishes. In practice this join is free
             JoinMix();
+            DrainWorkerMails();
             CopyCmdList(mail, m_cmdListSize);
-            DispatchCommandList();
+            const bool completesOnWorker = DispatchCommandList();
             m_cmdListSize = 0;
             //  yield mail and the deferred resume callback are still raised synchronously at mail time,
-            PushMail(kDspYield);
+            // except for Prime's worker mix, whose yield follows its sync mails at completion.
+            if (!completesOnWorker) PushMail(kDspYield);
             if (!m_rawMailbox) ++m_deferredResumeCallbacks;
             m_mailState = MailState::WaitingForNextTask;
             break;
+        }
         case MailState::WaitingForNextTask:
             if ((mail & kMailCmdListMask) == kMailCmdList) {
                 m_cmdListSize = mail & 0xffffu;
@@ -299,7 +338,12 @@ private:
             m_mailState = MailState::WaitingForCmdListSize;
             break;
         case kMailReset:
-            if (m_rawMailbox) throw std::runtime_error("Prime AX return to ROM is not implemented");
+            // The SDK's done path (AXQuit cancelled the task): no reply. PrimeDspSendMail
+            // returns the DSP to its ROM.
+            if (m_rawMailbox) {
+                m_mailState = MailState::WaitingForCmdListSize;
+                break;
+            }
             PushMail(kDspDone);
             m_mailState = MailState::WaitingForCmdListSize;
             break;
@@ -330,7 +374,8 @@ private:
     // Everything that must be observed at mail time happens here, before the mix leaves the
     // guest thread: the DSP sync mails OUTPUT commands raise (so the mail sequence doesn't
     // depend on where the mix runs)
-    void DispatchCommandList() {
+    // Returns true when the mix runs on the worker and posts its own mails.
+    bool DispatchCommandList() {
         AXCommandLayout layout = m_commandLayout;
         if (layout == AXCommandLayout::Auto) {
             const bool validNew = ScanCommandList(AXCommandLayout::New, nullptr);
@@ -344,6 +389,26 @@ private:
         CommandListScan scan{};
         if (!ScanCommandList(layout, &scan) && m_rawMailbox)
             throw std::runtime_error("Invalid or unsupported Prime AX command list");
+        // Prime (raw mailbox): the mix runs on the worker the way the DSP runs beside
+        // the CPU. Its SYNC and YIELD mails are posted when it finishes, so no guest
+        // code can read PB write-back, aux or output buffers before they are complete;
+        // aux therefore stays on guest memory (no shadow, no one-frame reverb delay).
+        if (m_rawMailbox && m_mixWorkerEnabled && EnsureMixWorker()) {
+            m_deferredAux = false;
+            m_auxInCount = 0;
+            m_mixLayout = layout;
+            m_mixCmdListSize = m_cmdListSize;
+            {
+                std::lock_guard<std::mutex> lock(m_mixMutex);
+                m_mixCompletionMails.assign(scan.outputCommands, kDspSync);
+                m_mixCompletionMails.push_back(kDspYield);
+                m_mixOutputCount = std::min<uint32_t>(scan.outputCount, static_cast<uint32_t>(m_mixOutputs.size()));
+                std::copy_n(scan.outputAddrs.begin(), m_mixOutputCount, m_mixOutputs.begin());
+                m_mixPending = true;
+            }
+            m_mixWake.notify_one();
+            return true;
+        }
         for (uint32_t i = 0; i < scan.outputCommands; ++i) {
             PushMail(kDspSync);
         }
@@ -367,10 +432,11 @@ private:
                 m_mixPending = true;
             }
             m_mixWake.notify_one();
-            return;
+            return false;
         }
 
         ExecuteCommandList(m_mixLayout, m_mixCmdListSize);
+        return false;
     }
 
     bool CanReadWords(uint32_t idx, uint32_t count) const {
@@ -447,10 +513,17 @@ private:
                 if (!skip(4)) return false;
                 break;
             case CMD_OUTPUT:
-            case CMD_OUTPUT_DPL2:
+            case CMD_OUTPUT_DPL2: {
+                const uint32_t addressBase = operandBase + (OutputCarriesVolume(layout) ? 1u : 0u);
                 if (!skip(OutputCarriesVolume(layout) ? 5 : 4)) return false;
-                if (scan) ++scan->outputCommands;
+                if (scan) {
+                    ++scan->outputCommands;
+                    // Surround address first, then the PCM frame (see ExecuteCommandList).
+                    if (scan->outputCount < scan->outputAddrs.size())
+                        scan->outputAddrs[scan->outputCount++] = wordAddress(addressBase + 2);
+                }
                 break;
+            }
             case CMD_WM_OUTPUT:
                 if (!skip(8)) return false;
                 break;
@@ -1370,6 +1443,9 @@ private:
 
     void MixWorkerMain() {
         t_onMixWorker = true;
+        // Audio is the one stream that must never stall: run the DSP-side mix
+        // ahead of the game's other host threads.
+        SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_HIGH);
         for (;;) {
             {
                 std::unique_lock<std::mutex> lock(m_mixMutex);
@@ -1389,12 +1465,30 @@ private:
                 ReportMixWorkerFailure("unknown exception");
             }
 
+            bool posted = false;
             {
                 std::lock_guard<std::mutex> lock(m_mixMutex);
+                // Even a failed mix posts its mails, or the guest would wait forever.
+                posted = !m_mixCompletionMails.empty();
+                m_mixDoneMails.insert(m_mixDoneMails.end(), m_mixCompletionMails.begin(),
+                                      m_mixCompletionMails.end());
+                m_mixCompletionMails.clear();
                 m_mixBusy = false;
             }
             m_mixIdle.notify_all();
+            // After busy is cleared: the hook takes the guest-side DSP lock, whose
+            // holder may be waiting in JoinMix.
+            if (posted) {
+                if (auto* hook = g_mixCompletionHook.load(std::memory_order_acquire)) hook();
+            }
         }
+    }
+
+    // m_mutex held: completed worker mails join the DSP->CPU mailbox queue in order.
+    void DrainWorkerMails() {
+        std::lock_guard<std::mutex> lock(m_mixMutex);
+        m_cpuMails.insert(m_cpuMails.end(), m_mixDoneMails.begin(), m_mixDoneMails.end());
+        m_mixDoneMails.clear();
     }
 
     void ReportMixWorkerFailure(const char* what) {
@@ -1439,6 +1533,13 @@ private:
     bool m_mixWorkerEnabled = false;
     AXCommandLayout m_mixLayout = AXCommandLayout::New;
     uint32_t m_mixCmdListSize = 0;
+    // Prime worker mix (m_mixMutex): mails posted at completion, mails already
+    // completed but not yet drained into m_cpuMails, and the PCM frames written.
+    std::vector<uint32_t> m_mixCompletionMails;
+    std::vector<uint32_t> m_mixDoneMails;
+    std::array<uint32_t, 4> m_mixOutputs{};
+    uint32_t m_mixOutputCount = 0;
+    static constexpr uint32_t kAxOutputPcmBytes = kAxSamplesPerFrame * 2u * sizeof(int16_t);
     std::atomic<bool> m_loggedMixWorkerFailure{false};
     std::atomic<bool> m_loggedAuxShadowOverflow{false};
     std::atomic<bool> m_loggedUnknownCommand{false};
@@ -1595,6 +1696,23 @@ void InitAram() {
 
 void JoinMixWorker() {
     Instance().JoinMix();
+}
+
+void JoinMixWorkerIfWriting(uint32_t addr, uint32_t bytes) {
+    Instance().JoinMixIfWriting(addr, bytes);
+}
+
+} // namespace AxDspHle
+
+// RM3E01 runtime overlay of DCInvalidateRange (prepare_prime_runtime_hooks.py), on entry.
+extern "C" void PrimeBeforeGuestDcInvalidate(uint32_t address, uint32_t length) {
+    if (length != 0) AxDspHle::JoinMixWorkerIfWriting(address, length);
+}
+
+namespace AxDspHle {
+
+void SetMixCompletionHook(void (*hook)()) {
+    g_mixCompletionHook.store(hook, std::memory_order_release);
 }
 
 void ShutdownMixWorker() {

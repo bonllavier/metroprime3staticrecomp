@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "request": "Inventory every Wiimote/Nunchuk motion the game can react to and give each a keyboard key ahead of play-testing.",
+  "method": "The game's own motion analyser (0x803C0A24 ring + biquads, 0x803C0E40 deadband detectors, 0x803C11D8 swing bits, 0x803BE890 orientation windows, 0x803C31DC/0x803C3728 digital tilt gestures, 0x803C3B94/0x803C3C7C gesture tables) defines the complete set of signals; CTweakPlayerControl mappings read from a live dump give the commands that consume them; shards located the consumers. Game text (STRG in compressed paks) was not read, so prompts are inferred from the consumers.",
+  "signals": {
+    "pointer": "KPAD pos (+0x28/+0x2C after the smoothing filter, now bypassed): analog axes CFinalInput +0x6C/+0x74 (commands 2/3 turn, 55/56 pitch), digital zones via type-5 commands 20-23 (0x80061F1C, GUI 0x800D38C4), digital buttons 27-30 (0x803C31DC indices 6/7). Mouse.",
+    "remote_depth": "KPAD dist (+0x48): push/pull mechanisms read it from scripts. Keys E/Q.",
+    "remote_roll": "analyser [0xF] roll = asin(x/|xz|) -> buttons 31/32 past 45 degrees (0x803C31DC index 8); scripts read the twist. Keys Z/X (verified in game).",
+    "remote_pitch": "analyser [0x14] -> buttons 33/34 past 45 degrees (index 9). No default command; keys U/J added.",
+    "remote_vertical_swing": "table A entry 2 (0x803C11D8: low-passed Z range > 0.25*512 over 15 samples) -> command 50 -> CMorphBall 0x8010C928 -> 0x8010C9D4 spring jump. Key T; its flick was re-shaped to the 0.32 s half-sine (previous 0.18 s flick did not reach the threshold in the model).",
+    "remote_horizontal_swing_and_jerk": "table A entries 1 (lp x swing) and 0 (hp x); no default command. Produced by the shake key as a side effect.",
+    "remote_deadband_flicks": "table A entries 3-6 (0x803C0E40 detectors, thresholds 0 in the dumps); no default command.",
+    "any_motion": "table A entries 7 (remote) / 15 (Nunchuk): integrated deadbanded |a| > 0.01 (0x803C11AC) -> command 42 (type 4, A[7] or A[15]); consumer not located in the DOL player code (likely a grab/escape or script). Key G (held shake) sets both in the model.",
+    "nunchuk_vertical_swing": "table A entry 10 -> commands 28/29 (grapple lasso cast, CPlayer 0x80175B54/0x8017F124; pull, CLassoPoint 0x800DF758). Keys R/F (verified in game).",
+    "nunchuk_horizontal_swing_and_jerk": "table A entries 9 and 8; no default command.",
+    "nunchuk_deadband_flicks": "table A entries 11-14; no default command (entry 12 can never fire: integral is non-negative).",
+    "nunchuk_roll": "analyser [0xF] -> buttons 23/24 past 45 degrees (index 4). No default command; keys N/M added.",
+    "nunchuk_pitch": "analyser [0x14] -> buttons 25/26 (index 5). No default command; keys I/K added.",
+    "orientation_windows": "table B (12 entries from 0x803BE890 max/min ordering windows); no default command (type 6 unused in the dump).",
+    "stick_directions": "buttons 13-20 (indices 0-3) from the Nunchuk stick; keys WASD."
+  },
+  "command_types_in_dump": {
+    "type0_unmapped": [4, 5, 12, 17, 18, 19, 24, 25, 30, 34, 57, 58, 84, 97, 98],
+    "type3_table_A": {"28": "A[10]", "29": "A[10]", "50": "A[2]"},
+    "type4_table_A_alt": {"42": "A[7] alt A[15]"},
+    "type5_pointer_zone": [20, 21, 22, 23],
+    "note": "Scripts can override command inputs at runtime (CControlMapper +0x68/+0xD4 table, 0x80062CC4); the keys above cover every physical signal the analyser can emit, so a scripted mapping still has a key."
+  },
+  "implementation": {
+    "runtime/include/hle/prime_keyboard_mouse.h": "Keys RemotePitchUp/Down, NunchukTwistLeft/Right, NunchukPitchUp/Down as held tilts (same 90-degree ramp and Precision scaling as the twist); SpringFlick uses CastProfile.",
+    "runtime/src/hle/input/kpad.cpp": "KPAD gravity vectors with roll and pitch for both devices: acc = (sin r cos p, -cos r cos p, sin p) + gestures; actions remote_up (U), remote_down (J), nunchuk_twist_left (N), nunchuk_twist_right (M), nunchuk_up (I), nunchuk_down (K).",
+    "runtime/include/hle/prime_motion_model.h": "Added the deadband any-motion accumulator (entries 7/15).",
+    "tests": "prime_lasso_gesture_tests: spring flick fires remote entry 2 and not the Nunchuk; held shake sets any-motion on both; tilt keys reach +-90 degrees and return. prime_wpad_packet_tests updated to the cast shape."
+  },
+  "validation": {
+    "build": "WiiCompiled.exe 161,272,320 bytes, 2026-10-25 04:52",
+    "tests_pass": ["mkw_prime_lasso_gesture_tests", "mkw_prime_wpad_packet_tests", "mkw_prime_mouse_look_tests"],
+    "in_game": "pending: spring jump (T) in morph ball, shake (G) wherever the game asks, tilt keys when a prompt appears"
+  }
+}

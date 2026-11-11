@@ -25,6 +25,7 @@ template<class Key, class Handle> class RawTextureSnapshotCache {
   using EntryIterator=typename std::list<Entry>::iterator;
   std::unordered_multimap<size_t,EntryIterator> keyIndex;
   size_t bytes = 0;
+  size_t unindexed = 0;  // entries stored without a key hash
   size_t budget;
   size_t limit;
   bool retainVersions;
@@ -41,6 +42,7 @@ private:
   }
   void erase_entry(EntryIterator entry) {
     erase_indexed(entry);
+    if(!entry->indexed)--unindexed;
     bytes-=entry->bytes.size()+entry->palette.size();
     entries.erase(entry);
   }
@@ -100,10 +102,23 @@ public:
              uint64_t sourceGeneration=0,uint64_t paletteGeneration=0,bool useGenerations=false) {
     if(!data || !size || size>budget || paletteSize>budget-size || !limit || (paletteSize && !palette)) return;
     const size_t total=size+paletteSize;
-    for(auto it=entries.begin();it!=entries.end();) {
-      const bool sameBytes=retainVersions && it->key==key && it->bytes.size()==size && it->palette.size()==paletteSize &&
-          source_bytes_equal(it->bytes.data(),data,size) && (!paletteSize || source_bytes_equal(it->palette.data(),palette,paletteSize));
-      if(it->key==key && (!retainVersions || sameBytes)) {
+    const auto replaces=[&](const Entry& entry) {
+      if(!(entry.key==key))return false;
+      return !retainVersions || (entry.bytes.size()==size && entry.palette.size()==paletteSize &&
+          source_bytes_equal(entry.bytes.data(),data,size) &&
+          (!paletteSize || source_bytes_equal(entry.palette.data(),palette,paletteSize)));
+    };
+    if(useKeyHash) {
+      // Equal keys hash equally, and every indexed store of this cache uses the
+      // same hash function, so the bucket holds all candidates for replacement.
+      std::vector<EntryIterator> matches;
+      const auto [first,last]=keyIndex.equal_range(keyHash);
+      for(auto index=first;index!=last;++index)if(replaces(*index->second))matches.push_back(index->second);
+      for(auto entry:matches) {erase_entry(entry);++statistics.replacements;}
+    }
+    for(auto it=entries.begin();(!useKeyHash || unindexed) && it!=entries.end();) {
+      // Unindexed entries (and every entry of an unindexed store) keep the full scan.
+      if((!useKeyHash || !it->indexed) && replaces(*it)) {
         auto erase=it++;erase_entry(erase);++statistics.replacements;
       } else ++it;
     }
@@ -120,7 +135,18 @@ public:
     entries.push_back({key,std::vector<uint8_t>(begin,begin+size),std::move(paletteBytes),handle,
                        keyHash,sourceGeneration,paletteGeneration,useKeyHash,useGenerations});
     if(useKeyHash)keyIndex.emplace(keyHash,std::prev(entries.end()));
+    else ++unindexed;
     bytes+=total;
+  }
+  // Drops every entry for which pred(key, source bytes, handle) holds (a texture replacement changed).
+  template<class Pred> size_t EraseIf(Pred pred) {
+    size_t erased=0;
+    for(auto it=entries.begin();it!=entries.end();) {
+      auto next=std::next(it);
+      if(pred(it->key,it->bytes,it->handle)) {erase_entry(it);++erased;}
+      it=next;
+    }
+    return erased;
   }
   size_t ByteSize() const {return bytes;}
   size_t EntryCount() const {return entries.size();}

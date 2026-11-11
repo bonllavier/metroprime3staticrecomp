@@ -81,8 +81,50 @@ void begin_display_list(uint8_t* buf, uint32_t size);
 uint32_t end_display_list();
 bool in_display_list();
 
-// Drain the internal FIFO buffer through the command processor
+// Drain the internal FIFO buffer through the command processor. With the
+// asynchronous decoder this is sync(): callers that then read or mutate
+// decoder state keep their barrier (slower but safe); hot paths use commit().
 void drain();
+
+// Asynchronous decoder (aurora_set_async_decoder): the writer thread only
+// appends GX wire commands; a decoder thread runs process_all over chunks in
+// order. Everything that reads or mutates decoder state must either run on the
+// decoder thread (stream commands, host callbacks) or sync() first.
+bool async_enabled();
+void set_async_enabled(bool enabled);
+bool on_decoder_thread();
+// Writer, at a command boundary: hands the buffer to the decoder when it is
+// large enough, or as soon as the decoder is idle and it holds a few KiB.
+void commit();
+// Writer, at a command boundary: hands the buffer to the decoder now.
+void hand_off();
+// SDK immediate-mode writer is between GXBegin and GXEnd (GXVert.cpp).
+bool in_begin();
+// Writer: lock-free count of chunks the decoder has queued or in progress.
+uint32_t async_backlog_hint();
+
+// Writer-side knowledge of the decoder's vertex CP state (VCD 0x50/0x60, VAT
+// 0x70..0x97). The SDK emits those registers from its shadow, so decoder and
+// shadow agree unless raw display-list bytes loaded CP registers behind the
+// shadow's back; these flags remember that until the next emission. They
+// replace reading g_gxState from the writer, which only the synchronous
+// decoder made valid.
+bool vertex_cp_unknown_vcd();
+bool vertex_cp_unknown_vat(uint8_t fmt);
+void note_vcd_emitted();
+void note_vat_emitted(uint8_t fmt);
+void mark_vertex_cp_unknown();
+// Writer, before raw display-list bytes enter the stream: marks the vertex CP
+// state unknown when the list loads CP registers 0x50..0x9F, or when it cannot
+// be walked to its end (draws need vertex sizes). Returns whether it marked.
+bool note_display_list_called(const uint8_t* data, uint32_t nbytes);
+// Writer: hand_off() then wait until the decoder has consumed every chunk
+// and the frame worker has sealed the previous frame.
+void sync();
+// Nothing queued for the decoder and nothing being decoded.
+bool async_idle();
+uint32_t decoder_native_thread_id();
+void shutdown_async();
 
 // Decode a whole command stream, submitting the staging batch whenever a draw does not fit.
 // process() alone stops at that draw, so a caller that ignores its count drops the rest.

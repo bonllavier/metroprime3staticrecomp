@@ -1,7 +1,15 @@
+#include "host_threads.h"
+#if defined(_WIN32)
+#include <aurora/host_cores.h>
+#endif
+extern "C" void InstallDxgiFrameLatencyLimit(unsigned frames);
 #include <algorithm>
 #include <atomic>
 #include <cctype>
 #include <chrono>
+#include <functional>
+#include <condition_variable>
+#include <deque>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -40,6 +48,7 @@
 #include <windows.h>
 #include <mmsystem.h>
 #include <dbghelp.h>
+#include <shellapi.h>
 #else
 #include <signal.h>
 #if defined(__x86_64__)
@@ -69,12 +78,21 @@
 #include "hle_stubs.h"
 #include "runtime_config.h"
 #include "runtime_log.h"
+#include "transcript_sink.h"
 #include "runtime_product.h"
 #include "recomp_mod_loader.h"
 #include <aurora/aurora.h>
 #include <aurora/gfx.h>
 #include <dolphin/gx/GXAurora.h>
 #include <dolphin/vi.h>
+#include "hle/gx_gpu_thread.h"
+#include "hle/prime_key_icons.h"
+#include "hle/prime_gamepad_runtime.h"
+#include "prime_port_version.h"
+#include "prime_host_options.h"
+#include "update_check.h"
+#include "post_effects.h"
+#include "reshade_loader.h"
 
 // Defined in `runtime/src/hle/vi.cpp` (used by GX/VI HLE).
 extern std::atomic_bool g_auroraFrameActive;
@@ -88,6 +106,10 @@ namespace {
 std::string FormatHostStackTrace(unsigned framesToSkip = 0);
 
 void ServiceGuestTimingDuringAuroraFrameWait() {
+    // A wait on the GX consumer thread must never run guest code; the guest
+    // thread keeps its own timing moving while the consumer is blocked. The
+    // same holds for Aurora's asynchronous decoder thread.
+    if (GxGpuThread::OnGpuThread() || aurora_on_decoder_thread()) return;
     // Aurora can block inside FIFO drains before control returns to GX HLE, for as long as a
     // whole display period. Keep VI retraces, alarms and audio moving at wall-clock cadence here
     // while still suppressing guest rescheduling and recursive Aurora work.
@@ -178,6 +200,16 @@ struct ProcessTranscriptState {
     int stderrPipeWriteFd = -1;
     std::thread stdoutThread;
     std::thread stderrThread;
+    // Destinations are written by their own threads (TranscriptSink): a stalled console or disk must
+    // never reach the pipe, and through it the thread that logged (the 2026-10-26 freeze).
+    std::unique_ptr<class TranscriptSink> fileSink;
+    std::unique_ptr<class TranscriptSink> stdoutMirrorSink;
+    std::unique_ptr<class TranscriptSink> stderrMirrorSink;
+#if defined(_WIN32)
+    HANDLE consoleInput = nullptr;
+    DWORD savedConsoleMode = 0;
+    bool quickEditDisabled = false;
+#endif
 };
 
 std::filesystem::path GetDefaultRuntimeLogDirectory() {
@@ -249,7 +281,24 @@ void WriteProcessTranscriptChunk(ProcessTranscriptState& state, const char* data
     state.file.flush();
 }
 
-void PumpTranscriptPipe(ProcessTranscriptState& state, int readFd, int mirrorFd) {
+void WriteMirrorFd(int mirrorFd, const char* data, size_t size) {
+    size_t offset = 0;
+    while (offset < size) {
+#if defined(_WIN32)
+        const int written = _write(mirrorFd, data + offset, static_cast<unsigned int>(size - offset));
+#else
+        const ssize_t written = ::write(mirrorFd, data + offset, size - offset);
+#endif
+        if (written <= 0) {
+            break;
+        }
+        offset += static_cast<size_t>(written);
+    }
+}
+
+// Reads one redirected stream from its pipe and hands every chunk to the sinks. It only ever blocks
+// on the pipe read, so the pipe is always drained and the logging threads never stall on it.
+void PumpTranscriptPipe(ProcessTranscriptState& state, int readFd, TranscriptSink* mirror) {
     std::array<char, 4096> buffer{};
     for (;;) {
 #if defined(_WIN32)
@@ -260,27 +309,14 @@ void PumpTranscriptPipe(ProcessTranscriptState& state, int readFd, int mirrorFd)
         if (bytesRead <= 0) {
             break;
         }
-
-        if (mirrorFd >= 0) {
-            size_t offset = 0;
-            while (offset < static_cast<size_t>(bytesRead)) {
-#if defined(_WIN32)
-                const int written = _write(mirrorFd,
-                                           buffer.data() + offset,
-                                           static_cast<unsigned int>(static_cast<size_t>(bytesRead) - offset));
-#else
-                const ssize_t written = ::write(mirrorFd,
-                                                buffer.data() + offset,
-                                                static_cast<size_t>(bytesRead) - offset);
-#endif
-                if (written <= 0) {
-                    break;
-                }
-                offset += static_cast<size_t>(written);
-            }
+        if (mirror != nullptr) {
+            mirror->Push(buffer.data(), static_cast<size_t>(bytesRead));
         }
-
-        WriteProcessTranscriptChunk(state, buffer.data(), static_cast<size_t>(bytesRead));
+        if (state.fileSink) {
+            state.fileSink->Push(buffer.data(), static_cast<size_t>(bytesRead));
+        } else {
+            WriteProcessTranscriptChunk(state, buffer.data(), static_cast<size_t>(bytesRead));
+        }
     }
 }
 
@@ -410,6 +446,48 @@ std::string ReadInstalledSetupVersion() {
     return text.substr(open + 1, close - open - 1);
 }
 
+// std::cerr writes each line as one unit: every RT_LOG fragment used to be its
+// own write to the transcript pipe, and lines from different threads mixed.
+// Text accumulates per thread until a newline or flush (std::endl).
+class LineBufferedStderr final : public std::streambuf {
+protected:
+    int_type overflow(int_type ch) override {
+        if (traits_type::eq_int_type(ch, traits_type::eof())) return traits_type::not_eof(ch);
+        auto& buffer = Buffer();
+        buffer.push_back(traits_type::to_char_type(ch));
+        if (ch == '\n') Write(buffer);
+        return ch;
+    }
+    std::streamsize xsputn(const char* text, std::streamsize count) override {
+        auto& buffer = Buffer();
+        buffer.append(text, static_cast<size_t>(count));
+        if (std::memchr(text, '\n', static_cast<size_t>(count))) Write(buffer);
+        return count;
+    }
+    int sync() override {
+        Write(Buffer());
+        return 0;
+    }
+
+private:
+    static std::string& Buffer() {
+        thread_local std::string buffer;
+        return buffer;
+    }
+    static void Write(std::string& buffer) {
+        if (buffer.empty()) return;
+        std::fwrite(buffer.data(), 1, buffer.size(), stderr);
+        buffer.clear();
+    }
+};
+
+void InstallLineBufferedStderr() {
+    // Never destroyed: std::cerr may still be used during static destruction.
+    static auto* buffer = new LineBufferedStderr;
+    std::cerr.rdbuf(buffer);
+    std::cerr.unsetf(std::ios_base::unitbuf);
+}
+
 void InitializeProcessTranscript(int argc, char** argv) {
     auto& state = GetProcessTranscriptState();
     if (state.initialized.exchange(true, std::memory_order_acq_rel)) {
@@ -497,12 +575,48 @@ void InitializeProcessTranscript(int argc, char** argv) {
         return;
     }
 
+    // The file keeps up to 16 MiB queued across a stall; a console mirror only 256 KiB (it is a
+    // convenience, the file is the record).
+    state.fileSink = std::make_unique<TranscriptSink>("log file", 16u << 20, [&state](const char* data, size_t size) {
+        WriteProcessTranscriptChunk(state, data, size);
+    });
+    if (state.savedStdoutFd >= 0) {
+        const int fd = state.savedStdoutFd;
+        state.stdoutMirrorSink = std::make_unique<TranscriptSink>("console", 256u << 10, [fd](const char* data, size_t size) {
+            WriteMirrorFd(fd, data, size);
+        });
+    }
+    if (state.savedStderrFd >= 0) {
+        const int fd = state.savedStderrFd;
+        state.stderrMirrorSink = std::make_unique<TranscriptSink>("console", 256u << 10, [fd](const char* data, size_t size) {
+            WriteMirrorFd(fd, data, size);
+        });
+    }
+#if defined(_WIN32)
+    // An inherited console in QuickEdit mode enters "Select" on any click and stops every writer until
+    // Esc. The mirror sink already keeps the game running through it; turning QuickEdit off for the
+    // run keeps the mirrored output flowing too. Restored at shutdown.
+    {
+        const HANDLE input = ::GetStdHandle(STD_INPUT_HANDLE);
+        DWORD mode = 0;
+        if (input != nullptr && input != INVALID_HANDLE_VALUE && ::GetConsoleMode(input, &mode) &&
+            (mode & ENABLE_QUICK_EDIT_MODE) != 0) {
+            if (::SetConsoleMode(input, (mode & ~ENABLE_QUICK_EDIT_MODE) | ENABLE_EXTENDED_FLAGS)) {
+                state.consoleInput = input;
+                state.savedConsoleMode = mode;
+                state.quickEditDisabled = true;
+            }
+        }
+    }
+#endif
+
     state.stdoutThread = std::thread([&state]() {
-        PumpTranscriptPipe(state, state.stdoutPipeReadFd, state.savedStdoutFd);
+        PumpTranscriptPipe(state, state.stdoutPipeReadFd, state.stdoutMirrorSink.get());
     });
     state.stderrThread = std::thread([&state]() {
-        PumpTranscriptPipe(state, state.stderrPipeReadFd, state.savedStderrFd);
+        PumpTranscriptPipe(state, state.stderrPipeReadFd, state.stderrMirrorSink.get());
     });
+    InstallLineBufferedStderr();
 }
 
 void ShutdownProcessTranscript() {
@@ -539,6 +653,19 @@ void ShutdownProcessTranscript() {
         state.stderrThread.join();
     }
 
+    // Pumps are done: everything logged is queued. Give the file a few seconds, a console much less.
+    // A sink whose writer is still stuck is leaked on purpose: its detached thread may wake later.
+    bool fileDrained = true;
+    if (state.fileSink && !(fileDrained = state.fileSink->Close(std::chrono::seconds(5)))) (void)state.fileSink.release();
+    if (state.stdoutMirrorSink && !state.stdoutMirrorSink->Close(std::chrono::milliseconds(500))) (void)state.stdoutMirrorSink.release();
+    if (state.stderrMirrorSink && !state.stderrMirrorSink->Close(std::chrono::milliseconds(500))) (void)state.stderrMirrorSink.release();
+#if defined(_WIN32)
+    if (state.quickEditDisabled) {
+        ::SetConsoleMode(state.consoleInput, state.savedConsoleMode);
+        state.quickEditDisabled = false;
+    }
+#endif
+
     if (state.stdoutPipeReadFd >= 0) {
         CloseFileDescriptor(state.stdoutPipeReadFd);
         state.stdoutPipeReadFd = -1;
@@ -556,12 +683,13 @@ void ShutdownProcessTranscript() {
         state.savedStderrFd = -1;
     }
 
-    {
+    if (fileDrained) {
         std::lock_guard<std::mutex> lock(state.fileMutex);
         state.file << "\n[runtime] process transcript ended\n";
         state.file.flush();
+        state.file.close();
     }
-    state.file.close();
+    // Otherwise the writer is still stuck inside the file: leave it to process exit rather than wait.
     state.enabled = false;
 }
 
@@ -792,9 +920,12 @@ void ShowRuntimeFatalPopup(std::string_view category, std::string_view details) 
                 message.append("\n\n[Additional details were written to the crash log.]");
             }
         }
-        message.append("\n\nSee the WiiCompiled Logs folder for the full diagnostic.");
+        message.append("\n\nTo report this, zip and attach this folder (it holds the log and crash files of this run):\n");
+        message.append(RuntimeConfigFile::PathToUtf8(GetRunLogDirectory()));
+        message.append("\n\nPlease also say where in the game you were.");
+        const std::string title = std::string(RuntimeProduct::Active().displayName) + " - Fatal Error";
 #if defined(_WIN32)
-        ::MessageBoxA(nullptr, message.c_str(), "WiiCompiled - Fatal Error",
+        ::MessageBoxA(nullptr, message.c_str(), title.c_str(),
                       MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TASKMODAL);
 #else
         // The shipped product is Windows-first. Keep non-Windows builds safe
@@ -807,6 +938,8 @@ void ShowRuntimeFatalPopup(std::string_view category, std::string_view details) 
 }
 
 namespace RuntimeCrash {
+
+const std::filesystem::path& RunLogDirectory() { return GetRunLogDirectory(); }
 
 void WriteCrashArtifacts(std::string_view reason, std::string_view extraDetails,
                          const uint32_t* missingGuestTarget) noexcept {
@@ -971,6 +1104,15 @@ void ReportStructuredException(EXCEPTION_POINTERS* info) {
     const auto faultAddress = reinterpret_cast<uintptr_t>(record->ExceptionAddress);
     std::cerr << std::hex << std::uppercase;
     RT_LOG(RT_TAG_RUNTIME) << "Fault address: 0x" << faultAddress << std::dec << std::nouppercase << std::endl;
+    // Name the module holding the fault, so a crash inside a DLL can be traced.
+    HMODULE faultModule = nullptr;
+    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           reinterpret_cast<LPCSTR>(faultAddress), &faultModule)) {
+        char modulePath[MAX_PATH] = {};
+        GetModuleFileNameA(faultModule, modulePath, MAX_PATH);
+        RT_LOG(RT_TAG_RUNTIME) << "Fault module: " << modulePath << " +0x" << std::hex
+                  << (faultAddress - reinterpret_cast<uintptr_t>(faultModule)) << std::dec << std::endl;
+    }
 
     if (code == EXCEPTION_ACCESS_VIOLATION && record->NumberParameters >= 2) {
         const auto accessType = record->ExceptionInformation[0];
@@ -1058,6 +1200,13 @@ LONG CALLBACK SehLogger(EXCEPTION_POINTERS* info) {
     // by their own frame handlers. Only hardware faults are fatal at first chance; anything
     // else that truly goes unhandled reaches UnhandledSehFilter.
     if ((info->ExceptionRecord->ExceptionCode & 0x20000000u) != 0) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+    // Likewise for Win32 error codes raised with RaiseException (severity bits not
+    // "error"): the Explorer file dialog raises and catches 0x6BA
+    // (RPC_S_SERVER_UNAVAILABLE) internally while enumerating shell extensions.
+    // Hardware faults all carry STATUS_SEVERITY_ERROR (0xC0000000).
+    if ((info->ExceptionRecord->ExceptionCode & 0xC0000000u) != 0xC0000000u) {
         return EXCEPTION_CONTINUE_SEARCH;
     }
     return ReportFatalSehAndExit(info);
@@ -1326,7 +1475,54 @@ static void TerminateHandler() {
 }
 
 // Runtime entry point: loads the configuration, brings up aurora and runs the game.
+void PrimeWaitForRestartedParent();  // hle/os/prime_host_restart.cpp
+
+// The only accepted argument: --iso <path> or --iso=<path> (discussion #5), so
+// launchers and shortcuts can name the disc image without the dialog. It does
+// not touch Config.toml; it is exported as CORRUPTION3_ISO for relaunches.
+// Windows reads the UTF-16 command line so any path character survives.
+std::vector<std::string> RuntimeArguments(int argc, char** argv) {
+    std::vector<std::string> arguments;
+#if defined(_WIN32)
+    (void)argc;
+    (void)argv;
+    int count = 0;
+    if (LPWSTR* wide = ::CommandLineToArgvW(::GetCommandLineW(), &count)) {
+        for (int i = 1; i < count; ++i) arguments.push_back(RuntimeConfigFile::PathToUtf8(std::filesystem::path(wide[i])));
+        ::LocalFree(wide);
+    }
+#else
+    for (int i = 1; i < argc; ++i) arguments.emplace_back(argv[i]);
+#endif
+    return arguments;
+}
+
+void ApplyRuntimeArguments(int argc, char** argv) {
+    const std::vector<std::string> arguments = RuntimeArguments(argc, argv);
+    for (size_t i = 0; i < arguments.size(); ++i) {
+        const std::string& argument = arguments[i];
+        std::string value;
+        if (argument == "--iso" && i + 1 < arguments.size()) {
+            value = arguments[++i];
+        } else if (argument.rfind("--iso=", 0) == 0) {
+            value = argument.substr(6);
+        } else {
+            throw std::invalid_argument("Unknown argument: " + argument +
+                                        "\n\nThe only accepted argument is --iso \"<path to the disc image>\". "
+                                        "Every other setting lives in UserData/Config.toml.");
+        }
+        if (PrimeDiscPath::Normalize(value).empty()) {
+            throw std::invalid_argument("--iso needs the path to the disc image, for example:\n  --iso \"D:\\Games\\Metroid Prime 3.rvz\"");
+        }
+        RuntimeConfigFile::SetPrimeIsoOverride(value);
+        RT_LOG(RT_TAG_CONFIG) << "[prime-iso-arg] --iso " << RuntimeConfigFile::PrimeIsoOverride() << std::endl;
+    }
+}
+
 int RuntimeMain(int argc, char** argv) {
+    // A relaunch after the game's OSRestart: the previous process still owns the
+    // window, the disc image and the caches until it exits.
+    PrimeWaitForRestartedParent();
     // Must run before the transcript duplicates stdout/stderr: it decides what
     // those descriptors are mirrored to now that the products are GUI-subsystem.
     AttachParentConsoleForDiagnostics();
@@ -1346,10 +1542,26 @@ int RuntimeMain(int argc, char** argv) {
     std::string currentEntryLabel;
 
     try {
-        if (argc != 1) {
-            throw std::invalid_argument("The game runtime does not accept command-line options; use Config.toml through the installed host.");
-        }
+        ApplyRuntimeArguments(argc, argv);
         RuntimeConfigFile::LogLoadedConfig();
+        {
+            const auto& cpu = HostThreads::CachedTopology();
+            RT_LOG(RT_TAG_RUNTIME) << "[host-cpu] logical_processors=" << cpu.logical
+                                   << " physical_cores=" << cpu.physical << std::endl;
+            // The guest CPU runs on this thread: it wins over background workers.
+            HostThreads::SetCurrentRole(HostThreads::Role::Game, L"Prime game (guest CPU)");
+#if defined(_WIN32)
+            // Background workers stay off this core's hyperthread sibling (aurora/host_cores.h).
+            aurora::host_cores::prefer_game_core();
+            RT_LOG(RT_TAG_RUNTIME) << "[host-cpu] game_core_mask=0x" << std::hex
+                                   << static_cast<uint64_t>(aurora::host_cores::game_core_mask()) << std::dec
+                                   << " (WII_COMPILED_GAME_CORE=0 disables it)" << std::endl;
+#endif
+        }
+        PrimeHostOptions::ApplyAtStartup();
+        UpdateCheck::Start();
+        // Before the renderer creates its D3D12 device, so ReShade can hook the swap chain.
+        ReShadeLoader::LoadIfEnabled();
         if (RuntimeConfigFile::DiscordPresenceEnabled()) {
             DiscordPresence::Initialize(RuntimeConfigFile::DiscordClientId(), "Mario Kart Wii");
         }
@@ -1361,10 +1573,65 @@ int RuntimeMain(int argc, char** argv) {
         // This is required for GX commands (like texture loading) to work.
         AuroraConfig auroraConfig = {};
         auroraConfig.appName = RuntimeProduct::Active().displayName.data();
+#if defined(_WIN32)
+        // The SDL window shows the icon embedded by assets/windows/prime_port.rc.
+        static std::vector<uint8_t> windowIconRgba;
+        static uint32_t windowIconSize = 0;
+        if (HICON icon = static_cast<HICON>(::LoadImageW(::GetModuleHandleW(nullptr), MAKEINTRESOURCEW(1), IMAGE_ICON,
+                                                           128, 128, LR_DEFAULTCOLOR))) {
+            ICONINFO info{};
+            if (::GetIconInfo(icon, &info) && info.hbmColor) {
+                BITMAP bitmap{};
+                if (::GetObjectW(info.hbmColor, sizeof(bitmap), &bitmap) && bitmap.bmWidth > 0 && bitmap.bmHeight > 0) {
+                    const uint32_t width = static_cast<uint32_t>(bitmap.bmWidth);
+                    const uint32_t height = static_cast<uint32_t>(bitmap.bmHeight);
+                    BITMAPINFO bmi{};
+                    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+                    bmi.bmiHeader.biWidth = bitmap.bmWidth;
+                    bmi.bmiHeader.biHeight = -bitmap.bmHeight; // top-down
+                    bmi.bmiHeader.biPlanes = 1;
+                    bmi.bmiHeader.biBitCount = 32;
+                    bmi.bmiHeader.biCompression = BI_RGB;
+                    windowIconRgba.assign(static_cast<size_t>(width) * height * 4, 0);
+                    HDC dc = ::GetDC(nullptr);
+                    if (::GetDIBits(dc, info.hbmColor, 0, height, windowIconRgba.data(), &bmi, DIB_RGB_COLORS) == static_cast<int>(height)) {
+                        for (size_t i = 0; i + 3 < windowIconRgba.size(); i += 4) std::swap(windowIconRgba[i], windowIconRgba[i + 2]); // BGRA -> RGBA
+                        windowIconSize = width == height ? width : 0;
+                    }
+                    ::ReleaseDC(nullptr, dc);
+                }
+            }
+            if (info.hbmColor) ::DeleteObject(info.hbmColor);
+            if (info.hbmMask) ::DeleteObject(info.hbmMask);
+            ::DestroyIcon(icon);
+        }
+        if (windowIconSize != 0) {
+            auroraConfig.iconRGBA8 = windowIconRgba.data();
+            auroraConfig.iconWidth = windowIconSize;
+            auroraConfig.iconHeight = windowIconSize;
+        }
+#endif
         const auto applicationDataDirectory = RuntimeConfigFile::ApplicationDataDirectory();
         const auto rendererCacheDirectory = applicationDataDirectory / "Cache";
         std::error_code rendererPathError;
         std::filesystem::create_directories(rendererCacheDirectory, rendererPathError);
+        {
+            // F1 > Video > "Purge shader cache" leaves this marker; the databases are closed here, before Aurora opens them.
+            const auto purgeMarker = rendererCacheDirectory / "purge_shader_cache.flag";
+            std::error_code purgeError;
+            if (std::filesystem::exists(purgeMarker, purgeError)) {
+                size_t removed = 0;
+                for (const auto& entry : std::filesystem::directory_iterator(rendererCacheDirectory, purgeError)) {
+                    const auto name = entry.path().filename().string();
+                    if (name.rfind("dawn_cache.db", 0) == 0 || name.rfind("pipeline_cache.db", 0) == 0) {
+                        std::error_code removeError;
+                        if (std::filesystem::remove(entry.path(), removeError)) ++removed;
+                    }
+                }
+                std::filesystem::remove(purgeMarker, purgeError);
+                RT_LOG(RT_TAG_RUNTIME) << "Shader cache purged at the player's request: " << removed << " files removed";
+            }
+        }
         if (rendererPathError) {
             RT_LOG(RT_TAG_RUNTIME) << "Unable to create renderer cache directory "
                       << RuntimeConfigFile::PathToUtf8(rendererCacheDirectory) << ": "
@@ -1377,7 +1644,13 @@ int RuntimeMain(int argc, char** argv) {
         auroraConfig.logCallback = &RuntimeAuroraLogCallback;
         auroraConfig.logLevel = LOG_DEBUG;
         const bool configWidescreen = RuntimeConfigFile::WidescreenEnabled(true);
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        // Prime renders 16:9 anamorphically when SYSCONF says so (written by
+        // PrimeHostOptions); present that image at 16:9 instead of the XFB's shape.
+        const bool forceAspect169 = RuntimeConfigFile::ForceAspect169Enabled() || configWidescreen;
+#else
         const bool forceAspect169 = RuntimeConfigFile::ForceAspect169Enabled();
+#endif
         auroraConfig.windowWidth = (configWidescreen || forceAspect169) ? 854 : 640;
         auroraConfig.windowHeight = 480;
         auroraConfig.windowWidth = RuntimeConfigFile::WindowWidth(auroraConfig.windowWidth);
@@ -1395,6 +1668,20 @@ int RuntimeMain(int argc, char** argv) {
                                          RuntimeConfigFile::TextureDumps(false);
         // No vsync knob: aurora always configures a non-blocking present mode.
         auroraConfig.desiredBackend = BACKEND_AUTO;
+        // Antialiasing is baked into every pipeline (part of the pipeline cache
+        // key) and the framebuffers, so it is read once here; anisotropy can
+        // change live (aurora_set_texture_anisotropy).
+        auroraConfig.msaa = RuntimeConfigFile::Msaa(1);
+        auroraConfig.cacheGeneration = PRIME_PORT_VERSION;
+        auroraConfig.imGuiInitCallback = [](const AuroraWindowSize* size) { settings_overlay::ImGuiInit(size); };
+        auroraConfig.forceTextureAnisotropy = static_cast<uint16_t>(RuntimeConfigFile::AnisotropicFiltering(0));
+        auroraConfig.perPixelLighting = RuntimeConfigFile::PerPixelLighting(false);
+        auroraConfig.enhancedMetal = RuntimeConfigFile::EnhancedMetal(true);
+        auroraConfig.enhancedMetalStrength = RuntimeConfigFile::EnhancedMetalStrength(0.30f);
+        auroraConfig.ubershader = RuntimeConfigFile::Ubershader(true);
+        auroraConfig.textureUpscaleFactor = RuntimeConfigFile::TextureUpscale(0);
+        auroraConfig.textureUpscaleMaxSize = RuntimeConfigFile::TextureUpscaleMaxSize(256);
+        auroraConfig.textureUpscaleSharpen = RuntimeConfigFile::TextureUpscaleSharpen(0.0f);
         const float resolutionMultiplier = RuntimeConfigFile::ResolutionMultiplier(1.0f);
         ConfigureMkwDynamicAspect(configWidescreen, forceAspect169,
                                   auroraConfig.windowWidth, auroraConfig.windowHeight);
@@ -1448,7 +1735,48 @@ int RuntimeMain(int argc, char** argv) {
         aurora_set_efb_persistence(true);
         RT_LOG(RT_TAG_GX) << "[prime-efb-persistence] hardware EFB survives host presentation boundaries" << std::endl;
 #endif
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        if (RuntimeConfigFile::PrimeOption(&RuntimeUserConfig::primePresentQueueLimit, "WII_COMPILED_PRIME_PRESENT_QUEUE_LIMIT", true))
+            InstallDxgiFrameLatencyLimit(1);
+        // Replacement textures shipped next to the executable (the two start-up screens that
+        // replace the game's Wii Remote strap screen) join the player's folder before Aurora
+        // indexes it, including when a new version is unzipped over an old folder.
+        if (const auto& portableRoot = RuntimeConfigFile::PortableRootDirectory()) {
+            const auto shipped = *portableRoot / "texture_replacements";
+            std::error_code walkError;
+            for (std::filesystem::recursive_directory_iterator it(shipped, walkError), end;
+                 !walkError && it != end; it.increment(walkError)) {
+                std::error_code error;
+                if (!it->is_regular_file(error)) continue;
+                const auto target = applicationDataDirectory / "texture_replacements" /
+                                    it->path().lexically_relative(shipped);
+                std::filesystem::create_directories(target.parent_path(), error);
+                std::error_code sizeError;
+                const auto installed = std::filesystem::file_size(target, sizeError);
+                if (sizeError || installed != it->file_size(error))
+                    std::filesystem::copy_file(it->path(), target,
+                                               std::filesystem::copy_options::overwrite_existing, error);
+                if (std::filesystem::exists(target, error)) auroraConfig.allowTextureReplacements = true;
+            }
+        }
+        // Keyboard/mouse icons: rendered from the current bindings before Aurora
+        // indexes texture_replacements (hle/prime_key_icons.h).
+        if (RuntimeConfigFile::PrimeOption(&RuntimeUserConfig::primeKeyboardIcons, "WII_COMPILED_PRIME_KEYBOARD_ICONS", false)) {
+            if (PrimeKeyIcons::Generate(applicationDataDirectory) > 0) auroraConfig.allowTextureReplacements = true;
+        }
+        // Gamepad icons are a replacement variant drawn when a pad is first used
+        // (PrimeGamepadRuntime::ServiceIcons); Aurora only has to look for them.
+        if (PrimeGamepadRuntime::IconsEnabled()) auroraConfig.allowTextureReplacements = true;
+#endif
         const AuroraInfo auroraInfo = aurora_initialize(0, nullptr, &auroraConfig);
+        PostEffects::Apply();
+        {
+            const auto& vc = RuntimeConfigFile::Get();
+            aurora_set_enhanced_metal_params(vc.enhancedMetalRoughness.value_or(0.25f),
+                                             vc.enhancedMetalMetallic.value_or(0.62f),
+                                             vc.enhancedMetalEdge.value_or(0.50f),
+                                             vc.enhancedMetalDetail.value_or(1.0f));
+        }
         if (auroraInfo.initializationStatus != AURORA_INITIALIZATION_SUCCESS) {
             throw std::runtime_error(auroraInfo.initializationError != nullptr
                 ? auroraInfo.initializationError : "No supported graphics backend is available");
@@ -1467,6 +1795,7 @@ int RuntimeMain(int argc, char** argv) {
         UpdateMkwDynamicAspectSurface(auroraInfo.windowSize.native_fb_width,
                                       auroraInfo.windowSize.native_fb_height);
         settings_overlay::InitializeRuntimeSettings();
+        PrimeHostOptions::ApplyPresentation(configWidescreen);
         RT_LOG(RT_TAG_CONFIG) << "video.widescreen=" << (configWidescreen ? "true" : "false")
                   << " force_16_9=" << (forceAspect169 ? "true" : "false")
                   << " SCGetAspectRatio=" << (configWidescreen || forceAspect169 ? 1 : 0)
@@ -1506,6 +1835,7 @@ int RuntimeMain(int argc, char** argv) {
         // Shutdown fiber system
         Fiber::GuestFiberManager::Shutdown();
         WindowPlacementPersistence::Flush(true);
+        GxGpuThread::Shutdown();
         aurora_shutdown();
         DiscordPresence::Shutdown();
         SetRuntimeExitCodeImpl(0);
@@ -1524,6 +1854,7 @@ int RuntimeMain(int argc, char** argv) {
         SetRuntimeExitCodeImpl(1);
         Fiber::GuestFiberManager::Shutdown();
         WindowPlacementPersistence::Flush(true);
+        GxGpuThread::Shutdown();
         aurora_shutdown();
         DiscordPresence::Shutdown();
         ShutdownProcessTranscript();
@@ -1536,6 +1867,7 @@ int RuntimeMain(int argc, char** argv) {
         SetRuntimeExitCodeImpl(1);
         Fiber::GuestFiberManager::Shutdown();
         WindowPlacementPersistence::Flush(true);
+        GxGpuThread::Shutdown();
         aurora_shutdown();
         DiscordPresence::Shutdown();
         ShutdownProcessTranscript();

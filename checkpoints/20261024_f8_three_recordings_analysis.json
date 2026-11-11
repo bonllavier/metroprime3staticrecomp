@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-24",
+  "game": "RM3E01_00",
+  "inputs": [
+    "UserData/Logs/profiles/stack_profile_20261024_193723.txt",
+    "_193931.txt",
+    "_194158.txt (120 s each)"
+  ],
+  "lost_ms_by_cause": {
+    "193723": {
+      "pipelines": 6975,
+      "cpu": 2107,
+      "disc": 195
+    },
+    "193931": {
+      "pipelines": 623,
+      "cpu": 686,
+      "textures": 89,
+      "disc": 32
+    },
+    "194158": {
+      "pipelines": 1502,
+      "cpu": 391,
+      "textures": 165,
+      "disc": 53
+    }
+  },
+  "findings": [
+    "Every frame of 80 ms or more coincides with new pipelines (max 542 ms with 16). The frame worker spends 36% of those windows in wait_pipeline_impl.",
+    "The startup prewarm compiles 12,473 pipelines in 3.3 s (all Dawn blob cache hits, DXC); each new room still adds 10-48.",
+    "skip_unready_pipelines=true had no effect: begin_frame(clearEfb=false) sets g_requirePersistentEfbPipelines and persistent texture copies set requireReadyPipelines, so Prime passes wait without limit. This is by design, to avoid losing EFB copy contents.",
+    "Game thread: 0x803E9F78 waits on the previous frame's GPU work (250 ms timeout), reading OSGetTime in a loop. That is idle time; PPC_Mftb is not an optimization target.",
+    "Game thread busy time, excluding that wait: 66-68% game code. Call-boundary interrupt poll about 10.5%, GPU FIFO word writes about 8%, indirect dispatch about 4%."
+  ],
+  "changes": [
+    "os_interrupt.cpp OS_HLE_PollPendingPrimeIpcInterrupt: full device checks on every 8th translated call return (thread_local counter); the idle loop (0x804E6D20) still checks on every pass. The CP breakpoint gate now runs on every checked poll.",
+    "prime_cpu_fifo_capture.h Capture::Push: whole-word fast path inside a burst. Validation, byte order and commit semantics unchanged.",
+    "memory.cpp PrimeGpuTryCaptureCpuFifo: acquire loads, inlined active check, no zero-init of the burst copy."
+  ],
+  "validation": {
+    "build": "linked 2026-10-24",
+    "tests": "mkw_prime_cpu_fifo_capture_tests, mkw_gx_fifo_storage_tests pass",
+    "user": "pending: a new F8 recording to compare CPU-frame counts"
+  },
+  "next": "Per-pipeline instrumentation (WGSL/Tint+DXC module vs PSO creation time, new module vs state variant), then the hybrid ubershader so persistent passes can draw without waiting.",
+  "recording_205056": {
+    "lost_ms": {
+      "pipelines": 7277,
+      "cpu": 2714,
+      "disc": 104,
+      "textures": 14
+    },
+    "ge80ms": {
+      "pipelines": 47
+    },
+    "game_thread": "Busy 56.9%, of which 67.2% guest code. OS_HLE_PollPendingPrimeIpcInterrupt still 6.8% after the 1-in-8 throttle: the function saved 7 registers and set up a 0x40 stack frame before its early return. PrimeGpuTryCaptureCpuFifo 5.1%.",
+    "changes": [
+      "os_interrupt.cpp: the poll is now a tiny counter function; the full check moved to a noinline PollPendingPrimeIpcInterruptFull (disassembly: no prologue on the skip path).",
+      "memory.cpp: PrimeGpuTryCaptureCpuFifo has a non-committing whole-word fast path with the same pointer checks; the commit path moved to a noinline PrimeGpuCaptureCpuFifoFull.",
+      "aurora lib/gx/pipeline.cpp: [pipeline-compile] line for each GX pipeline of 20 ms or more (module vs pipeline ms, new module, TEV/texgen/ind/fog/blend/depth, hash) and a [pipeline-compile-summary] every 10 s."
+    ],
+    "validation": {
+      "tests": "mkw_prime_cpu_fifo_capture_tests, mkw_gx_fifo_storage_tests pass",
+      "user": "pending: a new F8 recording plus console.log pipeline telemetry"
+    }
+  }
+}

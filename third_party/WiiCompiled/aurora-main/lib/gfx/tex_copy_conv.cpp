@@ -5,6 +5,7 @@
 #include "../gx/gx.hpp"
 #include "../webgpu/gpu.hpp"
 #include "texture.hpp"
+#include "gpu_timing.hpp"
 #include "../gx/gx_fmt.hpp"
 
 #include <absl/container/flat_hash_map.h>
@@ -99,9 +100,8 @@ fn sample_copy(uv: vec2f) -> vec4f {
 }
 )"sv;
 
+// Prefixed with detail::DepthSourceBinding or detail::MultisampledDepthSourceBinding.
 static const std::string DepthShaderPreamble = R"(
-@group(0) @binding(0) var src: texture_depth_2d;
-
 struct UVTransform {
     offset: vec2f,
     scale: vec2f,
@@ -322,6 +322,39 @@ static constexpr std::string_view FragZ8 = R"(
 }
 )"sv;
 
+// GX_CTF_Z4: upper four bits of depth in I4 storage (upstream aurora).
+static constexpr std::string_view FragZ4 = R"(
+@fragment fn fs_main(in: VertexOutput) -> @location(0) vec4f {
+    let z4 = f32(sample_depth_copy(in.uv).r >> 4u) / 15.0;
+    return vec4f(z4, z4, z4, z4);
+}
+)"sv;
+
+// GX_CTF_Z8M / GX_CTF_Z8L store the middle / low byte of the 24-bit depth in the
+// same single-byte (I8) storage shape as GX_TF_Z8.
+static constexpr std::string_view FragZ8M = R"(
+@fragment fn fs_main(in: VertexOutput) -> @location(0) vec4f {
+    let z = f32(sample_depth_copy(in.uv).g) / 255.0;
+    return vec4f(z, z, z, z);
+}
+)"sv;
+static constexpr std::string_view FragZ8L = R"(
+@fragment fn fs_main(in: VertexOutput) -> @location(0) vec4f {
+    let z = f32(sample_depth_copy(in.uv).b) / 255.0;
+    return vec4f(z, z, z, z);
+}
+)"sv;
+
+// GX_CTF_Z16L is the depth analogue of GX_CTF_GB8: middle byte as intensity,
+// low byte as alpha (IA8 storage).
+static constexpr std::string_view FragZ16L = R"(
+@fragment fn fs_main(in: VertexOutput) -> @location(0) vec4f {
+    let bytes = sample_depth_copy(in.uv);
+    let m = f32(bytes.g) / 255.0;
+    return vec4f(m, m, m, f32(bytes.b) / 255.0);
+}
+)"sv;
+
 // GX_TF_Z16 is the depth RA8 copy path: depth samples have opaque alpha and their high-Z byte in
 // red, so the encoded [A, R] pair samples through IA8 as high-Z intensity with opaque alpha.
 static constexpr std::string_view FragZ16 = detail::Z16FragmentShader;
@@ -366,13 +399,19 @@ static constexpr std::array DepthConvPipelines{
     ConvPipeline{GX_TF_Z8, FragZ8, wgpu::TextureFormat::RGBA8Unorm, "TexCopyConv Z8"},
     ConvPipeline{GX_TF_Z16, FragZ16, wgpu::TextureFormat::RGBA8Unorm, "TexCopyConv Z16"},
     ConvPipeline{GX_TF_Z24X8, FragZ24X8, wgpu::TextureFormat::RGBA8Unorm, "TexCopyConv Z24X8"},
+    ConvPipeline{GX_CTF_Z4, FragZ4, wgpu::TextureFormat::RGBA8Unorm, "TexCopyConv Z4"},
+    ConvPipeline{GX_CTF_Z8M, FragZ8M, wgpu::TextureFormat::RGBA8Unorm, "TexCopyConv Z8M"},
+    ConvPipeline{GX_CTF_Z8L, FragZ8L, wgpu::TextureFormat::RGBA8Unorm, "TexCopyConv Z8L"},
+    ConvPipeline{GX_CTF_Z16L, FragZ16L, wgpu::TextureFormat::RGBA8Unorm, "TexCopyConv Z16L"},
 };
 
 static wgpu::BindGroupLayout g_bindGroupLayout;
 static wgpu::BindGroupLayout g_depthBindGroupLayout;
+static wgpu::BindGroupLayout g_msaaDepthBindGroupLayout;
 static wgpu::Sampler g_nearestSampler;
 static wgpu::Sampler g_linearSampler;
 static absl::flat_hash_map<GXTexFmt, wgpu::RenderPipeline> g_pipelines;
+static absl::flat_hash_map<GXTexFmt, wgpu::RenderPipeline> g_msaaDepthPipelines;
 static absl::flat_hash_map<wgpu::TextureFormat, wgpu::RenderPipeline> g_blitPipelines;
 
 static wgpu::RenderPipeline create_pipeline(const ConvPipeline& conv, const std::string_view shaderPreamble,
@@ -487,6 +526,33 @@ void initialize() {
   };
   g_depthBindGroupLayout = g_device.CreateBindGroupLayout(&depthBindGroupLayoutDescriptor);
 
+  static constexpr std::array msaaDepthBindGroupLayoutEntries{
+      wgpu::BindGroupLayoutEntry{
+          .binding = 0,
+          .visibility = wgpu::ShaderStage::Fragment,
+          .texture =
+              wgpu::TextureBindingLayout{
+                  .sampleType = wgpu::TextureSampleType::Depth,
+                  .viewDimension = wgpu::TextureViewDimension::e2D,
+                  .multisampled = true,
+              },
+      },
+      wgpu::BindGroupLayoutEntry{
+          .binding = 1,
+          .visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment,
+          .buffer =
+              wgpu::BufferBindingLayout{
+                  .type = wgpu::BufferBindingType::Uniform,
+              },
+      },
+  };
+  static constexpr wgpu::BindGroupLayoutDescriptor msaaDepthBindGroupLayoutDescriptor{
+      .label = "TexCopyConv MSAA Depth Bind Group Layout",
+      .entryCount = msaaDepthBindGroupLayoutEntries.size(),
+      .entries = msaaDepthBindGroupLayoutEntries.data(),
+  };
+  g_msaaDepthBindGroupLayout = g_device.CreateBindGroupLayout(&msaaDepthBindGroupLayoutDescriptor);
+
   // Native RAM readback uses RGBA even when the EFB/surface uses BGRA.
   // Build both variants here; frame workers only read the completed map.
   for (const auto format : {wgpu::TextureFormat::RGBA8Unorm, wgpu::TextureFormat::BGRA8Unorm}) {
@@ -499,10 +565,16 @@ void initialize() {
       Log.fatal("Output format mismatch for {}", conv.fmt);
     }
   }
+  const std::string depthPreamble = std::string(detail::DepthSourceBinding) + DepthShaderPreamble;
+  const std::string msaaDepthPreamble = std::string(detail::MultisampledDepthSourceBinding) + DepthShaderPreamble;
   for (const auto& conv : DepthConvPipelines) {
-    g_pipelines[conv.fmt] = create_pipeline(conv, DepthShaderPreamble, g_depthBindGroupLayout);
+    g_pipelines[conv.fmt] = create_pipeline(conv, depthPreamble, g_depthBindGroupLayout);
     if (conv.outputFormat != to_wgpu(conv.fmt)) {
       Log.fatal("Output format mismatch for {}", conv.fmt);
+    }
+    // MSAA is fixed at startup, so a 1x session never pays for these.
+    if (webgpu::g_graphicsConfig.msaaSamples > 1) {
+      g_msaaDepthPipelines[conv.fmt] = create_pipeline(conv, msaaDepthPreamble, g_msaaDepthBindGroupLayout);
     }
   }
 
@@ -527,9 +599,11 @@ void initialize() {
 
 void shutdown() {
   g_pipelines.clear();
+  g_msaaDepthPipelines.clear();
   g_blitPipelines.clear();
   g_bindGroupLayout = {};
   g_depthBindGroupLayout = {};
+  g_msaaDepthBindGroupLayout = {};
   g_nearestSampler = {};
   g_linearSampler = {};
 }
@@ -550,7 +624,7 @@ static void execute(const wgpu::CommandEncoder& cmd, const ConvRequest& req, con
         },
     };
     const wgpu::BindGroupDescriptor bindGroupDescriptor{
-        .layout = g_depthBindGroupLayout,
+        .layout = req.multisampledDepthSource ? g_msaaDepthBindGroupLayout : g_depthBindGroupLayout,
         .entryCount = bindGroupEntries.size(),
         .entries = bindGroupEntries.data(),
     };
@@ -593,6 +667,7 @@ static void execute(const wgpu::CommandEncoder& cmd, const ConvRequest& req, con
       .label = "TexCopyConv Pass",
       .colorAttachmentCount = colorAttachments.size(),
       .colorAttachments = colorAttachments.data(),
+      .timestampWrites = gpu_timing::pass_writes(gpu_timing::Category::Copy),
   };
   const auto pass = cmd.BeginRenderPass(&renderPassDescriptor);
   pass.SetPipeline(pipeline);
@@ -602,8 +677,9 @@ static void execute(const wgpu::CommandEncoder& cmd, const ConvRequest& req, con
 }
 
 void run(const wgpu::CommandEncoder& cmd, const ConvRequest& req) {
-  const auto it = g_pipelines.find(req.fmt);
-  if (it == g_pipelines.end()) {
+  const auto& pipelines = req.multisampledDepthSource ? g_msaaDepthPipelines : g_pipelines;
+  const auto it = pipelines.find(req.fmt);
+  if (it == pipelines.end()) {
     Log.fatal("No copy conversion pipeline for format {}", static_cast<int>(req.fmt));
   }
   execute(cmd, req, it->second);

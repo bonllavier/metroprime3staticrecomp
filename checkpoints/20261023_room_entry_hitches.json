@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "request": "Short FPS drops (to ~50) when entering a room, breaking objects or seeing new areas; record 15 s with F8 and analyze",
+  "tooling": [
+    "F8 records 15 s (was 10) without needing the F9 panel; an on-screen notice shows recording progress and the save.",
+    "stack_profile v3: each sampling sweep is stamped ('s <ms>'); 'c <ms> presents dvd_bytes texture_upload_bytes pipelines_created' lines record every counter change. New APIs: aurora_get_present_count, aurora_get_texture_upload_bytes_total, PrimeDvdBytesReadTotal.",
+    "Analyzer (scratchpad hitch.py): slow presents, counters per slow frame, per-thread inclusive functions inside vs outside hitch windows."
+  ],
+  "findings": {
+    "profiles": ["stack_profile_20261023_224336.txt", "stack_profile_20261023_224842.txt"],
+    "texture_burst": "One ~103 ms frame in each recording with ~50 MB of new texture data uploaded (room textures). GX thread in that frame: 76% creating textures; arb_mip_check 31% (single-threaded downscale+compare of every mip chain), CMPR decode 19% (already parallel), Dawn/D3D12 texture creation and upload ~28%.",
+    "disc_streaming": "~700 ms of 25-55 ms frames while the game streams: 153 serialized disc reads, 5.6 MB. The IPC reply delay model (600 us + 32 MiB/s per read, Dolphin hardware figures) summed 259 ms; the game thread was idle 20% of that window waiting for replies (vs <4% elsewhere). nod decrypt/read on the game thread ~10%."
+  },
+  "changes": [
+    "aurora lib/gfx/texture_convert.cpp: downscale() and avg_diff() split rows across the decode pool. avg_diff accumulates integer squared differences (exact, order independent), so hasArbitraryMips is bit-identical to the serial version.",
+    "Option 'Lectura de disco rapida' ([prime] fast_disc_reads, WII_COMPILED_PRIME_FAST_DISC_READS, F1 > Rendimiento, live): disc read replies use a fixed 200 us delay instead of the drive model. Default on. A nonzero delay is kept so a reply never completes on the submission stack (FMOD case documented in memory.cpp)."
+  ],
+  "not_done": [
+    "Texture creation/upload in Dawn (~28% of the burst frame) and CMPR->RGBA8 expansion (8x data) remain; uploading CMPR as BC1 would cut both but changes decoding details and needs a fidelity review.",
+    "Disc reads still run synchronously on the game thread (nod decrypt); moving them to a worker during the reply delay is deferred."
+  ],
+  "validation": {
+    "build": "linked 2026-10-23 23:52; smoke test reached the title screen at 60 FPS without errors",
+    "user": "pending: re-record the same room with F8"
+  },
+  "second_recording_2026-10-24": {
+    "profile": "stack_profile_20261024_000447.txt (20 s, morph ball and a short walk)",
+    "findings": [
+      "137-222 ms frames coincide with new pipelines (+1..+13): the game thread waited 79% in aurora_wait_for_frame_worker while the GX thread idled, i.e. the frame worker blocked on first-use shader compiles. Startup prewarm had loaded 4759 pipelines (all Dawn blob hits); the cache held 5144 after the session, so these are first-use only and are prewarmed on the next start.",
+      "38-43 ms frames with ~2 MB disc reads per frame: nod sector-group decryption on the game thread (~15%); the disc was opened with preloader_threads = 0.",
+      "105-111 ms frames with 2-3 MB new textures: texture creation on the GX thread plus frame-worker waits."
+    ],
+    "changes": [
+      "F8 recording length 20 s (kF8ProfileSeconds).",
+      "F8 also samples the frame worker and presenter threads (aurora_get_render_thread_ids); profiles list 'threads game gx frame_worker presenter'.",
+      "nod disc opened with preloader_threads = 2 so following sector groups are decrypted ahead of the read position."
+    ],
+    "validation": "linked 2026-10-24 00:09; boots through the intro skip into gameplay with the ISO open (validate_hashes=0), 4 threads profiled; user re-check pending"
+  }
+}

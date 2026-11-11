@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-24",
+  "game": "RM3E01_00",
+  "request": "Smoother play: cut game-thread load (audio mix on its own thread, default on and switchable, best possible quality), use every core of the host and adapt to its count, GPU texture decode (point 2), disc reads off the game thread (point 4). Ubershader explicitly not started.",
+  "baseline": {
+    "profile": "stack_profile_20261024_003330.txt (60 s)",
+    "slow_frames_over_20ms": {"total": 167, "no_load_activity": 122, "disc": 23, "textures": 19, "pipelines": 3},
+    "game_thread_cpu": "51.6 s of 60 s (86%)",
+    "hle_overhead_on_game_thread": "AX/DSP mix 6.8%, CPU FIFO capture 6.2% (+6.9% FIFO writes), IPC poll 4.4%, timebase 7.1% (mostly in spin waits)"
+  },
+  "changes": {
+    "audio_mix_thread": [
+      "runtime/src/hle/audio/ax_mix.cpp: Prime's raw-mailbox AX command lists execute on the mix worker (option [audio] mix_worker, default true, F1 > Audio, live). Unlike the MKW deferred mode, the DSP SYNC/YIELD mails are posted only when the mix completes (m_mixCompletionMails -> m_mixDoneMails, drained in order under m_mutex), so PB write-back, aux and output buffers are complete before the guest can react; aux stays on guest memory (no shadow, no one-frame reverb delay). Same mixing code as the synchronous path.",
+      "memory.cpp: completion hook collects the mails and raises the DSP mailbox interrupt (lock order g_primeDspMutex -> m_mutex; the worker clears busy before taking the guest lock to avoid deadlock with JoinMix).",
+      "audio.cpp: the DSP audio DMA joins a mix only if it would read a PCM frame that mix writes (OUTPUT destinations recorded by the scan), and joins before raising the AID interrupt that runs __AXOutNewFrame.",
+      "Mix worker runs at SDL_THREAD_PRIORITY_HIGH."
+    ],
+    "game_thread_overhead": [
+      "MemoryPrimeIpcPollControl: while replies wait out their delay, the queue/clock is checked every 16th call-boundary poll instead of every poll.",
+      "CPU FIFO capture: write pointer stored with release instead of seq_cst (no xchg per GPU word)."
+    ],
+    "cpu_topology_and_priorities": [
+      "runtime/include/host_threads.h: logical/physical core detection (logged as [host-cpu]); game and GX threads ABOVE_NORMAL; frame worker ABOVE_NORMAL; on-demand pipeline compiles ABOVE_NORMAL, prewarm compiles BELOW_NORMAL; arbitrary-mip checker BELOW_NORMAL; audio mix and presenter highest. Windows still schedules over all 8 logical processors of the i7-4790 (4 cores/8 threads); priorities decide who wins under contention."
+    ],
+    "gpu_cmpr_decode": [
+      "aurora lib/gfx/tex_cmpr_decode.{hpp,cpp}: GX_TF_CMPR static textures upload the raw blocks (8x less than RGBA8) and a compute shader writes every mip with the CPU decoder's arithmetic (5/6-bit expansion, GX 3/8-5/8 blend, half-blend colour with alpha 0). Requests run before the render pass that created the texture (native frames only, like palette conversions).",
+      "hasArbitraryMips for those textures comes from a background CPU check (atomic in TextureRef); before it lands the texture uses the non-arbitrary LOD path.",
+      "Option [prime] gpu_texture_decode (default true), F1 > Rendimiento; WII_COMPILED_AURORA_CMPR_GPU_VERIFY=1 reads back and compares every mip level of the first 256 textures."
+    ],
+    "async_disc_reads": [
+      "dvd.cpp: DI DVDLowRead (ioctl 0x71) is read and decrypted by one disc worker (FIFO order); the guest DMA copy, texture/display-list invalidation and IPC reply run on the guest thread when the poll finds completed reads. The reply keeps the fast/model minimum delay measured from submission.",
+      "Option [prime] async_disc_reads (default true), F1 > Rendimiento, live."
+    ]
+  },
+  "validation": {
+    "builds": "linked 2026-10-24 01:13 after a CMake reconfigure (new Aurora source; llvm-mingw on PATH for windres)",
+    "audio": "mix worker started; underruns=0 over 40 s; queue converges to its 60 ms target as before; SYNC/YIELD mail pattern unchanged",
+    "gpu_cmpr": "verification: 1185 mip levels compared, 0 mismatched texels",
+    "async_disc": "boot through intro skip to the front-end menu at 60 FPS, no read failures",
+    "user": "pending: listening test and a new F8 recording of the same route"
+  },
+  "not_done": "Ubershader (not requested yet); D3D12 texture creation cost on new textures remains."
+}

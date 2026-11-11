@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-24",
+  "game": "RM3E01_00",
+  "symptom": "On entering some rooms, surfaces show solid magenta, or another texture (once the space star field) in place of their own. They sometimes come back right when the room is entered again.",
+  "root_cause": "Raw texture snapshot caches (lib/gx/raw_texture_snapshot_cache.hpp, rawPalettes / rawSnapshots in gx.cpp) skip the byte comparison when the GxGuestWrite generation of the source range is unchanged (generation-skip, ChatGPT commit ad3fcba). Generations advance only through DMA-class notifications (DVD, locked-cache DMA) and the DC range HLE overrides, which sit at Mario Kart addresses (0x801A1600..0x801A16E4). In RM3E01 the translated dcbi/dcbf/dcbst are no-ops and DCInvalidateRange 0x804DF8C8, DCFlushRange 0x804DF8F4, DCStoreRange 0x804DF924, DCFlushRangeNoSync 0x804DF954 and DCZeroRange 0x804DF980 notified nothing. Texture data the CPU writes (resources it decompresses, then flushes) at an address a previous texture with the same size and format used was served from the old snapshot. This was already logged as an open risk in 20261023_gpu_thread_and_cache_fixes.json.",
+  "fix": [
+    "recomp/tools/prepare_prime_runtime_hooks.py: five new overlays, anchored on the original cmplwi r4,0 at each address and on the raw translation hash. A scope guard captures r3/r4 at entry and calls PrimeNotifyGuestDcRange on every return (after DCZeroRange has zeroed the blocks); the original bodies are unchanged.",
+    "runtime/src/hle/os/os_cache.cpp: PrimeNotifyGuestDcRange -> DcRangeOp -> GxNotifyGuestRamDmaWrite (texture and TLUT dirty marking plus the GxGuestWrite generation bump), the same path the Mario Kart overrides use.",
+    "Pipeline subset of build_prime_runtime.ps1: prepare_prime_runtime_hooks.py, emit-build-shards (1 base_common shard + registrations changed), cmake configure, build."
+  ],
+  "validation": {
+    "build": "linked 2026-10-24 ~19:27",
+    "static_check": "lldb disassembly: func_804DF8C8/8F4/924/954/980 each call PrimeNotifyGuestDcRange; in func_804DF980 the call follows memset_zero_32",
+    "tests": "mkw_gx_fifo_storage_tests pass",
+    "user": "pending: revisit the magenta rooms"
+  },
+  "limits": "Guest code that runs its own inline dcbf loops instead of these SDK functions would still be unnotified. If magenta remains, an F7 dump now records per-draw texture size, format, TLUT, guest address and bound host texture.",
+  "followup_floor_flicker": {
+    "symptom": "A few floor textures flicker, as if two textures alternated (reported after the DC overlay).",
+    "evidence": "F5 bursts capture_20261024_202453/202458/202517/202526 (8 frames each). The projected character shadow (pass 4, depth EQUAL, blend ZERO/SRCCOLOR, texmap 7 = 64x64 I4 at a fixed address) binds the GX_CTF_R4 EFB copy (183x124 host) in some frames and the guest-RAM I4 snapshot (64x64) in others, irregularly.",
+    "root_cause": "The 0x804DF8C8 DCInvalidateRange overlay sent GxNotifyGuestRamDmaWrite -> MarkTexObjsDirtyForRange -> InvalidateEfbCopyDestinationsForRange -> GXDestroyCopyTex. The game invalidates the shadow copy destination to read the GPU result, so the copy was destroyed and the draw sampled stale RAM.",
+    "fix": "DCInvalidateRange removed from the overlays (prepare_prime_runtime_hooks.py). It marks a completed DMA, and DVD and locked-cache DMA already notify. DCFlushRange, DCStoreRange, DCFlushRangeNoSync and DCZeroRange keep notifying.",
+    "validation": {
+      "build": "linked 2026-10-24 ~20:40",
+      "static_check": "func_804DF8C8 has no PrimeNotifyGuestDcRange call; func_804DF8F4 keeps it",
+      "user": "pending: the floor flicker, and the magenta textures must stay fixed"
+    },
+    "tools": "F5 = 8-frame draw-dump burst. Each draw now has a '  tex' line written after texture resolution. Analyzer: scratchpad burst_analyze.py.",
+    "result_after_invalidate_removal": "Not sufficient: bursts 203407/203559/203603/203621, taken with the 20:30 build, still alternate between the R4 copy and the RAM snapshot."
+  },
+  "followup_copy_retirement": {
+    "cases": [
+      "Character shadow: GX_CTF_R4 64x64 copies rotating over 0x92103a20/0x92104220/0x92104a20, sampled as I4 by the floor multiply pass.",
+      "Transformation effect (burst 203621, full-screen noise): RGBA8 640x448 screen copies at 0x922210e0/0x92339100, sampled 640x448 f6 from the same addresses but bound to a 640x448 guest-RAM upload, i.e. uninitialised RAM, because the copy had been retired."
+    ],
+    "root_cause": "GxNotifyGuestRamDmaWrite -> MarkTexObjsDirtyForRange -> InvalidateEfbCopyDestinationsForRange retired every EFB copy overlapping a flushed range. RM3E01 flushes large blocks containing those buffers. dcbf writes back only CPU-dirty lines, so on hardware the GPU result in RAM survives. With the new DC overlays every such flush destroyed the GPU-only copy.",
+    "fix": "runtime/src/hle/gx/gx_copy.cpp: each copy destination stores per-4 KiB XXH3 digests of the guest bytes under it at copy time; a flush retires the copy only if a touched page's bytes changed (the CPU really wrote there). Recycled allocations the CPU rewrites still retire their stale copy.",
+    "validation": {
+      "build": "linked 2026-10-24",
+      "tests": "mkw_gx_fifo_storage_tests pass",
+      "user": "pending: floor shadow flicker, transformation noise, magenta textures"
+    }
+  }
+}

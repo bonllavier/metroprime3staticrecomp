@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "request": "Cockpit interactive objects: hovering the pointer must outline the object in red as on Wii (it flooded the view with a green glow, then showed rectangle edges, then nothing)",
+  "effect_sequence": "1) object drawn normally with depth write; 2) A8 copy of its screen rectangle saves the EFB alpha and clears it to 0; 3) the same geometry is redrawn with color off, alpha on, dst alpha 255, depth LEQUAL, no depth write (marks the silhouette in alpha); 4) second A8 copy = silhouette mask; 5) a screen quad samples the mask at offsets and draws the red outline; 6) the saved alpha is restored.",
+  "causes_and_fixes": [
+    {
+      "cause": "Aurora GXCopyTex pushed an alpha clear to the dst-alpha value before any copy made while dst alpha was enabled. Unscissored it filled the whole EFB alpha (bloom mask -> full-screen glow); scissored it filled the copy rectangle, so the mask was the rectangle (red rectangle edges). The hardware has no such clear: dst alpha only affects pixels being drawn.",
+      "fix": "aurora-main/lib/dolphin/gx/GXFrameBuffer.cpp: the clear was removed."
+    },
+    {
+      "cause": "Dst alpha was implemented only through the blend constant (alpha blend Constant/Zero, SetBlendConstant per draw). For the alpha-only marking draws the written alpha came out as 0 (mask copy measured 0-19/255 although the draws rasterized: forcing color on showed the exact silhouette). Making the TEV write alpha 1 instead restored the outline (user-confirmed on the centre panel and the other interactive cockpit objects). The reason the constant path wrote 0 was not identified.",
+      "fix": "ShaderConfig::dstAlpha: when the color blend does not read source alpha (color off, or blend factors without SRCALPHA/INVSRCALPHA), the fragment shader writes the dst-alpha value after the alpha compare and the alpha blend is One/Zero (gx/pipeline.hpp shader_dst_alpha, gx/shader.cpp, gx/gx.cpp to_blend_state). Draws whose color blend reads source alpha keep the blend-constant path."
+    }
+  ],
+  "also_changed": [
+    "gx/shader.cpp: vertex position declared @invariant (equal-depth LEQUAL redraws across different shaders).",
+    "GXPipelineConfigVersion 19 -> 20; gfx/pipeline_cache.cpp migrates version-19 rows (bundled and user caches) by inserting dstAlpha = none and recomputing it, so caches stay warm (4588 rows migrated on the first run).",
+    "Temporary switches removed: WII_COMPILED_DIAG_NO_COPY_DSTALPHA, _NO_MERGE, _MARK_NO_DEPTH, _MARK_COLOR, _MARK_TEV_ALPHA, _SKIP_MARK."
+  ],
+  "performance_note": "The ~27 FPS seen during the investigation came from diagnostic runs with draw merging disabled (WII_COMPILED_DIAG_NO_MERGE); that switch no longer exists.",
+  "validation": {
+    "user": "red outline correct with the TEV-alpha experiment, which the final shader path reproduces generally",
+    "final_build": "linked 2026-10-23 22:22; reaches startup with cache migration; user check of outline and FPS pending"
+  }
+}

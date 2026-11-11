@@ -1,0 +1,41 @@
+// Windows resources for the Metroid Prime 3 PC Port executable: application
+// icon (also loaded at runtime for the SDL window) and the version block shown
+// in Explorer's Properties > Details. Compiled by windres through CMake.
+#include <winver.h>
+#include "prime_port_version.h"
+
+1 ICON "MetroidPrime3PCPort.ico"
+
+// Application manifest (resource 1 of type RT_MANIFEST = 24): runs as the invoking user and declares
+// the supported Windows versions. Executables without one are rare and score worse in antivirus
+// machine-learning models.
+1 24 "prime_port.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION    PRIME_PORT_VERSION_MAJOR,PRIME_PORT_VERSION_MINOR,PRIME_PORT_VERSION_PATCH,0
+ PRODUCTVERSION PRIME_PORT_VERSION_MAJOR,PRIME_PORT_VERSION_MINOR,PRIME_PORT_VERSION_PATCH,0
+ FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
+ FILEFLAGS      0
+ FILEOS         VOS_NT_WINDOWS32
+ FILETYPE       VFT_APP
+ FILESUBTYPE    VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName",      PRIME_PORT_AUTHOR "\0"
+            VALUE "FileDescription",  PRIME_PORT_NAME "\0"
+            VALUE "FileVersion",      PRIME_PORT_VERSION "\0"
+            VALUE "InternalName",     PRIME_PORT_EXECUTABLE "\0"
+            VALUE "LegalCopyright",   "Port created by " PRIME_PORT_AUTHOR ". GPL-3.0. Metroid Prime is a trademark of Nintendo; no game data is included.\0"
+            VALUE "OriginalFilename", PRIME_PORT_EXECUTABLE ".exe\0"
+            VALUE "ProductName",      PRIME_PORT_NAME "\0"
+            VALUE "ProductVersion",   PRIME_PORT_VERSION "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

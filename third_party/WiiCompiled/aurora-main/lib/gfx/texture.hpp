@@ -1,4 +1,6 @@
 #pragma once
+
+#include <atomic>
 #include <dolphin/gx.h>
 
 #include <utility>
@@ -36,6 +38,13 @@ TextureFormatInfo format_info(wgpu::TextureFormat format) noexcept;
 uint64_t calc_texture_size(wgpu::TextureFormat format, uint32_t width, uint32_t height, uint32_t mips) noexcept;
 
 constexpr u32 InvalidTextureFormat = -1;
+// Live texture accounting (diagnostics): count and approximate bytes
+// (w * h * 4, plus a third for mips) of every TextureRef alive.
+extern std::atomic<int64_t> g_liveTextureCount, g_liveTextureBytes;
+inline int64_t approx_texture_bytes(const wgpu::Extent3D& size, uint32_t mips) noexcept {
+  const int64_t base = int64_t(size.width) * size.height * std::max<uint32_t>(size.depthOrArrayLayers, 1) * 4;
+  return mips > 1 ? base + base / 3 : base;
+}
 struct TextureRef {
   wgpu::Texture texture;
   wgpu::TextureView sampleTextureView;
@@ -44,8 +53,12 @@ struct TextureRef {
   wgpu::TextureFormat format;
   uint32_t mipCount;
   u32 gxFormat;
-  bool hasArbitraryMips = false;
+  // Atomic: GPU-decoded CMPR textures get it from a background check.
+  std::atomic<bool> hasArbitraryMips{false};
   bool isReplacement = false;
+  // Texture tags of the source texture (texture_replacement::TextureTag bits), -1 = not yet
+  // looked up; set on the first draw that samples it.
+  std::atomic<int8_t> tagBits{-1};
 
   TextureRef(wgpu::Texture texture, wgpu::TextureView sampleTextureView, wgpu::TextureView attachmentTextureView,
              wgpu::Extent3D size, wgpu::TextureFormat format, uint32_t mipCount, u32 gxFormat)
@@ -55,13 +68,23 @@ struct TextureRef {
   , size(size)
   , format(format)
   , mipCount(mipCount)
-  , gxFormat(gxFormat) {}
+  , gxFormat(gxFormat) {
+    g_liveTextureCount.fetch_add(1, std::memory_order_relaxed);
+    g_liveTextureBytes.fetch_add(approx_texture_bytes(size, mipCount), std::memory_order_relaxed);
+  }
+  ~TextureRef() {
+    g_liveTextureCount.fetch_sub(1, std::memory_order_relaxed);
+    g_liveTextureBytes.fetch_sub(approx_texture_bytes(size, mipCount), std::memory_order_relaxed);
+  }
+  TextureRef(const TextureRef&) = delete;
+  TextureRef& operator=(const TextureRef&) = delete;
 };
 
 TextureHandle new_static_texture_2d(uint32_t width, uint32_t height, uint32_t mips, u32 gxFormat,
                                     ArrayRef<uint8_t> data, bool tlut, const char* label) noexcept;
 TextureHandle new_dynamic_texture_2d(uint32_t width, uint32_t height, uint32_t mips, u32 gxFormat,
-                                     const char* label) noexcept;
+                                     const char* label,
+                                     wgpu::TextureUsage extraUsage = wgpu::TextureUsage::None) noexcept;
 TextureHandle new_render_texture(uint32_t width, uint32_t height, u32 gxFormat, const char* label) noexcept;
 TextureHandle new_conv_texture(uint32_t width, uint32_t height, u32 gxFormat, const char* label) noexcept;
 void write_texture(TextureRef& ref, ArrayRef<uint8_t> data) noexcept;

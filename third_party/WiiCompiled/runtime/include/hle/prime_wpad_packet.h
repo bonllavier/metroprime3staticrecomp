@@ -9,8 +9,8 @@ namespace PrimeWpadPacket {
 // KPADUnifiedWpadStatus: WPADStatus / WPADFSStatus / WPADCLStatus union, then fmt.
 constexpr uint32_t kUnifiedSize = 0x38;
 constexpr uint32_t kUButton = 0x00, kUAccX = 0x02, kUAccY = 0x04, kUAccZ = 0x06, kUObj = 0x08, kUDev = 0x28,
-                   kUErr = 0x29, kUFsStickX = 0x2A, kUFsStickY = 0x2B, kUFsAccX = 0x2C, kUFsAccY = 0x2E,
-                   kUFsAccZ = 0x30, kUClButton = 0x2A, kUClLStickX = 0x2C, kUClLStickY = 0x2E, kUClRStickX = 0x30,
+                   kUErr = 0x29, kUFsAccX = 0x2A, kUFsAccY = 0x2C, kUFsAccZ = 0x2E, kUFsStickX = 0x30,
+                   kUFsStickY = 0x31, kUClButton = 0x2A, kUClLStickX = 0x2C, kUClLStickY = 0x2E, kUClRStickX = 0x30,
                    kUClRStickY = 0x32, kUClTriggerL = 0x34, kUClTriggerR = 0x35, kUFmt = 0x36;
 
 // WPAD device types (WPAD_DEV_*) and the data formats KPAD runs each of them
@@ -25,13 +25,17 @@ constexpr uint8_t kFmtClassicAccDpd = 8;
 constexpr int8_t kWpadErrNone = 0;
 constexpr int8_t kWpadErrNoController = -1;
 
-// Raw accelerometer as WPADStatus carries it: 10 bits, 0x200 at 0 g, 100 per g.
-constexpr float kRawAccZero = 512.0f;
+// Raw accelerometer as WPADStatus carries it: the 10-bit reading minus the
+// remote's 0 g calibration (WPAD 0x804FCBF0 subtracts control block +0x874), so
+// signed around 0. One g is the calibration's gravity unit, kRawAccPerG for the
+// virtual remote (see kCalibration*).
 constexpr float kRawAccPerG = 100.0f;
+constexpr int16_t kCalibrationZero = 0x200;
+constexpr int16_t kCalibrationOneG = kCalibrationZero + static_cast<int16_t>(kRawAccPerG);
 
 inline uint16_t RawAcc(float g) {
-    const float raw = kRawAccZero + g * kRawAccPerG;
-    return static_cast<uint16_t>(std::clamp(raw, 0.0f, 1023.0f));
+    const float raw = std::clamp(g * kRawAccPerG, -512.0f, 511.0f);
+    return static_cast<uint16_t>(static_cast<int16_t>(raw));
 }
 
 inline std::array<uint8_t, 0x38> Encode(const WiiRemoteInput::KpadSample* sample) {
@@ -54,10 +58,18 @@ inline std::array<uint8_t, 0x38> Encode(const WiiRemoteInput::KpadSample* sample
     Write16(addr + kUAccX, RawAcc(-sample->acc[0]));
     Write16(addr + kUAccY, RawAcc(sample->acc[2]));
     Write16(addr + kUAccZ, RawAcc(-sample->acc[1]));
-    // No IR: every DPDObject invalid (x/y at the sensor's out-of-range value).
+    // DPDObject {s16 x, s16 y, u16 size, u8 traceID, u8 pad}: the two sensor-bar
+    // marks when the remote sees them, the rest invalid (out-of-range x/y).
     for (uint32_t i = 0; i < 4; ++i) {
-        Write16(addr + kUObj + i * 8, 0x3FF);
-        Write16(addr + kUObj + i * 8 + 2, 0x3FF);
+        if (sample->irValid && i < 2) {
+            Write16(addr + kUObj + i * 8, static_cast<uint16_t>(std::clamp(sample->irDots[i][0], 0.0f, 1023.0f)));
+            Write16(addr + kUObj + i * 8 + 2, static_cast<uint16_t>(std::clamp(sample->irDots[i][1], 0.0f, 767.0f)));
+            Write16(addr + kUObj + i * 8 + 4, 4);
+            Write8(addr + kUObj + i * 8 + 6, static_cast<uint8_t>(i));
+        } else {
+            Write16(addr + kUObj + i * 8, 0x3FF);
+            Write16(addr + kUObj + i * 8 + 2, 0x3FF);
+        }
     }
     Write8(addr + kUErr, static_cast<uint8_t>(kWpadErrNone));
     if (sample->hasClassic) {
@@ -72,11 +84,12 @@ inline std::array<uint8_t, 0x38> Encode(const WiiRemoteInput::KpadSample* sample
         Write8(addr + kUFmt, kFmtClassicAccDpd);
     } else if (sample->hasNunchuk) {
         Write8(addr + kUDev, kDevFreestyle);
-        // WPADFSStatus: 8-bit stick (centre 128) and 10-bit Nunchuk accelerometer.
+        // WPADFSStatus: s16 Nunchuk accelerometer at +0x2A, then s8 stick at
+        // +0x30 (KPAD 0x804D8F6C sign-extends it; game 0x803C0A24 reads the same).
         Write8(addr + kUFsStickX,
-                       static_cast<uint8_t>(std::clamp(128.0f + sample->stick[0] * 100.0f, 0.0f, 255.0f)));
+                       static_cast<uint8_t>(static_cast<int8_t>(std::clamp(sample->stick[0] * 100.0f, -127.0f, 127.0f))));
         Write8(addr + kUFsStickY,
-                       static_cast<uint8_t>(std::clamp(128.0f + sample->stick[1] * 100.0f, 0.0f, 255.0f)));
+                       static_cast<uint8_t>(static_cast<int8_t>(std::clamp(sample->stick[1] * 100.0f, -127.0f, 127.0f))));
         Write16(addr + kUFsAccX, RawAcc(-sample->nunchukAcc[0]));
         Write16(addr + kUFsAccY, RawAcc(sample->nunchukAcc[2]));
         Write16(addr + kUFsAccZ, RawAcc(-sample->nunchukAcc[1]));

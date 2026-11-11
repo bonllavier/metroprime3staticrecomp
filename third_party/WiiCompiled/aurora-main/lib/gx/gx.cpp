@@ -1,3 +1,4 @@
+#include "../diagnostic_env.hpp"
 #include "gx.hpp"
 #include "producer_profile.hpp"
 #include "raw_texture_snapshot_cache.hpp"
@@ -12,7 +13,10 @@
 #include "../gfx/texture.hpp"
 #include "../gfx/texture_convert.hpp"
 #include "../gfx/texture_replacement.hpp"
+#include "../gfx/texture_upscale.hpp"
+#include "../gfx/post_process.hpp"
 #include "gx_fmt.hpp"
+#include "render_policy.hpp"
 
 #include <absl/container/flat_hash_map.h>
 #include <absl/container/flat_hash_set.h>
@@ -54,6 +58,51 @@ static GXState make_default_gx_state() {
 }
 
 GXState g_gxState = make_default_gx_state();
+std::atomic<bool> g_perPixelLighting{false};
+std::atomic<bool> g_enhancedMetal{false};
+DrawMetalOverride g_drawMetal{};
+std::atomic<bool> g_enhancedMaterials{false};
+std::atomic<bool> g_envMaterial{false};
+std::atomic<bool> g_envBorrowedLights{false};
+std::atomic<bool> g_litRoomMaterial{false};
+std::atomic<bool> g_softHighlights{false};
+std::atomic<bool> g_linearBlend{false};
+std::atomic<bool> g_smoothLightmaps{false};
+std::atomic<bool> g_areaReflections{false};
+std::atomic<bool> g_softShadows{false};
+std::atomic<bool> g_engineLightsOption{false};
+std::atomic<bool> g_extraDynamicLights{false};
+std::atomic<bool> g_lightmapDither{false};
+BorrowedLights g_borrowedLights{};
+EngineEnvLights g_engineEnvLights{};
+namespace {
+std::mutex g_engineLightsMutex;
+std::vector<AuroraEngineLight> g_engineLightsInput;  // game thread writes, GX producer thread copies
+uint64_t g_engineLightsGeneration = 0;
+} // namespace
+void set_engine_lights(const AuroraEngineLight* lights, uint32_t count) {
+  std::lock_guard<std::mutex> lock(g_engineLightsMutex);
+  g_engineLightsInput.assign(lights, lights + (lights != nullptr ? std::min<uint32_t>(count, 512) : 0));
+  ++g_engineLightsGeneration;
+}
+bool take_engine_lights(std::vector<AuroraEngineLight>& out, uint64_t& generation) {
+  std::lock_guard<std::mutex> lock(g_engineLightsMutex);
+  if (generation == g_engineLightsGeneration) return false;
+  out = g_engineLightsInput;
+  generation = g_engineLightsGeneration;
+  return true;
+}
+std::array<std::atomic<uint64_t>, 16> g_materialClasses{};
+// Neutral defaults (see AuroraMaterialExt): colour and highlight multipliers at 1, no star dust.
+std::array<std::array<std::atomic<float>, MaterialExtFloats>, 16> g_materialExt{};
+static const bool g_materialExtNeutral = [] {
+  for (auto& slot : g_materialExt)
+    for (size_t i = 0; i < 7; ++i) slot[i].store(1.0f, std::memory_order_relaxed);
+  return true;
+}();
+std::atomic<float> g_enhancedMetalStrength{0.30f};
+// Defaults: roughness 0.25, metallic 0.62, edge 0.50, detail 1.00 (x255).
+std::atomic<uint32_t> g_enhancedMetalParams{64u | (158u << 8) | (128u << 16) | (255u << 24)};
 
 static wgpu::Sampler sEmptySampler;
 static wgpu::Texture sEmptyTexture;
@@ -554,6 +603,49 @@ gfx::TextureHandle get_tlut_texture(const GXTlutObj_& tlut) {
   return handle;
 }
 
+// Texture replacement variants (aurora_set_texture_replacement_variant): a switch re-resolves only
+// what it changes, the replacement handles it dropped and the cached conversions of the original
+// textures a variant replaces. The raw snapshot caches are locals of the resolve functions below and
+// compare s_variantGeneration on entry; everything else is handled in apply_texture_replacement_variant.
+static u64 s_variantGeneration = 0;
+static std::vector<gfx::TextureHandle> s_variantDroppedHandles;
+
+static bool variant_dropped_handle(const gfx::TextureHandle& handle) noexcept {
+  return handle && std::find(s_variantDroppedHandles.begin(), s_variantDroppedHandles.end(), handle) !=
+                       s_variantDroppedHandles.end();
+}
+
+static bool variant_changed_source(const StaticTextureKey& key, const void* data, size_t size) noexcept {
+  const size_t base = GXGetTexBufferSize(static_cast<u16>(key.width), static_cast<u16>(key.height), key.format, false, 0);
+  return gfx::texture_replacement::variant_changed_texture(key.width, key.height, key.format, data, std::min(base, size));
+}
+
+static void apply_texture_replacement_variant() noexcept {
+  std::vector<gfx::TextureHandle> dropped;
+  if (!gfx::texture_replacement::apply_pending_variant(dropped)) {
+    return;
+  }
+  s_variantDroppedHandles = std::move(dropped);
+  ++s_variantGeneration;
+  const auto changed = [](const auto& item) {
+    const auto& key = item.first;
+    const size_t size = GXGetTexBufferSize(static_cast<u16>(key.width), static_cast<u16>(key.height), key.format, false, 0);
+    return variant_dropped_handle(item.second.handle) || variant_changed_source(key, key.data, size);
+  };
+  absl::erase_if(s_staticTextureSourceCache, changed);
+  absl::erase_if(s_staticPaletteTextureSourceCache,
+                 [](const auto& item) { return variant_dropped_handle(item.second.handle); });
+  absl::erase_if(s_textureObjectCaches, [](const auto& item) { return variant_dropped_handle(item.second.handle); });
+  clear_static_source_front_cache();
+  invalidate_static_texture_cache();
+  for (auto& item : g_gxState.textures) {
+    if (variant_dropped_handle(item.ref)) {
+      item.ref.reset();
+    }
+  }
+  g_gxState.stateDirty = true;
+}
+
 gfx::TextureHandle resolve_static_texture(const GXTexObj_& obj) {
   producer_profile::Scope profile(producer_profile::StaticTexture);
   ZoneScoped;
@@ -565,7 +657,15 @@ gfx::TextureHandle resolve_static_texture(const GXTexObj_& obj) {
   // entry cap evicted at only ~4-5 MiB resident and repeatedly decoded CMPR.
   // Keep the exact-byte validation and 16 MiB source budget, but permit that
   // budget to hold more small sources. LRU promotion uses list splice (O(1)).
-  static RawTextureSnapshotCache<StaticTextureKey,gfx::TextureHandle> rawSnapshots(16*1024*1024,512);
+  // The hangar keeps the 16 MiB budget full (constant evictions); 64 MiB holds its working set.
+  static RawTextureSnapshotCache<StaticTextureKey,gfx::TextureHandle> rawSnapshots(64*1024*1024,2048);
+  static u64 rawVariantGeneration = 0;
+  if (rawVariantGeneration != s_variantGeneration) {
+    rawVariantGeneration = s_variantGeneration;
+    rawSnapshots.EraseIf([](const StaticTextureKey& key, const std::vector<uint8_t>& bytes, const gfx::TextureHandle& handle) {
+      return variant_dropped_handle(handle) || variant_changed_source(key, bytes.data(), bytes.size());
+    });
+  }
   const bool rawSnapshot = obj.no_cache() && obj.data != nullptr;
   const StaticTextureKey rawKey = rawSnapshot ? make_static_texture_key(obj) : StaticTextureKey{};
   const size_t rawKeyHash = rawSnapshot ? absl::Hash<StaticTextureKey>{}(rawKey) : 0;
@@ -575,7 +675,7 @@ gfx::TextureHandle resolve_static_texture(const GXTexObj_& obj) {
   const bool rawGenerationTracked = rawGeneration != kGuestWriteUntracked;
   if (rawSnapshot) {
     static const bool traceSnapshots = [] {
-      const char* value=std::getenv("WII_COMPILED_PRIME_PERFORMANCE_TRACE");
+      const char* value=AURORA_DIAGNOSTIC_ENV("WII_COMPILED_PRIME_PERFORMANCE_TRACE");
       return value && std::strcmp(value,"1")==0;
     }();
     static unsigned traceProbe=0;
@@ -585,7 +685,7 @@ gfx::TextureHandle resolve_static_texture(const GXTexObj_& obj) {
       if (now>=nextReport) {
         nextReport=now+std::chrono::seconds(5);
         const auto stats=rawSnapshots.Stats();
-        Log.info("[prime-raw-cache] lookups={} hits={} misses={} evictions={} replacements={} key_probes={} byte_validations={} generation_hits={} entries={} source_bytes={} source_budget=16777216 entry_limit=512",
+        Log.info("[prime-raw-cache] lookups={} hits={} misses={} evictions={} replacements={} key_probes={} byte_validations={} generation_hits={} entries={} source_bytes={} source_budget=67108864 entry_limit=2048",
                  stats.lookups,stats.hits,stats.misses,stats.evictions,stats.replacements,stats.keyProbes,stats.byteValidations,
                  stats.generationHits,rawSnapshots.EntryCount(),rawSnapshots.ByteSize());
       }
@@ -642,6 +742,16 @@ gfx::TextureHandle resolve_static_texture(const GXTexObj_& obj) {
     const u32 dataSize = GXGetTexBufferSize(static_cast<u16>(obj.width()), static_cast<u16>(obj.height()),
                                             obj.format(), obj.has_mips(),
                                             obj.has_mips() ? static_cast<u8>(obj.mip_count() - 1) : 0);
+    // Load-time Super-xBR upscale (user option). Raw guest objects (Prime loads
+    // every texture through BP registers, flagged no_cache) are covered too: the
+    // raw snapshot cache below keeps the handle while the source bytes are
+    // unchanged and the upscaler caches by content hash across reloads.
+    if (gfx::texture_upscale::enabled() && can_cache_static_texture_upload(obj)) {
+      handle = gfx::texture_upscale::find_cached(obj, {static_cast<const uint8_t*>(obj.data), dataSize});
+    }
+    if (handle) {
+      // fallthrough to the caches below
+    } else {
     static const bool tracePrimeTextureAlloc = std::getenv("WII_COMPILED_TRACE_PRIME_TEXTURE_ALLOC") != nullptr;
     if (tracePrimeTextureAlloc) {
       static unsigned allocations = 0;
@@ -654,6 +764,13 @@ gfx::TextureHandle resolve_static_texture(const GXTexObj_& obj) {
     }
     handle = gfx::new_static_texture_2d(obj.width(), obj.height(), obj.mip_count(), obj.format(),
                                         {static_cast<const uint8_t*>(obj.data), dataSize}, false, nameStr);
+    if (gfx::texture_upscale::enabled() && can_cache_static_texture_upload(obj) &&
+        !g_gxState.copyTextures.contains(obj.data)) {
+      // Upscaled on a worker; the result is swapped into this handle later. EFB copy
+      // destinations read back from RAM change every frame and are left alone.
+      gfx::texture_upscale::schedule(handle, obj, {static_cast<const uint8_t*>(obj.data), dataSize}, false, nameStr);
+    }
+    }
   }
   if (rawSnapshot) {
     const u64 afterGeneration=guest_write_generation(obj.data,rawSize);
@@ -685,23 +802,43 @@ gfx::TextureHandle resolve_static_palette_texture(const GXTexObj_& obj, const GX
   // or the global TLUT generation (which can change on unrelated loads).
   // The game alternates palette contents in the same TMEM slot. Keep several
   // exact byte versions per metadata key so A/B/A does not recreate A forever.
-  static RawTextureSnapshotCache<StaticPaletteTextureKey,gfx::TextureHandle> rawPalettes(8*1024*1024,256,true);
+  // Prime samples several hundred distinct texture/palette pairs per frame in
+  // heavy scenes; 256 entries thrashed the LRU (60% misses, each one a palette
+  // conversion and a new GPU texture). The budget bounds guest source bytes.
+  static RawTextureSnapshotCache<StaticPaletteTextureKey,gfx::TextureHandle> rawPalettes(32*1024*1024,4096,true);
+  static u64 paletteVariantGeneration = 0;
+  if (paletteVariantGeneration != s_variantGeneration) {
+    paletteVariantGeneration = s_variantGeneration;
+    rawPalettes.EraseIf([](const StaticPaletteTextureKey&, const std::vector<uint8_t>&, const gfx::TextureHandle& handle) {
+      return variant_dropped_handle(handle);
+    });
+  }
   const bool rawSnapshot=(obj.no_cache() || tlut.no_cache()) && obj.data && tlut.data;
   auto rawKey=rawSnapshot ? make_static_palette_texture_key(obj,tlut) : StaticPaletteTextureKey{};
   rawKey.texture.texDataVersion=0;rawKey.tlutDataVersion=0;
-  const size_t rawKeyHash=rawSnapshot ? absl::Hash<StaticPaletteTextureKey>{}(rawKey) : 0;
+  size_t rawKeyHash=0;
   const u32 rawSize=rawSnapshot ? GXGetTexBufferSize(static_cast<u16>(obj.width()),static_cast<u16>(obj.height()),
       obj.format(),obj.has_mips(),obj.has_mips() ? static_cast<u8>(obj.mip_count()-1) : 0) : 0;
   const size_t paletteSize=rawSnapshot ? static_cast<size_t>(tlut.numEntries)*2 : 0;
   const u64 textureGeneration=rawSnapshot ? guest_write_generation(obj.data,rawSize) : kGuestWriteUntracked;
-  const u64 paletteGeneration=rawSnapshot ? guest_write_generation(tlut.data,paletteSize) : kGuestWriteUntracked;
-  const bool rawGenerationsTracked=textureGeneration!=kGuestWriteUntracked && paletteGeneration!=kGuestWriteUntracked;
+  // Identify the palette by content. Prime alternates palettes A/B/A in the
+  // same TMEM range, so a load counter keyed every reload as a new texture
+  // (60% misses with 4096 entries). Palettes are at most 32 KiB and usually
+  // 32/512 bytes, so the digest is cheap next to a texture comparison. The
+  // 64-bit digest stands in for a palette generation: equal content may skip
+  // the palette byte comparison while texture bytes keep their own tracking.
+  const u64 paletteDigest=rawSnapshot ? static_cast<u64>(digest_source_bytes(tlut.data,paletteSize)) : 0;
+  const u64 paletteGeneration=paletteDigest;
+  const bool rawGenerationsTracked=textureGeneration!=kGuestWriteUntracked;
   if(rawSnapshot) {
-    // Filter alternating palettes cheaply before comparing full index images.
-    // Hash collisions are safe: Find still compares both complete byte spans.
-    rawKey.tlutDataVersion=static_cast<uint32_t>(digest_source_bytes(tlut.data,paletteSize));
+    static uint64_t paletteDigestSkips=0,paletteDigestCalls=0;
+    ++paletteDigestCalls;
+    rawKey.tlutDataVersion=static_cast<uint32_t>(paletteDigest);
+    // Hash the complete key: hashed before tlutDataVersion was set, every
+    // palette version of one texture shared a bucket (~200 probes per lookup).
+    rawKeyHash=absl::Hash<StaticPaletteTextureKey>{}(rawKey);
     static const bool traceSnapshots=[] {
-      const char* value=std::getenv("WII_COMPILED_PRIME_PERFORMANCE_TRACE");
+      const char* value=AURORA_DIAGNOSTIC_ENV("WII_COMPILED_PRIME_PERFORMANCE_TRACE");
       return value && std::strcmp(value,"1")==0;
     }();
     static unsigned traceProbe=0;
@@ -711,9 +848,9 @@ gfx::TextureHandle resolve_static_palette_texture(const GXTexObj_& obj, const GX
       if(now>=nextReport) {
         nextReport=now+std::chrono::seconds(5);
         const auto stats=rawPalettes.Stats();
-        Log.info("[prime-raw-palette-cache] lookups={} hits={} misses={} evictions={} replacements={} key_probes={} byte_validations={} generation_hits={} entries={} source_bytes={} source_budget=8388608 entry_limit=256",
+        Log.info("[prime-raw-palette-cache] lookups={} hits={} misses={} evictions={} replacements={} key_probes={} byte_validations={} generation_hits={} palette_digest_skips={} palette_digest_calls={} entries={} source_bytes={} source_budget=33554432 entry_limit=4096",
                  stats.lookups,stats.hits,stats.misses,stats.evictions,stats.replacements,stats.keyProbes,stats.byteValidations,
-                 stats.generationHits,rawPalettes.EntryCount(),rawPalettes.ByteSize());
+                 stats.generationHits,paletteDigestSkips,paletteDigestCalls,rawPalettes.EntryCount(),rawPalettes.ByteSize());
       }
     }
     if(auto handle=rawPalettes.Find(rawKey,obj.data,rawSize,tlut.data,paletteSize,rawKeyHash,true,
@@ -763,15 +900,24 @@ gfx::TextureHandle resolve_static_palette_texture(const GXTexObj_& obj, const GX
     if (converted.data.empty()) {
       return {};
     }
-    handle =
-        gfx::new_static_texture_2d(obj.width(), obj.height(), obj.mip_count(), GX_TF_RGBA8_PC,
-                                   {converted.data.data(), converted.data.size()}, false, "GX Static Palette Texture");
-    handle->hasArbitraryMips = converted.hasArbitraryMips;
+    if (gfx::texture_upscale::enabled()) {
+      handle = gfx::texture_upscale::find_cached_rgba(obj, converted);
+    }
+    if (!handle) {
+      handle =
+          gfx::new_static_texture_2d(obj.width(), obj.height(), obj.mip_count(), GX_TF_RGBA8_PC,
+                                     {converted.data.data(), converted.data.size()}, false, "GX Static Palette Texture");
+      handle->hasArbitraryMips = converted.hasArbitraryMips;
+      if (gfx::texture_upscale::enabled() && !converted.hasArbitraryMips &&
+          !g_gxState.copyTextures.contains(obj.data)) {
+        gfx::texture_upscale::schedule(handle, obj, {converted.data.data(), converted.data.size()}, true,
+                                       "GX Static Palette Texture");
+      }
+    }
   }
   if (rawSnapshot) {
     const u64 afterTextureGeneration=guest_write_generation(obj.data,rawSize);
-    const u64 afterPaletteGeneration=guest_write_generation(tlut.data,paletteSize);
-    if(!rawGenerationsTracked || (afterTextureGeneration==textureGeneration && afterPaletteGeneration==paletteGeneration))
+    if(!rawGenerationsTracked || afterTextureGeneration==textureGeneration)
       rawPalettes.Store(rawKey,obj.data,rawSize,handle,tlut.data,paletteSize,rawKeyHash,true,
                         textureGeneration,paletteGeneration,rawGenerationsTracked);
   }
@@ -1063,6 +1209,10 @@ gfx::ClipRect map_logical_scissor(const gfx::ClipRect& logicalScissor) noexcept 
 void set_logical_viewport(const gfx::Viewport& viewport) noexcept {
   const bool changed = viewport != g_gxState.logicalViewport;
   g_gxState.logicalViewport = viewport;
+  if (changed) {
+    gfx::post::note_viewport(viewport.left, viewport.top, viewport.width, viewport.height, viewport.znear,
+                             viewport.zfar, static_cast<float>(logical_fb_size().x));
+  }
   g_gxState.stateDirty = g_gxState.stateDirty || changed;
   apply_logical_render_state();
 }
@@ -1240,8 +1390,41 @@ void set_display_copy_present_source() noexcept {
     return;
   }
 
-  g_gxState.displayCopyBindGroup = webgpu::create_copy_bind_group(g_gxState.displayCopyTexture->sampleTextureView,
-                                                                  webgpu::present_source().sampler);
+  // Every display copy lands here (once per frame). Creating a bind group takes Dawn's device lock, which
+  // the frame worker holds while it encodes and the presenter while it presents, so the decoding thread
+  // stalled on it; reuse the group while the copy texture and sampler stay the same. The game alternates
+  // display copies between XFBs, so a single entry missed every frame (59 % of the decoder blocked
+  // there, F8 2026-10-30 23:58): keep a few. The cached handles keep both objects alive, so a recycled
+  // address can never match a different texture; at most kEntries old copy textures stay alive.
+  // Never destroyed: releasing Dawn objects from a static destructor could run after Dawn unloads.
+  struct CopyGroupEntry {
+    wgpu::TextureView view;
+    wgpu::Sampler sampler;
+    wgpu::BindGroup group;
+  };
+  constexpr size_t kEntries = 4;
+  struct CopyGroupCache {
+    std::array<CopyGroupEntry, kEntries> entries;
+    size_t next = 0;  // round-robin replacement
+  };
+  static auto* cache = new CopyGroupCache{};
+  const auto& view = g_gxState.displayCopyTexture->sampleTextureView;
+  const auto& sampler = webgpu::present_source().sampler;
+  CopyGroupEntry* hit = nullptr;
+  for (auto& entry : cache->entries) {
+    if (entry.group && entry.view.Get() == view.Get() && entry.sampler.Get() == sampler.Get()) {
+      hit = &entry;
+      break;
+    }
+  }
+  if (hit == nullptr) {
+    hit = &cache->entries[cache->next];
+    cache->next = (cache->next + 1) % kEntries;
+    hit->group = webgpu::create_copy_bind_group(view, sampler);
+    hit->view = view;
+    hit->sampler = sampler;
+  }
+  g_gxState.displayCopyBindGroup = hit->group;
   webgpu::set_present_source_override(g_gxState.displayCopyBindGroup, g_gxState.displayCopyTexture->texture,
                                       g_gxState.displayCopyTexture->size, g_gxState.displayCopyTexture->format);
 }
@@ -1283,6 +1466,75 @@ void evict_copy_texture(const void* dest) noexcept {
   if (changed) {
     mark_copy_texture_cache_changed();
   }
+}
+
+void enforce_copy_texture_budget() noexcept {
+  static const u64 budgetBytes = [] {
+    u64 mb = 512;
+    if (const char* value = std::getenv("WII_COMPILED_AURORA_COPY_BUDGET_MB")) {
+      const auto parsed = std::strtoull(value, nullptr, 10);
+      if (parsed >= 64 && parsed <= 16384) mb = parsed;
+    }
+    return mb << 20;
+  }();
+  constexpr u32 kSweepFrames = 60;   // once a second
+  constexpr u32 kIdleFrames = 300;   // never touch a copy used in the last 5 s
+  static u32 lastSweep = 0;
+  const u32 frame = gfx::current_frame();
+  if (frame - lastSweep < kSweepFrames) return;
+  lastSweep = frame;
+
+  const size_t sparesDropped = prune_copy_texture_pool_spares(8, kIdleFrames);
+  absl::flat_hash_set<const void*> seen;
+  u64 bytes = 0;
+  const auto textureBytes = [](const gfx::TextureHandle& handle) {
+    return static_cast<u64>(handle->size.width) * handle->size.height * 4u;
+  };
+  const auto count = [&](const GXState::CopyTextureRef& ref) {
+    if (ref.handle && seen.insert(ref.handle.get()).second) bytes += textureBytes(ref.handle);
+  };
+  for (const auto& [_, ref] : g_gxState.copyTextures) count(ref);
+  for (const auto& [_, ref] : g_gxState.copyTextureCache) count(ref);
+  bytes += copy_texture_pool_bytes(seen);
+  static u32 lastReport = 0;
+  if (lastReport == 0 || frame - lastReport >= 3600) {  // once a minute
+    lastReport = frame;
+    Log.info("[copy-budget] {} MiB in {} copy destinations ({} keyed copies), budget {} MiB; all live textures: {} ({} MiB)",
+             bytes >> 20, g_gxState.copyTextures.size(), g_gxState.copyTextureCache.size(), budgetBytes >> 20,
+             gfx::g_liveTextureCount.load(std::memory_order_relaxed),
+             gfx::g_liveTextureBytes.load(std::memory_order_relaxed) >> 20);
+  }
+  if (bytes <= budgetBytes) return;
+
+  // Per destination: how long it has been idle and the bytes only it keeps alive.
+  absl::flat_hash_map<const void*, policy::CopyDestination> byDest;
+  absl::flat_hash_map<const void*, absl::flat_hash_set<const void*>> handlesOf;
+  const auto note = [&](const void* dest, const GXState::CopyTextureRef& ref) {
+    auto& entry = byDest[dest];
+    entry.id = dest;
+    const u32 last = std::max(ref.lastSampledFrame, ref.lastProducedFrame);
+    const u32 idle = frame - last;
+    entry.idleFrames = entry.bytes == 0 && entry.idleFrames == 0 ? idle : std::min(entry.idleFrames, idle);
+    if (ref.handle && handlesOf[dest].insert(ref.handle.get()).second) entry.bytes += textureBytes(ref.handle);
+  };
+  for (const auto& [dest, ref] : g_gxState.copyTextures) note(dest, ref);
+  for (const auto& [key, ref] : g_gxState.copyTextureCache) note(key.dest, ref);
+  std::vector<policy::CopyDestination> destinations;
+  destinations.reserve(byDest.size());
+  for (const auto& [_, entry] : byDest) destinations.push_back(entry);
+  const auto plan = policy::plan_copy_evictions(std::move(destinations), bytes, budgetBytes, kIdleFrames);
+  size_t evicted = 0;
+  u32 youngest = 0;
+  for (const void* dest : plan) {
+    const auto& entry = byDest[dest];
+    evict_copy_texture(dest);
+    bytes -= std::min<u64>(bytes, entry.bytes);
+    ++evicted;
+    youngest = entry.idleFrames;
+  }
+  Log.info("[copy-budget] {} MiB of EFB copy textures over the {} MiB budget: evicted {} idle destinations (youngest idle {} s), "
+           "dropped {} pool spares, {} MiB remain",
+           (bytes + 0) >> 20, budgetBytes >> 20, evicted, youngest / 60, sparesDropped, bytes >> 20);
 }
 
 static void mark_copy_texture_cache_changed() noexcept {
@@ -1357,13 +1609,29 @@ GXState::CopyTextureRef* find_copy_texture_for_texobj(const GXTexObj_& obj) noex
     mark_copy_texture_sampled(obj.data, exact->second);
     return &exact->second;
   }
+  if (exact != g_gxState.copyTextures.end() && exact->second) {
+    // Fidelity detector: a texture starts exactly at an EFB copy but its format or size does not
+    // match, so it reads guest RAM, which a GPU-only copy never wrote (the scan visor's C8 view
+    // of its A8 ID copy was this). Recycled guest memory also lands here; log each shape once.
+    static absl::flat_hash_set<u64> reported;
+    const auto& copy = exact->second;
+    const u64 shape = (u64{static_cast<u32>(copy.format)} << 56) | (u64{obj.format()} << 48) |
+                      (u64{copy.width} << 36) | (u64{copy.height} << 24) | (u64{obj.width()} << 12) | obj.height();
+    if (reported.size() < 64 && reported.insert(shape).second) {
+      Log.warn("[render-fidelity] texture at an EFB copy does not match it: copy format 0x{:x} {}x{}, sampled as "
+               "0x{:x} {}x{}; reading guest RAM instead",
+               static_cast<u32>(copy.format), copy.width, copy.height, obj.format(), obj.width(), obj.height());
+    }
+  }
   // A guest allocation can be recycled while an old GPU-only EFB copy still exists.
   return nullptr;
 }
 
 void resolve_sampled_textures(const ShaderInfo& info) noexcept {
+  apply_texture_replacement_variant();
   producer_profile::Scope profile(producer_profile::Textures);
   ZoneScoped;
+  gfx::texture_upscale::apply_completed();
 
   for (u32 i = 0; i < MaxTextures; ++i) {
     if (!info.sampledTextures.test(i)) {
@@ -1552,7 +1820,7 @@ static inline wgpu::CompareFunction to_compare_function(GXCompare func) {
 }
 
 static inline wgpu::BlendState to_blend_state(GXBlendMode mode, GXBlendFactor srcFac, GXBlendFactor dstFac,
-                                              GXLogicOp op, GXPixelFmt pixelFmt, u32 dstAlpha) {
+                                              GXLogicOp op, GXPixelFmt pixelFmt, u32 dstAlpha, bool shaderDstAlpha) {
   wgpu::BlendComponent colorBlendComponent;
   switch (mode) {
     DEFAULT_FATAL("unsupported blend mode {}", underlying(mode));
@@ -1642,7 +1910,13 @@ static inline wgpu::BlendState to_blend_state(GXBlendMode mode, GXBlendFactor sr
     break;
   }
   wgpu::BlendComponent alphaBlendComponent;
-  if (dstAlpha != UINT32_MAX) {
+  if (shaderDstAlpha) {
+    alphaBlendComponent = wgpu::BlendComponent{
+        .operation = wgpu::BlendOperation::Add,
+        .srcFactor = wgpu::BlendFactor::One,
+        .dstFactor = wgpu::BlendFactor::Zero,
+    };
+  } else if (dstAlpha != UINT32_MAX) {
     alphaBlendComponent = wgpu::BlendComponent{
         .operation = wgpu::BlendOperation::Add,
         .srcFactor = wgpu::BlendFactor::Constant,
@@ -1716,7 +1990,7 @@ wgpu::RenderPipeline build_pipeline(const PipelineConfig& config, ArrayRef<wgpu:
       .depthCompare = config.depthCompare ? to_compare_function(config.depthFunc) : wgpu::CompareFunction::Always,
   };
   const auto blendState = to_blend_state(config.blendMode, config.blendFacSrc, config.blendFacDst, config.blendOp,
-                                         config.pixelFmt, config.dstAlpha);
+                                         config.pixelFmt, config.dstAlpha, config.shaderConfig.dstAlpha != UINT32_MAX);
   const std::array colorTargets{wgpu::ColorTargetState{
       .format = g_graphicsConfig.surfaceConfiguration.format,
       .blend = &blendState,
@@ -1933,10 +2207,12 @@ void populate_pipeline_config(PipelineConfig& config, GXPrimitive primitive, GXV
     config.shaderConfig.indStages[i] = g_gxState.indStages[i];
   }
   config.shaderConfig.numIndStages = g_gxState.numIndStages;
+  bool anyLighting = false;
   for (u8 i = 0; i < MaxColorChannels; ++i) {
     const auto& cc = g_gxState.colorChannelConfig[i];
     if (cc.lightingEnabled) {
       config.shaderConfig.colorChannels[i] = cc;
+      anyLighting = true;
     } else {
       // Only matSrc matters when lighting disabled
       config.shaderConfig.colorChannels[i] = {
@@ -1944,11 +2220,26 @@ void populate_pipeline_config(PipelineConfig& config, GXPrimitive primitive, GXV
       };
     }
   }
+  // Per-pixel lighting only changes the shader of lit materials; unlit draws keep
+  // the vertex-mode key so the shipped pipeline seed still covers them.
+  config.shaderConfig.perPixelLighting =
+      (anyLighting && g_perPixelLighting.load(std::memory_order_relaxed)) ? 1 : 0;
   for (u8 i = 0; i < MaxTexCoord; ++i) {
     config.shaderConfig.tcgs[i].src = static_cast<GXTexGenSrc>(GX_TG_TEX0 + i);
   }
   for (u8 i = 0; i < g_gxState.numTexGens; ++i) {
     config.shaderConfig.tcgs[i] = g_gxState.tcgs[i];
+  }
+  // Enhanced metal: Prime's metallic materials reflect an environment texture addressed by the
+  // normal (GX_TG_NRM texgen). Only per-pixel-lit materials get the variant.
+  config.shaderConfig.enhancedMetal = 0;
+  if (config.shaderConfig.perPixelLighting != 0 && g_enhancedMetal.load(std::memory_order_relaxed)) {
+    for (u8 i = 0; i < g_gxState.numTexGens; ++i) {
+      if (g_gxState.tcgs[i].src == GX_TG_NRM) {
+        config.shaderConfig.enhancedMetal = 1;
+        break;
+      }
+    }
   }
   config.shaderConfig.alphaCompare = {};
   if (g_gxState.alphaCompare) {
@@ -1969,6 +2260,22 @@ void populate_pipeline_config(PipelineConfig& config, GXPrimitive primitive, GXV
   config.depthUpdate = g_gxState.depthUpdate;
   config.alphaUpdate = effective_alpha_update(g_gxState.pixelFmt, g_gxState.alphaUpdate);
   config.colorUpdate = g_gxState.colorUpdate;
+  config.shaderConfig.dstAlpha = shader_dst_alpha(config);
+  const u32 dstAlphaValue = config.dstAlpha;
+  normalize_pipeline_key(config);
+  if (dstAlphaValue != UINT32_MAX && dstAlphaValue != 0 && config.alphaUpdate &&
+      config.shaderConfig.dstAlpha == UINT32_MAX) {
+    // Fidelity detector: a nonzero destination alpha with a colour blend that reads source alpha
+    // takes the blend-constant path, which wrote alpha 0 in RM3E01 (interaction highlight). Log
+    // each value/blend once so an affected effect can be found.
+    static absl::flat_hash_set<u32> reported;
+    const u32 key = (dstAlphaValue << 16) | (static_cast<u32>(config.blendFacSrc) << 8) |
+                    static_cast<u32>(config.blendFacDst);
+    if (reported.size() < 32 && reported.insert(key).second) {
+      Log.warn("[render-fidelity] dst alpha {} with blend src {} dst {} uses the blend-constant path",
+               dstAlphaValue, static_cast<u32>(config.blendFacSrc), static_cast<u32>(config.blendFacDst));
+    }
+  }
 }
 
 static TextureBindGroupCacheKey make_texture_bind_group_cache_key(const ShaderInfo& info) noexcept {
@@ -2217,16 +2524,25 @@ static std::pair<wgpu::FilterMode, wgpu::MipmapFilterMode> wgpu_filter_mode(GXTe
 }
 
 static u16 wgpu_aniso(GXAnisotropy aniso) {
+  aurora::gx::policy::AnisoRequest request = aurora::gx::policy::AnisoRequest::One;
   switch (aniso) {
     DEFAULT_FATAL("invalid aniso {}", static_cast<int>(aniso));
   case GX_ANISO_1:
+    request = aurora::gx::policy::AnisoRequest::One;
+    break;
   case GX_MAX_ANISOTROPY:
-    return 1;
+    request = aurora::gx::policy::AnisoRequest::Max;
+    break;
   case GX_ANISO_2:
-    return std::max<u16>(aurora::webgpu::g_graphicsConfig.textureAnisotropy / 2, 1);
+    request = aurora::gx::policy::AnisoRequest::Two;
+    break;
   case GX_ANISO_4:
-    return std::max<u16>(aurora::webgpu::g_graphicsConfig.textureAnisotropy, 1);
+    request = aurora::gx::policy::AnisoRequest::Four;
+    break;
   }
+  // forceTextureAnisotropy (F1 > Video) wins over the game's request; see render_policy.hpp.
+  return aurora::gx::policy::effective_anisotropy(aurora::webgpu::g_graphicsConfig.forceTextureAnisotropy,
+                                      aurora::webgpu::g_graphicsConfig.textureAnisotropy, request);
 }
 
 static bool supports_wgpu_aniso(wgpu::FilterMode magFilter, wgpu::FilterMode minFilter,

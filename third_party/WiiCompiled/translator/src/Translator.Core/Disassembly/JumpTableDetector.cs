@@ -6,6 +6,17 @@ using Translator.Core.Loading;
 
 namespace Translator.Core.Disassembly;
 
+/// <summary>
+/// Jump tables supplied by a caller that knows them exactly (relocatable modules
+/// carry one relocation per table entry), keyed by bctr address. When a bctr is
+/// listed, its targets replace the heuristic bound search. Empty by default.
+/// </summary>
+public static class JumpTableOverrides
+{
+    public static IReadOnlyDictionary<uint, IReadOnlyList<uint>> Tables { get; set; } =
+        new Dictionary<uint, IReadOnlyList<uint>>();
+}
+
 internal static class JumpTableDetector
 {
     private const int MaxBacktrackInstructions = 192;
@@ -24,6 +35,14 @@ internal static class JumpTableDetector
         if (!indexByAddress.TryGetValue(bctrAddress, out var bctrIndex))
         {
             return false;
+        }
+
+        if (JumpTableOverrides.Tables.TryGetValue(bctrAddress, out var known))
+        {
+            if (known.Count == 0 || known.Any(target => target < functionStart || target >= functionEnd || (target & 3) != 0))
+                throw new InvalidOperationException($"Jump table override for {bctrAddress:X8} leaves the function");
+            targets = known.Distinct().ToList();
+            return true;
         }
 
         var mtctrIndex = FindPrevious(ordered, bctrIndex, "mtctr", limit: 6);

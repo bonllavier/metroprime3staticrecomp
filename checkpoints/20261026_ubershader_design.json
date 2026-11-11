@@ -1,0 +1,7 @@
+{
+  "date": "2026-10-26",
+  "stage_done": "1: pipeline choice policy + compile priorities with 6 unit tests; design doc docs/ubershader_diseno.md",
+  "stage_pending": "2: uber WGSL generator + GPU equivalence test; 3: pipeline plumbing; 4: F1 option; 5: user QA",
+  "tests": "tools/test_graphics.ps1 all passed (gx_fifo 258, blob_cache 8, render_policy 18, runtime ctest 22, python icons)",
+  "game_behaviour_changed": false
+}

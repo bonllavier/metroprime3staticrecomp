@@ -20,6 +20,10 @@ void VI_HLE_WaitForNextRetracePoll();
 void VI_HLE_PresentFrame(bool presentedXfb, bool paceToRetrace);
 bool VI_HLE_IsAdvancingRetrace();
 void VI_HLE_SetXfbReady(uint32_t xfbAddr); // Called by GXCopyDisp to signal EFB→XFB copy
+// Prime: a decoded XFB copy may be presented before the next retrace
+// (WII_COMPILED_PRIME_PRESENT_ON_COPY=1). Any thread; presentation itself
+// happens at the guest thread's next safe retrace-poll point.
+void VI_HLE_NotePrimeXfbCopied(uint32_t xfbAddr);
 void Audio_HLE_Tick(CpuContext* ctx, uint32_t deltaMicros);
 void Audio_HLE_Poll(CpuContext* ctx);
 // Deferred twin of Audio_HLE_Poll for the long host waits that already service

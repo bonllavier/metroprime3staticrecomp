@@ -30,7 +30,7 @@ def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--probe',type=Path,required=True);ap.add_argument('--capture',type=Path,required=True);ap.add_argument('--checkpoint',type=Path,required=True)
     a=ap.parse_args();probe=json.loads(a.probe.read_text(encoding='utf-8-sig'))
-    exe=ROOT/'recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe';log=Path(probe['log'])
+    exe=ROOT/'recomp/build/RM3E01_00_runtime_link_probe/Corruption_3 PC.exe';log=Path(probe['log'])
     assert sha(exe)==probe['executable_sha256'] and sha(log)==probe['log_sha256']
     text=log.read_text(encoding='utf-8',errors='replace')
     assert probe['alive_at_deadline'] and probe['gpu_validation_requested'] and not probe['failure_logged']

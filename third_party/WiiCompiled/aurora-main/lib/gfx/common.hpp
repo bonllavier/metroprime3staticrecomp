@@ -227,9 +227,11 @@ private:
 namespace aurora::gfx {
 inline constexpr bool UseTextureBuffer = false;
 inline constexpr uint64_t UniformBufferSize = 25165824;  // 24mb
-inline constexpr uint64_t VertexBufferSize = 3145728;    // 3mb
-inline constexpr uint64_t IndexBufferSize = 2097152;     // 2mb
-inline constexpr uint64_t StorageBufferSize = 8388608;   // 8mb
+// Prime's heavy scenes filled 3 MiB of vertices every frame, forcing mid-frame
+// staging submits on the GX producer thread.
+inline constexpr uint64_t VertexBufferSize = 16777216;   // 16mb
+inline constexpr uint64_t IndexBufferSize = 8388608;     // 8mb
+inline constexpr uint64_t StorageBufferSize = 33554432;  // 32mb
 inline constexpr uint64_t TextureUploadSize = 25165824;  // 24mb
 
 extern AuroraStats g_stats;
@@ -285,6 +287,10 @@ void abort_frame() noexcept;
 void end_frame(const wgpu::CommandEncoder& cmd);
 void end_batch(const wgpu::CommandEncoder& cmd);
 uint32_t current_frame() noexcept;
+// Index of the render pass draws are currently recorded into (diagnostics).
+uint32_t current_render_pass_index() noexcept;
+// CPU view of vertex bytes pushed this frame (diagnostics).
+const uint8_t* staged_vertex_data(const Range& range) noexcept;
 
 // One frame's recorded render passes, detached from the guest-visible
 // recording state. The contents are private to common.cpp.
@@ -314,6 +320,12 @@ void seal_frame(SealedFrame& out) noexcept;
 // Encode a sealed frame. Never touches the producer-visible recording state,
 // so this may run concurrently with the producer's FIFO drains.
 void render(SealedFrame& frame, wgpu::CommandEncoder& cmd, int32_t interpolatedFrame = -1, bool finalize = true);
+// Frame interpolation: the sealed passes begin at a game frame start (the previous seal carried its
+// passes after the display copy here). Only then can inserted images replay the frame whole.
+bool sealed_frame_starts_game_frame(const SealedFrame& frame) noexcept;
+// The sealed passes end at their last display copy; the rest moved to the next batch.
+bool sealed_frame_ends_at_display_copy(const SealedFrame& frame) noexcept;
+uint32_t sealed_frame_carried_out_draws(const SealedFrame& frame) noexcept;
 
 // Encode the frame that is still being recorded. Only for the synchronous
 // EFB-readback split path, which runs on the producer thread.
@@ -379,6 +391,13 @@ template <typename State>
 const State& get_state();
 template <typename DrawData>
 void push_draw_command(DrawData data);
+// Tags the current render pass with a perspective camera (post-process scene snapshot).
+void note_pass_camera(float a, float b, float znear, float zfar) noexcept;
+// A display copy (GXCopyDisp) just ended a game frame: the pass that follows starts the next one.
+void note_display_copy() noexcept;
+// The copy just recorded (GXCopyTex) is the game's glow source: soften it after the resolve by the
+// copy's scale over the game's own size (post::soften_copy).
+void note_resolve_soften(float scaleX, float scaleY) noexcept;
 template <typename DrawData>
 DrawData* get_last_draw_command();
 

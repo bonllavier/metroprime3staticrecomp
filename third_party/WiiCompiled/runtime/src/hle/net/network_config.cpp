@@ -193,6 +193,13 @@ int32_t HandleKdIoctl(uint32_t cmd, uint32_t inBuf, uint32_t inLen, uint32_t out
         // this like Dolphin does (unchanged output) leaks cmd 3's zero result
         // into MKW's post-resume probe and makes the SDK panic. Preserve the
         // two pending startup probes, then report success once ready.
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        // Metroid Prime 3 probes the scheduler once, from the Game Select
+        // screen; the -42 meant for Mario Kart's boot cycle surfaced there as
+        // "WiiConnect24 cannot be used ... Error Code: 109042" every launch.
+        WriteReturn(outBuf, outLen, 0);
+        return 0;
+#endif
         if (g_kdTrySuspendPhase == KdTrySuspendPhase::Boot) {
             g_kdBootProbeSeen = true;
             WriteReturn(outBuf, outLen, -42);

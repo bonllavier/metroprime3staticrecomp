@@ -3,6 +3,11 @@
 #include "isa/big_endian.h"
 #include "gx_internal.h"
 
+#include <dolphin/gx/GXAurora.h>
+
+#include <array>
+#include <cstring>
+
 // Shared GX command-stream helpers used verbatim by gx_fifo.cpp, gx_dl.cpp and gx_vertex.cpp
 // instead of forked per-file copies; genuine per-caller differences are explicit parameters here.
 // Header-inline throughout: the shipped clang/llvm-mingw build has no LTO across runtime shards,
@@ -315,6 +320,9 @@ inline bool PackIndexedAttrData(const uint8_t* srcBase, uint32_t stride, uint32_
     return true;
 }
 
+// gx_dl.cpp: the decoder no longer holds a by-value copy of this attribute's array.
+extern "C" void GxForgetCopiedArray(uint32_t attr);
+
 // Binds the guest XF array (position/normal matrices, lights) a GX_LOAD_INDX_*
 // packet indexes into, so aurora can resolve the index itself.
 inline bool ApplyIndexedXfArrayForPacket(uint8_t cmd, uint32_t value) {
@@ -342,6 +350,46 @@ inline bool ApplyIndexedXfArrayForPacket(uint8_t cmd, uint32_t value) {
     }
 
     GXSetArray(static_cast<GXAttr>(attr), hostPtr, span, static_cast<uint8_t>(arr.stride));
+    GxForgetCopiedArray(static_cast<uint32_t>(attr));
+    return true;
+}
+
+// The same GX_LOAD_INDX_* packet as an immediate XF load: the matrix words are read from guest
+// memory now and travel in the packet. With the asynchronous decoder, ApplyIndexedXfArrayForPacket
+// only hands aurora a pointer and the words were read when the decoder got there; the game had
+// often written the next frame's matrices by then (Bryyo lava: its texture matrices scroll the
+// surface, which jumped between two positions and flickered, 2026-11-01). Same XF memory writes
+// (copy_xf_data) as the indexed form. False when the array cannot be read; then use the old path.
+inline bool SubmitIndexedXfImmediate(uint8_t cmd, uint32_t value) {
+    const int attr = GX_POS_MTX_ARRAY +
+                     (((cmd & GxCmd::GX_OPCODE_MASK_CMD) - GxCmd::GX_LOAD_INDX_A_CMD) / 0x08);
+    if (attr < GX_POS_MTX_ARRAY || attr > GX_LIGHT_ARRAY) {
+        return false;
+    }
+    const uint32_t index = value >> 16;
+    const uint32_t words = ((value >> 12) & 0x0fu) + 1u;
+    const uint32_t xfAddress = value & 0x0fffu;
+    const auto& arr = g_hleGxState.vtxArray[attr];
+    if (arr.base == 0 || arr.stride == 0) {
+        return false;
+    }
+    const uint32_t address = arr.base + index * arr.stride;
+    const uint32_t bytes = words * 4u;
+    if (!Memory::Contains(address, bytes)) {
+        return false;
+    }
+    const auto* source = static_cast<const uint8_t*>(GuestToHostPtr(address, bytes));
+    if (!source) {
+        return false;
+    }
+    std::array<uint8_t, 5 + 16 * 4> packet{};
+    packet[0] = 0x10;  // GX_LOAD_XF_REG
+    packet[1] = static_cast<uint8_t>((words - 1u) >> 8);
+    packet[2] = static_cast<uint8_t>(words - 1u);
+    packet[3] = static_cast<uint8_t>(xfAddress >> 8);
+    packet[4] = static_cast<uint8_t>(xfAddress);
+    std::memcpy(packet.data() + 5, source, bytes);  // big-endian words, as in the FIFO
+    GXCallDisplayList(packet.data(), 5u + bytes);
     return true;
 }
 
@@ -370,6 +418,27 @@ struct AuroraVtxPublishOptions {
 };
 
 inline void PublishAuroraVtxState(GXVtxFmt fmt, const AuroraVtxPublishOptions& options) {
+    // Most primitives republish exactly what the previous one published. That
+    // is ~48 setter calls per draw; skip them while the HLE inputs are
+    // byte-identical and Aurora reports no vertex-state change since.
+    struct Memo {
+        bool valid = false;
+        GXVtxFmt fmt = GX_VTXFMT0;
+        AuroraVtxPublishOptions options{};
+        uint64_t epoch = 0;
+        GXAttrType vtxDesc[26]{};
+        VtxAttrFmt vtxAttrFmt[26]{};
+    };
+    static Memo memo;
+    static_assert(sizeof(memo.vtxDesc) == sizeof(g_hleGxState.vtxDesc));
+    static_assert(sizeof(memo.vtxAttrFmt) == sizeof(g_hleGxState.vtxAttrFmt[0]));
+    if (memo.valid && memo.fmt == fmt && memo.options.includeNbt == options.includeNbt &&
+        memo.options.fmtLoopFirst == options.fmtLoopFirst &&
+        memo.options.fmtLoopLast == options.fmtLoopLast && memo.epoch == GXAuroraVtxStateEpoch() &&
+        std::memcmp(memo.vtxDesc, g_hleGxState.vtxDesc, sizeof(memo.vtxDesc)) == 0 &&
+        std::memcmp(memo.vtxAttrFmt, g_hleGxState.vtxAttrFmt[fmt], sizeof(memo.vtxAttrFmt)) == 0) {
+        return;
+    }
     for (int attr = 0; attr < 26; ++attr) {
         if (!options.includeNbt && attr == GX_VA_NBT) {
             continue;
@@ -393,6 +462,12 @@ inline void PublishAuroraVtxState(GXVtxFmt fmt, const AuroraVtxPublishOptions& o
         const auto& f = g_hleGxState.vtxAttrFmt[fmt][attr];
         GXSetVtxAttrFmt(fmt, gxAttr, f.cnt, f.type, f.frac);
     }
+    memo.valid = true;
+    memo.fmt = fmt;
+    memo.options = options;
+    memo.epoch = GXAuroraVtxStateEpoch();
+    std::memcpy(memo.vtxDesc, g_hleGxState.vtxDesc, sizeof(memo.vtxDesc));
+    std::memcpy(memo.vtxAttrFmt, g_hleGxState.vtxAttrFmt[fmt], sizeof(memo.vtxAttrFmt));
 }
 
 } // namespace GxStream

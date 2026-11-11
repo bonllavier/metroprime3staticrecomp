@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-24",
+  "game": "RM3E01_00",
+  "symptom": "Aurora Unit briefing cutscene: the window stops responding mid-dialogue, no error. Process alive, one thread at 100% CPU.",
+  "diagnosis_method": "lldb (llvm-mingw) attached to the frozen pid 12720: thread CPU sampling, stack samples, guest memory reads at flat base 0x100000000000, runtime statics through the image slide. Game code decompiled through the Ghidra HTTP plugin.",
+  "evidence": {
+    "spinning_thread": "Prime game (guest CPU): CSkinnedModel path 0x804708D0 -> 0x803F188C -> 0x803F0D84 -> 0x803F093C -> 0x803F038C -> 0x803F486C, looping on 0x803F4A5C",
+    "game_logic": "0x803F486C allocates skinning scratch from the staging ring 0x805CE25C (0x40000 bytes). While the ring is full it calls 0x803F4A5C, which retires entries whose 64-bit PE-token fence has passed (0x803EC3A0 -> 0x803EC2C8; fence object 0x805CDC6C; GPU token from PE+0x0E via 0x804D2638; fences issued by 0x803EC144 / GXSetDrawSync).",
+    "fence_state": "issued token 0x3864, last GPU token 0x3849, epoch 0x20000, 27 (0x1B) pending entries, ring full",
+    "cp_state": "control 0x0037 (read, breakpoint, linked, breakpoint IRQ enabled); read pointer 0x006DA300 = breakpoint 0x006DA300; write pointer 0x006F6600; g_primeBreakpointReached = 1; retained bursts 0x1C300 = 115456 bytes, the missing tokens among them; CP status 0x0000 (stale); decoder at a command boundary (inBegin 0, fifoByteCount 0); GX consumer idle",
+    "root_cause": "The CP breakpoint interrupt is delivered only from VI_HLE_PollRetrace / VI_HLE_PollRetraceGuestSpin (OS idle and VI paths). The game's PE-token wait loop reaches only OS_HLE_PollPendingPrimeIpcInterrupt (IPC and DSP), so the breakpoint ISR never runs, the game never moves the breakpoint, the GP never reaches the tokens, and the CPU waits forever. On hardware the CP interrupt is raised wherever the CPU is running."
+  },
+  "fix": "memory.cpp MemoryPrimeCpBreakpointPollReady(): CP control & 0x23 == 0x23 and (no GPU thread, or breakpoint reached). os_interrupt.cpp OS_HLE_PollPendingPrimeIpcInterrupt: every 16th call-boundary poll, if ready, calls VI_HLE_DispatchPrimeCpInterrupt (the existing DispatchPrimeCpInterrupt, which keeps its EE, OS mask, status and handler checks).",
+  "validation": {
+    "build": "linked 2026-10-24",
+    "tests": "mkw_gx_fifo_storage_tests and mkw_prime_wpad_packet_tests pass",
+    "user": "pending: replay the briefing cutscene"
+  },
+  "not_changed": "VI retrace delivery inside this same loop was not added; revisit if a similar wait ever needs VBlank."
+}

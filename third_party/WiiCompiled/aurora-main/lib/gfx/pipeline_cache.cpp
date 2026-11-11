@@ -1,12 +1,30 @@
 #include "pipeline_cache.hpp"
 
+#if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <aurora/host_cores.h>
+#endif
+
 #include "clear.hpp"
 #include "../gx/pipeline.hpp"
+#include "../gx/gx.hpp"
+#include "../gx/uber.hpp"
+#include "../gx/render_policy.hpp"
 #include "../fs_helper.hpp"
 #include "../sqlite_utils.hpp"
 #include "../webgpu/gpu.hpp"
 
+#include <absl/container/flat_hash_map.h>
+
 #include <algorithm>
+#include <cstddef>
+#include <cstring>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -39,6 +57,10 @@ struct PendingPipeline {
   PipelineRef hash;
   uint32_t firstFrameUsed = UINT32_MAX;
   NewPipelineCallback create;
+  // Hybrid ubershader mode: a specialised GX pipeline met in play whose draws the ubershader already covers.
+  // It no longer blocks a frame, so it compiles at low priority on a few workers instead of preempting the
+  // game. A draw that does wait on it clears the flag (promote_pending_pipeline_for_wait).
+  bool bridged = false;
 };
 
 struct PipelineCacheWrite {
@@ -77,11 +99,53 @@ constexpr size_t BuildPipelinesPerFrame = 1;
 static std::vector<std::thread> g_pipelineThreads;
 static bool g_pipelineThreadEnd = false;
 static size_t g_activeBackgroundPipelineWorkers = 0;
+static size_t g_activeBridgedPipelineWorkers = 0;
+static size_t g_activeUrgentPipelineWorkers = 0;
+// Bridged compiles share the CPU with the game: at most this many at once (see PendingPipeline::bridged).
+constexpr size_t MaxBridgedPipelineWorkers = 2;
 static std::condition_variable g_pipelineCv;
 static absl::flat_hash_map<PipelineRef, CachedPipeline> g_pipelines;
 static std::deque<PendingPipeline> g_priorityPipelines;
 static std::deque<PendingPipeline> g_backgroundPipelines;
 static absl::flat_hash_set<PipelineRef> g_pendingPipelines;
+// Bumped whenever g_pipelines loses entries (only its clear at shutdown: entries are never replaced).
+static std::atomic<uint32_t> g_pipelineMapGeneration{0};
+
+namespace {
+// Per-thread memory of pipelines already found ready. The encoder asks for the pipeline of every
+// pipeline change, and each ask took g_pipelineMutex (shared with the compile workers) for a map lookup:
+// a few percent of the frame worker on 5000-draw screens such as the pause map. Raw handles are safe while
+// the generation holds, since entries are never replaced or erased before the clear that bumps it.
+struct ReadyPipelines {
+  uint32_t generation = UINT32_MAX;
+  absl::flat_hash_map<PipelineRef, WGPURenderPipeline> handles;
+};
+thread_local ReadyPipelines t_readyPipelines;
+
+bool recall_ready_pipeline(PipelineRef ref, wgpu::RenderPipeline& pipeline) {
+  auto& cache = t_readyPipelines;
+  const uint32_t generation = g_pipelineMapGeneration.load(std::memory_order_acquire);
+  if (cache.generation != generation) {
+    cache.handles.clear();
+    cache.generation = generation;
+    return false;
+  }
+  const auto it = cache.handles.find(ref);
+  if (it == cache.handles.end()) {
+    return false;
+  }
+  pipeline = wgpu::RenderPipeline(it->second);
+  return true;
+}
+
+// Called with g_pipelineMutex held, right after finding the entry.
+void remember_ready_pipeline(PipelineRef ref, const wgpu::RenderPipeline& pipeline) {
+  auto& cache = t_readyPipelines;
+  if (cache.generation == g_pipelineMapGeneration.load(std::memory_order_acquire)) {
+    cache.handles.emplace(ref, pipeline.Get());
+  }
+}
+} // namespace
 
 static sqlite3* g_pipelineCacheDb = nullptr;
 static sqlite3_stmt* g_pipelineCacheLoadStmt = nullptr;
@@ -405,6 +469,7 @@ static PendingPipeline* touch_pending_pipeline(PipelineRef hash, bool prioritize
 static bool promote_pending_pipeline_for_wait(PipelineRef hash) {
   auto priorityIt = find_pending_pipeline(g_priorityPipelines, hash);
   if (priorityIt != g_priorityPipelines.end()) {
+    priorityIt->bridged = false;  // a draw waits on it after all: full priority
     if (priorityIt != g_priorityPipelines.begin()) {
       PendingPipeline pending = std::move(*priorityIt);
       g_priorityPipelines.erase(priorityIt);
@@ -484,10 +549,15 @@ static PipelineRef find_pipeline_impl(ShaderType type, const PipelineConfig& con
           syncCreate = true;
         } else {
           auto& targetQueue = deferGxPipeline ? g_priorityPipelines : g_backgroundPipelines;
+          bool bridged = false;
+          if constexpr (std::is_same_v<PipelineConfig, gx::PipelineConfig>) {
+            bridged = deferGxPipeline && gx::uber_hybrid_enabled() && !gx::is_uber_pipeline(config);
+          }
           targetQueue.emplace_back(PendingPipeline{
               .hash = hash,
               .firstFrameUsed = firstFrameUsed,
               .create = std::move(cb),
+              .bridged = bridged,
           });
           g_pendingPipelines.insert(hash);
           ++queuedPipelines;
@@ -965,6 +1035,9 @@ static void note_pipeline_queue_drained() {
            "loaded)",
            g_prewarmCount, elapsed.count() / 1000.0, stats.hits, stats.lookups, stats.stores,
            static_cast<double>(stats.hitBytes) / (1024.0 * 1024.0));
+  // Every blob this build needs was just loaded or stored: on the first launch of a new build, the
+  // rest of the Dawn cache belongs to the previous one.
+  webgpu::blob_cache_finish_boot_sweep();
 }
 
 static void compile_pending_pipeline(PendingPipeline pending) {
@@ -987,9 +1060,39 @@ static void compile_pending_pipeline(PendingPipeline pending) {
   }
 }
 
+// Physical cores of the host (in_play_compile_cap); logical processors / 2 when unknown.
+static size_t physical_core_count() {
+  static const size_t count = [] {
+    size_t cores = 0;
+#if defined(_WIN32)
+    DWORD length = 0;
+    GetLogicalProcessorInformationEx(RelationProcessorCore, nullptr, &length);
+    if (length != 0) {
+      std::vector<uint8_t> buffer(length);
+      if (GetLogicalProcessorInformationEx(RelationProcessorCore,
+                                           reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(buffer.data()),
+                                           &length)) {
+        for (DWORD offset = 0; offset < length;) {
+          const auto* entry = reinterpret_cast<const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*>(buffer.data() + offset);
+          if (entry->Relationship == RelationProcessorCore) ++cores;
+          offset += entry->Size;
+        }
+      }
+    }
+#endif
+    if (cores == 0) cores = std::max<size_t>(1, std::thread::hardware_concurrency() / 2);
+    return cores;
+  }();
+  return count;
+}
+
 static void pipeline_worker() {
 #ifdef TRACY_ENABLE
   tracy::SetThreadName("Pipeline compilation thread");
+#endif
+#if defined(_WIN32)
+  // A burst of compiles must not run on the game thread's hyperthread sibling (host_cores.h).
+  aurora::host_cores::keep_off_game_core();
 #endif
 
   while (true) {
@@ -997,28 +1100,70 @@ static void pipeline_worker() {
     bool background = false;
     {
       std::unique_lock lock{g_pipelineMutex};
-      g_pipelineCv.wait(lock, [] {
-        return !g_priorityPipelines.empty() ||
-               (!g_backgroundPipelines.empty() &&
-                g_activeBackgroundPipelineWorkers < MaxBackgroundPipelineWorkers) ||
-               g_pipelineThreadEnd;
+      // Which queue to serve is a tested policy (render_policy.hpp): urgent, then bridged within its cap, then prewarm.
+      using gx::policy::CompileSlot;
+      CompileSlot slot = CompileSlot::None;
+      g_pipelineCv.wait(lock, [&] {
+        bool urgentQueued = false, bridgedQueued = false;
+        for (const auto& queued : g_priorityPipelines) (queued.bridged ? bridgedQueued : urgentQueued) = true;
+        const size_t inPlayCap =
+            gx::policy::in_play_compile_cap(physical_core_count(), g_skipUnreadyGxPipelines.load(std::memory_order_relaxed));
+        slot = gx::policy::pick_compile_slot(urgentQueued, bridgedQueued, g_activeBridgedPipelineWorkers,
+                                             MaxBridgedPipelineWorkers, !g_backgroundPipelines.empty(),
+                                             g_activeBackgroundPipelineWorkers, MaxBackgroundPipelineWorkers,
+                                             g_activeUrgentPipelineWorkers, inPlayCap);
+        return slot != CompileSlot::None || g_pipelineThreadEnd;
       });
       if (g_pipelineThreadEnd) {
         return;
       }
-      background = g_priorityPipelines.empty();
-      auto& source = background ? g_backgroundPipelines : g_priorityPipelines;
-      pending = std::move(source.front());
-      source.pop_front();
+      background = slot == CompileSlot::Background;
       if (background) {
+        pending = std::move(g_backgroundPipelines.front());
+        g_backgroundPipelines.pop_front();
         ++g_activeBackgroundPipelineWorkers;
+      } else {
+        const bool wantBridged = slot == CompileSlot::Bridged;
+        auto it = g_priorityPipelines.begin();
+        while (it->bridged != wantBridged) ++it;
+        pending = std::move(*it);
+        g_priorityPipelines.erase(it);
+        if (pending.bridged) ++g_activeBridgedPipelineWorkers;
+        else ++g_activeUrgentPipelineWorkers;
       }
     }
+    const bool bridged = pending.bridged;
+#if defined(_WIN32)
+    // Tested policy (render_policy.hpp): bridged and prewarm compiles below normal, urgent ones normal in
+    // skip-unready mode (every wait is bounded) and above normal only when draws wait without limit.
+    using gx::policy::CompilePriority;
+    const auto priority = gx::policy::compile_priority(
+        background ? gx::policy::CompileSlot::Background
+                   : (bridged ? gx::policy::CompileSlot::Bridged : gx::policy::CompileSlot::Urgent),
+        g_skipUnreadyGxPipelines.load(std::memory_order_relaxed));
+    SetThreadPriority(GetCurrentThread(), priority == CompilePriority::BelowNormal ? THREAD_PRIORITY_BELOW_NORMAL
+                                          : priority == CompilePriority::Normal    ? THREAD_PRIORITY_NORMAL
+                                                                                    : THREAD_PRIORITY_ABOVE_NORMAL);
+#endif
     compile_pending_pipeline(std::move(pending));
+    if (bridged) {
+      {
+        std::lock_guard lock{g_pipelineMutex};
+        --g_activeBridgedPipelineWorkers;
+      }
+      g_pipelineCv.notify_all();
+    }
     if (background) {
       {
         std::lock_guard lock{g_pipelineMutex};
         --g_activeBackgroundPipelineWorkers;
+      }
+      g_pipelineCv.notify_all();
+    }
+    if (!bridged && !background) {
+      {
+        std::lock_guard lock{g_pipelineMutex};
+        --g_activeUrgentPipelineWorkers;
       }
       g_pipelineCv.notify_all();
     }
@@ -1071,6 +1216,7 @@ static void load_pipeline_cache_entries(ShaderType type, uint32_t configVersion,
     return;
   }
 
+  std::vector<PipelineRef> invalidRows;
   while ((ret = sqlite3_step(g_pipelineCacheLoadStmt)) == SQLITE_ROW) {
     const auto storedHash = static_cast<PipelineRef>(sqlite3_column_int64(g_pipelineCacheLoadStmt, 0));
     const auto* configBlob = static_cast<const uint8_t*>(sqlite3_column_blob(g_pipelineCacheLoadStmt, 1));
@@ -1090,12 +1236,70 @@ static void load_pipeline_cache_entries(ShaderType type, uint32_t configVersion,
     }
     if constexpr (std::is_same_v<PipelineConfig, gx::PipelineConfig>) {
       if (!gx::valid_pipeline_config(config)) {
-        Log.warn("Skipping invalid cached GX pipeline configuration");
+        Log.warn("Removing invalid cached GX pipeline configuration (hash {:016X})", static_cast<uint64_t>(storedHash));
+        invalidRows.push_back(storedHash);
         continue;
       }
     }
 
-    find_pipeline_impl(type, config, [=] { return create(config); }, false, firstFrameUsed);
+    bool skipSpecialised = false;
+    if constexpr (std::is_same_v<PipelineConfig, gx::PipelineConfig>) {
+      // Test switch WII_COMPILED_PREWARM_SKIP_ONE_IN=<n>: leave one specialised recipe in n uncompiled at boot,
+      // so those materials compile in play the way a player without a complete cache meets them.
+      static const uint64_t skipOneIn = [] {
+        const char* value = std::getenv("WII_COMPILED_PREWARM_SKIP_ONE_IN");
+        return value ? std::strtoull(value, nullptr, 10) : 0ull;
+      }();
+      skipSpecialised = skipOneIn > 1 && !gx::is_uber_pipeline(config) && storedHash % skipOneIn == 0;
+    }
+    if (!skipSpecialised) {
+      find_pipeline_impl(type, config, [=] { return create(config); }, false, firstFrameUsed);
+    }
+    if constexpr (std::is_same_v<PipelineConfig, gx::PipelineConfig>) {
+      // Hybrid ubershader: its pipeline for this material is derived again from the seed each boot (not
+      // persisted), compiled right after the specialised ones so a draw never needs one that is missing.
+      // Also for the per-pixel lighting variant below: with that option on, lit materials only ever use it.
+      const auto queueUber = [&](const gx::PipelineConfig& material) {
+        if (!gx::uber_hybrid_enabled() || gx::is_uber_pipeline(material)) return;
+        const auto uberConfig = gx::make_uber_config(material, gx::build_shader_info(material.shaderConfig));
+        bool fits = false;
+        gx::build_uber_shader_info(uberConfig, &fits);
+        if (fits) {
+          const auto uberPipeline = gx::encode_uber_pipeline(uberConfig);
+          find_pipeline_impl(type, uberPipeline, [=] { return create(uberPipeline); }, false, firstFrameUsed);
+        }
+      };
+      queueUber(config);
+      // Per-pixel lighting keys lit materials differently. Prewarm that variant of
+      // every cached lit recipe too, so the first session with the option on does
+      // not compile (and, in skip-unready mode, hide) the world during play. The
+      // variants are not persisted: they are derived again from the seed each boot.
+      if (gx::g_perPixelLighting.load(std::memory_order_relaxed) && config.shaderConfig.perPixelLighting == 0) {
+        bool anyLighting = false;
+        for (const auto& cc : config.shaderConfig.colorChannels) anyLighting |= cc.lightingEnabled != 0;
+        if (anyLighting) {
+          gx::PipelineConfig variant = config;
+          variant.shaderConfig.perPixelLighting = 1;
+          if (!skipSpecialised) {
+            find_pipeline_impl(type, variant, [=] { return create(variant); }, false, firstFrameUsed);
+          }
+          queueUber(variant);
+          // Enhanced metal variant of the same lit recipe (normal-based texgen only).
+          if (gx::g_enhancedMetal.load(std::memory_order_relaxed)) {
+            bool normalTexgen = false;
+            for (u8 t = 0; t < config.shaderConfig.numTexGens; ++t)
+              normalTexgen |= config.shaderConfig.tcgs[t].src == GX_TG_NRM;
+            if (normalTexgen) {
+              gx::PipelineConfig metal = variant;
+              metal.shaderConfig.enhancedMetal = 1;
+              if (!skipSpecialised) {
+                find_pipeline_impl(type, metal, [=] { return create(metal); }, false, firstFrameUsed);
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   if (ret != SQLITE_DONE) {
@@ -1105,13 +1309,177 @@ static void load_pipeline_cache_entries(ShaderType type, uint32_t configVersion,
 
   sqlite3_reset(g_pipelineCacheLoadStmt);
   sqlite3_clear_bindings(g_pipelineCacheLoadStmt);
+  for (const auto hash : invalidRows) {
+    const auto sql = fmt::format("DELETE FROM pipeline_cache WHERE type = {} AND hash = {}", underlying(type),
+                                 static_cast<int64_t>(hash));
+    if (sqlite::exec(g_pipelineCacheDb, sql.c_str()) != SQLITE_OK) {
+      Log.warn("Failed to remove invalid cached pipeline configuration: {}", sqlite3_errmsg(g_pipelineCacheDb));
+    }
+  }
+}
+
+// Version 20 added ShaderConfig::dstAlpha. Rows of version 19 are rewritten
+// in place of being pruned, so existing and bundled caches stay warm.
+static void migrate_gx_pipeline_cache_v19() {
+  static_assert(gx::GXPipelineConfigVersion == 22);
+  constexpr uint32_t OldVersion = 19;
+  constexpr size_t InsertAt = offsetof(gx::PipelineConfig, shaderConfig) + offsetof(gx::ShaderConfig, dstAlpha);
+  constexpr size_t OldSize = sizeof(gx::PipelineConfig) - sizeof(uint32_t);
+  static_assert(offsetof(gx::ShaderConfig, dstAlpha) + sizeof(uint32_t) == sizeof(gx::ShaderConfig));
+  if (!prepare_pipeline_cache_db()) {
+    return;
+  }
+  sqlite3_stmt* stmt = nullptr;
+  const auto query = fmt::format("SELECT config, first_frame_used FROM pipeline_cache WHERE type = {} AND "
+                                 "config_version = {}", underlying(ShaderType::GX), OldVersion);
+  if (sqlite3_prepare_v3(g_pipelineCacheDb, query.c_str(), -1, 0, &stmt, nullptr) != SQLITE_OK) {
+    Log.warn("Failed to read GX pipeline cache rows to migrate: {}", sqlite3_errmsg(g_pipelineCacheDb));
+    return;
+  }
+  std::vector<PipelineCacheWrite> writes;
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    const auto* blob = static_cast<const uint8_t*>(sqlite3_column_blob(stmt, 0));
+    if (blob == nullptr || sqlite3_column_bytes(stmt, 0) != static_cast<int>(OldSize)) {
+      continue;
+    }
+    gx::PipelineConfig config;
+    auto* bytes = reinterpret_cast<uint8_t*>(&config);
+    const uint32_t none = UINT32_MAX;
+    std::memcpy(bytes, blob, InsertAt);
+    std::memcpy(bytes + InsertAt, &none, sizeof(none));
+    std::memcpy(bytes + InsertAt + sizeof(none), blob + InsertAt, OldSize - InsertAt);
+    if (config.version != OldVersion) {
+      continue;
+    }
+    config.version = gx::GXPipelineConfigVersion;
+    config.shaderConfig.dstAlpha = gx::shader_dst_alpha(config);
+    gx::normalize_pipeline_key(config);
+    if (!gx::valid_pipeline_config(config)) {
+      continue;
+    }
+    PipelineCacheWrite write{
+        .type = ShaderType::GX,
+        .hash = static_cast<PipelineRef>(xxh3_hash_s(bytes, sizeof(config), static_cast<HashType>(ShaderType::GX))),
+        .configVersion = gx::GXPipelineConfigVersion,
+        .config = ByteBuffer(sizeof(config)),
+        .firstFrameUsed = static_cast<uint32_t>(sqlite3_column_int64(stmt, 1)),
+    };
+    std::memcpy(write.config.data(), bytes, sizeof(config));
+    writes.push_back(std::move(write));
+  }
+  sqlite3_finalize(stmt);
+  if (writes.empty()) {
+    return;
+  }
+  sqlite::Transaction tx(g_pipelineCacheDb, Log, true);
+  if (!tx) {
+    return;
+  }
+  for (const auto& write : writes) {
+    if (!write_pipeline_cache_record(write)) {
+      return;
+    }
+  }
+  tx.commit();
+  Log.info("Migrated {} GX pipeline cache rows from version {}", writes.size(), OldVersion);
+}
+
+// Versions 20 and 21 share the current layout; only draw-state fields leave the key
+// (normalize_pipeline_key), so rows differing in those collapse into one.
+static void migrate_gx_pipeline_cache_same_layout(const uint32_t OldVersion) {
+  static_assert(gx::GXPipelineConfigVersion == 22);
+  if (!prepare_pipeline_cache_db()) {
+    return;
+  }
+  sqlite3_stmt* stmt = nullptr;
+  const auto query = fmt::format("SELECT config, first_frame_used FROM pipeline_cache WHERE type = {} AND "
+                                 "config_version = {}", underlying(ShaderType::GX), OldVersion);
+  if (sqlite3_prepare_v3(g_pipelineCacheDb, query.c_str(), -1, 0, &stmt, nullptr) != SQLITE_OK) {
+    Log.warn("Failed to read GX pipeline cache rows to migrate: {}", sqlite3_errmsg(g_pipelineCacheDb));
+    return;
+  }
+  absl::flat_hash_map<PipelineRef, PipelineCacheWrite> writes;
+  size_t rows = 0;
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    const auto* blob = static_cast<const uint8_t*>(sqlite3_column_blob(stmt, 0));
+    if (blob == nullptr || sqlite3_column_bytes(stmt, 0) != static_cast<int>(sizeof(gx::PipelineConfig))) {
+      continue;
+    }
+    gx::PipelineConfig config;
+    std::memcpy(&config, blob, sizeof(config));
+    if (config.version != OldVersion) {
+      continue;
+    }
+    ++rows;
+    config.version = gx::GXPipelineConfigVersion;
+    gx::normalize_pipeline_key(config);
+    if (!gx::valid_pipeline_config(config)) {
+      continue;
+    }
+    const auto hash =
+        static_cast<PipelineRef>(xxh3_hash_s(&config, sizeof(config), static_cast<HashType>(ShaderType::GX)));
+    const auto firstFrame = static_cast<uint32_t>(sqlite3_column_int64(stmt, 1));
+    if (auto it = writes.find(hash); it != writes.end()) {
+      it->second.firstFrameUsed = std::min(it->second.firstFrameUsed, firstFrame);
+      continue;
+    }
+    PipelineCacheWrite write{
+        .type = ShaderType::GX,
+        .hash = hash,
+        .configVersion = gx::GXPipelineConfigVersion,
+        .config = ByteBuffer(sizeof(config)),
+        .firstFrameUsed = firstFrame,
+    };
+    std::memcpy(write.config.data(), &config, sizeof(config));
+    writes.emplace(hash, std::move(write));
+  }
+  sqlite3_finalize(stmt);
+  if (writes.empty()) {
+    return;
+  }
+  sqlite::Transaction tx(g_pipelineCacheDb, Log, true);
+  if (!tx) {
+    return;
+  }
+  for (const auto& [_, write] : writes) {
+    if (!write_pipeline_cache_record(write)) {
+      return;
+    }
+  }
+  tx.commit();
+  Log.info("Migrated {} GX pipeline cache rows from version {} into {} pipelines", rows, OldVersion, writes.size());
+}
+
+// Rows of older config versions are deleted at every launch, but SQLite keeps the freed pages
+// inside the file. Compact when most of it is free (a 108 MiB file held 16 MiB of recipes).
+static void compact_pipeline_cache_if_wasteful() {
+  const auto pragma = [](const char* name) {
+    int64_t value = 0;
+    const auto cmd = fmt::format("PRAGMA {};", name);
+    sqlite::exec(g_pipelineCacheDb, cmd.c_str(),
+                 [&value](int, char** argv, char**) { value = argv[0] != nullptr ? std::atoll(argv[0]) : 0; });
+    return value;
+  };
+  const int64_t pages = pragma("page_count"), freePages = pragma("freelist_count"), pageSize = pragma("page_size");
+  if (freePages * pageSize < (8ll << 20) || freePages * 4 < pages) {
+    return;
+  }
+  Log.info("Compacting pipeline_cache.db: {:.1f} of {:.1f} MiB were free pages",
+           static_cast<double>(freePages * pageSize) / 1048576.0, static_cast<double>(pages * pageSize) / 1048576.0);
+  if (sqlite::exec(g_pipelineCacheDb, "VACUUM;") != SQLITE_OK) {
+    Log.warn("Failed to compact the pipeline cache: {}", sqlite3_errmsg(g_pipelineCacheDb));
+  }
 }
 
 static void load_pipeline_cache() {
   if (!prepare_pipeline_cache_db()) {
     return;
   }
+  migrate_gx_pipeline_cache_v19();
+  migrate_gx_pipeline_cache_same_layout(20);
+  migrate_gx_pipeline_cache_same_layout(21);
   prune_old_pipeline_cache_versions();
+  compact_pipeline_cache_if_wasteful();
   if (g_pipelineCacheBroken) {
     return;
   }
@@ -1159,7 +1527,11 @@ PipelineRef find_pipeline(ShaderType type, const clear::PipelineConfig& config, 
 
 template <>
 PipelineRef find_pipeline(ShaderType type, const gx::PipelineConfig& config, NewPipelineCallback&& cb) {
-  return find_pipeline_impl(type, config, std::move(cb), true, std::nullopt);
+  // Ubershader keys are derived from the persisted recipes at every boot; persisting them would put empty
+  // TEV programs into pipeline_cache.db (and into a merged seed), where the specialised loader would reject
+  // or, worse, generate from them.
+  const bool persist = !gx::is_uber_pipeline(config);
+  return find_pipeline_impl(type, config, std::move(cb), persist, std::nullopt);
 }
 
 void initialize_pipeline_cache() {
@@ -1168,6 +1540,8 @@ void initialize_pipeline_cache() {
   g_pipelineFrameActive = false;
   g_pipelineThreadEnd = false;
   g_activeBackgroundPipelineWorkers = 0;
+  g_activeBridgedPipelineWorkers = 0;
+  g_activeUrgentPipelineWorkers = 0;
 
   if (webgpu::g_backendType == wgpu::BackendType::OpenGL || webgpu::g_backendType == wgpu::BackendType::OpenGLES ||
       webgpu::g_backendType == wgpu::BackendType::WebGPU) {
@@ -1203,6 +1577,8 @@ void shutdown_pipeline_cache() {
   g_pipelineThreads.clear();
   g_hasPipelineThread = false;
   g_activeBackgroundPipelineWorkers = 0;
+  g_activeBridgedPipelineWorkers = 0;
+  g_activeUrgentPipelineWorkers = 0;
 
   stop_pipeline_cache_writer();
   pipeline_cache_abort();
@@ -1210,6 +1586,7 @@ void shutdown_pipeline_cache() {
   g_pipelineFrameActive = false;
   g_pipelinesPerFrame = 0;
   g_pipelines.clear();
+  g_pipelineMapGeneration.fetch_add(1, std::memory_order_acq_rel);
   g_priorityPipelines.clear();
   g_backgroundPipelines.clear();
   g_pendingPipelines.clear();
@@ -1237,6 +1614,7 @@ void set_skip_unready_pipelines(bool enabled) noexcept {
 }
 
 bool skip_unready_pipelines() noexcept { return g_skipUnreadyGxPipelines.load(std::memory_order_relaxed); }
+bool pipeline_prewarm_active() noexcept { return g_prewarmActive.load(std::memory_order_acquire); }
 
 uint32_t queued_pipeline_count() noexcept {
 #if defined(__cpp_lib_atomic_ref)
@@ -1246,28 +1624,61 @@ uint32_t queued_pipeline_count() noexcept {
 #endif
 }
 
+// Skip-unready mode: waits for a pipeline until `deadline` at most, promoting it
+// ahead of background prewarm so a skipped draw comes back as soon as possible.
+bool wait_pipeline_until(PipelineRef ref, wgpu::RenderPipeline& pipeline,
+                         std::chrono::steady_clock::time_point deadline) {
+  if (recall_ready_pipeline(ref, pipeline)) {
+    return true;
+  }
+  std::unique_lock lock{g_pipelineMutex};
+  if (!g_pipelines.contains(ref) && g_pendingPipelines.contains(ref)) {
+    if (promote_pending_pipeline_for_wait(ref)) {
+      g_pipelineCv.notify_all();
+    }
+    g_pipelineCv.wait_until(lock, deadline, [ref] {
+      return g_pipelines.contains(ref) || !g_pendingPipelines.contains(ref) || g_pipelineThreadEnd;
+    });
+  }
+  const auto it = g_pipelines.find(ref);
+  if (it == g_pipelines.end()) {
+    return false;
+  }
+  pipeline = it->second.pipeline;
+  remember_ready_pipeline(ref, pipeline);
+  return true;
+}
+
 bool try_pipeline(PipelineRef ref, wgpu::RenderPipeline& pipeline) {
+  if (recall_ready_pipeline(ref, pipeline)) {
+    return true;
+  }
   std::scoped_lock lock{g_pipelineMutex};
   const auto it = g_pipelines.find(ref);
   if (it == g_pipelines.end()) {
     return false;
   }
   pipeline = it->second.pipeline;
+  remember_ready_pipeline(ref, pipeline);
   return true;
 }
 
 static bool wait_pipeline_impl(PipelineRef ref, wgpu::RenderPipeline& pipeline, bool fatalIfMissing,
                                bool persistentPass) {
+  if (recall_ready_pipeline(ref, pipeline)) {
+    return true;
+  }
   std::unique_lock lock{g_pipelineMutex};
   if (!g_pipelines.contains(ref) && g_pendingPipelines.contains(ref)) {
     ZoneScopedN("wait_pipeline");
     const auto finished = [ref] {
       return g_pipelines.contains(ref) || !g_pendingPipelines.contains(ref) || g_pipelineThreadEnd;
     };
+    // Whatever the pass, a blocked draw makes its pipeline urgent (it may have been queued as bridged).
+    if (promote_pending_pipeline_for_wait(ref)) {
+      g_pipelineCv.notify_all();
+    }
     if (persistentPass) {
-      if (promote_pending_pipeline_for_wait(ref)) {
-        g_pipelineCv.notify_all();
-      }
       // A persistent resolve is the last chance to produce its texture, so timing out here corrupts it
       // permanently. Only a pass marked requireReadyPipelines takes this path.
     }
@@ -1284,6 +1695,7 @@ static bool wait_pipeline_impl(PipelineRef ref, wgpu::RenderPipeline& pipeline, 
     return false;
   }
   pipeline = it->second.pipeline;
+  remember_ready_pipeline(ref, pipeline);
   return true;
 }
 

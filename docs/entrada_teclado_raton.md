@@ -60,3 +60,12 @@ No declarar el juego jugable por esta prueba.
 Evidencia: checkpoints 20261021_prime_keyboard_mouse_windows_input.json,
 20261021_prime_keyboard_mouse_negative_checks.json y
 20261021_prime_keyboard_mouse_boot.json. Todos viven en ../checkpoints/.
+
+## Batería del Wiimote siempre llena (25 de octubre de 2026)
+
+- **Síntoma.** "Warning: Wii Remote Batteries Are Low" permanente y el indicador del casco vacío.
+- **Causa.** El generador de entrada (`FUN_803c2670`) llama a `WPADGetInfoAsync(0, manager+0xB8C, 0x803C4884)` cada pocos segundos (temporizador en +0xBF0). El callback solo copia la `WPADInfo` a +0xB28.. cuando el resultado es 0. Con el mando virtual de teclado/ratón la librería WPAD no tiene dispositivo, la petición falla y el gestor conserva batería 0; el HUD (`FUN_801c50c0`) enciende `battery` (0 a 4) segmentos de `model_battery1..4` y muestra el aviso en los niveles 0 y 1.
+- **Solución.** Hook en `WPADGetInfoAsync` (0x804F6A2C, prólogo `9421ff70`) con `PrimeInputTryGetInfoAsync` en `kpad.cpp`: escribe `WPADInfo{dpd=1, speaker=0, attach=según extensión, lowBat=0, nearempty=0, battery=4, led=1<<canal, protocol=1, firmware=0}`, devuelve 0 y ejecuta el callback del juego con (canal, 0) como una petición completada. Aplica al mando virtual y al Bluetooth por igual.
+- **Opción.** `[prime] wiimote_battery_full` (por defecto `true`, variable `WII_COMPILED_PRIME_WIIMOTE_BATTERY_FULL`), casilla en F1 > Controles. Se lee en cada llamada, sin reiniciar.
+- **Validación.** Ejecución pid 16704: cuatro respuestas del hook en 85 s, sin errores, indicador de batería con cuatro segmentos confirmado por el usuario. Evidencia: `checkpoints/20261025_prime_wiimote_battery_full.json`.
+

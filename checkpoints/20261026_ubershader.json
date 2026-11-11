@@ -1,0 +1,10 @@
+{
+  "date": "2026-10-26",
+  "status": "functional, experimental, off by default",
+  "keys": {"recipes": 3966, "uber_keys": 1590, "uber_modules": 746, "too_big_for_uniform": 53},
+  "prewarm": {"without": "5718 pipelines 2.5 s, dawn blob 148 MiB", "with": "7299 pipelines 4.2 s, dawn blob 245 MiB"},
+  "forced_render_check": {"scene": "Bryyo save 05 percent, first room after loading", "differing_pixels_gt40": "0.77 percent", "cause": "animated elements only", "fps": "55-57 vs 59-60"},
+  "tests": "tools/test_graphics.ps1 all passed (gx_fifo 262 incl. 4 UberShader, blob_cache 8, render_policy 18, ctest 22, python)",
+  "specialised_golden_unchanged": true,
+  "not_validated": ["scan visor", "bloom", "phazon effects", "low-end iGPU"]
+}

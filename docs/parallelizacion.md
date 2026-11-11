@@ -46,3 +46,18 @@ Siguiente candidata en trabajo: reusar los contadores de escritura de rangos GX,
 Resultado de la candidata de generacion: solo se omite el cotejo exacto cuando el rango esta rastreado y mantiene el mismo contador; cambios y rangos no rastreados conservan la comparacion completa. La prueba cubre acierto generacional, cambio de contenido, rango no rastreado y cambios de paleta. Build completo y CTest 19/19 pasan.
 
 En la misma vista del hangar, F9 mostro 28.4 FPS (35.17 ms/frame, P95 46.79 ms), 13.3% de CPU del juego y un hilo logico al 100%; GPU 4.6%. [prime-raw-cache] llego a 1,716,223 consultas, 1,715,660 aciertos, 563 fallos, 228 expulsiones, 100 cotejos byte a byte y 1,715,635 aciertos por generacion. [prime-gx-producer] estimo textura estatica en ~46-56 ms por ventana de cinco segundos, frente a ~970-986 ms de la candidata hash anterior. La lectura anterior mostro 19.9 FPS, pero las capturas de FPS no son un ensayo controlado; el descenso de cotejos si esta confirmado por el trace. Paletas aun registra generation_hits=0. El hilo GX sigue saturado: esta mejora reduce trabajo de texturas, pero no paraleliza la ejecucion ni alcanza 60 FPS.
+
+
+## Hilo GPU dedicado y correcciones de caché (23 de octubre)
+
+Un perfilador de pila integrado (F8 en el panel F9, 10 s; script `tools/summarize_stack_profile.py`) mostró que en el hangar el 55 % del hilo del juego era la GPU emulada (FIFO, display lists, Aurora). `fn_803E9F78` (BeginScene de CGraphics) espera al callback del breakpoint CP, así que el juego admite un frame en vuelo.
+
+Cambios, activados por los lanzadores (`-SyncRenderer` vuelve al modo anterior):
+
+- `WII_COMPILED_PRIME_GPU_THREAD=1`: las ráfagas del gather pipe se encolan y un hilo consumidor decodifica. Candado GX para VI/overlay/eventos; el bloqueo por breakpoint se decide al encolar y el breakpoint se notifica cuando el consumidor llega a él.
+- `WII_COMPILED_AURORA_OVERLAP_ENCODE=1`: codificación del frame sellado fuera del mutex del renderer.
+- `WII_COMPILED_AURORA_LAZY_END_DRAIN=1`: los dibujos se agrupan hasta el siguiente cambio de estado.
+- Caché de texturas con paleta: clave por contenido de la paleta y hash completo (antes 60 % de fallos y ~200 sondeos por búsqueda; ahora 41 fallos cada 5 s).
+- Sondeo DSP sin mutex, memo de estado de vértices, copia DVD en bloque y SHA-1 de la ISO opcional (`WII_COMPILED_PRIME_VALIDATE_ISO_HASHES=1`).
+
+Medición sin intervención en el tramo pesado: síncrono 34–37 FPS; final 57–58 FPS (≈50 durante la carga de zona). El usuario confirmó 52–58 FPS y 3D correcto. Evidencia: `../checkpoints/20261023_gpu_thread_and_cache_fixes.json`. Pendiente: QA de juego prolongado, tirones de carga y exclusión opcional de Bitdefender (~9 % del hilo del juego).

@@ -215,7 +215,11 @@ void WriteStdErrEarly(const char* text) {
     WriteStdErrEarly("\n");
 
 #if defined(_WIN32)
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    ::MessageBoxA(nullptr, message.data, "Corruption_3 PC - Unsupported Processor",
+#else
     ::MessageBoxA(nullptr, message.data, "WiiCompiled - Unsupported Processor",
+#endif
                   MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TASKMODAL);
     // Leave through the OS rather than exit(): the C++ dynamic initializers
     // have not run yet, so there is no constructed program state to unwind and

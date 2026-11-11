@@ -1,23 +1,30 @@
+#include "post_process.hpp"
 #include "../diagnostic_env.hpp"
 #include "common.hpp"
+#include "draw_dump.hpp"
 #include "staging_map.hpp"
 #include "../gx/shader_info.hpp"
 
 #include "clear.hpp"
 #include "depth_peek.hpp"
 #include "efb_ram_copy.hpp"
+#include "gpu_timing.hpp"
 #include "../internal.hpp"
 #include "../webgpu/gpu.hpp"
 #include "../gx/pipeline.hpp"
+#include "../gx/render_policy.hpp"
 #include "pipeline_cache.hpp"
 #include "tex_copy_conv.hpp"
 #include "tex_copy_format_contract.hpp"
 #include "tex_palette_conv.hpp"
+#include "tex_cmpr_decode.hpp"
 #include "texture_replacement.hpp"
+#include "texture_upscale.hpp"
 #include "texture.hpp"
 #include "../window.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -39,6 +46,10 @@ static bool CachedWiiCompiledTracePrimeGx() {
   return enabled;
 }
 
+
+namespace aurora::gx {
+void enforce_copy_texture_budget() noexcept;
+}
 
 namespace aurora::gfx {
 static Module Log("aurora::gfx");
@@ -157,6 +168,40 @@ wgpu::BindGroup g_staticBindGroup;
 wgpu::BindGroupLayout g_uniformBindGroupLayout;
 wgpu::BindGroup g_uniformBindGroup;
 
+// Frame interpolation renders the draws a sealed batch recorded after its display copy (the head of
+// the next game frame) together with the next batch, so the GPU copy of one batch has to survive
+// the next batch's upload. Two sets alternate per staging upload once the second one exists; the
+// g_* buffer globals above always name the set being encoded, which only the encoding thread moves.
+struct GpuBufferSet {
+  wgpu::Buffer vertex;
+  wgpu::Buffer uniform;
+  wgpu::Buffer index;
+  wgpu::Buffer storage;
+  wgpu::BindGroup staticBindGroup;
+  wgpu::BindGroup uniformBindGroup;
+};
+static constexpr uint8_t kUntaggedBufferSet = 0xFF;
+static std::array<GpuBufferSet, 2> g_bufferSets;
+static bool g_alternateBufferSets = false;
+static uint8_t g_boundBufferSet = 0;
+static uint8_t g_nextWriteBufferSet = 0;
+static uint8_t g_lastWrittenBufferSet = 0;
+
+static void bind_buffer_set(uint8_t set) noexcept {
+  if (set == kUntaggedBufferSet || set == g_boundBufferSet || set >= g_bufferSets.size() ||
+      (set != 0 && !g_alternateBufferSets)) {
+    return;
+  }
+  const auto& buffers = g_bufferSets[set];
+  g_vertexBuffer = buffers.vertex;
+  g_uniformBuffer = buffers.uniform;
+  g_indexBuffer = buffers.index;
+  g_storageBuffer = buffers.storage;
+  g_staticBindGroup = buffers.staticBindGroup;
+  g_uniformBindGroup = buffers.uniformBindGroup;
+  g_boundBufferSet = set;
+}
+
 // for imgui debug
 AuroraStats g_stats{};
 uint32_t g_drawCallCount = 0;
@@ -167,6 +212,8 @@ struct RenderPass {
   wgpu::TextureView colorView;
   wgpu::TextureView resolveView; // MSAA resolve target; null if msaaSamples == 1
   wgpu::TextureView depthView;
+  wgpu::Texture depthTexture;   // texture behind depthView (EFB or offscreen), for SSAO accumulation
+  wgpu::Extent3D depthSize{};
   wgpu::Texture copySourceTexture;
   wgpu::TextureView copySourceView;
   wgpu::TextureView copySourceDepthView;
@@ -191,19 +238,54 @@ struct RenderPass {
   CommandList commands;
   bool clearColor = true;
   bool clearDepth = true;
+  // Up to four perspective cameras (xf[4], xf[5]) whose draws were counted by post::note_draw in
+  // this pass: the bloom / SSAO scene snapshot is taken after the last pass of the world camera.
+  std::array<std::array<float, 4>, 4> postCameras{};
+  std::array<uint32_t, 4> postCameraDraws{};
+  // Of those draws, the ones that may write depth (z-update on, LESS / LEQUAL / EQUAL test).
+  std::array<uint32_t, 4> postCameraDepthWrites{};
+  uint8_t postCameraCount = 0;
+  // Depth writes the SSAO merge cannot defer past: from a draw with no tagged camera (2D, other
+  // shaders, a fifth camera) or with a test that can move depth away from the camera.
+  bool depthWritesForeign = false;
+  // The first pass after a display copy: a new game frame starts here (post-process light shafts
+  // and area colours run once per game frame).
+  bool startsGameFrame = false;
+  // Glow source copy to soften after this pass' resolve (post::soften_copy); 0 = none.
+  float resolveSoftenX = 0.0f, resolveSoftenY = 0.0f;
+  // A GX copy with the clear flag follows this pass: the previous pass' depth is still intact when
+  // this pass begins (the clear is this pass' load op or its first draw). SSAO snapshots it there.
+  bool captureDepthBefore = false;
+  // Some draw of this pass may write depth (any non-GX draw, or a GX draw with z-update on). The SSAO
+  // depth merge skips world passes after which the EFB depth cannot have changed.
+  bool depthWrites = false;
   // The resolve destination outlives the frame with no re-issue path (one-shot
   // bake), so this pass may not drop draws even in skip-unready-pipelines mode.
   bool requireReadyPipelines = false;
   bool resolveHalfScale = false;
   bool resolveCopyFilterActive = false;
   bool resolveForceOpaqueAlpha = false;
+  std::string resolveDumpPath; // diagnostic readback of this pass's copy (draw dump)
   bool resolveNeedsConversion = false;
   bool resolveNeedsShaderSampling = false;
   bool resolveLinearSampling = false;
   bool snapshotColorResolveSource = false;
   std::vector<tex_palette_conv::ConvRequest> paletteConvs;
+  std::vector<tex_cmpr_decode::Request> cmprDecodes;
+  // GPU buffer set holding this pass' vertex, index, uniform and storage ranges (see GpuBufferSet).
+  uint8_t bufferSet = kUntaggedBufferSet;
 };
 static std::vector<RenderPass> g_renderPasses;
+// Passes a seal recorded after its last display copy: the start of the next game frame, which every
+// image of the next batch (inserted and native) draws first. Only while frame interpolation runs.
+static std::vector<RenderPass> g_carriedPasses;
+// The batch being recorded begins at a game frame start: either the previous seal moved its passes
+// after the display copy here, or it ended exactly on a frame boundary.
+static bool g_nextBatchStartsGameFrame = false;
+// Seals in a row without any display copy; two mean a title that presents without one, where every
+// seal is its own frame boundary.
+static uint32_t g_sealsWithoutDisplayCopy = 0;
+static bool g_boundaryAtSeal = false;
 static u32 g_currentRenderPass = UINT32_MAX;
 
 // Recycle command storage: discarding passes used to free their command lists too, so each frame
@@ -251,6 +333,15 @@ struct SealedFrameData {
   depth_peek::FrameMapping depthMapping;
   DebugFrameData debug;
   std::vector<RenderPass> passes;
+  // The passes begin at a game frame start (the previous seal carried its tail here).
+  bool startsGameFrame = false;
+  // The passes after the last display copy moved to the next batch: the list ends at that copy.
+  bool endsAtDisplayCopy = false;
+  uint32_t carriedOutDraws = 0;
+  // GPU buffer set of this batch's own passes.
+  uint8_t ownBufferSet = 0;
+  // CMPR decodes write textures once; the first image of a presentation group runs them.
+  bool decodesDone = false;
 };
 
 SealedFrame::SealedFrame() : m_data(std::make_unique<SealedFrameData>()) {}
@@ -456,6 +547,8 @@ static void set_efb_targets(RenderPass& pass) {
   pass.colorView = webgpu::g_frameBuffer.view;
   pass.resolveView = webgpu::g_graphicsConfig.msaaSamples > 1 ? webgpu::g_frameBufferResolved.view : nullptr;
   pass.depthView = webgpu::g_depthBuffer.view;
+  pass.depthTexture = webgpu::g_depthBuffer.texture;
+  pass.depthSize = webgpu::g_depthBuffer.size;
   pass.copySourceTexture =
       webgpu::g_graphicsConfig.msaaSamples > 1 ? webgpu::g_frameBufferResolved.texture : webgpu::g_frameBuffer.texture;
   pass.copySourceView =
@@ -509,8 +602,50 @@ gx::DrawData* get_last_draw_command() {
   return &last.data.draw.gx;
 }
 
+void note_resolve_soften(float scaleX, float scaleY) noexcept {
+  // resolve_pass has just begun the next pass; the copy belongs to the one before it.
+  if (g_currentRenderPass == 0 || g_currentRenderPass > g_renderPasses.size()) return;
+  auto& pass = g_renderPasses[g_currentRenderPass - 1];
+  if (!pass.resolveTarget) return;
+  pass.resolveSoftenX = scaleX;
+  pass.resolveSoftenY = scaleY;
+}
+
+void note_display_copy() noexcept {
+  if (has_current_render_pass()) g_renderPasses[g_currentRenderPass].startsGameFrame = true;
+  gx::note_frame_interpolation_boundary();
+}
+
+// Camera slot of the draw being recorded (note_pass_camera, then push_draw_command on the same
+// thread); -1 = no tagged camera.
+static int g_drawPassCamera = -1;
+
+void note_pass_camera(float a, float b, float znear, float zfar) noexcept {
+  if (!has_current_render_pass()) return;
+  auto& pass = g_renderPasses[g_currentRenderPass];
+  const std::array<float, 4> key{a, b, znear, zfar};
+  for (uint8_t i = 0; i < pass.postCameraCount; ++i)
+    if (pass.postCameras[i] == key) { ++pass.postCameraDraws[i]; g_drawPassCamera = i; return; }
+  if (pass.postCameraCount < pass.postCameras.size()) {
+    pass.postCameraDraws[pass.postCameraCount] = 1;
+    g_drawPassCamera = pass.postCameraCount;
+    pass.postCameras[pass.postCameraCount++] = key;
+  }
+}
+
 static void push_draw_command(ShaderDrawCommand data) {
+  const bool gx = data.type == ShaderType::GX;
+  const bool depthWrite = !gx || data.gx.depthWrite;
+  const bool unordered = !gx || data.gx.depthWriteUnordered;
+  const int camera = g_drawPassCamera;
+  g_drawPassCamera = -1;
   push_command(CommandType::Draw, Command::Data{.draw = data});
+  if (depthWrite && g_currentRenderPass < g_renderPasses.size()) {
+    auto& pass = g_renderPasses[g_currentRenderPass];
+    pass.depthWrites = true;
+    if (camera >= 0 && camera < pass.postCameraCount && !unordered) ++pass.postCameraDepthWrites[camera];
+    else pass.depthWritesForeign = true;
+  }
   ++g_drawCallCount;
 }
 
@@ -617,6 +752,20 @@ void resolve_pass(TextureHandle texture, ClipRect rect, bool clearColor, bool cl
       sourceRect = {srcLeft, srcTop, std::max(srcRight - srcLeft, 1.0f), std::max(srcBottom - srcTop, 1.0f)};
     }
   }
+  if (auto* dump = draw_dump::active()) UNLIKELY {
+    const uint32_t copyIndex = draw_dump::g_copyIndex++;
+    if (copyIndex == draw_dump::requested_copy()) draw_dump::g_copyTexture = texture;
+    if (draw_dump::all_copies_requested())
+      prevPass.resolveDumpPath = draw_dump::base_path() + ".copy" + std::to_string(copyIndex) + ".bmp";
+    std::fprintf(dump, "copy pass=%u rect=%d,%d,%d,%d source=%g,%g,%g,%g target=%ux%u format=%u clear=%d/%d/%d "
+                       "half=%d dst=%ux%u pf=%u opaque_alpha=%d clear_rgba=%.3f,%.3f,%.3f,%.3f\n",
+                 g_currentRenderPass, rect.x, rect.y, rect.width, rect.height, sourceRect.x(), sourceRect.y(),
+                 sourceRect.z(), sourceRect.w(), prevPass.targetSize.width, prevPass.targetSize.height,
+                 unsigned(resolveFormat), int(clearColor), int(clearAlpha), int(clearDepth), int(halfScale),
+                 texture ? texture->size.width : 0, texture ? texture->size.height : 0,
+                 unsigned(gx::g_gxState.pixelFmt), int(forceOpaqueAlpha), clearColorValue.x(), clearColorValue.y(),
+                 clearColorValue.z(), clearColorValue.w());
+  }
   prevPass.resolveTarget = std::move(texture);
   prevPass.requireReadyPipelines |= persistentCopy;
   prevPass.resolveRect = rect;
@@ -690,6 +839,8 @@ void resolve_pass(TextureHandle texture, ClipRect rect, bool clearColor, bool cl
       .colorView = prevPass.colorView,
       .resolveView = prevPass.resolveView,
       .depthView = prevPass.depthView,
+      .depthTexture = prevPass.depthTexture,
+      .depthSize = prevPass.depthSize,
       .copySourceTexture = prevPass.copySourceTexture,
       .copySourceView = prevPass.copySourceView,
       .copySourceDepthView = prevPass.copySourceDepthView,
@@ -699,6 +850,7 @@ void resolve_pass(TextureHandle texture, ClipRect rect, bool clearColor, bool cl
       .clearDepthValue = clearDepthValue,
       .clearColor = useAttachmentColorClear,
       .clearDepth = useAttachmentDepthClear,
+      .captureDepthBefore = clearDepth,
   };
   push_render_pass(std::move(newPass));
   ++g_currentRenderPass;
@@ -729,6 +881,13 @@ void resolve_pass(TextureHandle texture, ClipRect rect, bool clearColor, bool cl
   push_command(CommandType::SetScissor, Command::Data{.setScissor = g_cachedScissor});
 }
 
+bool can_push_cmpr_decode() noexcept { return has_current_render_pass(); }
+
+// Decodes run before the pass the texture was created in, ahead of any sampling.
+void push_cmpr_decode(tex_cmpr_decode::Request&& request) {
+  g_renderPasses[g_currentRenderPass].cmprDecodes.push_back(std::move(request));
+}
+
 void queue_palette_conv(tex_palette_conv::ConvRequest req) {
   if (!has_current_render_pass()) {
     Log.warn("Dropping palette conversion without an active render pass");
@@ -747,6 +906,10 @@ uint32_t get_sample_count() noexcept {
 }
 
 void clear_caches() noexcept {
+  // A resize replaces the EFB the carried passes target; the next batch starts without them and
+  // shows its inserted images as copies of the native one.
+  recycle_render_passes(g_carriedPasses);
+  g_nextBatchStartsGameFrame = false;
   g_offscreenCache.clear();
   // Retire rather than free; see g_retiredBindGroups.
   g_retiredBindGroups.reserve(g_retiredBindGroups.size() + g_cachedBindGroups.size());
@@ -784,7 +947,7 @@ static OffscreenCacheEntry get_offscreen_textures(uint32_t width, uint32_t heigh
   const auto depthFormat = webgpu::g_graphicsConfig.depthFormat;
   const wgpu::TextureDescriptor depthDesc{
       .label = "Offscreen Depth",
-      .usage = wgpu::TextureUsage::RenderAttachment,
+      .usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding,
       .dimension = wgpu::TextureDimension::e2D,
       .size = size,
       .format = depthFormat,
@@ -834,6 +997,8 @@ void begin_offscreen(uint32_t width, uint32_t height) {
   RenderPass newPass{
       .colorView = g_offscreenColor.view,
       .depthView = g_offscreenDepth.view,
+      .depthTexture = g_offscreenDepth.texture,
+      .depthSize = {width, height, 1},
       .copySourceTexture = g_offscreenColor.texture,
       .copySourceView = g_offscreenColor.view,
       .copySourceDepthView = g_offscreenDepth.view,
@@ -899,6 +1064,7 @@ void initialize() {
   depth_peek::initialize();
   tex_copy_conv::initialize();
   tex_palette_conv::initialize();
+  tex_cmpr_decode::initialize();
   texture_replacement::initialize();
 
   // For uniform & storage buffer offset alignments
@@ -1018,9 +1184,80 @@ void initialize() {
     };
     g_uniformBindGroup = g_device.CreateBindGroup(&bindGroupDescriptor);
   }
+  g_bufferSets[0] = GpuBufferSet{
+      .vertex = g_vertexBuffer,
+      .uniform = g_uniformBuffer,
+      .index = g_indexBuffer,
+      .storage = g_storageBuffer,
+      .staticBindGroup = g_staticBindGroup,
+      .uniformBindGroup = g_uniformBindGroup,
+  };
+  g_bufferSets[1] = {};
+  g_alternateBufferSets = false;
+  g_boundBufferSet = 0;
+  g_nextWriteBufferSet = 0;
+  g_lastWrittenBufferSet = 0;
 
   gx::initialize();
   initialize_pipeline_cache();
+}
+
+// The second GPU buffer set (80 MB), made the first time a seal carries passes to the next batch.
+// Runs in the seal prologue: the set the next upload writes is the one nothing references yet.
+static void ensure_alternate_buffer_set() {
+  if (g_alternateBufferSets) {
+    return;
+  }
+  const auto createBuffer = [](wgpu::BufferUsage usage, uint64_t size, const char* label) {
+    const wgpu::BufferDescriptor descriptor{
+        .label = label,
+        .usage = usage | ((AURORA_DIAGNOSTIC_ENV("WII_COMPILED_GPU_CAPTURE_BUFFERS") ||
+                           AURORA_DIAGNOSTIC_ENV("WII_COMPILED_GPU_CAPTURE_ALSO_BUFFERS"))
+                              ? wgpu::BufferUsage::CopySrc
+                              : wgpu::BufferUsage::None),
+        .size = size,
+    };
+    return g_device.CreateBuffer(&descriptor);
+  };
+  GpuBufferSet set{
+      .vertex = createBuffer(wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, VertexBufferSize,
+                             "Shared Vertex Buffer B"),
+      .uniform = createBuffer(wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, UniformBufferSize,
+                              "Shared Uniform Buffer B"),
+      .index = createBuffer(wgpu::BufferUsage::Index | wgpu::BufferUsage::CopyDst, IndexBufferSize,
+                            "Shared Index Buffer B"),
+      .storage = createBuffer(wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, StorageBufferSize,
+                              "Shared Storage Buffer B"),
+  };
+  std::vector<wgpu::BindGroupEntry> staticEntries{
+      wgpu::BindGroupEntry{.binding = 0, .buffer = set.vertex},
+      wgpu::BindGroupEntry{.binding = 1, .buffer = set.storage},
+  };
+  if (g_diagnosticRasterCoverage) {
+    staticEntries.push_back(wgpu::BindGroupEntry{.binding = 2, .buffer = g_diagnosticRasterCoverage});
+  }
+  const wgpu::BindGroupDescriptor staticDescriptor{
+      .label = "Static bind group B",
+      .layout = g_staticBindGroupLayout,
+      .entryCount = staticEntries.size(),
+      .entries = staticEntries.data(),
+  };
+  set.staticBindGroup = g_device.CreateBindGroup(&staticDescriptor);
+  const std::array uniformEntries{
+      wgpu::BindGroupEntry{.binding = 0, .buffer = set.uniform, .size = gx::MaxUniformSize},
+  };
+  const wgpu::BindGroupDescriptor uniformDescriptor{
+      .label = "Uniform bind group B",
+      .layout = g_uniformBindGroupLayout,
+      .entryCount = uniformEntries.size(),
+      .entries = uniformEntries.data(),
+  };
+  set.uniformBindGroup = g_device.CreateBindGroup(&uniformDescriptor);
+  g_bufferSets[1] = std::move(set);
+  g_alternateBufferSets = true;
+  // Everything so far went to set 0, including the batch being sealed.
+  g_nextWriteBufferSet = g_lastWrittenBufferSet ^ 1u;
+  Log.info("Frame interpolation: second GPU buffer set created");
 }
 
 void shutdown() {
@@ -1030,7 +1267,10 @@ void shutdown() {
   depth_peek::shutdown();
   tex_copy_conv::shutdown();
   tex_palette_conv::shutdown();
+  tex_cmpr_decode::shutdown();
   texture_replacement::shutdown();
+  texture_upscale::shutdown();
+  post::shutdown();
   gx::shutdown();
 
   g_textureUploads.clear();
@@ -1041,6 +1281,11 @@ void shutdown() {
   g_uniformBuffer = {};
   g_indexBuffer = {};
   g_storageBuffer = {};
+  g_bufferSets = {};
+  g_alternateBufferSets = false;
+  g_boundBufferSet = 0;
+  g_carriedPasses.clear();
+  g_nextBatchStartsGameFrame = false;
   g_diagnosticRasterCoverage = {};
   // Invalidate outstanding callbacks before releasing their buffers.
   s_mappingState.reset();
@@ -1165,6 +1410,8 @@ bool begin_frame(bool clearEfb) {
   // Starting a logical frame must reset interpolation even when the emulated
   // EFB survives the host presentation boundary. Mid-frame resume stays separate.
   if (!clearEfb && g_frameIndex != 0) gx::begin_frame_interpolation();
+  // Producer thread, once per logical frame (EFB-persistent or not).
+  gx::enforce_copy_texture_budget();
   return begin_frame_impl(clearEfb || g_frameIndex == 0);
 }
 
@@ -1256,6 +1503,17 @@ static void end_batch_impl(const wgpu::CommandEncoder& cmd, bool advanceFrame) {
   ZoneScoped;
   ASSERT(!advanceFrame || !g_inOffscreen, "end_frame called while offscreen rendering is active");
   if (advanceFrame) {
+    // Game frames end at display copies. A title that presents without any (two seals in a row with
+    // none) gets one boundary per seal instead, the batch being its whole frame.
+    g_boundaryAtSeal = false;
+    if (gx::frame_interpolation_active()) {
+      if (gx::frame_interpolation_boundaries_in_batch() != 0) {
+        g_sealsWithoutDisplayCopy = 0;
+      } else if (++g_sealsWithoutDisplayCopy >= 2) {
+        gx::note_frame_interpolation_boundary();
+        g_boundaryAtSeal = true;
+      }
+    }
     gx::finalize_frame_interpolation();
   } else {
     // Mid-frame batch split: the staging buffer is about to be unmapped and rotated, so pending
@@ -1276,6 +1534,18 @@ static void end_batch_impl(const wgpu::CommandEncoder& cmd, bool advanceFrame) {
     return writeSize;
   };
   capture_geometry_diagnostic();
+  // Upload into the set no carried pass references; everything recorded since the last upload uses it.
+  const uint8_t writeSet = g_alternateBufferSets ? g_nextWriteBufferSet : uint8_t{0};
+  if (g_alternateBufferSets) {
+    g_nextWriteBufferSet = writeSet ^ 1u;
+  }
+  g_lastWrittenBufferSet = writeSet;
+  bind_buffer_set(writeSet);
+  for (auto& pass : g_renderPasses) {
+    if (pass.bufferSet == kUntaggedBufferSet) {
+      pass.bufferSet = writeSet;
+    }
+  }
   g_stagingBuffers[currentStagingBuffer].Unmap();
   s_mappingState.reset();
   g_stats.drawCallCount = g_drawCallCount;
@@ -1336,7 +1606,8 @@ void split_staging_batch() {
   const auto& active = g_renderPasses[g_currentRenderPass];
   RenderPass continuation{
       .colorView = active.colorView, .resolveView = active.resolveView,
-      .depthView = active.depthView, .copySourceTexture = active.copySourceTexture,
+      .depthView = active.depthView, .depthTexture = active.depthTexture, .depthSize = active.depthSize,
+      .copySourceTexture = active.copySourceTexture,
       .copySourceView = active.copySourceView, .copySourceDepthView = active.copySourceDepthView,
       .targetSize = active.targetSize, .msaaSamples = active.msaaSamples,
       .clearColor = false, .clearDepth = false,
@@ -1378,6 +1649,10 @@ void split_staging_batch() {
 }
 
 uint32_t current_frame() noexcept { return g_frameIndex; }
+uint32_t current_render_pass_index() noexcept { return g_currentRenderPass; }
+const uint8_t* staged_vertex_data(const Range& range) noexcept {
+  return range.offset + range.size <= g_verts.size() ? g_verts.data() + range.offset : nullptr;
+}
 
 // The only place that erases from g_cachedBindGroups, whose handles the frame being encoded still
 // holds, so it runs in the seal prologue with the renderer mutex held and the producer excluded.
@@ -1502,30 +1777,271 @@ fn diagnostic_main(@builtin(global_invocation_id) id: vec3u) {
 }
 
 static void render_pass_impl(const wgpu::RenderPassEncoder& pass, const std::vector<RenderPass>& passes, u32 idx,
-                             int32_t interpolatedFrame, DebugFrameData& debugFrame, size_t commandLimit=SIZE_MAX);
+                             int32_t interpolatedFrame, DebugFrameData& debugFrame, size_t commandLimit=SIZE_MAX,
+                             size_t commandBegin=0);
+
+struct RenderOptions {
+  // CMPR decodes write their textures once per presentation group: the first image runs them.
+  bool runDecodes = true;
+  // The passes hold exactly one game frame, from its start to its display copy, so every image
+  // (inserted ones included) draws it whole, with its own SSAO and scene effects.
+  bool selfContained = false;
+  // The list ends at a display copy, its tail carried to the next batch: no world block stays open.
+  bool endsAtDisplayCopy = false;
+  // Buffer set left bound afterwards, for work encoded after the frame (EFB readbacks).
+  uint8_t ownBufferSet = kUntaggedBufferSet;
+};
 
 static void render_impl(std::vector<RenderPass>& renderPasses, wgpu::CommandEncoder& cmd, int32_t interpolatedFrame,
-                        bool finalize, DebugFrameData& debugFrame, const depth_peek::FrameMapping& depthMapping) {
+                        bool finalize, DebugFrameData& debugFrame, const depth_peek::FrameMapping& depthMapping,
+                        const RenderOptions& options) {
   ZoneScoped;
-  // Palette conversions, MSAA resolves and EFB copies depend on sealed frame state, not on the
-  // interpolation weight, so encode them on the native render and let replay slots sample them.
+  // Diagnostics, draw dumps and the SSAO depth carried between batches belong to the native render.
   const bool encodeTextureBakes = interpolatedFrame < 0;
-  for (u32 i = 0; i < renderPasses.size(); ++i) {
-    const auto& passInfo = renderPasses[i];
-    if (encodeTextureBakes) {
-      for (const auto& conv : passInfo.paletteConvs) {
-        tex_palette_conv::run(cmd, conv);
+  // Scene effects (SSAO, floor reflections, light shafts) need the frame's whole world. An inserted
+  // image of a self-contained frame draws all of it, so it gets them too; without that every other
+  // image at 120 Hz lacked them, which flickers.
+  const bool sceneEffects = encodeTextureBakes || options.selfContained;
+  // EFB copies that no draw follows still run for every image of a self-contained frame: what they
+  // copy differs per image.
+  const bool encodeAllResolves = encodeTextureBakes || options.selfContained;
+  // SSAO depth accumulation.
+  // A repeated presentation has no new EFB draws: keep the previous frame's accumulated depth.
+  bool efbHasDraws = false;
+  for (const auto& candidate : renderPasses) {
+    if (candidate.depthView.Get() == webgpu::g_depthBuffer.view.Get() && !candidate.commands.empty()) { efbHasDraws = true; break; }
+  }
+  const bool accumulateDepth = sceneEffects && efbHasDraws && post::wants_depth();
+  // A self-contained frame never carries a world block in or out, whichever image draws it.
+  if (options.selfContained) post::set_depth_carry(false, 0);
+  if (accumulateDepth) post::begin_depth(cmd, webgpu::g_depthBuffer);
+  const RenderPass* ssaoPrevPass = nullptr;
+  // Scene points: the end of every block of EFB passes drawn with the world camera (tagged per pass
+  // by post::note_draw). There the colour is snapshotted (bloom source) and SSAO is applied straight
+  // into the EFB, before the visor, HUD and messages are drawn. One render call can hold two game
+  // frames (two world blocks); applying only after the last one left every other frame without
+  // occlusion (flicker), so each block gets its own application.
+  // sceneEnd: 1 = the main world block ends after this pass (snapshot + SSAO), 2 = a small block with
+  // the world camera ends here (the game's effect passes, 1-6 draws into parts of the EFB): only its
+  // depth is discarded. SSAO on those small blocks produced a screen quarter that looked different
+  // (a cross through the centre) and flicker.
+  constexpr uint32_t kMinWorldBlockDraws = 24;
+  std::vector<uint8_t> sceneEnd(renderPasses.size(), 0);
+  // Passes whose depth feeds SSAO: EFB passes (main depth buffer) that drew with the world camera.
+  // Merging every pass let off-screen renders (characters drawn into textures in cutscenes) and other
+  // passes leak their depth, which showed up as dark silhouettes on walls where nobody stands.
+  std::vector<uint8_t> worldPass(renderPasses.size(), 0);
+  uint8_t sceneStart = 0;  // same codes, for a block carried from the previous batch that ends at once
+  const uint32_t carriedDraws = encodeTextureBakes ? post::carried_world_draws() : 0;
+  if (encodeTextureBakes) post::set_depth_carry(false, 0);
+  // Passes the pending SSAO depth merge may be deferred past (see the merge loop below).
+  std::vector<uint8_t> mergeDeferrable(renderPasses.size(), 0);
+  // World passes of a small block (sceneEnd 2): its depth is discarded at the block end, so merging
+  // it is wasted work. Rundas' fight has a dozen such blocks per frame (12-25 merges).
+  std::vector<uint8_t> mergeDiscarded(renderPasses.size(), 0);
+  if (sceneEffects && post::wants_scene_color()) {
+    std::array<float, 4> world{};
+    if (post::world_camera(world)) {
+      for (size_t k = 0; k < renderPasses.size(); ++k) {
+        const auto& rp = renderPasses[k];
+        if (rp.depthView.Get() != webgpu::g_depthBuffer.view.Get()) {
+          mergeDeferrable[k] = 1;  // its own depth target: the EFB depth is untouched
+          continue;
+        }
+        bool onlyWorldNearer = !rp.clearDepth && !rp.depthWritesForeign;
+        for (uint8_t c = 0; c < rp.postCameraCount && onlyWorldNearer; ++c)
+          if (rp.postCameraDepthWrites[c] != 0 && rp.postCameras[c] != world) onlyWorldNearer = false;
+        mergeDeferrable[k] = onlyWorldNearer ? 1 : 0;
+      }
+      size_t lastWorld = SIZE_MAX;
+      uint32_t blockDraws = carriedDraws;
+      bool firstEfb = true;
+      size_t blockFirst = 0;
+      for (size_t k = 0; k < renderPasses.size(); ++k) {
+        const auto& rp = renderPasses[k];
+        if (rp.colorView.Get() != webgpu::g_frameBuffer.view.Get()) continue;
+        uint32_t worldDraws = 0;
+        for (uint8_t c = 0; c < rp.postCameraCount; ++c)
+          if (rp.postCameras[c] == world) worldDraws += rp.postCameraDraws[c];
+        if (worldDraws > 0 && rp.depthView.Get() == webgpu::g_depthBuffer.view.Get()) worldPass[k] = 1;
+        if (worldDraws > 0) {
+          if (lastWorld == SIZE_MAX) blockFirst = k;
+          lastWorld = k;
+          blockDraws += worldDraws;
+        } else if (lastWorld != SIZE_MAX) {
+          sceneEnd[lastWorld] = blockDraws >= kMinWorldBlockDraws ? 1 : 2;
+          if (sceneEnd[lastWorld] == 2)
+            for (size_t m = blockFirst; m <= lastWorld; ++m) mergeDiscarded[m] = 1;
+          lastWorld = SIZE_MAX;
+          blockDraws = 0;
+        } else if (firstEfb && carriedDraws > 0) {
+          // The block carried from the previous batch ended with that batch.
+          sceneStart = carriedDraws >= kMinWorldBlockDraws ? 1 : 2;
+          blockDraws = 0;
+        }
+        firstEfb = false;
+      }
+      // A world block still open at the end of this batch continues in the next one (the game's
+      // frame straddles batches at a varying point): no SSAO yet, and the depth is carried over.
+      // Applying it to each half separately made the result change every frame (flicker) and left
+      // visible boundaries between the halves.
+      // A list cut at its display copy closes the block there instead: the passes after the copy
+      // belong to the next game frame and render at the start of the next batch.
+      if (lastWorld != SIZE_MAX && options.endsAtDisplayCopy) {
+        sceneEnd[lastWorld] = blockDraws >= kMinWorldBlockDraws ? 1 : 2;
+        if (sceneEnd[lastWorld] == 2)
+          for (size_t m = blockFirst; m <= lastWorld; ++m) mergeDiscarded[m] = 1;
+      } else if (lastWorld != SIZE_MAX && encodeTextureBakes) {
+        post::set_depth_carry(true, blockDraws);
+      }
+      // One application per game frame. Rundas' fight draws its world in two to four full-size blocks
+      // per frame (effect passes and EFB copies in between) and the EFB depth persists across them,
+      // so every application recomputed SSAO and floor reflections over the whole screen and darkened
+      // and reflected what earlier ones had already treated (post-process up to 9.5 ms of GPU per
+      // frame, [gpu-time] 2026-11-01). Earlier full-size blocks of a frame now only accumulate their
+      // depth (action 3); the last one of the frame applies, still before its own EFB copy (#16).
+      // A frame ends at its display copy (startsGameFrame); a block still open at the end of the
+      // batch is not counted, so the last closed one keeps applying as before in that case.
+      size_t lastFull = SIZE_MAX;
+      bool startPending = sceneStart == 1;
+      for (size_t k = 0; k < renderPasses.size(); ++k) {
+        if (renderPasses[k].startsGameFrame && renderPasses[k].colorView.Get() == webgpu::g_frameBuffer.view.Get()) {
+          lastFull = SIZE_MAX;  // a new game frame: the previous one's last block stays an application
+          startPending = false;
+        }
+        if (sceneEnd[k] != 1) continue;
+        if (lastFull != SIZE_MAX) sceneEnd[lastFull] = 3;
+        if (startPending) sceneStart = 3;
+        startPending = false;
+        lastFull = k;
       }
     }
-    const bool hasRenderWork = passInfo.clearColor || passInfo.clearDepth || !passInfo.commands.empty();
+  }
+  static const bool sceneDebug = post::debug_depth_requested();
+  if (sceneDebug && encodeTextureBakes && current_frame() % 30 == 0) {
+    std::string line = "[post-scene] frame=" + std::to_string(current_frame()) + " efb:";
+    for (size_t k = 0; k < renderPasses.size(); ++k)
+      if (renderPasses[k].colorView.Get() == webgpu::g_frameBuffer.view.Get())
+        line += " " + std::to_string(k) + "=" + std::to_string(renderPasses[k].commands.size()) + (sceneEnd[k] == 1 ? "*" : sceneEnd[k] == 2 ? "-" : "");
+    line += " carried=" + std::to_string(carriedDraws) + " start=" + std::to_string(sceneStart);
+    std::fprintf(stderr, "%s\n", line.c_str());
+  }
+  // The SSAO depth merge folds the EFB depth into the accumulation as max(previous, this depth). When
+  // no draw could have written the EFB depth since the last merge, merging again gives the same
+  // result: skip it. Effect-heavy frames (Rundas' ice, hypermode) split the world into dozens of
+  // passes at the game's EFB copies, mostly particles without z-update; one full-screen merge per
+  // pass (24 per frame) made those fights GPU-bound. A reset of the accumulation, a face run waiting
+  // to be finalized and any depth-writing draw on the EFB depth mark it dirty again.
+  //
+  // Deferral: a world pass' depth need not be merged when the next pass starts if that pass cannot
+  // lose any of it, i.e. it does not clear the EFB depth and its only depth writes are world-camera
+  // draws with a LESS / LEQUAL / EQUAL test (the depth there only gets nearer; merge is a max of
+  // 1/distance, monotonic in depth inside the world band). Merging once after the last of such a run
+  // gives the same accumulation as merging after every pass. Rundas' fight wrote depth between
+  // its 24 copies per frame, so the skip above alone never triggered there.
+  bool efbDepthDirty = true;
+  size_t ssaoMergesSkipped = 0, ssaoMergesDeferred = 0;
+  size_t ssaoMergesDiscarded = 0, ssaoApplications = 0, ssaoSmallBlocks = 0, ssaoAccumulatedBlocks = 0;
+  // A small block's passes are not merged (mergeDiscarded), so its end leaves the accumulation as it
+  // was, keeping what earlier full-size blocks of the frame gathered; only a merge forced by a face
+  // run puts its depth in, and then the accumulation is reset as before.
+  bool smallBlockMerged = false;
+  // A game frame ends with its display copy (GXCopyDisp, note_display_copy). The EFB clears were no
+  // use as a marker: the frame-start clear is a scissored clear draw like the effect passes' ones. A second full-size world block of the same frame
+  // (Rundas' fight: two per frame) gets SSAO and floor reflections for its own depth, but the light
+  // shafts and the area colours, computed from the whole picture, were added / measured again:
+  // shafts doubled on everything drawn before. Only the first application after a clear does them.
+  bool firstInGameFrame = true;
+  size_t ssaoFrameStarts = 0;
+  const auto mergeWorldDepth = [&](const RenderPass& pass) -> bool {
+    const size_t index = static_cast<size_t>(&pass - renderPasses.data());
+    if (index < mergeDiscarded.size() && mergeDiscarded[index] && !post::face_depth_pending()) {
+      ++ssaoMergesDiscarded;  // reset at its block end without being used
+      return false;
+    }
+    if (!efbDepthDirty && !post::face_depth_pending()) {
+      ++ssaoMergesSkipped;
+      return false;
+    }
+    post::merge_depth(cmd, pass.depthTexture, pass.depthView, pass.depthSize);
+    if (index < mergeDiscarded.size() && mergeDiscarded[index]) smallBlockMerged = true;
+    efbDepthDirty = false;
+    return true;
+  };
+  size_t ssaoApplied = 0;  // applications that actually ran (apply_ssao_in_frame returned true)
+  const auto sceneAction = [&](uint8_t action) {
+    if (action == 1) {
+      post::capture_scene_color(cmd);
+      // The area colour readback is once per presented frame: the native render takes it.
+      if (post::apply_ssao_in_frame(cmd, firstInGameFrame, encodeTextureBakes)) ++ssaoApplied;
+      firstInGameFrame = false;
+      ++ssaoApplications;
+    } else if (action == 2) {
+      ++ssaoSmallBlocks;
+    } else if (action == 3) {
+      ++ssaoAccumulatedBlocks;  // a later block of this game frame applies with this depth too
+      return;
+    }
+    if (action == 1 || (action == 2 && smallBlockMerged)) {
+      post::reset_depth(cmd);  // the next block starts from an empty accumulation
+      efbDepthDirty = true;     // the depth still in the EFB must be folded into it again
+      smallBlockMerged = false;
+    }
+  };
+  const auto sceneAfter = [&](size_t pass) {
+    if (pass < sceneEnd.size()) sceneAction(sceneEnd[pass]);
+  };
+  sceneAction(sceneStart);
+  size_t ssaoMerges = 0, ssaoEfbPasses = 0, ssaoOtherPasses = 0, ssaoEfbMax = 0, ssaoOtherMax = 0;
+  uint32_t ssaoOtherW = 0, ssaoOtherH = 0;
+  for (u32 i = 0; i < renderPasses.size(); ++i) {
+    const auto& passInfo = renderPasses[i];
+    // Carried passes read the previous upload's buffers; everything below binds through the globals.
+    bind_buffer_set(passInfo.bufferSet);
+    if (passInfo.colorView.Get() == webgpu::g_frameBuffer.view.Get() && passInfo.startsGameFrame) {
+      firstInGameFrame = true;
+      ++ssaoFrameStarts;
+    }
+    // Fold the previous world pass' depth into the SSAO accumulation before it is cleared or left
+    // (only world passes are kept in ssaoPrevPass; the merge also keeps only the world camera's band).
+    bool keepPending = false;
+    if (accumulateDepth && ssaoPrevPass != nullptr && ssaoPrevPass->depthTexture) {
+      if (mergeDeferrable[i] && !post::face_depth_pending()) {
+        keepPending = true;  // every world pass shares the EFB depth: merged later, once
+        ++ssaoMergesDeferred;
+      } else if (mergeWorldDepth(*ssaoPrevPass)) {
+        ++ssaoMerges;
+      }
+    }
+    if (accumulateDepth) {
+      ssaoPrevPass = worldPass[i] ? &passInfo : keepPending ? ssaoPrevPass : nullptr;
+      if (passInfo.depthView.Get() == webgpu::g_depthBuffer.view.Get()) { ++ssaoEfbPasses; ssaoEfbMax = std::max(ssaoEfbMax, passInfo.commands.size()); }
+      else { ++ssaoOtherPasses; ssaoOtherMax = std::max(ssaoOtherMax, passInfo.commands.size()); ssaoOtherW = passInfo.depthSize.width; ssaoOtherH = passInfo.depthSize.height; }
+    }
+    // Decodes fill a texture from CPU data once, before the first image of the group samples it.
+    // Palette conversions run for every image: their source can be an EFB copy this image just made.
+    if (options.runDecodes) {
+      for (const auto& decode : passInfo.cmprDecodes) {
+        tex_cmpr_decode::run(cmd, decode);
+      }
+    }
+    for (const auto& conv : passInfo.paletteConvs) {
+      tex_palette_conv::run(cmd, conv);
+    }
+    const bool hasRenderWork = passInfo.clearColor || passInfo.clearDepth || !passInfo.commands.empty() ||
+                               !passInfo.cmprDecodes.empty();
     if (i == renderPasses.size() - 1) {
-      ASSERT(!passInfo.resolveTarget, "Final render pass must not have resolve target");
-    } else if (!(passInfo.resolveTarget && encodeTextureBakes) && !hasRenderWork) {
+      // A list cut at its display copy ends with that copy's pass; the next frame's passes follow
+      // in the next batch.
+      ASSERT(!passInfo.resolveTarget || options.endsAtDisplayCopy, "Final render pass must not have resolve target");
+    } else if (!(passInfo.resolveTarget && encodeAllResolves) && !hasRenderWork) {
       // Skip only empty intermediate passes: offscreen and scratch passes with resolves still have to
       // run for later samplers, and on a replay slot a resolve-only pass has nothing to encode.
       continue;
     }
 
+    // SSAO wants the depth of the 3D world, which the game clears before drawing the HUD and
+    // again at the display copy: snapshot it right after the frame's heaviest pass ends.
     const std::array attachments{
         wgpu::RenderPassColorAttachment{
             .view = passInfo.colorView,
@@ -1608,11 +2124,75 @@ static void render_impl(std::vector<RenderPass>& renderPasses, wgpu::CommandEnco
       isolatedPass.End();
       Log.info("[prime-isolated-complete-pass] frame={} pass={} commands={}",current_frame(),i,passInfo.commands.size());
     }
-    auto pass = cmd.BeginRenderPass(&renderPassDescriptor);
-    render_pass_impl(pass, renderPasses, i, interpolatedFrame, debugFrame);
-    pass.End();
+    // Runs of draws that sample a texture of the SSAO exclusion list (Samus' face): the pass is
+    // encoded in segments so the depth before and after each run can be compared (post::face_*).
+    // Each run is of one kind: depth (opaque face) or cover (transparent visor glass, by colour).
+    struct ExcludeRun { size_t begin, end; bool cover; };
+    std::vector<ExcludeRun> excludeRuns;
+    if (accumulateDepth && worldPass[i] && passInfo.msaaSamples == 1 && passInfo.depthView && post::ssao_exclude_active()) {
+      int open = 0;  // 0 none, 1 depth run, 2 cover run
+      for (size_t j = 0; j < passInfo.commands.size(); ++j) {
+        const auto& c = passInfo.commands[j];
+        if (c.type != CommandType::Draw) continue;  // viewport / scissor changes do not close a run
+        const bool gx = c.data.draw.type == ShaderType::GX;
+        const int kind = gx && c.data.draw.gx.ssaoExclude ? 1 : gx && c.data.draw.gx.ssaoCover ? 2 : 0;
+        if (kind != 0 && kind == open) excludeRuns.back().end = j + 1;
+        else if (kind != 0) excludeRuns.push_back({j, j + 1, kind == 2});
+        open = kind;
+      }
+    }
+    if (excludeRuns.empty()) {
+      wgpu::RenderPassDescriptor timedDescriptor = renderPassDescriptor;
+      timedDescriptor.timestampWrites = gpu_timing::pass_writes(gpu_timing::Category::Game);
+      auto pass = cmd.BeginRenderPass(&timedDescriptor);
+      render_pass_impl(pass, renderPasses, i, interpolatedFrame, debugFrame);
+      pass.End();
+    } else {
+      size_t at = 0;
+      bool firstSegment = true;
+      const auto segment = [&](size_t end) {
+        std::array segmentAttachments = attachments;
+        wgpu::RenderPassDepthStencilAttachment segmentDepth = depthStencilAttachment;
+        if (!firstSegment) {  // later segments continue the same pass: keep colour and depth
+          segmentAttachments[0].loadOp = wgpu::LoadOp::Load;
+          segmentDepth.depthLoadOp = wgpu::LoadOp::Load;
+        }
+        wgpu::RenderPassDescriptor descriptor = renderPassDescriptor;
+        descriptor.colorAttachments = segmentAttachments.data();
+        descriptor.depthStencilAttachment = &segmentDepth;
+        descriptor.timestampWrites = gpu_timing::pass_writes(gpu_timing::Category::Game);
+        auto pass = cmd.BeginRenderPass(&descriptor);
+        render_pass_impl(pass, renderPasses, i, interpolatedFrame, debugFrame, end, at);
+        pass.End();
+        at = end;
+        firstSegment = false;
+      };
+      for (const auto& run : excludeRuns) {
+        if (run.begin > at || firstSegment) segment(run.begin);  // the first one also performs the pass' clears
+        post::face_before(cmd, passInfo.depthView, passInfo.depthSize, run.cover);
+        segment(run.end);
+        post::face_after(cmd, passInfo.depthView, passInfo.depthSize, run.cover);
+      }
+      segment(passInfo.commands.size());
+    }
+    if (passInfo.depthWrites && passInfo.depthView.Get() == webgpu::g_depthBuffer.view.Get()) efbDepthDirty = true;
 
-    if (finalize && i == renderPasses.size() - 1) {
+    // End of a world block: fold this pass' depth in and apply SSAO *before* this pass' EFB copy.
+    // The game copies the whole EFB right after the world (for its own glow), draws an effect into the
+    // top-left quarter and restores that quarter from the copy; with SSAO applied after the copy, that
+    // quarter came back without occlusion (a cross through the screen centre, flickering).
+    if (i < sceneEnd.size() && sceneEnd[i] != 0) {
+      if (accumulateDepth && passInfo.depthTexture && worldPass[i]) {
+        if (mergeWorldDepth(passInfo)) ++ssaoMerges;
+      }
+      sceneAction(sceneEnd[i]);
+      sceneEnd[i] = 0;
+      if (accumulateDepth) ssaoPrevPass = nullptr;  // already merged; the accumulation was reset
+    }
+
+
+    // The native image's depth, whichever image of the group is encoded last.
+    if (encodeTextureBakes && i == renderPasses.size() - 1) {
       depth_peek::encode_frame_snapshot(cmd, passInfo.copySourceDepthView, passInfo.targetSize, passInfo.msaaSamples, depthMapping);
     }
 
@@ -1640,9 +2220,6 @@ static void render_impl(std::vector<RenderPass>& renderPasses, wgpu::CommandEnco
         resolveSourceTexture = passInfo.resolveSourceSnapshot->texture;
         resolveSourceView = passInfo.resolveSourceSnapshot->sampleTextureView;
       }
-      if (isDepth && passInfo.msaaSamples > 1) {
-        Log.fatal("Depth tex copies from multisampled EFB targets are not supported");
-      }
       const tex_copy_conv::ConvRequest convReq{
           .fmt = passInfo.resolveFormat,
           .srcView = resolveSourceView,
@@ -1652,6 +2229,7 @@ static void render_impl(std::vector<RenderPass>& renderPasses, wgpu::CommandEnco
                               ? tex_copy_conv::SampleFilter::Linear
                               : tex_copy_conv::SampleFilter::Nearest,
           .forceOpaqueAlpha = passInfo.resolveForceOpaqueAlpha,
+          .multisampledDepthSource = isDepth && passInfo.msaaSamples > 1,
       };
       if (passInfo.resolveNeedsConversion) {
         tex_copy_conv::run(cmd, convReq);
@@ -1680,8 +2258,68 @@ static void render_impl(std::vector<RenderPass>& renderPasses, wgpu::CommandEnco
         };
         cmd.CopyTextureToTexture(&src, &dst, &size);
       }
+      if (passInfo.resolveSoftenX > 0.0f && passInfo.resolveTarget)
+        post::soften_copy(cmd, *passInfo.resolveTarget, passInfo.resolveSoftenX, passInfo.resolveSoftenY);
+      if (!passInfo.resolveDumpPath.empty() && encodeTextureBakes) {
+        const auto& target = *passInfo.resolveTarget;
+        const bool bgra = target.format == wgpu::TextureFormat::BGRA8Unorm;
+        if (bgra || target.format == wgpu::TextureFormat::RGBA8Unorm) {
+          const uint32_t bytesPerRow = (target.size.width * 4 + 255) & ~255u;
+          const wgpu::BufferDescriptor desc{.label = "Draw dump copy readback",
+              .usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead,
+              .size = uint64_t{bytesPerRow} * target.size.height};
+          draw_dump::CopyReadback readback{.buffer = g_device.CreateBuffer(&desc), .width = target.size.width,
+              .height = target.size.height, .bytesPerRow = bytesPerRow, .bgra = bgra, .path = passInfo.resolveDumpPath};
+          const wgpu::TexelCopyTextureInfo source{.texture = target.texture};
+          const wgpu::TexelCopyBufferInfo destination{
+              .layout = {.offset = 0, .bytesPerRow = bytesPerRow, .rowsPerImage = target.size.height},
+              .buffer = readback.buffer};
+          const wgpu::Extent3D extent{target.size.width, target.size.height, 1};
+          cmd.CopyTextureToBuffer(&source, &destination, &extent);
+          draw_dump::g_copyReadbacks.push_back(std::move(readback));
+        } else {
+          Log.warn("[draw-dump] copy {} has format {}; not read back", passInfo.resolveDumpPath,
+                   magic_enum::enum_name(target.format));
+        }
+      }
     }
   }
+  if (accumulateDepth && ssaoPrevPass != nullptr && ssaoPrevPass->depthTexture) {
+    if (mergeWorldDepth(*ssaoPrevPass)) ++ssaoMerges;
+  }
+  if (!renderPasses.empty()) sceneAfter(renderPasses.size() - 1);
+  bind_buffer_set(options.ownBufferSet);
+#if defined(MKW_PRIME_QA_TOOLS)
+  // During an F5 burst: every frame's block layout and post-process outcome, to line up with the
+  // captured images (pass index = draws.txt pass; * apply, - small, + accumulate, ^ display copy).
+  if (encodeTextureBakes && draw_dump::g_armedFrame.load(std::memory_order_acquire) != UINT32_MAX) UNLIKELY {
+    std::string line = "[post-scene-dump] frame=" + std::to_string(current_frame()) + " base=" +
+                       draw_dump::finished_base_path() + " start=" + std::to_string(sceneStart) +
+                       " carried=" + std::to_string(carriedDraws) + " efb:";
+    for (size_t k = 0; k < renderPasses.size(); ++k) {
+      if (renderPasses[k].colorView.Get() != webgpu::g_frameBuffer.view.Get()) continue;
+      line += " " + std::to_string(k) + "=" + std::to_string(renderPasses[k].commands.size());
+      if (worldPass[k]) line += "w";
+      if (renderPasses[k].startsGameFrame) line += "^";
+      line += sceneEnd[k] == 1 ? "*" : sceneEnd[k] == 2 ? "-" : sceneEnd[k] == 3 ? "+" : "";
+    }
+    line += " applications=" + std::to_string(ssaoApplications) + " applied=" + std::to_string(ssaoApplied) +
+            " carry_out=" + std::to_string(post::carried_world_draws()) + " last=" + post::last_apply_skip();
+    std::fprintf(stderr, "%s\n", line.c_str());
+  }
+  if (accumulateDepth && encodeTextureBakes) {
+    static uint32_t ssaoStatFrames = 0;
+    static uint32_t lastHeavyStat = 0;
+    // Every 300 frames, and heavy frames (many blocks or merges) at most once a second.
+    const bool heavy = renderPasses.size() >= 20 && ssaoStatFrames - lastHeavyStat >= 60;
+    if ((++ssaoStatFrames % 300) == 1 || heavy) {
+      if (heavy) lastHeavyStat = ssaoStatFrames;
+      std::fprintf(stderr, "[post-ssao] frame=%u passes=%zu efb_passes=%zu (max draws %zu) other_passes=%zu (max draws %zu, %ux%u) merges=%zu skipped=%zu deferred=%zu discarded=%zu applications=%zu small_blocks=%zu accumulated_blocks=%zu game_frames=%zu\n",
+                   current_frame(), renderPasses.size(), ssaoEfbPasses, ssaoEfbMax, ssaoOtherPasses, ssaoOtherMax, ssaoOtherW, ssaoOtherH, ssaoMerges,
+                   ssaoMergesSkipped, ssaoMergesDeferred, ssaoMergesDiscarded, ssaoApplications, ssaoSmallBlocks, ssaoAccumulatedBlocks, ssaoFrameStarts);
+    }
+  }
+#endif
   if (finalize) {
     recycle_render_passes(renderPasses);
   }
@@ -1711,6 +2349,51 @@ void seal_frame(SealedFrame& out) noexcept {
   // capacity included, back to the producer.
   recycle_render_passes(passes);
   passes.swap(g_renderPasses);
+  auto& data = out.data();
+  data.decodesDone = false;
+  data.ownBufferSet = g_lastWrittenBufferSet;
+  data.startsGameFrame = g_nextBatchStartsGameFrame;
+  data.endsAtDisplayCopy = false;
+  data.carriedOutDraws = 0;
+  // The previous seal's passes after its display copy open this batch's game frame.
+  const size_t carriedIn = g_carriedPasses.size();
+  if (carriedIn != 0) {
+    passes.insert(passes.begin(), std::make_move_iterator(g_carriedPasses.begin()),
+                  std::make_move_iterator(g_carriedPasses.end()));
+    g_carriedPasses.clear();
+  }
+  // With frame interpolation every image of a batch must draw one whole game frame: the VI retrace
+  // that seals it falls inside the next frame's world, and replaying that head on top of the EFB made
+  // the native image mix two frames (objects missing or flickering). The passes after the last display
+  // copy move to the next batch, whose images all draw them first. Their data stays in this batch's GPU
+  // buffer set, which the next upload does not overwrite.
+  static const bool noCarry = AURORA_DIAGNOSTIC_ENV("WII_COMPILED_QA_INTERP_NO_CARRY") != nullptr;
+  size_t cut = SIZE_MAX;
+  if (!noCarry && gx::frame_interpolation_active() && gx::frame_interpolation_replay_safe()) {
+    for (size_t i = passes.size(); i-- > carriedIn;) {
+      if (passes[i].startsGameFrame) {
+        cut = i;
+        break;
+      }
+    }
+  }
+  if (cut != SIZE_MAX && cut > 0) {
+    ensure_alternate_buffer_set();
+    uint32_t draws = 0;
+    for (size_t i = cut; i < passes.size(); ++i) {
+      for (const auto& command : passes[i].commands) {
+        draws += command.type == CommandType::Draw ? 1u : 0u;
+      }
+    }
+    g_carriedPasses.assign(std::make_move_iterator(passes.begin() + static_cast<std::ptrdiff_t>(cut)),
+                           std::make_move_iterator(passes.end()));
+    passes.erase(passes.begin() + static_cast<std::ptrdiff_t>(cut), passes.end());
+    data.endsAtDisplayCopy = true;
+    data.carriedOutDraws = draws;
+    g_nextBatchStartsGameFrame = true;
+  } else {
+    g_nextBatchStartsGameFrame = g_boundaryAtSeal && gx::frame_interpolation_replay_safe();
+  }
 #ifdef AURORA_GFX_DEBUG_GROUPS
   // Marker indices and unmatched-group warnings belong to these detached passes.
   // The next producer frame must not modify strings still read by this encoder.
@@ -1723,12 +2406,36 @@ void seal_frame(SealedFrame& out) noexcept {
   g_currentRenderPass = UINT32_MAX;
 }
 
+bool sealed_frame_starts_game_frame(const SealedFrame& frame) noexcept { return frame.data().startsGameFrame; }
+bool sealed_frame_ends_at_display_copy(const SealedFrame& frame) noexcept {
+  return frame.data().endsAtDisplayCopy;
+}
+uint32_t sealed_frame_carried_out_draws(const SealedFrame& frame) noexcept { return frame.data().carriedOutDraws; }
+
 void render(SealedFrame& frame, wgpu::CommandEncoder& cmd, int32_t interpolatedFrame, bool finalize) {
-  render_impl(frame.data().passes, cmd, interpolatedFrame, finalize, frame.data().debug, frame.data().depthMapping);
+  auto& data = frame.data();
+  const RenderOptions options{
+      .runDecodes = !data.decodesDone,
+      .selfContained = data.startsGameFrame && data.endsAtDisplayCopy,
+      .endsAtDisplayCopy = data.endsAtDisplayCopy,
+      .ownBufferSet = data.ownBufferSet,
+  };
+  data.decodesDone = true;
+  render_impl(data.passes, cmd, interpolatedFrame, finalize, data.debug, data.depthMapping, options);
 }
 
 void render(wgpu::CommandEncoder& cmd, int32_t interpolatedFrame, bool finalize) {
-  render_impl(g_renderPasses, cmd, interpolatedFrame, finalize, g_debugFrame, depth_peek::capture_frame_mapping());
+  // A prefix submitted mid-batch (EFB readback, staging split) renders natively, so it draws the
+  // carried frame start first; the batch's inserted images then copy the native one.
+  if (!g_carriedPasses.empty()) {
+    g_renderPasses.insert(g_renderPasses.begin(), std::make_move_iterator(g_carriedPasses.begin()),
+                          std::make_move_iterator(g_carriedPasses.end()));
+    g_carriedPasses.clear();
+    g_nextBatchStartsGameFrame = false;
+  }
+  const RenderOptions options{.runDecodes = true, .ownBufferSet = g_lastWrittenBufferSet};
+  render_impl(g_renderPasses, cmd, interpolatedFrame, finalize, g_debugFrame, depth_peek::capture_frame_mapping(),
+              options);
   if (finalize) {
     g_currentRenderPass = UINT32_MAX;
     expire_bind_group_cache();
@@ -1737,6 +2444,8 @@ void render(wgpu::CommandEncoder& cmd, int32_t interpolatedFrame, bool finalize)
 
 void after_submit() noexcept {
   depth_peek::after_submit();
+  post::after_submit();
+  gpu_timing::after_submit();
   efb_ram::after_submit();
   // Retire this frame's completed GPU work. Dawn only reclaims destroyed resources inside a device
   // tick, and a frame that never ticks keeps every released image and its memory for the run.
@@ -1746,7 +2455,8 @@ void after_submit() noexcept {
 }
 
 static void render_pass_impl(const wgpu::RenderPassEncoder& pass, const std::vector<RenderPass>& renderPasses, u32 idx,
-                             int32_t interpolatedFrame, DebugFrameData& debugFrame, size_t commandLimit) {
+                             int32_t interpolatedFrame, DebugFrameData& debugFrame, size_t commandLimit,
+                             size_t commandBegin) {
   static uint32_t firstFontFrame=UINT32_MAX;
   const char* fontDelayText=AURORA_DIAGNOSTIC_ENV("WII_COMPILED_GPU_CAPTURE_FONT_DELAY");
   const uint32_t fontDelay=fontDelayText ? std::min(600u,static_cast<uint32_t>(std::strtoul(fontDelayText,nullptr,10))) : 0;
@@ -1765,7 +2475,12 @@ static void render_pass_impl(const wgpu::RenderPassEncoder& pass, const std::vec
 
   size_t diagnosticCommandIndex=0;
   for (const auto& cmd : renderPasses[idx].commands) {
+    const size_t commandIndex = diagnosticCommandIndex;
     if(diagnosticCommandIndex++>=commandLimit) break;
+    // A pass encoded in segments (SSAO exclusion runs) restarts from commandBegin: the earlier
+    // viewport and scissor commands are replayed so the new render pass starts with the same state.
+    if (commandIndex < commandBegin && cmd.type != CommandType::SetViewport && cmd.type != CommandType::SetScissor)
+      continue;
 #ifdef AURORA_GFX_DEBUG_GROUPS
     {
       size_t firstDiff = lastDebugGroupStack.size();
@@ -1877,14 +2592,44 @@ bool bind_pipeline(PipelineRef ref, const wgpu::RenderPassEncoder& pass, Pipelin
   }
   wgpu::RenderPipeline pipeline;
   bool pipelineReady;
-  if (!skip_unready_pipelines()) {
+  // Which wait applies is a tested policy (render_policy.hpp, pipeline_wait).
+  const auto waitPolicy = gx::policy::pipeline_wait(skip_unready_pipelines(), requireReady);
+  if (waitPolicy == gx::policy::PipelineWait::Unbounded) {
     pipelineReady = wait_pipeline(ref, pipeline);
-  } else if (requireReady) {
-    // The pass resolves into a persistent texture (a one-shot bake such as MKW's minimap), so a
-    // skipped draw would never be re-issued. These run behind loads, not mid-race.
-    pipelineReady = wait_pipeline_for_persistent_pass(ref, pipeline);
+  } else if (waitPolicy == gx::policy::PipelineWait::PersistentPassBudget) {
+    // The pass resolves into a texture copy that may be one-shot (the first frame of any copy target
+    // counts as one, and so does an offscreen bake), so a skipped draw might never be re-issued.
+    // Waiting without a limit, though, froze Prime for 140-360 ms whenever a new area brought
+    // materials the cache did not have yet (D3D12 compiles of 180-500 ms each; F8 captures of
+    // 2026-10-28). Skip-unready mode is the player's choice of smoothness over completeness, so these
+    // passes get their own bounded budget too: up to 6 ms per frame, then the draw is skipped this
+    // frame and returns once its pipeline lands. A copy the game produces again next frame (nearly
+    // all of them) heals by itself.
+    static thread_local uint32_t persistentBudgetFrame = UINT32_MAX;
+    static thread_local std::chrono::steady_clock::time_point persistentDeadline;
+    if (persistentBudgetFrame != current_frame()) {
+      persistentBudgetFrame = current_frame();
+      persistentDeadline = std::chrono::steady_clock::now() +
+                           std::chrono::milliseconds(gx::policy::pipeline_wait_budget_ms(waitPolicy));
+    }
+    pipelineReady = wait_pipeline_until(ref, pipeline, persistentDeadline);
+    if (!pipelineReady) {
+      static std::atomic<uint32_t> skipped{0};
+      const uint32_t n = skipped.fetch_add(1, std::memory_order_relaxed) + 1;
+      if (n <= 8 || n % 1000 == 0)
+        Log.info("[persistent-pass-skip] draws skipped in copy/offscreen passes while their pipeline compiled: {}", n);
+    }
   } else {
-    pipelineReady = try_pipeline(ref, pipeline);
+    // Each encoded frame may wait up to 4 ms in total for new pipelines; draws
+    // whose pipeline is still compiling after that are skipped for this frame.
+    static thread_local uint32_t budgetFrame = UINT32_MAX;
+    static thread_local std::chrono::steady_clock::time_point deadline;
+    if (budgetFrame != current_frame()) {
+      budgetFrame = current_frame();
+      deadline = std::chrono::steady_clock::now() +
+                 std::chrono::milliseconds(gx::policy::pipeline_wait_budget_ms(waitPolicy));
+    }
+    pipelineReady = wait_pipeline_until(ref, pipeline, deadline);
   }
   if (!pipelineReady) {
     return false;

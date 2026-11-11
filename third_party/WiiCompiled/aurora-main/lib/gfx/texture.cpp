@@ -5,9 +5,11 @@
 #include "aurora/aurora.h"
 #include "texture.hpp"
 #include "texture_convert.hpp"
+#include "tex_cmpr_decode.hpp"
 #include "../gx/gx_fmt.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -18,6 +20,10 @@
 #include <webgpu/webgpu_cpp.h>
 
 namespace aurora::gfx {
+std::atomic<int64_t> g_liveTextureCount{0}, g_liveTextureBytes{0};
+// Bytes written to GPU textures since startup; read by the F8 profiler timeline.
+std::atomic<uint64_t> g_textureUploadBytesTotal{0};
+
 using webgpu::g_device;
 using webgpu::g_queue;
 
@@ -82,6 +88,17 @@ TextureHandle new_static_texture_2d(uint32_t width, uint32_t height, uint32_t mi
   ZoneScoped;
 
   mips = clamp_mip_count(width, height, mips, label);
+  if (!tlut && format == GX_TF_CMPR && tex_cmpr_decode::enabled()) {
+    // The GPU writes every mip; copy-source usage keeps verification readbacks possible.
+    auto handle = new_dynamic_texture_2d(width, height, mips, format, label,
+                                         wgpu::TextureUsage::StorageBinding | wgpu::TextureUsage::CopySrc);
+    if (tex_cmpr_decode::queue(handle, data)) {
+      if (handle->mipCount > 1) schedule_arbitrary_mip_check(handle, data);
+      return handle;
+    }
+    write_texture(*handle, data);
+    return handle;
+  }
   auto handle = new_dynamic_texture_2d(width, height, mips, format, label);
   auto& ref = *handle;
 
@@ -136,6 +153,7 @@ TextureHandle new_static_texture_2d(uint32_t width, uint32_t height, uint32_t mi
           .rowsPerImage = heightBlocks,
       };
       g_queue.WriteTexture(&dstView, data.data() + offset, dataSize, &dataLayout, &physicalSize);
+      g_textureUploadBytesTotal.fetch_add(dataSize, std::memory_order_relaxed);
     }
     offset += dataSize;
   }
@@ -146,7 +164,7 @@ TextureHandle new_static_texture_2d(uint32_t width, uint32_t height, uint32_t mi
 }
 
 TextureHandle new_dynamic_texture_2d(uint32_t width, uint32_t height, uint32_t mips, u32 gxFormat,
-                                     const char* label) noexcept {
+                                     const char* label, wgpu::TextureUsage extraUsage) noexcept {
   ZoneScopedS(3);
   mips = clamp_mip_count(width, height, mips, label);
   const auto wgpuFormat = to_wgpu(gxFormat);
@@ -157,7 +175,7 @@ TextureHandle new_dynamic_texture_2d(uint32_t width, uint32_t height, uint32_t m
   };
   const wgpu::TextureDescriptor textureDescriptor{
       .label = label,
-      .usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst |
+      .usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst | extraUsage |
                (std::getenv("WII_COMPILED_GPU_CAPTURE_BOUND_TEXTURE") ? wgpu::TextureUsage::CopySrc : wgpu::TextureUsage::None),
       .dimension = wgpu::TextureDimension::e2D,
       .size = size,
@@ -294,6 +312,7 @@ void write_texture(TextureRef& ref, ArrayRef<uint8_t> data) noexcept {
           .rowsPerImage = heightBlocks,
       };
       g_queue.WriteTexture(&dstView, data.data() + offset, dataSize, &dataLayout, &physicalSize);
+      g_textureUploadBytesTotal.fetch_add(dataSize, std::memory_order_relaxed);
     }
     offset += dataSize;
   }
@@ -302,3 +321,7 @@ void write_texture(TextureRef& ref, ArrayRef<uint8_t> data) noexcept {
   }
 }
 } // namespace aurora::gfx
+
+uint64_t aurora_get_texture_upload_bytes_total() {
+  return aurora::gfx::g_textureUploadBytesTotal.load(std::memory_order_relaxed);
+}

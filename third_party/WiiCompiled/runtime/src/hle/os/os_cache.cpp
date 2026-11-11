@@ -73,6 +73,16 @@ extern "C" void DCInvalidateRange_801a1600(uint32_t addr, uint32_t length)
     DcRangeOp("DCInvalidateRange_801a1600", addr, length);
 }
 
+// RM3E01 runtime overlay (prepare_prime_runtime_hooks.py) of the original
+// DCFlushRange/DCStoreRange/DCFlushRangeNoSync/DCZeroRange at
+// 0x804DF8F4..0x804DF980, called as each returns: the translated dcb* are no-ops,
+// so without this the GX texture caches never see CPU-written texture data and
+// reuse another texture that lived at the same address.
+extern "C" void PrimeNotifyGuestDcRange(uint32_t addr, uint32_t length)
+{
+    if (length != 0) DcRangeOp("PrimeDcRange", addr, length);
+}
+
 extern "C" void DCFlushRange_801a162c(uint32_t addr, uint32_t length)
 {
     DcRangeOp("DCFlushRange_801a162c", addr, length);

@@ -24,3 +24,20 @@ logs/**
 **/obj/
 **/__pycache__/
 **/TestResults/
+
+# Local session scratch and private QA data (user tours, run captures, profiles)
+.session_tmp/
+qa/recordings/
+qa/runs/
+qa/profile/
+qa/control/
+
+# Per-title trees are regenerated from the disc by tools/trilogy
+# (extract/ holds disc files and must never be committed).
+/titles/**
+!/titles/*/
+!/titles/*/project.yml
+
+# Local tool outputs
+tools/prime_icons/out/
+third_party/reshade/Screenshots/

@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01",
+  "report": "Public v0.1.0 session base_1792950520_pid14708 (RTX 3050, 16 GB RAM): fatal 'WebGPU error 3: ID3D12Device::CreateHeap - While calling CreateTexture(Copy Conv Texture)' via CheckOutOfMemoryHRESULT, Device removed reason S_OK, after ~37 minutes (start 1792950520, crash 1792952758). Settings: per_pixel_lighting on, texture_upscale off, msaa 1, anisotropic 16, borderless at monitor resolution.",
+  "hypothesis": "Video memory exhaustion. Aurora keeps one GPU copy texture per guest EFB-copy destination (g_gxState.copyTextures / copyTextureCache) until the guest rewrites that memory (evict_copy_texture from the DC/write path), plus up to three pooled spares per key; nothing bounded the total, so destinations the game abandons (recycled heap) accumulate. Not yet proven: the failing allocation is only the one that hit the limit.",
+  "fix": "gx::enforce_copy_texture_budget (lib/gx/gx.cpp), called from gfx::begin_frame once per logical frame (Prime keeps the EFB across presents, so the clearEfb branch is not taken): once a second it drops pool spares beyond 8 idle >5 s, sums copy texture bytes (w*h*4, deduplicated), and above 512 MiB (env WII_COMPILED_AURORA_COPY_BUDGET_MB, 64..16384) evicts destinations idle longest (>5 s) through evict_copy_texture until 3/4 of the budget.",
+  "diagnostics": "Once a minute: '[copy-budget] X MiB in N copy destinations (K keyed copies), budget B MiB; all live textures: C (M MiB)'. All-texture count/bytes come from new atomics in TextureRef ctor/dtor (lib/gfx/texture.hpp), balanced across the Super-xBR in-place swap.",
+  "validation": {
+    "build": "Corruption_3 PC.exe 2026-10-25 (version 0.1.1)",
+    "smoke": "title screen 130 s: lines every minute, 0 copy destinations at the title, 70 live textures / 68 MiB; no errors",
+    "pending": "user gameplay session of 40+ minutes; the per-minute lines show which pool grows"
+  }
+}

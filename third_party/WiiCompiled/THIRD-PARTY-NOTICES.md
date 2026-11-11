@@ -25,6 +25,10 @@ Aurora itself vendors:
 - **libogc-derived SRAM structures** - zlib-style license, Copyright (c) Michael Wiedenbauer
   (shagkur) and Dave Murphy (WinterMute). `aurora-main/lib/card/SRAM.hpp`.
   Source: <https://github.com/devkitPro/libogc>
+- **Super-xBR algorithm** - MIT, Copyright (c) 2015-2016 Hyllian. `aurora-main/lib/gfx/texture_upscale.cpp`
+  is an independent CPU implementation of the published method (edge-directed 2x interpolation
+  with the author's weights); no upstream source is copied.
+  Source: <https://github.com/libretro/common-shaders/tree/master/xbr/shaders/super-xbr>
 
 ### Dolphin Emulator data files - GPL-2.0-or-later
 
@@ -137,6 +141,9 @@ trees themselves (fetched by `Launcher/Prepare-Dependencies.ps1`) so end-user bu
 | libpng | 1.6.58 | PNG Reference Library License v2 | <https://github.com/pnggroup/libpng> |
 | FreeType | 2.14.3 | **FreeType License (FTL)** - see below | <https://freetype.org/> |
 | Zstandard | 1.5.7 | **BSD-3-Clause** - see below | <https://github.com/facebook/zstd> |
+| nod (reads the disc image) | pinned commit `6a54b418` | MIT OR Apache-2.0 | <https://github.com/encounter/nod> |
+| bzip2 (for `.wia` images, linked with nod) | 1.0.8 | bzip2 license (BSD-style) | <https://sourceware.org/bzip2/> |
+| liblzma / XZ Utils (for `.wia` images, linked with nod) | 5.8 | 0BSD | <https://tukaani.org/xz/> |
 | SQLite | 3.51.3 amalgamation | Public domain | <https://sqlite.org/> |
 | Tracy Profiler | pinned commit | BSD-3-Clause | <https://github.com/wolfpld/tracy> |
 | C++/WinRT | - | MIT (Microsoft) | <https://github.com/microsoft/cppwinrt> |

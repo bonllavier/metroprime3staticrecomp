@@ -14,7 +14,9 @@ import inspect_static_sel
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--module", choices=("rhbm", "Tweaks", "ScriptGUIScreenFrontEndUI", "ScriptWorldTeleporter", "ScriptAchievement", "ScriptContextSensitiveActivator", "ScriptGrapplePoint", "ScriptMultiModelActor", "ScriptContextSensitiveAction", "ScriptContextActionButtonPressing", "Friendly", "GunTurret", "MapScreenWebInterface"), default="rhbm")
+    table = {row["name"]: row for row in json.loads(
+        (ROOT / "recomp/config/RM3E01_00/rso_modules.json").read_text())["modules"]}
+    parser.add_argument("--module", choices=tuple(table), default="rhbm")
     name = parser.parse_args().module
     directory = ROOT / f"recomp/.tools/rso-runtime/{name}"
     module = json.loads((directory / "module.json").read_text())
@@ -54,7 +56,7 @@ def main():
     for row in translation["functions"]:
         code.append(f'    {{0x{row["entry"]:08X}u, {row["name"]}}},')
     prolog = module["entry_points"]["prolog"]
-    symbol = {"rhbm": "g_primeRhbmModule", "Tweaks": "g_primeTweaksModule", "ScriptGUIScreenFrontEndUI": "g_primeFrontEndUiModule", "ScriptWorldTeleporter": "g_primeWorldTeleporterModule", "ScriptAchievement": "g_primeAchievementModule", "ScriptContextSensitiveActivator": "g_primeContextSensitiveActivatorModule", "ScriptGrapplePoint": "g_primeGrapplePointModule", "ScriptMultiModelActor": "g_primeMultiModelActorModule", "ScriptContextSensitiveAction": "g_primeContextSensitiveActionModule", "ScriptContextActionButtonPressing": "g_primeContextActionButtonPressingModule", "Friendly": "g_primeFriendlyModule", "GunTurret": "g_primeGunTurretModule", "MapScreenWebInterface": "g_primeMapScreenWebInterfaceModule"}[name]
+    symbol = table[name]["symbol"]
     code += ['};', '}', f'extern const PrimeRsoModule {symbol} = {{',
              f'    {module["module_id"]}u, {len(raw)}u, {prolog["section"]}u, {prolog["offset"]}u, {module["sections"][prolog["section"]]["file_offset"]}u, "{name}", "{module["original_sha256"]}",',
              '    sections, sizeof(sections)/sizeof(sections[0]),',

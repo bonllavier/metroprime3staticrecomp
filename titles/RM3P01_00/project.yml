@@ -1,0 +1,3 @@
+memory:
+  sda_base: 0x806827C0
+  sda2_base: 0x80688FE0

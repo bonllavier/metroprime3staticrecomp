@@ -13,6 +13,7 @@ extern "C" void OS_HLE_DispatchPendingPrimeAidInterrupt();
 #include <algorithm>
 #include <cstdint>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -591,8 +592,59 @@ void Audio_HLE_PrimeDspDmaWrite(uint32_t address, uint16_t value)
     }
 }
 
+namespace {
+// The emulated AI clock runs on the host timer while the sound card runs on its
+// own crystal; a ~0.02% mismatch drained the output queue in minutes and would
+// then click. Pace the emulated DMA (never the samples) by at most 0.1% so the
+// queue stays near its target, as if the console's AI crystal differed slightly.
+class AiClockFollower {
+public:
+    uint32_t Scale(uint32_t deltaMicros) {
+        const auto now = std::chrono::steady_clock::now();
+        if (now >= m_next) {
+            const double dt = m_last.time_since_epoch().count() == 0 ? 0.0
+                : std::chrono::duration<double>(now - m_last).count();
+            m_last = now;
+            m_next = now + std::chrono::milliseconds(100);
+            const double queued = AudioBackend::Instance().QueuedSeconds();
+            if (queued >= 0.0) {
+                // The instantaneous queue swings by a device period and a DMA
+                // burst; follow its ~2 s average so the rate moves smoothly (a
+                // steady clock offset, not a modulated pitch).
+                m_smoothed = m_haveSmoothed ? m_smoothed + 0.05 * (queued - m_smoothed) : queued;
+                m_haveSmoothed = true;
+                // The queue integrates the clock difference, so proportional
+                // control alone settles (time constant target/gain = 30 s);
+                // the steady offset from the target is drift/gain, a few ms.
+                const double error = (kTargetSeconds - m_smoothed) / kTargetSeconds;
+                m_rate = 1.0 + std::clamp(0.002 * error, -0.001, 0.001);
+                (void)dt;
+                if (++m_reports % 50 == 0)
+                    RT_LOG(RT_TAG_AUDIO) << "[prime-ai-clock] queued_ms=" << queued * 1000.0 << " average_ms=" << m_smoothed * 1000.0
+                                         << " rate_ppm=" << (m_rate - 1.0) * 1e6 << std::endl;
+            }
+        }
+        m_remainder += deltaMicros * m_rate;
+        const double whole = std::floor(m_remainder);
+        m_remainder -= whole;
+        return static_cast<uint32_t>(whole);
+    }
+    double Rate() const { return m_rate; }
+
+private:
+    static constexpr double kTargetSeconds = 0.060;
+    std::chrono::steady_clock::time_point m_last{}, m_next{};
+    double m_rate = 1.0, m_remainder = 0.0;
+    uint32_t m_reports = 0;
+    double m_smoothed = 0.0;
+    bool m_haveSmoothed = false;
+};
+AiClockFollower g_aiClockFollower;
+}  // namespace
+
 void Audio_HLE_PrimeDspDmaTick(CpuContext* ctx, uint32_t deltaMicros)
 {
+    deltaMicros = g_aiClockFollower.Scale(deltaMicros);
     static thread_local bool tickActive = false;
     if (tickActive) {
         std::lock_guard<std::mutex> lock(g_primeDspDma.mutex);
@@ -621,6 +673,8 @@ void Audio_HLE_PrimeDspDmaTick(CpuContext* ctx, uint32_t deltaMicros)
             if (!g_primeDspDma.dma.TakeTransfer(transfer)) break;
         }
         const uint32_t guestAddress = 0x80000000u | transfer.address;
+        // The mix worker may still be writing the next AX frame; never stream it half done.
+        AxDspHle::JoinMixWorkerIfWriting(guestAddress, PrimeDspAudioDma::kBytesPerBlock);
         const uint8_t* samples = nullptr;
         try {
             samples = static_cast<const uint8_t*>(Memory::GetPointer(guestAddress,
@@ -661,6 +715,9 @@ void Audio_HLE_PrimeDspDmaTick(CpuContext* ctx, uint32_t deltaMicros)
         }
 
         if (transfer.bufferCompleted) {
+            // The AID interrupt runs __AXOutNewFrame, which reads the mix's PB write-back
+            // and aux buffers; the mix normally finished milliseconds ago.
+            AxDspHle::JoinMixWorker();
             MemoryPrimeDspRaiseAIDInterrupt();
             OS_HLE_DispatchPendingPrimeAidInterrupt();
             OS_HLE_DispatchPendingPrimeDspInterrupt();

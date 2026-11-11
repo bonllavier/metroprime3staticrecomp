@@ -1,0 +1,144 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "request": "Try per-pixel lighting and a free, lightweight, in-process texture upscaler (no AI, no dumps/exports).",
+  "executable": {
+    "path": "recomp/build/RM3E01_00_runtime_link_probe/WiiCompiled.exe",
+    "sha256": "a8f3775b51cecc84dd7b1f170c0a55b1d729339a7180150640ffc85198776fbc",
+    "build": "cmake reconfigure (new source in cmake/aurora_gx.cmake) + cmake --build --target WiiCompiled.exe; repair_prime_clock_metadata.py passed"
+  },
+  "per_pixel_lighting": {
+    "files": [
+      "aurora-main/lib/gx/gx.hpp (ShaderConfig::perPixelLighting bit, g_perPixelLighting)",
+      "aurora-main/lib/gx/gx.cpp (bit set only when a color channel has lighting; apply_completed hook)",
+      "aurora-main/lib/gx/shader.cpp (config-driven path, ppl_nrm renormalization)",
+      "aurora-main/lib/gx/command_processor.cpp + pipeline.hpp + pipeline.cpp (DrawData::fallbackPipeline)",
+      "aurora-main/lib/gfx/pipeline_cache.cpp (per-pixel variant prewarm of cached lit recipes)",
+      "aurora-main/include/aurora/aurora.h + lib/aurora.cpp (config field, aurora_set/get_per_pixel_lighting)",
+      "runtime/include/runtime_config.h, runtime/src/main.cpp, runtime/src/settings_overlay.cpp"
+    ],
+    "config_key": "[video] per_pixel_lighting (bool, live)",
+    "pipeline_cache": "GXPipelineConfigVersion unchanged (22); the bit lived in zero padding so vertex-mode rows stay valid. Per-pixel variants are prewarmed, not persisted.",
+    "first_session_problem": "Runs pid 8592/10232 (both options, before the fix) showed dark rooms and black arms: per-pixel pipelines compiled during play while skip_unready_pipelines skipped their draws.",
+    "fix": "Variant prewarm at cache load + per-vertex fallback pipeline per draw while the per-pixel one is pending."
+  },
+  "texture_upscale": {
+    "files": [
+      "aurora-main/lib/gfx/texture_upscale.hpp/.cpp (Super-xBR 2x/4x, worker thread, in-place TextureRef swap, content cache)",
+      "aurora-main/lib/gfx/texture_convert.hpp/.cpp (parallel_for_rows export)",
+      "aurora-main/lib/gx/gx.cpp (find_cached/schedule hooks in resolve_static_texture and resolve_static_palette_texture)",
+      "aurora-main/lib/gfx/common.cpp (shutdown)",
+      "THIRD-PARTY-NOTICES.md (Super-xBR algorithm credit, MIT, independent implementation)"
+    ],
+    "config_keys": "[video] texture_upscale (0/2/4), texture_upscale_max_size (128/256/512)",
+    "design": "Original uploaded first; worker decodes + upscales every mip; swap after >= 3 frames (GPU CMPR decode targets the original); cache by XXH64 of source bytes, 768 MB budget; skips depth formats, arbitrary mips, YUVA, sizes < 8 or > max.",
+    "first_attempt_problem": "Gate on canCacheUpload excluded Prime's raw (no_cache) BP-register textures: nothing was upscaled (probe pid 19376). Fixed by keying on format only.",
+    "olympus_load": "320 textures upscaled (up to 256x256, 6 mips), pending 0 by 60 s"
+  },
+  "runs": [
+    {
+      "tag": "probe",
+      "pid": 19376,
+      "options": "both on (gate bug)",
+      "result": "no upscale lines, no errors"
+    },
+    {
+      "tag": "ppl_up2",
+      "pid": 4936,
+      "options": "both on",
+      "result": "lit at 60 s (pipelines compiled in play)"
+    },
+    {
+      "tag": "off",
+      "pid": 13416,
+      "options": "both off",
+      "result": "reference captures"
+    },
+    {
+      "tag": "final",
+      "pid": 8592,
+      "options": "both on",
+      "result": "dark room at 75 s"
+    },
+    {
+      "tag": "pplon",
+      "pid": 10232,
+      "options": "both on",
+      "result": "dark room 50-90 s"
+    },
+    {
+      "tag": "A_pploff_up2",
+      "pid": 10776,
+      "options": "upscale only",
+      "result": "lit; user: textures ok, small stutter"
+    },
+    {
+      "tag": "B_pplon_up0",
+      "pid": 15152,
+      "options": "per-pixel only",
+      "result": "lit; user: stable"
+    },
+    {
+      "tag": "C_both_noskip",
+      "pid": 19388,
+      "options": "both on, skip_unready false",
+      "result": "lit; user: fine, small stutters"
+    },
+    {
+      "tag": "D_fix_first",
+      "pid": 18392,
+      "options": "both on, variant prewarm, per-pixel rows deleted",
+      "result": "room lit, arms black until prewarm end (5318 pipelines, 50.2 s)"
+    },
+    {
+      "tag": "E_fix_second",
+      "pid": 8100,
+      "options": "both on, warm",
+      "result": "correct; prewarm 5318 in 2.3 s; user: textures fine, slight stutters"
+    },
+    {
+      "tag": "F_fresh_dawn",
+      "pid": 18916,
+      "options": "both on, empty Dawn blob cache, async upscale + fallback",
+      "result": "lit at 40/60/80 s while compiling; 320 textures; user: good, very slight stutters"
+    },
+    {
+      "tag": "G_warm_async",
+      "pid": 18992,
+      "options": "both on, warm",
+      "result": "60 FPS, 0 errors, 320 textures pending 0; user: quite stable and good"
+    }
+  ],
+  "evidence": "recomp/build/RM3E01_00_runtime_link_probe/UserData/Logs/window_pid*_<tag>_*.png, grid_*.png, compare_off_vs_on.png, base_*_pid<pid>/console.log",
+  "backups": [
+    "UserData/Config.toml.before_ppl_upscale_20261025",
+    "UserData/Cache/pipeline_cache.db.bak_20261025_ppl (before deleting the 230 per-pixel rows for the first-session test)"
+  ],
+  "user_config_state": "per_pixel_lighting = true, texture_upscale = 2, texture_upscale_max_size = 256, skip_unready_pipelines = true",
+  "limits": [
+    "Visual benefit of per-pixel lighting needs user QA in scenes with dynamic lights; Olympus captures only prove correctness and 60 FPS.",
+    "Super-xBR smooths edges; it does not add detail nor remove CMPR block quantization.",
+    "Indirect-texture maps are upscaled too; exclude by indirect stage if artefacts appear.",
+    "Per-pixel variants are derived from cached recipes at every boot; materials never seen in vertex mode still compile on first sight (with fallback)."
+  ],
+  "iso": "untouched, read-only",
+  "matching": "decomp/ untouched",
+  "title_screen_followup": {
+    "finding": "Title draws one 832x456 CMPR texture (plus 512 px ones); 256 px limit skipped them. Added texture_upscale_max_size = 1024; texture now upscaled to 1664x912 (run pid 6636) but the look is nearly unchanged: soft low-res source, Super-xBR adds no detail. User confirmed no visible change, also with the new texture_upscale_sharpen knob at 0.5 (run pid 18972).",
+    "changes": [
+      "1024 limit option",
+      "texture_upscale_sharpen (0..1 unsharp mask) config/overlay/aurora API",
+      "EFB copy destinations excluded from scheduling (per-frame RAM readbacks)"
+    ],
+    "user_config_state": "per_pixel_lighting = true, texture_upscale = 2, texture_upscale_max_size = 1024, texture_upscale_sharpen = 0.0",
+    "next_options": [
+      "texture replacement pack (supported, personal use)",
+      "external upscale of the title art (user declined AI/dumps)"
+    ]
+  },
+  "magenta_followup": {
+    "reproduced": "Norion save, pid 17936 (both on) magenta; pid 11340 (ppl off, upscale 4x) magenta; pid 7820 (ppl on, upscale off) clean",
+    "trace": "CPU CMPR decode of several 512x512 mips=1 textures already holds 4-15% magenta texels before the filter; decoder logic matches the GPU shader",
+    "status": "root cause open; user disabled texture_upscale (0). Per-pixel lighting stays on."
+  }
+}

@@ -1,6 +1,7 @@
 // Stubs for renderer symbols the GX/FIFO/command_processor code references but that live in the
 // full renderer, so the test binary links without the WebGPU runtime.
 
+#include <atomic>
 #include "gx/gx.hpp"
 #include "gfx/clear.hpp"
 #include "gfx/common.hpp"
@@ -8,7 +9,9 @@
 #include "gfx/efb_ram_copy.hpp"
 #include "gfx/tex_copy_conv.hpp"
 #include "gfx/tex_palette_conv.hpp"
+#include "gfx/post_process.hpp"
 #include "gfx/texture.hpp"
+#include "gfx/texture_replacement.hpp"
 #include "gx/pipeline.hpp"
 #include "gx/shader_info.hpp"
 #include "internal.hpp"
@@ -80,16 +83,20 @@ wgpu::Buffer g_indexBuffer;
 wgpu::Buffer g_storageBuffer;
 uint32_t g_drawCallCount = 0;
 uint32_t g_mergedDrawCallCount = 0;
+bool try_pipeline(PipelineRef, wgpu::RenderPipeline&) { return false; }
 } // namespace aurora::gfx
 
 namespace aurora::webgpu {
 GraphicsConfig g_graphicsConfig{};
+wgpu::Instance g_instance;
 } // namespace aurora::webgpu
 
 // --- GXState (the real instance -- tests validate this) ---
 namespace aurora::gx {
 GXState g_gxState{};
 void notify_copy_texture_created() noexcept {}
+bool uber_hybrid_enabled() noexcept { return false; }
+bool uber_force() noexcept { return false; }
 } // namespace aurora::gx
 
 namespace aurora::vi {
@@ -100,6 +107,8 @@ void configure(const GXRenderModeObj*) noexcept {}
 // --- Texture uploads ---
 namespace aurora::gfx {
 std::vector<TextureUpload> g_textureUploads;
+void note_display_copy() noexcept {}
+void note_resolve_soften(float, float) noexcept {}
 } // namespace aurora::gfx
 
 namespace aurora::gfx::efb_ram {
@@ -194,7 +203,6 @@ void populate_pipeline_config(PipelineConfig& config, GXPrimitive primitive, GXV
 }
 GXBindGroups build_bind_groups(const ShaderInfo& info) noexcept { return {}; }
 void resolve_sampled_textures(const ShaderInfo& info) noexcept {}
-u8 color_channel(GXChannelID id) noexcept { return 0; }
 u8 comp_type_size(GXAttr attr, GXCompType type) noexcept {
   if (!s_useRealVertexFormatHelpers) {
     return 0;
@@ -545,6 +553,10 @@ u32 compute_texture_upload_size(const GXTexObj_& obj) noexcept { return 0; }
 void register_tlut(const GXTlutObj*, const void*, GXTlutFmt, u16) noexcept {}
 void load_tlut(const GXTlutObj*, u32) noexcept {}
 std::optional<TextureHandle> find_replacement(const GXTexObj_&) noexcept { return std::nullopt; }
+uint64_t texture_content_hash(const GXTexObj_&) noexcept { return 0; }
+uint8_t texture_tags_listed() noexcept { return 0; }
+uint8_t texture_tags(const GXTexObj_&) noexcept { return 0; }
+std::string dump_texture_for_inspection(const GXTexObj_&, const std::filesystem::path&) noexcept { return {}; }
 } // namespace aurora::gfx::texture_replacement
 
 // --- Window stub ---
@@ -553,6 +565,8 @@ namespace aurora::window {
 AuroraWindowSize get_window_size() { return {640, 480, 640, 480, 640, 480, 1.0f}; }
 void set_frame_buffer_aspect_fit(bool) {}
 void set_force_aspect_16_9(bool) {}
+void set_fixed_aspect(float) {}
+float fixed_aspect() noexcept { return 16.f / 9.f; }
 } // namespace aurora::window
 
 // --- WebGPU C API stubs (prevent linker errors from wgpu:: destructors) ---
@@ -565,6 +579,10 @@ void wgpuTextureRelease(WGPUTexture) {}
 void wgpuTextureViewRelease(WGPUTextureView) {}
 void wgpuSamplerRelease(WGPUSampler) {}
 void wgpuShaderModuleRelease(WGPUShaderModule) {}
+WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice, const WGPUShaderModuleDescriptor*) { return nullptr; }
+void wgpuDevicePushErrorScope(WGPUDevice, WGPUErrorFilter) {}
+WGPUFuture wgpuDevicePopErrorScope(WGPUDevice, WGPUPopErrorScopeCallbackInfo) { return {}; }
+WGPUWaitStatus wgpuInstanceWaitAny(WGPUInstance, size_t, WGPUFutureWaitInfo*, uint64_t) { return WGPUWaitStatus_Success; }
 void wgpuRenderPipelineRelease(WGPURenderPipeline) {}
 void wgpuBindGroupRelease(WGPUBindGroup) {}
 void wgpuBindGroupLayoutRelease(WGPUBindGroupLayout) {}
@@ -583,3 +601,68 @@ void aurora::gfx::push_debug_group(std::string) {}
 void aurora_push_debug_group(const char*) {}
 void aurora_pop_debug_group() {}
 void aurora::gfx::insert_debug_marker(std::string) {}
+
+// --- Symbols the library gained after these stubs were last updated ---------------------------------
+// (draw dump / frame capture, live texture accounting, shader build). The suite stopped linking when
+// they appeared; keep it linking by adding a stub here whenever a source file in tests/CMakeLists.txt
+// starts referencing a new symbol. tools/test_graphics.ps1 runs this suite on every graphics change.
+namespace aurora::gfx {
+std::atomic<int64_t> g_liveTextureCount{0}, g_liveTextureBytes{0};
+uint32_t current_render_pass_index() noexcept { return 0; }
+const uint8_t* staged_vertex_data(const Range&) noexcept { return nullptr; }
+} // namespace aurora::gfx
+extern "C" void aurora_request_frame_capture(uint32_t, const char*) {}
+// The real shader.cpp is linked (shader_golden_test.cpp); only its device is a null stand-in.
+namespace aurora::webgpu {
+wgpu::Device g_device;
+} // namespace aurora::webgpu
+
+// Post-process hooks the command processor calls while recording (SSAO camera notes, exclusion).
+namespace aurora::gfx::post {
+void note_display_source(float, float, float, float) {}
+void note_draw() {}
+void note_world_up(float, float, float) {}
+void note_lights(uint32_t, const float (*)[3], const float*) {}
+bool light_shafts_wanted() { return false; }
+bool area_colours(float*, float*) { return false; }
+void note_projection(const float*, bool) {}
+bool ssao_exclude_active() { return false; }
+void note_engine_lights(uint32_t, const float (*)[3], const float*, const float*, const uint8_t*) {}
+void note_world_view(const float*) {}
+} // namespace aurora::gfx::post
+namespace aurora::gx {
+std::atomic<uint32_t> g_enhancedMetalParams{0};
+std::atomic<float> g_enhancedMetalStrength{0.0f};
+DrawMetalOverride g_drawMetal{};
+std::atomic<bool> g_enhancedMaterials{false};
+std::array<std::atomic<uint64_t>, 16> g_materialClasses{};
+std::array<std::array<std::atomic<float>, MaterialExtFloats>, 16> g_materialExt{};
+std::atomic<bool> g_envMaterial{false};
+std::atomic<bool> g_envBorrowedLights{false};
+BorrowedLights g_borrowedLights{};
+std::atomic<bool> g_litRoomMaterial{false};
+std::atomic<bool> g_softHighlights{false};
+std::atomic<bool> g_linearBlend{false};
+std::atomic<bool> g_smoothLightmaps{false};
+std::atomic<bool> g_areaReflections{false};
+std::atomic<bool> g_softShadows{false};
+std::atomic<bool> g_engineLightsOption{false};
+std::atomic<bool> g_extraDynamicLights{false};
+std::atomic<bool> g_lightmapDither{false};
+EngineEnvLights g_engineEnvLights{};
+// Engine light input (gx.cpp in the game): tests feed it through set_engine_lights.
+namespace {
+std::vector<AuroraEngineLight> g_testEngineLights;
+uint64_t g_testEngineLightsGeneration = 0;
+} // namespace
+void set_engine_lights(const AuroraEngineLight* lights, uint32_t count) {
+  g_testEngineLights.assign(lights, lights + (lights != nullptr ? count : 0));
+  ++g_testEngineLightsGeneration;
+}
+bool take_engine_lights(std::vector<AuroraEngineLight>& out, uint64_t& generation) {
+  if (generation == g_testEngineLightsGeneration) return false;
+  out = g_testEngineLights;
+  generation = g_testEngineLightsGeneration;
+  return true;
+}
+} // namespace aurora::gx

@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-11",
+  "revision": "RM3E01_00",
+  "request": "GitHub issue #7 (ultrawide 3440x1440), user authorization 2026-11-11",
+  "doc": "recomp/docs/ultrawide.md",
+  "setting": "[video] aspect_ratio = 16:9 (default) | window | 21:9 | 32:9 | W:H | WxH | ratio; F1 > Video > Aspect ratio",
+  "hooks": {
+    "0x800BE034": "post: viewport aspect x factor for the 640x448 full-screen viewport (culling 0x8036F6AC and matrix +0xD0 follow)",
+    "0x800BF0C4": "entry: remember CGameViewport (vtable 0x80591498) to set its dirty bit 0x80 at +0x58 on factor changes",
+    "0x803E91D4": "entry: CGraphics::SetPerspective aspect x factor when called from CGuiCamera (returns 0x80433C80, 0x80433DA8)",
+    "0x803EB060": "observation/trace only in the release; WII_COMPILED_PRIME_UW_FLUSH=1 (QA build) re-enables the rejected flush policy",
+    "0x804EB174": "THP decode: present at 16:9 while movies play (20-frame hold)"
+  },
+  "rejected": "Widening every full-screen perspective at the GX flush also widened the Mii icon render (0x800F27F4), a square pass drawn at 64x64 (0x802C8238) and saved/restored projections inconsistently (trace of hangar_uw21, 2026-11-11).",
+  "tests": {
+    "unit": "mkw_prime_widescreen_tests PASS; test_graphics.ps1 ALL PASSED (Aurora 286, runtime ctest 32/32, python)",
+    "replay_hangar_uw21": "recomp/qa/runs/hangar_uw21/20261111_032127_video: mean 59.93 FPS, min 58, 0 errors; Hor+ world, HUD centred at 16:9 positions, THP frames 209-5079 presented at 16:9, none during gameplay",
+    "replay_hangar_uw32": "recomp/qa/runs/hangar_uw32/20261111_032845_v1: mean 59.98 FPS, min 59, 0 errors",
+    "replay_hangar_uw16": "recomp/qa/runs/hangar_uw16/20261111_031147_base: factor 1, unchanged behaviour (no pixel comparison)",
+    "window_mode": "1680x720 -> 2.333 (factor 1.3125); 1280x720 -> factor 1; live resize 1704x721 -> 2.363, 2384x661 -> 3.607, 984x721 -> 1.0, no errors",
+    "trilogy": "make_address_map/make_title_tree/build_title for R3ME01_MP3 and R3ME01_FE pass (language gate r13 displacement now read from each DOL); probe_title menu_to_mp3 at 21:9: factor 1.333 in the MP3 executable, movies at 16:9 (titles/probe_runs/20261111_041017_uw21)"
+  },
+  "pending_user_qa": ["pause menu, map, logbook and visors on a real ultrawide monitor", "real-time cinematics", "GPU cost at native 3440x1440", "Trilogy gameplay inside MP3"]
+}

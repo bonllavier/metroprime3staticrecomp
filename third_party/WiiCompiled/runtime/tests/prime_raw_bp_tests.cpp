@@ -65,8 +65,13 @@ int main() {
         Reject([&]{bp.DecodeColorCopy();});
     }
     bp.Write(0x52,0x010263);
+    // PE format 3 (Z24) selects the depth copies the scan visor uses (GX_TF_Z24X8 nibble 6 is one of them).
     bp.Write(0x43,3);
+    Require(bp.DecodeColorCopy().width==320);
+    // Depth copies of unsupported formats are still refused (nibble 2 = GX_TF_RA4 has no depth meaning).
+    bp.Write(0x52,0x010223);
     Reject([&]{bp.DecodeColorCopy();});
+    bp.Write(0x52,0x010263);
     // Original later-cinematic snapshot: BP bit15 clear means R4, not I4.
     bp.Write(0x43,1);bp.Write(0x49,0);bp.Write(0x4A,0x3FCFF);
     bp.Write(0x4D,0x10);bp.Write(0x52,0x10A03);

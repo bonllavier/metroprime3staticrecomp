@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "request": "Audiophile review: least processed, Wii-faithful audio without risking stability",
+  "chain_reviewed": [
+    "AX DSP HLE (ax_mix.cpp): per-voice polyphase SRC from the bundled DSP coefficient ROM, voice LPF/biquad, volume ramps and dpop as the microcode does. Left unchanged (faithful).",
+    "Prime AI DMA (audio.cpp): 32 kHz stereo S16 BE, 32 bytes per 250 us.",
+    "AudioBackend: endian/L-R swap only, gain 1, previously SDL 3.4.4 converted 32 kHz S16 to the device's 44.1/48 kHz F32."
+  ],
+  "measurements": {
+    "sdl_resampler_32k_to_44k1": {"1kHz": "0.000 dB, residual -85.6 dB", "12kHz": "-0.363 dB, residual -27.8 dB", "15kHz": "-3.600 dB, residual -9.4 dB"},
+    "host_resampler_32k_to_44k1": {"1kHz": "0.000 dB, residual -134 dB", "12kHz": "+0.00002 dB, residual -108 dB", "14kHz": "0.000 dB, residual -104 dB", "15kHz": "-0.242 dB, residual -125 dB"},
+    "clock_drift_before": "queue fell ~6 KB per 80 s (~0.02%), would empty in ~7 min",
+    "clock_follower_5min": "rate +200..+285 ppm, queue ~53 ms average, 0 underruns"
+  },
+  "changes": [
+    "audio_resampler.h: rational polyphase Kaiser windowed-sinc, 128 taps/phase, cutoff 0.965 of source Nyquist, unity-gain phases, float, no dither; exact 441/320 (44.1 kHz) and 3/2 (48 kHz).",
+    "AudioBackend opens the stream in the device's own rate and F32 so SDL performs no conversion; WII_COMPILED_AUDIO_SDL_RESAMPLER=1 restores SDL conversion. Underrun counter via SDL get-callback, logged every 10 s.",
+    "AI clock follower: paces the emulated AI DMA (never the samples) by at most +-0.1% from a ~2 s average of the output queue, proportional control, target 60 ms.",
+    "MusicAttenuation::TickGuest is inert for RM3E01: it followed Mario Kart nw4r::snd pointers at fixed MKW addresses through Prime RAM and could rewrite unrelated floats."
+  ],
+  "validation": {"platform_tests": "22/22 PASS including mkw_audio_resampler_tests", "user": "user reports audio sounds good and somewhat clearer"},
+  "limits": [
+    "SDL uses WASAPI shared mode; exclusive mode and Windows audio enhancements are outside this runtime.",
+    "A device default-format change after startup is handled by SDL conversion until restart.",
+    "The guest's own content (32 kHz, 16-bit, AX/FMOD mixing) is unchanged by design."
+  ]
+}

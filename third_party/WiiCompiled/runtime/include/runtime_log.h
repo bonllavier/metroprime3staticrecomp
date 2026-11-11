@@ -3,7 +3,10 @@
 #ifndef MKW_RUNTIME_LOG_H
 #define MKW_RUNTIME_LOG_H
 
+#include <atomic>
+#include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 
 #include "memory.h"
@@ -27,6 +30,14 @@
 
 // Stream form:  RT_LOG(RT_TAG_OS) << "OSCreateThread failed" << std::endl;
 #define RT_LOG(tag) (std::cerr << "[" tag "] ")
+
+// Per-I/O chatter (every disc read, IOS ioctl): the first occurrences of a
+// site are logged, the rest only with WII_COMPILED_TRACE_PRIME_IO=1.
+//   static std::atomic<uint32_t> seen; if (RtLogRepeated(seen)) RT_LOG(...) << ...;
+inline bool RtLogRepeated(std::atomic<uint32_t>& seen, uint32_t first = 32) {
+    static const bool all = std::getenv("WII_COMPILED_TRACE_PRIME_IO") != nullptr;
+    return all || seen.fetch_add(1, std::memory_order_relaxed) < first;
+}
 
 // printf form:  RT_LOGF(RT_TAG_GX, "invalid GXTexObj @0x%08X\n", addr);
 // `tag` and the format string must both be literals; they are concatenated.

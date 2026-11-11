@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $taskRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $taskBuild = Join-Path $taskRoot $BuildDirectory
-$taskExe = Join-Path $taskBuild 'WiiCompiled.exe'
+$taskExe = Join-Path $taskBuild 'Corruption_3 PC.exe'
 $taskDrive = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($taskBuild))
 $taskFreeBytesAtStart = $taskDrive.AvailableFreeSpace
 if ($taskFreeBytesAtStart -lt ($MinimumFreeMegabytes * 1MB)) {

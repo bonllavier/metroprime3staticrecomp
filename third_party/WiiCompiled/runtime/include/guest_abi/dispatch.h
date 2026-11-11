@@ -5,6 +5,18 @@
 // RM3E01_00 translated-call boundary hook. The runtime checks the guest MSR
 // before delivering a pending IOS IPC interrupt.
 extern "C" void OS_HLE_PollPendingPrimeIpcInterrupt(CpuContext* ctx, uint32_t guestTarget);
+// The check itself; every other build makes it a no-op.
+extern "C" void OS_HLE_PollPendingPrimeIpcInterruptFull(CpuContext* ctx, uint32_t guestTarget);
+
+// Emitted after every static translated call return (MKW_STATIC_TRANSLATED_CALL). External
+// interrupts arrive asynchronously on hardware too: only every 8th return, and every pass of the
+// idle loop 0x804E6D20, runs the out-of-line check. Inline so the skipped returns cost a
+// thread-local increment rather than a call (that call was ~4 % of the game thread in boss fights).
+inline thread_local uint32_t g_translatedCallBoundaryPolls = 0;
+inline void PollTranslatedCallBoundary(CpuContext* ctx, uint32_t guestTarget) {
+    if (guestTarget != 0x804E6D20u && (++g_translatedCallBoundaryPolls & 7u) != 0) [[likely]] return;
+    OS_HLE_PollPendingPrimeIpcInterruptFull(ctx, guestTarget);
+}
 // Audio DMA completion point: dispatch only DSP AID, without draining IOS IPC.
 extern "C" void OS_HLE_DispatchPendingPrimeDspInterrupt();
 // Runtime section addresses are separate from the immutable DOL registry.
@@ -303,10 +315,16 @@ struct KnownTypedNativeCpuCall {
 #include "guest_abi/native_cpu_calls.inc"
 
 // Direct-mapped thread-local memo in front of the sorted registry lookup every bctrl performs;
-// a miss just re-runs the sorted lookup. 512 entries (12 KiB) covers the per-frame indirect
-// working set while staying L1/L2 resident, unlike 4096 which would thrash L2. Must stay a
-// power of two, the index masks with (size - 1).
-inline constexpr size_t kIndirectDispatchCacheEntries = 512;
+// a miss just re-runs the sorted lookup. 2048 entries (32 KiB per table) hold the indirect
+// working set of heavy Prime scenes (many actor types, each with its own virtual methods); at 512
+// the misses cost ~0.9 % of the game thread there (F8 captures of 2026-10-28). The slot is the top
+// bits of a Fibonacci hash: the bottom bits of (address>>2)*K only depend on address bits 2..10,
+// which made functions 2 KiB apart collide.
+inline constexpr unsigned kIndirectDispatchCacheBits = 11;
+inline constexpr size_t kIndirectDispatchCacheEntries = size_t{1} << kIndirectDispatchCacheBits;
+inline constexpr size_t IndirectDispatchCacheSlot(uint32_t address) noexcept {
+    return static_cast<uint32_t>((address >> 2) * 2654435761u) >> (32u - kIndirectDispatchCacheBits);
+}
 
 // Namespace-scope `inline thread_local`, not function-local `static thread_local`, to avoid a
 // thread-static init epoch check on every bctrl (same as g_currentCpuContext in guest_abi/cpu_context.h).
@@ -338,8 +356,7 @@ public:
             return FindByAddressPtrSlow(address);
         }
 
-        auto& cached = g_indirectResolvedDispatchMemo[
-            ((address >> 2) * 2654435761u) & (kIndirectDispatchCacheEntries - 1)];
+        auto& cached = g_indirectResolvedDispatchMemo[IndirectDispatchCacheSlot(address)];
         if (cached.valid && cached.address == address) {
             return cached.info;
         }
@@ -358,8 +375,7 @@ public:
             return nullptr;
         }
 
-        auto& cached = g_indirectRawDispatchMemo[
-            ((address >> 2) * 2654435761u) & (kIndirectDispatchCacheEntries - 1)];
+        auto& cached = g_indirectRawDispatchMemo[IndirectDispatchCacheSlot(address)];
         if (cached.valid && cached.address == address) {
             return cached.record;
         }
@@ -434,10 +450,8 @@ MKW_PPC_FORCE_INLINE bool TryDispatchResolvedCpuTarget(const TranslatedFunctionI
     return true;
 }
 
-inline bool TryDispatchRawCpuTarget(const RawDispatchRecord* record, CpuContext* cpu) {
-    if (!record || !record->entry) {
-        return false;
-    }
+// Guarded indirect call: non-volatile register guards and a context switch.
+MKW_PPC_NO_INLINE inline bool TryDispatchRawCpuTargetGuarded(const RawDispatchRecord* record, CpuContext* cpu) {
     RecompMod::ScopedTranslatedExecutionAddress translatedExecution(record->address);
     PpcNonvolatileGprGuard gprGuard(cpu, record->preserveNonvolatileGprs);
     PpcNonvolatileFprGuard fprGuard(cpu, record->nonvolatileFprWriteMask);
@@ -448,6 +462,24 @@ inline bool TryDispatchRawCpuTarget(const RawDispatchRecord* record, CpuContext*
         record->entry(cpu);
     }
     return true;
+}
+
+// 91 % of RM3E01's indirect targets (19,814 of 21,707 records) write no
+// non-volatile FPR and need no GPR guard, and the caller is almost always
+// already in `cpu`'s context. For them the guarded path's guards are no-ops,
+// but its 0x178-byte frame and the out-of-line FPR guard calls still ran on
+// every bctrl: ~1.8 % of the game thread (F8 2026-10-31 01:12, twice that in
+// heavy actor scenes). Same effects, without them.
+MKW_PPC_FORCE_INLINE bool TryDispatchRawCpuTarget(const RawDispatchRecord* record, CpuContext* cpu) {
+    if (!record || !record->entry) {
+        return false;
+    }
+    if (record->nonvolatileFprWriteMask == 0 && !record->preserveNonvolatileGprs && TryGetCpuContext() == cpu) {
+        RecompMod::ScopedTranslatedExecutionAddress translatedExecution(record->address);
+        record->entry(cpu);
+        return true;
+    }
+    return TryDispatchRawCpuTargetGuarded(record, cpu);
 }
 
 template <uint32_t Target>

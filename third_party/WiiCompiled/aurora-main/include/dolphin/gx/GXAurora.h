@@ -63,6 +63,28 @@ extern "C" {
 
 #define GX_LOAD_AURORA_INVALIDATE_TEX_ALL 0x0035
 
+/**
+ * Host callback in GX stream order (aurora_stream_host_callback): u32 id,
+ * u32 size, then `size` payload bytes. The decoder runs the registered
+ * AuroraStreamCallback outside the renderer lock, after every earlier command.
+ */
+#define GX_LOAD_AURORA_HOST_CALLBACK 0x0040
+
+/**
+ * Deferred draw (aurora_stream_deferred_draw): u32 size, then `size` payload
+ * bytes the host's expander (aurora_set_deferred_draw_expander) turns into one
+ * draw command (opcode|fmt, u16 count, vertices) on the decoder thread, inline,
+ * so the draw merges and batches like any other.
+ */
+#define GX_LOAD_AURORA_DEFERRED_DRAW 0x0041
+
+/**
+ * Vertex/XF array by value (GXSetArrayCopy): like GX_LOAD_AURORA_ARRAYBASE + n, but followed by a u32
+ * size, a 1-byte little-endian flag and `size` bytes of array data. The decoder keeps its own copy, so
+ * the draws see the array as it was when the command was written, whatever the game writes later.
+ */
+#define GX_LOAD_AURORA_ARRAYDATA 0x0050
+
 
 /*
  * Debug marker stuff
@@ -96,6 +118,11 @@ typedef enum _AuroraViewportPolicy {
  * When AURORA_VIEWPORT_NATIVE is used, GXSetTexCopySrc/GXSetTexCopyDst will use native framebuffer resolution.
  */
 void AuroraSetViewportPolicy(AuroraViewportPolicy policy);
+/**
+ * Shape of the AURORA_VIEWPORT_16_9 policy's content (16:9 by default). A wider value renders and
+ * presents a wider image, pillarboxed on wider surfaces (used for ultrawide).
+ */
+void AuroraSetFixedAspect(float aspect);
 
 /**
  * Retrieves the current content framebuffer size.
@@ -141,6 +168,20 @@ void GXCreateFrameBuffer(u32 width, u32 height);
 void GXRestoreFrameBuffer(void);
 
 void GXApplyBPReg(u8 reg, u32 value);
+
+/**
+ * Counter advanced whenever the SDK vertex descriptor/attribute-format shadow
+ * or the decoder's vertex state may have changed. Callers that republish
+ * vertex state can skip an identical republish while it is unchanged.
+ */
+u64 GXAuroraVtxStateEpoch(void);
+
+/**
+ * Writer: flush the SDK shadow's dirty state (vertex descriptors, attribute
+ * formats, BP masks) into the stream now. Required before a host callback
+ * whose decoder-side handler reads vertex state (aurora_stream_host_callback).
+ */
+void GXAuroraPublishDirtyState(void);
 
 #if __cplusplus
 }

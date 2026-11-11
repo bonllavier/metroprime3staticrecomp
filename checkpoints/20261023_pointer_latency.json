@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "request": "Wii pointer trails the Windows mouse cursor; minimize input-to-display latency",
+  "measurement": "PrimeInputLatency (KPAD read -> XFB copy decoded -> VI handoff -> surface Present) plus Aurora [present-latency] stage timing; unattended hangar runs.",
+  "findings": [
+    "Pointer came from the last SDL motion event, pumped once per retrace: up to one frame stale at the KPAD read.",
+    "Prime flips to a finished XFB from its GPU-done breakpoint callback, so the copy was shown at the retrace after next: copy_to_vi ~16.4 ms.",
+    "Present() blocks ~11-15 ms on D3D12 in Immediate, Mailbox and Fifo, windowed, borderless and exclusive alike; worker seal/encode ~0.6-0.8 ms, presenter queue/acquire/submit < 0.2 ms.",
+    "Pointer mapped to the whole window although the game image is letterboxed by aspect."
+  ],
+  "changes": [
+    "KPAD read samples the OS cursor (GetCursorPos/ScreenToClient) at the read instead of the last SDL event.",
+    "Pointer coordinates are relative to Aurora's presented image rectangle (aurora_get_present_viewport_fraction); outside it the remote points off-screen.",
+    "WII_COMPILED_PRIME_PRESENT_ON_COPY=1 (launcher default): a decoded XFB copy is presented at the guest thread's next safe VI poll; the ready tracker prevents a second present at the retrace.",
+    "WII_COMPILED_AURORA_PRESENT_MODE=immediate|mailbox|fifo diagnostic override; offered modes logged.",
+    "Diagnostics: [prime-input-latency] and [present-latency] every 10 s."
+  ],
+  "results_input_to_present_avg_ms": {
+    "before_estimate": "~45-55 (stale pointer up to 16 + frame ~17-20 + VI wait ~16 + Present ~11)",
+    "d3d12_present_on_copy": "30.8-32.7",
+    "vulkan_immediate": "24.2 (tearing; backend less validated here)",
+    "vulkan_mailbox": "28.8-30.9"
+  },
+  "validation": {"platform_tests": "22/22 PASS", "frames_change": "14 consecutive captures differ", "fatal_logs": 0, "fps": "60.0"},
+  "pending": "User QA of feel and alignment of reticle under the cursor; Present blocking inside Dawn D3D12 not resolved."
+}

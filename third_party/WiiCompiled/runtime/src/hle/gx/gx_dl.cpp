@@ -5,14 +5,20 @@
 #include "runtime_log.h"
 #include "recomp_mod_loader.h"
 #include "hle/prime_dl_vertex_expansion.h"
+#include "hle/prime_deferred_draw.h"
+#include "hle/prime_gx_stream.h"
+extern "C" void GXAuroraPublishDirtyState(void);
 #include "hle/gx_fifo_storage.h"
+#include <aurora/aurora.h>
 
 #include <cstdlib>
+#include <sstream>
 #include <unordered_map>
 
 // The display-list scan cache validates a cached scan against the live guest
 // bytes with a 64-bit XXH3 digest (see GxDisplayListScanCache::CanReuse).
 #include <xxhash.h>
+#include "hle/prime_dl_vertex_cache.h"
 
 // Diagnostic environment switches are fixed for the lifetime of this process.
 static bool CachedWiiCompiledTracePrimeMii() {
@@ -828,10 +834,326 @@ static bool DisplayListMayContainDraw(const uint8_t* data, uint32_t nbytes) {
     return !WalkDisplayList(data, nbytes, visitor, 0);
 }
 
-// Interpreter fallback
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
+// True when the array bytes this draw's indices read may still be changing: some 64 KiB granule
+// under them got a write notification (DC flush/store, DMA) within the last second, or the arrays
+// cannot be tracked (uncached mirror, multi-group attributes). Such draws are not deferred to the
+// asynchronous decoder (see TrySubmitPrimePackedDl). GX thread only.
+// Whether the game published (DC flush/store, DMA) any of [addr, addr + bytes) within the last
+// second, or the range is not tracked at all (uncached mirror, outside MEM1/MEM2). GX thread only.
+static bool RangeWrittenRecently(uint32_t addr,uint32_t bytes) {
+    struct Seen {
+        uint32_t generation=0;
+        int64_t changedMs=-1000000;
+    };
+    static thread_local std::vector<Seen> seen(GxGuestWrite::kGranuleCount);
+    constexpr int64_t kQuietMs=1000;
+    // Writes through the uncached mirror send no notification at all.
+    if(addr>=0xC0000000u)return true;
+    const uint64_t first=CanonicalizeGxMainRamAddress(addr);
+    const uint64_t end=first+bytes;
+    if(bytes==0 || end>GxGuestWrite::kTrackedSpan)return true;
+    const int64_t nowMs=std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    bool recent=false;
+    for(uint64_t granule=first>>GxGuestWrite::kGranuleShift;granule<=((end-1)>>GxGuestWrite::kGranuleShift);++granule) {
+        const uint32_t generation=GxGuestWrite::g_generations[granule].load(std::memory_order_relaxed);
+        auto& entry=seen[granule];
+        if(generation!=entry.generation) {
+            entry.generation=generation;
+            entry.changedMs=nowMs;
+        }
+        if(nowMs-entry.changedMs<kQuietMs)recent=true;
+    }
+    return recent;
+}
+
+static bool ArraysWrittenRecently(const uint8_t* source,uint32_t count,
+                                  const std::vector<PrimeDlVertices::Attribute>& attributes) {
+    static thread_local std::vector<PrimeDlVertexCache::Span> spans;
+    if(!PrimeDlVertexCache::ReadSpans(source,count,attributes,spans))return true;
+    bool recent=false;
+    for(const auto& span:spans)
+        if(RangeWrittenRecently(span.first,span.bytes))recent=true;
+    if(recent) {
+        static unsigned traces=0;
+        if(traces++<4)RT_LOG(RT_TAG_GX)<<"[prime-packed-indexed-dl] kept on the GX thread: arrays written recently vertices="
+                                       <<count<<std::endl;
+    }
+    return recent;
+}
+
+// Arrays the game rewrites without notification while the GX thread may still be reading them for
+// the previous frame (Bryyo lava ripples: the game keeps one ripple mesh, rewrites it every frame and
+// lets the GPU run up to a frame behind through its FIFO breakpoint). On the Wii the GPU is done long
+// before; here a patch read before the rewrite and its neighbour read during it disagree on the
+// vertices they share: black wedges between patches. The decoder finds such arrays (a snapshot that no
+// longer matches memory) and lists them here; the GX thread then reads each byte of them only once
+// per frame (FrameArrayView), so every patch sharing a vertex sees the same value and the surface
+// stays closed even when the read overlaps the game's rewrite.
+namespace {
+std::array<std::atomic<uint32_t>,16> g_volatileArrays{};
+uint32_t g_gxFrame=0;  // GX thread: display copies interpreted
+}
+
+static bool IsVolatileArray(uint32_t base) {
+    for(const auto& slot:g_volatileArrays)
+        if(slot.load(std::memory_order_relaxed)==base)return true;
+    return false;
+}
+
+static void MarkVolatileArray(uint32_t base) {
+    // The mesh moves when a room is loaded again: the oldest address gives way to the new one.
+    static std::atomic<uint32_t> nextSlot{0};
+    if(base==0 || IsVolatileArray(base))return;
+    const uint32_t slot=nextSlot.fetch_add(1,std::memory_order_relaxed)%g_volatileArrays.size();
+    g_volatileArrays[slot].store(base,std::memory_order_relaxed);
+    RT_LOG(RT_TAG_GX)<<"[prime-volatile-array] base=0x"<<std::hex<<base<<std::dec
+                     <<" rewritten under the GX thread: read once per frame from now on"<<std::endl;
+}
+
+extern "C" void GxPrimeNoteDisplayCopy() { ++g_gxFrame; }
+
+namespace {
+struct FrameArrayView {
+    uint32_t base=0,stride=0,frame=~0u;
+    std::vector<uint8_t> bytes;  // [0, size) of the array, each byte read once this frame
+};
+std::array<FrameArrayView,8> s_frameViews;
+}
+
+// GX thread. Null when no attribute reads a volatile array; otherwise `attributes` with those arrays
+// pointing into this frame's views (extended now with the bytes this draw reads beyond them).
+static const std::vector<PrimeDlVertices::Attribute>* FrameCoherentAttributes(
+    const uint8_t* source,uint32_t count,const std::vector<PrimeDlVertices::Attribute>& attributes) {
+    constexpr size_t kMaxViewBytes=1u<<20;
+    bool any=false;
+    for(const auto& a:attributes)
+        if(a.indexBytes && IsVolatileArray(a.arrayBase)) {any=true;break;}
+    if(!any)return nullptr;
+    static thread_local std::vector<PrimeDlVertexCache::Span> spans;
+    static thread_local std::vector<PrimeDlVertices::Attribute> viewAttributes;
+    if(!PrimeDlVertexCache::ReadSpans(source,count,attributes,spans))return nullptr;
+    viewAttributes=attributes;
+    size_t next=0;
+    for(auto& a:viewAttributes) {
+        if(!a.indexBytes)continue;
+        const auto& span=spans[next++];
+        if(!IsVolatileArray(a.arrayBase) || !a.arrayData || span.first<a.arrayBase)continue;
+        const size_t end=size_t(span.first-a.arrayBase)+span.bytes;
+        if(end>a.arrayBytes || end>kMaxViewBytes)continue;
+        FrameArrayView* view=nullptr;
+        for(auto& candidate:s_frameViews)
+            if(candidate.base==a.arrayBase && candidate.stride==a.arrayStride) {view=&candidate;break;}
+        if(!view) {
+            view=&s_frameViews[0];
+            for(auto& candidate:s_frameViews)
+                if(candidate.frame!=g_gxFrame) {view=&candidate;break;}
+            *view={a.arrayBase,a.arrayStride,~0u,{}};
+        }
+        if(view->frame!=g_gxFrame) {
+            view->frame=g_gxFrame;
+            view->bytes.clear();
+        }
+        if(end>view->bytes.size()) {
+            const size_t from=view->bytes.size();
+            view->bytes.resize(end);
+            std::memcpy(view->bytes.data()+from,a.arrayData+from,end-from);
+        }
+        a.arrayData=view->bytes.data();
+        a.arrayBytes=view->bytes.size();
+    }
+    return &viewAttributes;
+}
+
+// Snapshots for a deferred draw (PrimeDeferredDraw::Snapshot): the array bytes its indices read,
+// copied now, when the GX thread interprets the draw, while the decoder would read them later. The game
+// rewrites some arrays without any notification (Bryyo lava ripples: the patches it drew were expanded
+// with heights the game had already replaced, on the decoder only: seams, flashes and jumping
+// geometry, 2026-11-01). Up to 16 KiB of array bytes (the patches read a few hundred); large static meshes
+// keep reading the array. Null when nothing is copied.
+static const std::vector<PrimeDeferredDraw::Snapshot>* SmallArraySnapshots(
+    const uint8_t* source,uint32_t count,const std::vector<PrimeDlVertices::Attribute>& attributes) {
+    constexpr uint32_t kMaxSnapshotBytes=16*1024;
+    static thread_local std::vector<PrimeDlVertexCache::Span> spans;
+    static thread_local std::vector<PrimeDeferredDraw::Snapshot> snapshots;
+    if(!PrimeDlVertexCache::ReadSpans(source,count,attributes,spans) || spans.empty())return nullptr;
+    uint64_t total=0;
+    for(const auto& span:spans)total+=span.bytes;
+    if(total>kMaxSnapshotBytes)return nullptr;
+    snapshots.assign(attributes.size(),{});
+    size_t next=0;
+    for(size_t i=0;i<attributes.size();++i) {
+        const auto& a=attributes[i];
+        if(!a.indexBytes)continue;
+        if(next>=spans.size() || !a.arrayData)return nullptr;
+        const auto& span=spans[next++];
+        const uint64_t skip=uint64_t(span.first)-a.arrayBase;
+        if(span.first<a.arrayBase || skip+span.bytes>a.arrayBytes)return nullptr;
+        snapshots[i]={static_cast<uint32_t>(skip),span.bytes};
+    }
+    return &snapshots;
+}
+
+// Decoder: how often the live array no longer matched a snapshot (what the draw would have read).
+static void NoteSnapshotChanges(const std::vector<PrimeDeferredDraw::SnapshotUse>& uses) {
+    static std::atomic<uint64_t> draws{0},changed{0};
+    static std::atomic<uint32_t> sampleBase{0};
+    if(uses.empty())return;
+    draws.fetch_add(1,std::memory_order_relaxed);
+    bool any=false;
+    for(const auto& use:uses) {
+        if(std::memcmp(use.live,use.copy,use.size)==0)continue;
+        if(!any)changed.fetch_add(1,std::memory_order_relaxed);
+        any=true;
+        sampleBase.store(use.arrayBase,std::memory_order_relaxed);
+    }
+    // All of the draw's arrays: once it stops being deferred, this check never sees its other arrays
+    // (the mesh's positions when its normals changed first).
+    if(any)for(const auto& use:uses)MarkVolatileArray(use.arrayBase);
+#if !defined(MKW_PRIME_QA_TOOLS)
+    return;
+#endif
+    static std::atomic<int64_t> nextLogMs{0};
+    const int64_t nowMs=std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    int64_t due=nextLogMs.load(std::memory_order_relaxed);
+    if(nowMs<due || !nextLogMs.compare_exchange_strong(due,nowMs+5000))return;
+    const uint64_t d=draws.exchange(0),c=changed.exchange(0);
+    if(c==0)return;
+    RT_LOG(RT_TAG_GX)<<"[prime-deferred-snapshot] draws="<<d<<" game_had_changed_the_array="<<c
+                     <<" sample_array=0x"<<std::hex<<sampleBase.load()<<std::dec<<std::endl;
+}
+
+#if defined(MKW_PRIME_QA_TOOLS)
+// Decoder, defer_dl_verify: the expansion here against the hash of the producer's own.
+static void VerifyDeferredExpansion(const PrimeDeferredDraw::View& draw,
+                                    const std::vector<PrimeDlVertices::Attribute>& attributes,
+                                    const std::vector<PrimeDeferredDraw::SnapshotUse>& snapshots,
+                                    const std::vector<uint8_t>& vertices) {
+    static std::atomic<uint64_t> checked{0},mismatched{0};
+    static std::atomic<int> details{0};
+    checked.fetch_add(1,std::memory_order_relaxed);
+    const uint64_t mine=static_cast<uint64_t>(XXH3_64bits(vertices.data(),vertices.size()))|1u;
+    if(mine!=draw.verifyHash) {
+        mismatched.fetch_add(1,std::memory_order_relaxed);
+        if(details.fetch_add(1,std::memory_order_relaxed)<24) {
+            std::ostringstream line;
+            line<<"[prime-defer-verify] MISMATCH cmd=0x"<<std::hex<<unsigned(draw.command)<<std::dec<<" count="<<draw.count
+                <<" bytes="<<vertices.size()<<" snapshots="<<snapshots.size()<<" attrs:";
+            for(const auto& a:attributes)
+                line<<" ["<<a.bytes<<"b idx"<<a.indexBytes<<" base=0x"<<std::hex<<a.arrayBase<<std::dec
+                    <<" stride="<<a.arrayStride<<" mapped="<<a.arrayBytes<<"]";
+            RT_LOG(RT_TAG_GX)<<line.str()<<std::endl;
+        }
+    }
+    static std::atomic<int64_t> nextLogMs{0};
+    const int64_t nowMs=std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    int64_t due=nextLogMs.load(std::memory_order_relaxed);
+    if(nowMs<due || !nextLogMs.compare_exchange_strong(due,nowMs+5000))return;
+    RT_LOG(RT_TAG_GX)<<"[prime-defer-verify] checked="<<checked.exchange(0)<<" mismatched="<<mismatched.exchange(0)<<std::endl;
+}
+
+#endif
+
+// Expansion of a packed draw (caller's thread: the GX thread, or the
+// asynchronous decoder for a deferred draw), through the cross-frame cache of
+// prime_dl_vertex_cache.h. Each thread keeps its own cache.
+static const std::vector<uint8_t>* ExpandPackedDraw(const uint8_t* source,uint32_t sourceBytes,uint32_t count,
+                                                    GXVtxFmt fmt,const std::vector<PrimeDlVertices::Attribute>& attributes,
+                                                    std::vector<uint8_t>& expanded,bool allowCache=true) {
+    const auto read=[](uint32_t address,size_t bytes,const uint8_t*& span) {
+        if(auto* pointer=MemoryInline::GetPointerFast(address,bytes)) {span=pointer;return true;}
+        if(!Memory::Contains(address,bytes))return false;
+        span=static_cast<const uint8_t*>(Memory::GetPointer(address,bytes));return true;
+    };
+    bool expandedParallel=false;
+    // Cross-frame reuse of this draw's expansion; see prime_dl_vertex_cache.h for the proofs.
+    // WII_COMPILED_DISABLE_DL_VERTEX_CACHE=1 restores expanding every draw (A/B comparison).
+    static const bool cacheEnabled=std::getenv("WII_COMPILED_DISABLE_DL_VERTEX_CACHE")==nullptr;
+    static thread_local PrimeDlVertexCache::Cache vertexCache(64u<<20);
+    const auto generation=[](uint32_t first,uint32_t bytes) {
+        // Uncached mirrors (0xC0000000+) can be written without any flush notification.
+        return first>=0xC0000000u ? PrimeDlVertexCache::kUntracked : GxGuestWrite::GenerationForRange(first,bytes);
+    };
+    const std::vector<uint8_t>* vertices=nullptr;
+    PrimeDlVertexCache::Key cacheKey{};
+    uint64_t sourceDigest=0;
+    // Only large draws: RM3E01 sends hundreds of thousands of 4-16 vertex draws per second,
+    // whose expansion is cheaper than the key, digest and lookup (measured: the lookup took
+    // 22% of the GX thread with every draw cached).
+    constexpr uint32_t kMinCachedVertices=48;
+    const bool cacheThisDraw=cacheEnabled && allowCache && count>=kMinCachedVertices;
+    if(cacheThisDraw) {
+        cacheKey={source,sourceBytes,count,static_cast<uint32_t>(fmt),PrimeDlVertexCache::LayoutSignature(attributes)};
+        sourceDigest=static_cast<uint64_t>(XXH3_64bits(source,sourceBytes));
+        vertices=vertexCache.Find(cacheKey,sourceDigest,generation);
+    }
+    if(!vertices) {
+        static thread_local std::vector<PrimeDlVertexCache::Span> spans;
+        // Generations are sampled before the bytes are read: a racing write
+        // costs a later re-expansion, never a stale reuse.
+        const bool tracked=cacheThisDraw && PrimeDlVertexCache::ReadSpans(source,count,attributes,spans);
+        const uint64_t arrayGeneration=tracked ? PrimeDlVertexCache::Cache::ArrayGeneration(spans,generation)
+                                               : PrimeDlVertexCache::kUntracked;
+        if(!PrimeDlVertices::Expand(source,sourceBytes,count,attributes,expanded,read,
+                                    GxFifoStorage::MaxBufferedBytes,&expandedParallel))return nullptr;
+        if(tracked)vertexCache.Store(cacheKey,sourceDigest,arrayGeneration,spans,expanded);
+        vertices=&expanded;
+    }
+#if defined(MKW_PRIME_QA_TOOLS)
+    if(cacheThisDraw && (vertexCache.Lookups()&0x3FFFu)==0) {
+        RT_LOG(RT_TAG_GX)<<"[prime-dl-vertex-cache] lookups="<<vertexCache.Lookups()<<" hits="<<vertexCache.Hits()
+            <<" stale="<<vertexCache.Stale()<<" entries="<<vertexCache.Entries()<<" bytes="<<vertexCache.Bytes()<<std::endl;
+    }
+#endif
+    static unsigned parallelTraces=0;
+    if(expandedParallel && parallelTraces++<8)RT_LOG(RT_TAG_GX)
+        <<"[prime-packed-indexed-dl] parallel vertex expansion vertices="<<count
+        <<" bytes="<<expanded.size()<<" workers=2"<<std::endl;
+    return vertices;
+}
+
+// Decoder thread (aurora_set_deferred_draw_expander): a deferred packed draw
+// back to GX wire form. The source bytes travel in the payload; the arrays are
+// read now, which the guest's sync points (PE token, draw done) already cover:
+// Aurora reads guest textures and lists here too (hilo_decodificador_aurora.md).
+extern "C" const uint8_t* PrimeExpandDeferredDraw(const uint8_t* payload,uint32_t size,uint32_t* wireBytes) {
+    static thread_local std::vector<PrimeDlVertices::Attribute> attributes;
+    static thread_local std::vector<uint8_t> expanded,wire;
+    static thread_local std::vector<PrimeDeferredDraw::SnapshotUse> snapshots;
+    PrimeDeferredDraw::View draw{};
+    if(!PrimeDeferredDraw::Decode(payload,size,draw,attributes,&snapshots)) {
+        static unsigned traces=0;
+        if(traces++<8)RT_LOG(RT_TAG_GX)<<"[prime-packed-indexed-dl] invalid deferred draw payload bytes="<<size<<std::endl;
+        return nullptr;
+    }
+    NoteSnapshotChanges(snapshots);
+    // No vertex cache here. Its proof is the arrays' write generation, and the game rewrites some
+    // arrays without any notification; the load balancing sends a draw here only on some frames, so
+    // this thread's entry for it could be several frames old while the generation still matched:
+    // lava ripple patches drawn with old heights beside current ones (black wedges between patches,
+    // only with this stage on, 2026-11-01). The decoder has the spare time to expand every draw.
+    const auto* vertices=ExpandPackedDraw(draw.source,draw.sourceBytes,draw.count,
+                                          static_cast<GXVtxFmt>(draw.command&7u),attributes,expanded,false);
+    if(!vertices)return nullptr;  // unreachable: the producer proved ExpandCannotFail
+#if defined(MKW_PRIME_QA_TOOLS)
+    if(draw.verifyHash!=0)VerifyDeferredExpansion(draw,attributes,snapshots,*vertices);
+#endif
+    wire.resize(3+vertices->size());
+    wire[0]=draw.command;
+    wire[1]=static_cast<uint8_t>(draw.count>>8);
+    wire[2]=static_cast<uint8_t>(draw.count);
+    std::memcpy(wire.data()+3,vertices->data(),vertices->size());
+    *wireBytes=static_cast<uint32_t>(wire.size());
+    return wire.data();
+}
+
+// Interpreter fallback
 static bool TrySubmitPrimePackedDl(uint8_t opcode,GXVtxFmt fmt,uint16_t count,
-                                   const uint8_t* source,uint32_t sourceBytes,bool publishLayout) {
+                                   const uint8_t* source,uint32_t sourceBytes,bool publishLayout,
+                                   bool bindPalettes) {
     if(!count || fmt>=GX_MAX_VTXFMT || aurora::gx::fifo::in_display_list())return false;
     static thread_local std::vector<PrimeDlVertices::Attribute> attributes;
     static thread_local std::vector<uint8_t> expanded;
@@ -839,7 +1161,23 @@ static bool TrySubmitPrimePackedDl(uint8_t opcode,GXVtxFmt fmt,uint16_t count,
     // by every non-draw command/nested list. Consecutive same-format draws
     // therefore share the layout and mapped-span proof, but always copy fresh
     // source bytes. The first draw of every visitor rebuilds this scratch plan.
-    if(publishLayout) {
+    // The plan (sizes, index widths, mapped array spans) depends only on the VAT/VCD
+    // layout of `fmt` (vtxStateGeneration) and on the array bases/strides, which
+    // GXSetArray and CP 0xA0/0xB0 writes change without bumping the generation.
+    // Reuse it across draws whose publication BP/XF commands invalidated.
+    static thread_local uint32_t planFormat=~0u, planGeneration=~0u;
+    static thread_local std::array<std::pair<uint32_t,uint32_t>,26> planArrays{};
+    bool planReusable=publishLayout && planFormat==static_cast<uint32_t>(fmt) &&
+                      planGeneration==g_hleGxState.vtxStateGeneration;
+    for(unsigned attr=0;planReusable && attr<26;++attr) {
+        const auto type=g_hleGxState.vtxDesc[attr];
+        if(type==GX_INDEX8 || type==GX_INDEX16) {
+            const auto& array=g_hleGxState.vtxArray[attr];
+            planReusable=planArrays[attr]==std::pair<uint32_t,uint32_t>{array.base,array.stride};
+        }
+    }
+    if(publishLayout && !planReusable) {
+      planFormat=~0u;
       attributes.clear();
       for(unsigned attr=0;attr<26;++attr) {
         const auto type=g_hleGxState.vtxDesc[attr];
@@ -872,26 +1210,104 @@ static bool TrySubmitPrimePackedDl(uint8_t opcode,GXVtxFmt fmt,uint16_t count,
         }
       }
     }
-    const auto read=[](uint32_t address,size_t bytes,const uint8_t*& span) {
-        if(auto* pointer=MemoryInline::GetPointerFast(address,bytes)) {span=pointer;return true;}
-        if(!Memory::Contains(address,bytes))return false;
-        span=static_cast<const uint8_t*>(Memory::GetPointer(address,bytes));return true;
-    };
-    bool expandedParallel=false;
-    if(!PrimeDlVertices::Expand(source,sourceBytes,count,attributes,expanded,read,
-                                GxFifoStorage::MaxBufferedBytes,&expandedParallel))return false;
-    static unsigned parallelTraces=0;
-    if(expandedParallel && parallelTraces++<8)RT_LOG(RT_TAG_GX)
-        <<"[prime-packed-indexed-dl] parallel vertex expansion vertices="<<count
-        <<" bytes="<<expanded.size()<<" workers=2"<<std::endl;
+    if(publishLayout && !planReusable) {
+      planFormat=static_cast<uint32_t>(fmt);
+      planGeneration=g_hleGxState.vtxStateGeneration;
+      for(unsigned attr=0;attr<26;++attr)
+        planArrays[attr]={g_hleGxState.vtxArray[attr].base,g_hleGxState.vtxArray[attr].stride};
+    }
+    // Draw dump companion: where this draw reads its positions from.
+#if defined(MKW_PRIME_QA_TOOLS)
+    if(aurora_draw_dump_active()) {
+#else
+    if(false) {
+#endif
+        uint32_t offset=0,index=0;
+        for(unsigned attr=0;attr<26;++attr) {
+            if(g_hleGxState.vtxDesc[attr]==GX_NONE)continue;
+            const auto& attribute=attributes[index++];
+            if(attr==GX_VA_POS) {
+                const auto& format=g_hleGxState.vtxAttrFmt[fmt][attr];
+                const uint32_t stride=sourceBytes/count;
+                std::ostringstream line;
+                line<<"[dump-dl-draw] count="<<count<<" fmt="<<fmt<<" pos_desc="<<g_hleGxState.vtxDesc[attr]
+                    <<" type="<<format.type<<" cnt="<<format.cnt<<" frac="<<unsigned(format.frac)
+                    <<" base=0x"<<std::hex<<attribute.arrayBase<<std::dec<<" stride="<<attribute.arrayStride
+                    <<" vtx_stride="<<stride<<" idx=";
+                for(uint32_t v=0;v<count && v<8;++v) {
+                    const uint8_t* at=source+v*stride+offset;
+                    line<<(attribute.indexBytes==2 ? uint32_t((at[0]<<8)|at[1]) : attribute.indexBytes==1 ? uint32_t(at[0]) : 0u)<<",";
+                }
+                RT_LOG(RT_TAG_GX)<<line.str()<<std::endl;
+                break;
+            }
+            offset+=attribute.indexBytes ? attribute.indexBytes*attribute.groups : attribute.bytes;
+        }
+    }
+    // Load balancing: the decoder expands a draw only while it keeps up (at most
+    // the chunk in progress pending). Deferring every draw made the decoder the
+    // bottleneck (80 % busy in the Norion and Dane cinematics, 2026-10-30); only
+    // with nothing pending at all, it took almost nothing (10 %) because the
+    // writer hands off a chunk every 16 KiB. A backlog past one chunk sends the
+    // expansion back to the GX thread, so neither thread waits on the other.
+    // Off by default ([prime] defer_dl_expansion): with it on, the lava ripple patches of Bryyo show
+    // seams (unsolved, hilo_decodificador_aurora.md). WII_COMPILED_PRIME_DEFER_DL_EXPANSION=1 turns it on.
+    static const bool deferEnabled=[]{const char* v=std::getenv("WII_COMPILED_PRIME_DEFER_DL_EXPANSION");return v && v[0]=='1';}();
+    // The decoder reads the arrays later than this thread would. Arrays the game rewrites all the time
+    // (fluid ripples: the lava of Bryyo) could then be read after the CPU had started on the next
+    // frame's values, and since the load balancing above defers a draw only on some frames, the lava
+    // switched between two states and its surface jumped (user, 2026-11-01; gone with the decoder
+    // off). A draw whose array memory was written within the last second, or is not tracked at all,
+    // is expanded here, at the moment the game submits it.
+    // Arrays the game rewrites under this thread are read through this frame's view (FrameCoherentAttributes):
+    // such a draw is expanded here, from the view, without the vertex cache.
+    const auto* coherent=deferEnabled ? FrameCoherentAttributes(source,count,attributes) : nullptr;
+    const bool deferred=!coherent && deferEnabled && PrimeGxStream::Async() && aurora_stream_decoder_backlog_hint()<=1 &&
+        PrimeDlVertices::ExpandCannotFail(sourceBytes,count,attributes,GxFifoStorage::MaxBufferedBytes) &&
+        !ArraysWrittenRecently(source,count,attributes);
+    const std::vector<uint8_t>* vertices=nullptr;
+    if(!deferred) {
+        vertices=coherent ? ExpandPackedDraw(source,sourceBytes,count,fmt,*coherent,expanded,false)
+                          : ExpandPackedDraw(source,sourceBytes,count,fmt,attributes,expanded);
+        if(!vertices)return false;
+    }
     struct RestoreFormat {
         GXVtxFmt previous;
         ~RestoreFormat(){g_hleGxState.currentVtxFmt=previous;}
     } restore{g_hleGxState.currentVtxFmt};
     g_hleGxState.currentVtxFmt=fmt;
-    if(publishLayout) {
-        ApplyAuroraVtxStateForDlBegin(fmt);
-        GX_HLE_PrimeBindDrawPalettes(fmt);
+    if(publishLayout) ApplyAuroraVtxStateForDlBegin(fmt);
+    if(publishLayout || bindPalettes) GX_HLE_PrimeBindDrawPalettes(fmt);
+    if(deferred) {
+        // The asynchronous decoder expands this draw (PrimeExpandDeferredDraw):
+        // only the plan and the encoded indices travel, and the GX thread, the
+        // one that saturates in heavy scenes, skips the expansion. Publish what
+        // GXBegin would flush first: the draw is decoded against that state.
+        GXAuroraPublishDirtyState();
+        static thread_local std::vector<uint8_t> payload;
+        const auto* snapshots=SmallArraySnapshots(source,count,attributes);
+        // WII_COMPILED_PRIME_DEFER_VERIFY=1 ([prime] defer_dl_verify): this thread also expands the draw
+        // and the decoder compares its own result with that hash (diagnostics, costs the saving).
+        uint64_t verifyHash=0;
+#if defined(MKW_PRIME_QA_TOOLS)
+        static const bool verify=[]{const char* v=std::getenv("WII_COMPILED_PRIME_DEFER_VERIFY");return v && v[0]=='1';}();
+        if(verify) {
+            static thread_local std::vector<uint8_t> check;
+            if(const auto* own=ExpandPackedDraw(source,sourceBytes,count,fmt,attributes,check,false))
+                verifyHash=static_cast<uint64_t>(XXH3_64bits(own->data(),own->size()))|1u;
+        }
+#endif
+        PrimeDeferredDraw::Encode(OpcodeToGXPrimitive(opcode)|fmt,count,source,sourceBytes,attributes,payload,
+                                  snapshots,verifyHash);
+        if(aurora_stream_deferred_draw(payload.data(),static_cast<uint32_t>(payload.size()))) {
+            GXMarkFrameWork();
+            static unsigned deferredTraces=0;
+            if(deferredTraces++<4)RT_LOG(RT_TAG_GX)<<"[prime-packed-indexed-dl] deferred to the decoder vertices="<<count
+                <<" source_bytes="<<sourceBytes<<" payload_bytes="<<payload.size()<<std::endl;
+            return true;
+        }
+        vertices=ExpandPackedDraw(source,sourceBytes,count,fmt,attributes,expanded);
+        if(!vertices)return false;
     }
     // Consecutive draws in this visitor cannot reload TLUT or change BP,
     // XF, CP, or VAT state: every such command invalidates publication.
@@ -901,12 +1317,12 @@ static bool TrySubmitPrimePackedDl(uint8_t opcode,GXVtxFmt fmt,uint16_t count,
     // Retain the producer FIFO's batching. Direct submit drains and resolves
     // textures per tiny primitive, defeating the native decoder's draw batches.
     GXBegin(OpcodeToGXPrimitive(opcode),fmt,count);
-    aurora::gx::fifo::write_data_bulk(expanded.data(),static_cast<uint32_t>(expanded.size()));
+    aurora::gx::fifo::write_data_bulk(vertices->data(),static_cast<uint32_t>(vertices->size()));
     GXEnd();
     GXMarkFrameWork();
     static unsigned traces=0;
     if(traces++<8)RT_LOG(RT_TAG_GX)<<"[prime-packed-indexed-dl] vertices="<<count
-        <<" source_bytes="<<sourceBytes<<" expanded_bytes="<<expanded.size()<<" batching=producer_fifo"<<std::endl;
+        <<" source_bytes="<<sourceBytes<<" expanded_bytes="<<vertices->size()<<" batching=producer_fifo"<<std::endl;
     return true;
 }
 #endif
@@ -915,12 +1331,16 @@ struct DlInterpretVisitor {
     static constexpr bool kHandlesDraw = true;
     PrimeDlVertices::PublicationTracker publication;
 
-    bool OnNop(uint8_t) { publication.Invalidate();return true; }
+    bool OnNop(uint8_t) { return true; }  // padding: no state
     bool OnInvalidateVertexCache(uint8_t) { publication.Invalidate();return true; }
     bool OnUnknownCommand(uint8_t) { publication.Invalidate();return true; }
     bool OnCpReg(const uint8_t*, uint8_t reg, uint32_t value) { publication.Invalidate();ApplyCpRegWrite(reg, value); return true; }
     bool OnBpReg(const uint8_t*, uint32_t bpWord) {
-        publication.Invalidate();
+        switch(PrimeDlVertices::BpEffectOf(static_cast<uint8_t>(bpWord >> 24))) {
+        case PrimeDlVertices::BpEffect::All: publication.Invalidate(); break;
+        case PrimeDlVertices::BpEffect::Palettes: publication.InvalidatePalettes(); break;
+        case PrimeDlVertices::BpEffect::None: break;
+        }
         GX_HLE_ApplyRawBp(static_cast<uint8_t>(bpWord >> 24), bpWord & 0x00FFFFFFu);
         return true;
     }
@@ -931,9 +1351,13 @@ struct DlInterpretVisitor {
         return true;
     }
     bool OnIndexedXf(const uint8_t* cmdPtr, uint8_t cmd, uint32_t value) {
-        publication.Invalidate();
-        ApplyIndexedXfArrayForPacket(cmd, value);
-        GXCallDisplayList(cmdPtr, 5);
+        // A matrix load (position/normal/texture/light): neither the vertex
+        // layout nor the palettes change.
+        // With the asynchronous decoder the matrix words are read now (SubmitIndexedXfImmediate).
+        if (!(PrimeGxStream::Async() && SubmitIndexedXfImmediate(cmd, value))) {
+            ApplyIndexedXfArrayForPacket(cmd, value);
+            GXCallDisplayList(cmdPtr, 5);
+        }
         GXMarkFrameWork();
         return true;
     }
@@ -951,7 +1375,8 @@ struct DlInterpretVisitor {
                 const uint8_t* vertices, uint32_t& payloadBytes) {
         EnsureAuroraFrameActive();
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
-        if(TrySubmitPrimePackedDl(opcode,vtxfmt,vtxCount,vertices,payloadBytes,publication.NeedsPublish(vtxfmt))) {
+        if(TrySubmitPrimePackedDl(opcode,vtxfmt,vtxCount,vertices,payloadBytes,publication.NeedsPublish(vtxfmt),
+                                  publication.NeedsPalettes(vtxfmt))) {
             publication.Completed(vtxfmt);return true;
         }
 #endif
@@ -1200,8 +1625,73 @@ static void SyncAppliedVtxStateFromHleReal() {
     s_appliedVtxStateGeneration = g_hleGxState.vtxStateGeneration;
 }
 
-static void ApplyAuroraArrayIfChanged(GXAttr attr, const void* data, uint32_t size, uint8_t stride) {
+// Arrays sent by value (GXSetArrayCopy) and what the decoder holds for each attribute. Survives
+// InvalidateAppliedAuroraState (run around every display list): a copy is resent only when the
+// game publishes that memory again or a draw reads past what was copied, so a rewritten array
+// travels about once per frame.
+struct CopiedArrayState {
+    uint32_t guestAddr = 0;
+    uint32_t size = 0;
+    uint64_t digest = 0;
+    uint8_t stride = 0;
+    bool valid = false;
+};
+static std::array<CopiedArrayState, GX_VA_MAX_ATTR> s_copiedArrays{};
+static uint64_t s_arrayCopies = 0, s_arrayCopyBytes = 0, s_arrayCopyChecks = 0;
+
+extern "C" void GxForgetCopiedArray(uint32_t attr) {
+    if (attr < s_copiedArrays.size()) s_copiedArrays[attr].valid = false;
+}
+
+static void ApplyAuroraArrayIfChanged(GXAttr attr, const void* data, uint32_t size, uint8_t stride,
+                                      uint32_t guestAddr = 0) {
     auto& applied = s_appliedArrays[attr];
+    // With the asynchronous decoder a pointer is read when the decoder gets to the draw; by then the
+    // game may have written the next frame's values (lava ripples: seams, black wedges and jumping
+    // geometry, only with the decoder on, 2026-11-01). The game writes those arrays without any DC
+    // flush notification, so small arrays are compared by content: the decoder gets a copy whenever
+    // the bytes differ from the copy it holds. Large arrays (static meshes) keep the pointer, unless
+    // the game published them within the last second.
+    constexpr uint32_t kContentCopyBytes = 16 * 1024;
+    if (guestAddr != 0 && PrimeGxStream::Async() &&
+        (size <= kContentCopyBytes || RangeWrittenRecently(guestAddr, size))) {
+        auto& copied = s_copiedArrays[attr];
+        // Display lists read different index ranges of one array: compare and send the largest range
+        // seen (still mapped: the same base was valid for it), so one copy serves them all.
+        const bool sameArray = copied.valid && copied.guestAddr == guestAddr && copied.stride == stride;
+        const uint32_t copySize = sameArray && copied.size > size && copied.size <= kContentCopyBytes ? copied.size : size;
+        const uint64_t digest = static_cast<uint64_t>(XXH3_64bits(data, copySize));
+        ++s_arrayCopyChecks;
+        if (sameArray && copied.size == copySize && copied.digest == digest) {
+            applied.valid = false;  // the decoder holds the copy, not this pointer
+            return;
+        }
+        const bool contentChanged = sameArray && copied.size == copySize;
+        if (GXSetArrayCopy(attr, data, copySize, stride)) {
+            copied = {guestAddr, copySize, digest, stride, true};
+            applied.valid = false;
+            static uint64_t changes = 0;
+            static uint32_t sampleBase = 0;
+            if (contentChanged) {
+                ++changes;
+                sampleBase = guestAddr;
+            }
+            ++s_arrayCopies;
+            s_arrayCopyBytes += copySize;
+#if defined(MKW_PRIME_QA_TOOLS)
+            static auto nextLog = std::chrono::steady_clock::now();
+            if (std::chrono::steady_clock::now() >= nextLog) {
+                nextLog = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+                RT_LOG(RT_TAG_GX) << "[prime-array-copy] checks=" << s_arrayCopyChecks << " copies=" << s_arrayCopies
+                                  << " bytes=" << s_arrayCopyBytes << " same_array_new_content=" << changes
+                                  << " sample=0x" << std::hex << sampleBase << std::dec << std::endl;
+                s_arrayCopies = s_arrayCopyBytes = s_arrayCopyChecks = changes = 0;
+            }
+#endif
+            return;
+        }
+    }
+    s_copiedArrays[attr].valid = false;
     if (applied.valid && applied.data == data && applied.size == size && applied.stride == stride) {
         return;
     }
@@ -1349,12 +1839,20 @@ static bool ApplyAuroraArraysForDisplayList(const std::array<uint32_t, GX_VA_MAX
         // and honor the array stride. Keep the backing pointer stable so per-frame
         // storage uploads can be cached instead of repacking every display-list call.
         if (!needsPack) {
-            ApplyAuroraArrayIfChanged(gxAttr, hostPtr, span, static_cast<uint8_t>(arr.stride));
+            ApplyAuroraArrayIfChanged(gxAttr, hostPtr, span, static_cast<uint8_t>(arr.stride), arr.base);
             continue;
         }
         auto& packed = s_packedArrays[attr][++s_packedArrayCursor[attr] & 1u];
         if (!PackIndexedAttrData(hostPtr, arr.stride, count, elemSize, packed)) {
             ok = false;
+            continue;
+        }
+        // The repacked copy lives in a two-slot buffer: with the asynchronous decoder it travels by
+        // value, or a third display list could rewrite it before the decoder reads it.
+        if (PrimeGxStream::Async() && GXSetArrayCopy(gxAttr, packed.data(), static_cast<uint32_t>(packed.size()),
+                                                     static_cast<uint8_t>(elemSize))) {
+            s_appliedArrays[gxAttr].valid = false;
+            GxForgetCopiedArray(gxAttr);
             continue;
         }
         ApplyAuroraArrayIfChanged(gxAttr, packed.data(), static_cast<uint32_t>(packed.size()), static_cast<uint8_t>(elemSize));
@@ -1386,7 +1884,7 @@ static bool ApplyAuroraIndexedXFArraysForDisplayList(const std::array<uint32_t, 
             ok = false;
             continue;
         }
-        ApplyAuroraArrayIfChanged(static_cast<GXAttr>(attr), hostPtr, span, static_cast<uint8_t>(arr.stride));
+        ApplyAuroraArrayIfChanged(static_cast<GXAttr>(attr), hostPtr, span, static_cast<uint8_t>(arr.stride), arr.base);
     }
     return ok;
 }

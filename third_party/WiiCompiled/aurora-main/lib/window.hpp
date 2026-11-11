@@ -43,6 +43,8 @@ bool is_presentable() noexcept;
 void pump_events() noexcept;
 bool native_resize_pending() noexcept;
 bool native_window_size_matches(uint32_t width, uint32_t height) noexcept;
+// The window's native handle (HWND on Windows), nullptr when unknown. Safe from any thread.
+void* native_window_handle() noexcept;
 void set_surface_ready(bool ready) noexcept;
 void set_title(const char* title);
 void set_fullscreen(bool fullscreen);
@@ -57,9 +59,13 @@ void request_frame_buffer_resize();
 void set_frame_buffer_scale(float scale);
 void set_frame_buffer_aspect_fit(bool fit);
 void set_force_aspect_16_9(bool force);
+// Shape used while the fixed-aspect policy is active (16:9 by default).
+void set_fixed_aspect(float aspect);
+float fixed_aspect() noexcept;
 void set_present_surface_fill(bool fill);
 void lock_present_aspect_ratio(int width, int height);
 void unlock_present_aspect_ratio();
 bool get_present_aspect_ratio(float& aspect) noexcept;
+float display_refresh_rate() noexcept;
 void set_background_input(bool value);
 }; // namespace aurora::window

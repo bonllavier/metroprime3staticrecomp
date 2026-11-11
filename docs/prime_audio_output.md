@@ -42,3 +42,31 @@ inspect_prime_radio_audio.py ofrece un resumen de solo lectura sin suspender hil
 Validacion adicional candidata PID7304: open-ginga.fsb progresa por bloques de 64 KiB hasta offset 0x150000 y el grupo music tiene canal activo. CoreAudio mide pico de sesion 0.4526716, volumen 1 y sin mute. Los dos hilos FMOD de streaming esperan en colas (state4/count0), sin reproducir en esta observacion el anterior park state1/count1 tras lectura terminada. Aun falta validar la escena radio y la voz con el usuario.
 
 QA humano confirmado el 22 de octubre: el usuario responde "Ahora se oye y avanza" para la voz del operador y la continuacion tras el codigo de radio en 4f95e13c. Se conserva como base actual. Esto valida la correccion funcional de esa escena, sin extenderla a fidelidad DSP completa, rendimiento ni estabilidad prolongada. Siguiente paso: continuar QA manual despues de la radio; controles sin automatizacion y FPS visible.
+
+
+## Revisión de fidelidad, 23 de octubre
+
+- El mezclador AX emulado ya reproduce el microcódigo (SRC polifásico con la ROM de coeficientes, filtros por voz, rampas): no se modifica.
+- La única conversión del host era el remuestreador de SDL (32 kHz -> dispositivo): -0.36 dB y residuo -28 dB a 12 kHz, -3.6 dB a 15 kHz. Se sustituye por `audio_resampler.h` (polifásico racional Kaiser, 128 taps/fase): plano hasta 14 kHz, -0.24 dB a 15 kHz, residuo <= -104 dB. El stream se abre en la frecuencia y formato F32 del dispositivo, así SDL no convierte nada. `WII_COMPILED_AUDIO_SDL_RESAMPLER=1` vuelve al de SDL.
+- Deriva de reloj AI/tarjeta (~0,02 %) vaciaba la cola en minutos. Ahora el ritmo de la DMA AI emulada sigue la cola (máx. ±0,1 %, control proporcional sobre media de 2 s); las muestras no se tocan. Prueba de 5 min: +200..+285 ppm, cola ~53 ms, 0 underruns.
+- `MusicAttenuation::TickGuest` queda inactivo en Prime: seguía punteros de Mario Kart en RAM de Prime.
+
+Evidencia: `../checkpoints/20261023_audio_fidelity_review.json`. 22/22 pruebas PASS; el usuario reporta sonido "un poco más claro".
+
+## Audio de los vídeos THP, 30 de octubre
+
+Síntoma (usuario): los vídeos con sonido (game over `Death_Movie.thp`, finales, `HyperDeath_*`) suenan dañados, con artefactos; la imagen va bien. Los vídeos del menú no tienen pista de audio. Todos los THP con audio son estéreo a 32 kHz, igual que la salida AI, así que no hay conversión de frecuencia ni interviene el remuestreador del host (que solo ve la salida final). La grabación F8 de las 01:17 contiene el game over (s 88-106, DVD estable a ~2 MB/s) a 59-61 FPS, y el log de esa sesión no muestra underruns: el defecto está en el PCM que produce el juego.
+
+Ruta del juego (DOL RM3E01): `fn_803E6E58` encadena en el callback de DMA AI un envoltorio (`fn_803E6ED8`) que llama primero al callback de AX (`0x804C0788`) y luego a los mezcladores registrados; el reproductor de vídeo registra `fn_80354D34` (vía `fn_80355034`). Ese mezclador, como el THPPlayer del SDK, lee `AIGetDMAStartAddr` (el búfer de AX recién programado), reprograma la DMA a su doble búfer `lbl_805CC840`, invalida el búfer de AX (`DCInvalidateRange`) y suma en él el audio THP (`fn_80354DF4`). El audio THP se decodifica con cada fotograma (`fn_80353F70` -> `fn_804EE544`).
+
+Causa: `__AXOutNewFrame` (`fn_804C0528`) arranca la mezcla del DSP y el callback programa en la DMA el búfer que el DSP está mezclando en ese momento (la DMA lo toma 3 ms después). En la Wii el DSP lo termina mientras la CPU hace el resto del trabajo del fotograma de sonido; con el hilo de mezcla (`Mix audio on its own thread`, activado por defecto) el reproductor podía leerlo a medio escribir. La DMA ya esperaba al hilo (`JoinMixWorkerIfWriting`); la lectura del reproductor no.
+
+Corrección: overlay de `DCInvalidateRange` 0x804DF8C8 en `prepare_prime_runtime_hooks.py` que, al entrar, llama a `PrimeBeforeGuestDcInvalidate` (`ax_mix.cpp`): espera solo si una mezcla pendiente o en curso escribe en ese rango. No notifica a las cachés GX (regla de `copias_efb_y_cache.md`). Comprobación rápida sin recompilar: con la opción del hilo de mezcla desactivada (F1 > Audio, se aplica al momento) la mezcla es síncrona y el vídeo debería sonar limpio.
+
+## Música atascada en bucle, 31 de octubre
+
+Síntoma (usuario): al entrar a Norion la música se trabó y repitió un trozo en bucle hasta que empezó la pista siguiente. Grabación F8 `stack_profile_20261031_005503.txt`: el streaming de música lee 64 KiB del disco cada 1-2 s. Tras una carga de zona en s 55 (15,7 MB), no hubo ninguna lectura de disco de s 60 a s 78. En s 79 se reanudó con la pista nueva. El registro no tiene errores de disco.
+
+Mecanismo (el mismo de la radio del 22 de octubre): el envoltorio de lectura de FMOD `0x80332E8C` somete la lectura y después suspende su hilo; el callback `0x80333228` lo reanuda con `OSResumeThread`. Si la respuesta IPC se entrega antes de la suspensión, la reanudación se pierde y el hilo queda suspendido (count 1). La protección era solo de tiempo real (200 µs desde la sumisión, `PrimeDiscReplyDelayMicros`). Si Windows quita la CPU al hilo del juego entre la sumisión y la suspensión más tiempo que eso, al volver la respuesta ya ha vencido y se entrega en el siguiente sondeo, antes de suspender. Esa noche había contención de CPU externa (Chrome, `[host-stall]` con el sistema al 100 %).
+
+Corrección (exe del 31/10 01:04): la respuesta de una lectura `/dev/di` (ioctl 0x71) espera además a que el juego haya avanzado 256 sondeos de interrupción desde la sumisión. Se cuentan con `g_primeGuestProgress`, que incrementa `MemoryPrimeIpcPollControl` en el hilo del juego, así que no avanza mientras el hilo está desalojado. Como respaldo, a los 20 ms de tiempo real se entrega igualmente (`PrimeIpcReplyQueue::kProgressFallbackMicros`), para que un invitado que deje de sondear no se quede sin respuesta. El reposo del invitado es un bucle que sigue sondeando, por lo que no hay espera adicional cuando todos los hilos aguardan el disco. Prueba en `prime_ipc_reply_queue_tests` (puerta y respaldo).

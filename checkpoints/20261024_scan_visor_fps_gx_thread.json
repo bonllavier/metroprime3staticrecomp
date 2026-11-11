@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-24",
+  "game": "RM3E01_00",
+  "question": "Area drops to about 45 FPS while scanning: shaders or CPU?",
+  "recording": "UserData/Logs/profiles/stack_profile_20261024_220929.txt (120 s)",
+  "lost_ms": {"cpu": 3741, "disc": 390, "textures": 131, "pipelines": 105},
+  "user_report": "With cached shaders, almost no stutter in visited areas.",
+  "timeline": "Slow seconds 0-5, 8, 12-18, 25-29 run at 42-53 FPS.",
+  "thread_busy_pct": {
+    "slow_seconds": {"gx": "79-88", "game": "about 60", "frame_worker": "10-13", "presenter": "0-3"},
+    "normal_seconds_60fps": {"gx": "35-57", "game": "40-78"}
+  },
+  "conclusion": "CPU-bound on the GX consumer thread. Busy samples per second roughly double (295 vs 136) across GX__CallDisplayList/WalkDisplayList/OnDraw (x2.2), fifo::process (x2.6), GXApplyBPReg (x2), ExpandMappedAttribute<2> and memcpy. No single hotspot: the scan visor submits the scene again (object-ID and outline passes), so the GX work doubles. Not shaders, not GPU encode, not presentation.",
+  "options": [
+    "Cache the expanded vertex data of display lists (static world geometry, the same lists drawn by several passes and frames), validated like GxDisplayListScanCache.",
+    "Spread display-list vertex expansion across worker threads.",
+    "Micro-optimise ExpandMappedAttribute and the memcpy-heavy push paths."
+  ],
+  "tools": "scratchpad timeline2.py (per-second FPS and thread busy), gxprof.py (GX thread profile, slow vs normal seconds)"
+}

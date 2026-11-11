@@ -199,6 +199,13 @@ add_test(NAME mkw_gx_fifo_storage_tests COMMAND mkw_gx_fifo_storage_tests)
 add_executable(mkw_prime_cpu_fifo_capture_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_cpu_fifo_capture_tests.cpp")
 target_include_directories(mkw_prime_cpu_fifo_capture_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
 add_test(NAME mkw_prime_cpu_fifo_capture_tests COMMAND mkw_prime_cpu_fifo_capture_tests)
+add_executable(mkw_prime_dl_vertex_cache_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_dl_vertex_cache_tests.cpp")
+target_include_directories(mkw_prime_dl_vertex_cache_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
+add_test(NAME mkw_prime_dl_vertex_cache_tests COMMAND mkw_prime_dl_vertex_cache_tests)
+# Aurora's asynchronous decoder chunk queue (header-only, no GPU).
+add_executable(mkw_aurora_stream_queue_tests "${MKW_TEST_RUNTIME_DIR}/tests/aurora_stream_queue_tests.cpp")
+target_include_directories(mkw_aurora_stream_queue_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/../aurora-main/lib")
+add_test(NAME mkw_aurora_stream_queue_tests COMMAND mkw_aurora_stream_queue_tests)
 
 add_executable(mkw_prime_raw_bp_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_raw_bp_tests.cpp")
 target_include_directories(mkw_prime_raw_bp_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
@@ -207,6 +214,11 @@ add_test(NAME mkw_prime_raw_bp_tests COMMAND mkw_prime_raw_bp_tests)
 add_executable(mkw_prime_raw_texture_snapshot_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_raw_texture_snapshot_tests.cpp")
 target_compile_features(mkw_prime_raw_texture_snapshot_tests PRIVATE cxx_std_17)
 add_test(NAME mkw_prime_raw_texture_snapshot_tests COMMAND mkw_prime_raw_texture_snapshot_tests)
+add_executable(mkw_audio_resampler_tests "${MKW_TEST_RUNTIME_DIR}/tests/audio_resampler_tests.cpp")
+target_include_directories(mkw_audio_resampler_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
+target_compile_features(mkw_audio_resampler_tests PRIVATE cxx_std_17)
+add_test(NAME mkw_audio_resampler_tests COMMAND mkw_audio_resampler_tests)
+
 
 add_executable(mkw_prime_trace_budget_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_trace_budget_tests.cpp")
 target_include_directories(mkw_prime_trace_budget_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
@@ -225,6 +237,36 @@ target_include_directories(mkw_prime_wpad_packet_tests PRIVATE "${MKW_TEST_RUNTI
 target_compile_features(mkw_prime_wpad_packet_tests PRIVATE cxx_std_17)
 add_test(NAME mkw_prime_wpad_packet_tests COMMAND mkw_prime_wpad_packet_tests)
 
+add_executable(mkw_prime_lasso_gesture_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_lasso_gesture_tests.cpp")
+target_include_directories(mkw_prime_lasso_gesture_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
+target_compile_features(mkw_prime_lasso_gesture_tests PRIVATE cxx_std_17)
+add_test(NAME mkw_prime_lasso_gesture_tests COMMAND mkw_prime_lasso_gesture_tests)
+
+add_executable(mkw_prime_gamepad_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_gamepad_tests.cpp")
+target_include_directories(mkw_prime_gamepad_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
+target_compile_features(mkw_prime_gamepad_tests PRIVATE cxx_std_17)
+add_test(NAME mkw_prime_gamepad_tests COMMAND mkw_prime_gamepad_tests)
+
+add_executable(mkw_prime_fov_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_fov_tests.cpp")
+target_include_directories(mkw_prime_fov_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
+target_compile_features(mkw_prime_fov_tests PRIVATE cxx_std_17)
+add_test(NAME mkw_prime_fov_tests COMMAND mkw_prime_fov_tests)
+
+add_executable(mkw_prime_disc_path_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_disc_path_tests.cpp")
+target_include_directories(mkw_prime_disc_path_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
+target_compile_features(mkw_prime_disc_path_tests PRIVATE cxx_std_17)
+add_test(NAME mkw_prime_disc_path_tests COMMAND mkw_prime_disc_path_tests)
+
+add_executable(mkw_prime_widescreen_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_widescreen_tests.cpp")
+target_include_directories(mkw_prime_widescreen_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
+target_compile_features(mkw_prime_widescreen_tests PRIVATE cxx_std_17)
+add_test(NAME mkw_prime_widescreen_tests COMMAND mkw_prime_widescreen_tests)
+
+add_executable(mkw_prime_mouse_look_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_mouse_look_tests.cpp")
+target_include_directories(mkw_prime_mouse_look_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
+target_compile_features(mkw_prime_mouse_look_tests PRIVATE cxx_std_17)
+add_test(NAME mkw_prime_mouse_look_tests COMMAND mkw_prime_mouse_look_tests)
+
 add_executable(mkw_prime_dsp_audio_dma_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_dsp_audio_dma_tests.cpp")
 target_include_directories(mkw_prime_dsp_audio_dma_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
 target_compile_features(mkw_prime_dsp_audio_dma_tests PRIVATE cxx_std_17)
@@ -235,3 +277,13 @@ target_include_directories(mkw_prime_ipc_reply_queue_tests PRIVATE "${MKW_TEST_R
 target_compile_features(mkw_prime_ipc_reply_queue_tests PRIVATE cxx_std_17)
 add_test(NAME mkw_prime_ipc_reply_queue_tests COMMAND mkw_prime_ipc_reply_queue_tests)
 
+
+add_executable(mkw_transcript_sink_tests "${MKW_TEST_RUNTIME_DIR}/tests/transcript_sink_tests.cpp")
+target_include_directories(mkw_transcript_sink_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
+target_compile_features(mkw_transcript_sink_tests PRIVATE cxx_std_17)
+add_test(NAME mkw_transcript_sink_tests COMMAND mkw_transcript_sink_tests)
+
+add_executable(mkw_prime_input_recording_tests "${MKW_TEST_RUNTIME_DIR}/tests/prime_input_recording_tests.cpp")
+target_include_directories(mkw_prime_input_recording_tests PRIVATE "${MKW_TEST_RUNTIME_DIR}/include")
+target_compile_features(mkw_prime_input_recording_tests PRIVATE cxx_std_17)
+add_test(NAME mkw_prime_input_recording_tests COMMAND mkw_prime_input_recording_tests)

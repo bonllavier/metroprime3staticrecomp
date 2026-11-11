@@ -1,0 +1,8 @@
+{
+  "date": "2026-10-26",
+  "bug_fixed": "ubershader keys were persisted into pipeline_cache.db (53 rows in the user's profile); now never persisted, rejected by valid_pipeline_config, purged at load, filtered by the seed merge",
+  "removed": ["requireExactPipelines plumbing", "WII_COMPILED_UBER_STRICT_BAKES", "policy persistentPass", "unused compile_priority"],
+  "added": ["policy pick_compile_slot used by the pipeline workers", "bridge specReady short-circuit", "7 UberShader tests, 3 compile-slot tests"],
+  "tests": "test_graphics.ps1 all passed: gx_fifo 265, render_policy 19, blob_cache 8, runtime ctest 22, python icons",
+  "ab_after_review": {"uber": 1, "mean_fps": 59.19, "min_fps": 48.1, "worst_frame_ms": 71, "invalid_rows_purged": 53}
+}

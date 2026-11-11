@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-25",
+  "game": "RM3E01 (Metroid Prime 3: Corruption, USA, disc 0, rev 0)",
+  "symptom": "With [prime] aurora_decode_thread = true, fatal 'unmapped vtx attr 9' (shader.cpp vtx_attr, GX_VA_POS attrType GX_NONE) on the save-slot screen. console.log base_1792908604_pid2496: first 'command_processor: unknown opcode 0x73 at pos 389' preceded by float vertex data decoded as opcodes, then bogus draws (cmd 0xB7 vtxCount=15310, 0xBE vtxCount=17813), 'GXEnd: vertex data not evenly divisible: 69 bytes for 8 vertices', 'Ignoring nested GX_CMD_CALL_DL', 'Skipping indexed XF load with invalid source array'. Second run after the first two fixes: same fatal on the title screen (console.log line 340) with no stream warnings at all.",
+  "root_causes": [
+    {
+      "id": "writer-reads-decoder-cp-state",
+      "where": "aurora-main/lib/dolphin/gx/GXGeometry.cpp AuroraVtxDescDiffers / AuroraVtxAttrFmtDiffers",
+      "mechanism": "GXSetVtxDesc/GXSetVtxAttrFmt compared the requested value with g_gxState.vtxDesc / g_gxState.vtxFmts (decoder-owned) to decide whether to mark CP state dirty when the SDK shadow (__gx) did not change. That catches the case where raw display-list bytes (GXCallDisplayList: register-only lists, flattened lists) loaded CP VCD/VAT behind the shadow's back. With the asynchronous decoder g_gxState lags the stream, so the check saw the old value, no CP write was re-emitted, and the decoder later applied the list's registers with nothing restoring them: its vertex size differed from the writer's, vertex bytes were decoded as opcodes.",
+      "fix": "Writer-side flags in aurora::gx::fifo (vertex_cp_unknown_vcd / vertex_cp_unknown_vat, note_vcd_emitted / note_vat_emitted, mark_vertex_cp_unknown, note_display_list_called). GXCallDisplayList walks the list (NOP, BP, CP, XF, indexed XF, nested CALL_DL sizes; stops at a draw or Aurora command conservatively) and marks the state unknown when it loads CP 0x50..0x9F or cannot be walked; __GXSetVCD / __GXSetVAT clear the flags when they emit outside a recording; GXEndDisplayList with dlSaveContext, GXCallDisplayListLE and fifo::init mark unknown. AuroraVtxDescDiffers = flag || (sync decoder && old g_gxState compare), so the synchronous path is a superset of its previous behaviour."
+    },
+    {
+      "id": "chunk-cut-inside-draw",
+      "where": "runtime/src/hle/gx/gx_gpu_thread.cpp Main idle flush; aurora-main/lib/gx/fifo.cpp hand_off",
+      "mechanism": "aurora_stream_flush() ran when the burst queue emptied even while a multi-burst raw draw was open (GX_HLE_PrimeInsideDraw). hand_off() reset the buffer between GXBegin and GXEnd: GXEnd measures the packet against get_buffer_size() - sBeginFifoSize, and the decoder received a chunk ending inside a draw (handle_draw returns false -> process() drops the rest silently or logs 'truncated draw').",
+      "fix": "hand_off() returns while GXVert.cpp in_begin() is true (fifo::in_begin exported); the GX consumer flushes only when QueueEmpty() && !GX_HLE_PrimeInsideDraw(); sync() inside a draw logs a warning (up to 8); handle_draw logs Log.error on the decoder thread when a chunk ends inside a draw header or draw body."
+    },
+    {
+      "id": "palette-callback-before-vertex-state",
+      "where": "runtime/src/hle/gx/gx_fifo.cpp GX_HLE_PrimeBindDrawPalettes (async branch); aurora-main/lib/gx/command_processor.cpp GXRawDrawTextureMask",
+      "mechanism": "Second repro (base_1792910228_pid144): fatal on the title screen with no misalignment warnings. The BindPalettes host callback was written to the stream before submit_raw_draw flushed the SDK dirty state (VCD/VAT bytes), so on the decoder GXRawDrawTextureMask built the shader config from the previous draw's VCD; at the first draw of the boot that is the default state (POS=GX_NONE) -> shader.cpp vtx_attr FATAL. GXRawDrawTextureMask also called __GXSetDirtyState() on the decoder thread, touching the writer's shadow and buffer.",
+      "fix": "New writer export GXAuroraPublishDirtyState() (GXManage.cpp, declared in GXAurora.h) called before PrimeGxStream::EmitBindPalettes; GXRawDrawTextureMask flushes dirty state only when !on_decoder_thread(). Invariant 6 in the doc: callback handlers never touch __gx nor write the FIFO."
+    },
+    {
+      "id": "fifo-reset-discards-buffered-stream",
+      "where": "aurora-main/lib/dolphin/gx/GXVert.cpp abort_vertex_writer; lib/gx/fifo.cpp clear_buffer",
+      "mechanism": "GX_HLE_PrimeResetFifo -> abort_vertex_writer -> clear_buffer discarded the whole writer buffer. Synchronous mode only holds the incomplete GXBegin packet there; the asynchronous writer holds every command since the last hand-off, register loads included (seen at console.log line 1310 of base_1792910704_pid13696, after the fatal, so not this run's trigger).",
+      "fix": "In async mode abort_vertex_writer truncates to sBeginFifoSize - 3 (the open packet only) and keeps the rest; clear_buffer marks the vertex CP state unknown."
+    },
+    {
+      "id": "poisoned-pipeline-cache-row",
+      "where": "UserData/Cache/pipeline_cache.db (user), aurora-main/lib/gx/pipeline.hpp valid_pipeline_config, lib/gfx/pipeline_cache.cpp load loop, lib/gx/command_processor.cpp handle_draw, recomp/tools/prime_pipeline_seed.py",
+      "mechanism": "Third repro (base_1792910704_pid13696): fatal at console.log line 186, before any FIFO record, black screen. The misaligned session (pid2496, first_frame_used=1844) stored a GX pipeline key with attrs: PNMTXIDX=NONE, TEX0MTXIDX=DIRECT, TEX2MTXIDX=DIRECT, POS=NONE, vtxStride=2, texgens=2, hash F01B5E303E9996E5 (byte 88 of the v22 blob = attrs[GX_VA_POS].attrType). Every boot's prewarm compiled it on a worker and FATAL'd in shader.cpp vtx_attr, independent of the decode-thread option. The shipped seed initial_pipeline_cache.db (2846 rows) has no such row.",
+      "fix": "Row deleted from the user's cache (backup: scratchpad pipeline_cache.backup.db; 2945 rows remain). valid_pipeline_config requires a position attribute and attrType <= GX_INDEX16; load_pipeline_cache_entries deletes invalid rows; handle_draw skips a draw whose VCD has no position with Log.error instead of building a key; prime_pipeline_seed.py merge skips such rows (is_valid_gx_config, reported as invalid=N)."
+    }
+  ],
+  "epoch": "g_gxVtxStateEpoch (GXAuroraVtxStateEpoch, read by runtime/src/hle/gx/gx_stream_common.h memo) is writer-owned: handle_cp bumps it only when not on the decoder thread (bump_vtx_state_epoch); GXCallDisplayList bumps it when the walk marks CP state unknown.",
+  "not_changed": "g_gxState.sourceVtxDesc is written by GXSetSourceVtxDesc (writer) and the decoder's VCD handler but read nowhere else; left as is. Other writer-side g_gxState writes (GXSetZScaleOffset/GXSetScissorBoxOffset in GXTransform.cpp, viewport policy in GXAurora.cpp, copy filter/bounding box in GXFrameBuffer.cpp) remain direct and are listed as a stage-2 review item in the doc.",
+  "files": {
+    "aurora-main/lib/gx/fifo.cpp": "41551091db1e4d70953dda9adff969b9927b8832",
+    "aurora-main/lib/gx/fifo.hpp": "71d621340c3474be34c7fc81c7d68c8282ffee01",
+    "aurora-main/lib/dolphin/gx/GXGeometry.cpp": "faca7f1db4ed4507f1a9d93c34083ea592d64ef0",
+    "aurora-main/lib/dolphin/gx/GXManage.cpp": "4e557f540ad333243c813d204770893da77664e7",
+    "aurora-main/lib/dolphin/gx/GXDispList.cpp": "661582f2cd26bfb30a27af45444da78311ad164c",
+    "aurora-main/lib/dolphin/gx/GXVert.cpp": "15fae98dcc7ab4d1fd15d1c3b091c34161560f8f",
+    "aurora-main/lib/gx/command_processor.cpp": "88014d0b596305a5faf2cb83e86f77d8fed1a9b8",
+    "runtime/src/hle/gx/gx_gpu_thread.cpp": "6b89049fc1d1a56071281327708b6b800eb00c9b",
+    "aurora-main/include/dolphin/gx/GXAurora.h": "e40a3695d7558010d998313d8080aa5a2a7279c6",
+    "runtime/src/hle/gx/gx_fifo.cpp": "2bb7855a58d81d3301aa3a012515907d30fc234a",
+    "aurora-main/lib/gx/pipeline.hpp": "5300220c1767c682c03c24ca88314f799e85f214",
+    "aurora-main/lib/gfx/pipeline_cache.cpp": "b86539903edd66c1366117ce6c6d737b9b8192d6",
+    "recomp/tools/prime_pipeline_seed.py": "2d5f65d16cb98d4beb90430b7edaef2bbeb77183"
+  },
+  "validation": {
+    "build": "cmake --build build/RM3E01_00_runtime_link_probe --target WiiCompiled.exe (161,251,840 bytes, 2026-10-25 01:52)",
+    "tests_pass": [
+      "mkw_aurora_stream_queue_tests",
+      "mkw_gx_fifo_storage_tests",
+      "mkw_prime_dl_vertex_cache_tests",
+      "mkw_prime_cpu_fifo_capture_tests",
+      "mkw_prime_wpad_packet_tests"
+    ],
+    "in_game": "pending user QA: boot with and without the option; expect no 'Removing invalid cached GX pipeline configuration' (row already deleted) and no 'with no position attribute' lines; then the stage-1 checklist."
+  },
+  "doc": "recomp/docs/hilo_decodificador_aurora.md",
+  "previous": "recomp/checkpoints/20261025_aurora_decode_thread_stage1.json"
+}

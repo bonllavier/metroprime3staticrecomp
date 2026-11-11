@@ -16,6 +16,16 @@ public static class DolFunctionRepair
         var map = FunctionMap.Load(Path.Combine(root, "recomp/config/RM3E01_00/functions.txt"));
         GuestSaveRestoreThunks.Current = GuestSaveRestoreThunks.FromFunctionMap(map);
         var image = new ProgramImageBuilder().Build(DolFile.Load(dol), ramSize: 0x700000);
+        // Switch tables whose guard bound the heuristic missed (audit_prime_dol_switches.py).
+        var overrides = Path.Combine(root, "recomp/config/RM3E01_00/dol_jump_tables.json");
+        if (File.Exists(overrides))
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(overrides));
+            Translator.Core.Disassembly.JumpTableOverrides.Tables = document.RootElement.GetProperty("tables").EnumerateArray()
+                .ToDictionary(table => Convert.ToUInt32(table.GetProperty("bctr").GetString(), 16),
+                    table => (IReadOnlyList<uint>)table.GetProperty("targets").EnumerateArray()
+                        .Select(target => Convert.ToUInt32(target.GetString(), 16)).ToList());
+        }
         var result = new FunctionTranslator(image).Translate(entry, new TranslationOptions(
             KnownFunctionEntryPoints: map.Addresses.ToHashSet(), EmitStateFreeLeafVariant: false));
         result.Ssa.ValidateUseDef();

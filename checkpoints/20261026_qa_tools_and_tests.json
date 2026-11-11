@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-26",
+  "console_freeze": {
+    "cause": "parent PowerShell console in QuickEdit 'Seleccionar' mode blocked the log mirror; 8 KB pipe filled; game thread blocked in its next log write",
+    "fix": "runtime/include/transcript_sink.h bounded queues per destination, QuickEdit disabled during the run",
+    "test": "mkw_transcript_sink_tests; tools/test_console_stall.ps1 passed (responding, log growing)"
+  },
+  "qa_tools": {
+    "flag": "MKW_PRIME_QA_TOOLS (ON locally, OFF for release; package_release.ps1 refuses the marker)",
+    "scripts": [
+      "recomp/qa/qa_record.ps1 (-Launch, -Name, -Stop, -Status)",
+      "recomp/qa/qa_replay.ps1"
+    ],
+    "format_test": "mkw_prime_input_recording_tests"
+  },
+  "new_tests": [
+    "UberShader.PackedStagesMirrorEveryShippedMaterial",
+    "UberShader.UniformLayoutAgreesWithTheSpecialisedShader",
+    "UberShader.EncodedKeysAreRefusedAsRecipesForEveryShippedMaterial",
+    "mkw_prime_input_recording_tests",
+    "mkw_transcript_sink_tests",
+    "tools/test_prime_pipeline_seed.py"
+  ],
+  "suite": "test_graphics.ps1 all passed: gx_fifo 268, render_policy 19, blob_cache 8, runtime ctest 28, python icons + seed filter",
+  "pending": [
+    "user records a real tour of a slow area with qa_record.ps1 -Launch / -Name / -Stop"
+  ],
+  "selfcheck": {
+    "recording_frames": 5671,
+    "replay": "finished, mean 59.8 fps, min 57.9, worst frame 61 ms, 0 errors",
+    "end_frame_diff_pixels_pct": 2.58,
+    "note": "replay window kept topmost for captures; recording must start at the title/menus; shared front-end frame clock"
+  },
+  "anchors": {
+    "player_layout_rm3e01": {
+      "CPlayer_pos": "+0x48/+0x58/+0x68 (3x4 transform at +0x3C), mirror +0x6C..+0x74",
+      "CPlayerState_ptr": "CPlayer+0x35A0 (0x809954c0 this session, static)",
+      "health": "CPlayerState+0xC (299 = 99 + 2 tanks)",
+      "capacity": "CPlayerState+0x8",
+      "knockback?": "+0x10 = 50"
+    },
+    "verified": "live: position floats moved while walking; health poke 299->30 persisted and the game later changed it on damage (194)",
+    "replay": "anchor every 30 frames; drift >0.5 m logged and corrected by writing the transform origin; health topped to capacity each frame; env WII_COMPILED_QA_NO_CORRECT / WII_COMPILED_QA_NO_GOD",
+    "pending": "live replay with anchors not yet run (user was using the PC); the selfcheck recording predates anchors"
+  }
+}

@@ -1,0 +1,523 @@
+{
+ "description": "Prime 3 RM3E01 RSO modules translated for the runtime. Ids/symbols of the first 13 are the reviewed ones; the rest were added with automatic root discovery (discover_prime_rso_roots.py). Hashes pin the disc RSO and its deterministic synthetic REL.",
+ "modules": [
+  {
+   "name": "rhbm",
+   "id": 1,
+   "symbol": "g_primeRhbmModule",
+   "rso_sha256": "05869cc26411f6b856aedde54ef2aa89d87c72132c643d9469b89b633e80797f",
+   "rel_sha256": "15424c386904ed96657adb71bc252f9ebaa57a87b5a7f221d7ebd246d0fc2097"
+  },
+  {
+   "name": "Tweaks",
+   "id": 2,
+   "symbol": "g_primeTweaksModule",
+   "rso_sha256": "f195aa36d03fb34a5a11821fa1533d52343d0be1d02e59a9e2a24e8791125a09",
+   "rel_sha256": "c4951be364206f7cfde832bad35ffc752f29d1912169c655d62ee202a2588a8c"
+  },
+  {
+   "name": "ScriptGUIScreenFrontEndUI",
+   "id": 3,
+   "symbol": "g_primeFrontEndUiModule",
+   "rso_sha256": "a8f1ae11bd85d80139a816ea5128c59643d02f20d49e0ba3a43b19f07719e68b",
+   "rel_sha256": "3b8fdfd6b8badd8cb38aa964580e690ded2d68df21ae1a1933d90a6c3cf14ed4"
+  },
+  {
+   "name": "ScriptWorldTeleporter",
+   "id": 4,
+   "symbol": "g_primeWorldTeleporterModule",
+   "rso_sha256": "f9f419e45635483df42018ff494be2f209f81ee57b040a343b82a617f2bdb652",
+   "rel_sha256": "b03282361b20f78e2d08aded0c99c1894df214008be7518c21f8c44b34d76d70"
+  },
+  {
+   "name": "ScriptAchievement",
+   "id": 5,
+   "symbol": "g_primeAchievementModule",
+   "rso_sha256": "795ca322e9b177e4bb929d7cf810309a22520b6399b95adbfa4366cfe389b73f",
+   "rel_sha256": "f630a17c0febd4eb861733754828760836092726652202e0e47e21783279fee0"
+  },
+  {
+   "name": "ScriptContextSensitiveActivator",
+   "id": 6,
+   "symbol": "g_primeContextSensitiveActivatorModule",
+   "rso_sha256": "c38bf16c1d9a9ab8d73acea85bd1b4d782fcb1183a376a9e4f812985b2ebcebe",
+   "rel_sha256": "0e685d02cfe15054c39b0ffb6fb7a960424d2cde75e980179408910d3dc4a523"
+  },
+  {
+   "name": "ScriptGrapplePoint",
+   "id": 7,
+   "symbol": "g_primeGrapplePointModule",
+   "rso_sha256": "65a7f4c935e0182ce280cabbbcdb2fec2db484ad1f494b4a1b346907a211eeca",
+   "rel_sha256": "4618f940098b241373f3084197ee16b2f6c227b0ecbd8cfdc9f1faee5a0d307b"
+  },
+  {
+   "name": "ScriptMultiModelActor",
+   "id": 8,
+   "symbol": "g_primeMultiModelActorModule",
+   "rso_sha256": "dcb5371039daa01f64c9e3f6c549c6a8cb828dc620a74f2a30cfecebbc53dd94",
+   "rel_sha256": "caa22a4a24e4e007d782e45d6ae71c5929db52d3709365969cd6e4f16bdb5d15"
+  },
+  {
+   "name": "ScriptContextSensitiveAction",
+   "id": 9,
+   "symbol": "g_primeContextSensitiveActionModule",
+   "rso_sha256": "c375aa59eac9e33e487a1a2daf1c82a439d3f56fed38572e8eb4e511b6c2aa92",
+   "rel_sha256": "ed687caa77f1f07a75f0e1349786050359fadad34fc0a1bb9a56540350845757"
+  },
+  {
+   "name": "ScriptContextActionButtonPressing",
+   "id": 10,
+   "symbol": "g_primeContextActionButtonPressingModule",
+   "rso_sha256": "b5ba4b9cade703b1a35302db055efd434b8d2d29ee9943767001012b78f1ba2e",
+   "rel_sha256": "8b85d72b89a27943dece80ad5b7d9660221c52552ea58413381d34ae277a360c"
+  },
+  {
+   "name": "Friendly",
+   "id": 11,
+   "symbol": "g_primeFriendlyModule",
+   "rso_sha256": "88b498761ff3aecfde46df79c7d1d85e2bc9973c8d74ca9fd0cd983a5c6ec435",
+   "rel_sha256": "dc2653331976e49bc902a8babf85b4b4212fb8e5ba439ac83a1f491ca79d3f92"
+  },
+  {
+   "name": "GunTurret",
+   "id": 12,
+   "symbol": "g_primeGunTurretModule",
+   "rso_sha256": "961f2790d74c57344ceb420fd26dd4ed827e6e43f7116fc163a45681e8925f8d",
+   "rel_sha256": "99c2dd2a48635db5429f9195c06e8795bacbd4b8b38b4cce558041097897b0cb"
+  },
+  {
+   "name": "MapScreenWebInterface",
+   "id": 13,
+   "symbol": "g_primeMapScreenWebInterfaceModule",
+   "rso_sha256": "89763875b4042e5cf2b3f230d5c7cd79e59f3edb39e4567fd5844ccc9c4f4d90",
+   "rel_sha256": "870b306487d98a561c74a099114486b0fa59465395c4aa47bdb3417459358b59"
+  },
+  {
+   "name": "AtomicAlpha",
+   "id": 14,
+   "symbol": "g_primeAtomicAlphaModule",
+   "rso_sha256": "c3af9e591cf02ddf0c5fa14df394bfcfd2bb903ff716487f17b4890923a0f914",
+   "rel_sha256": "c7ff9c6fcaf11fe71301d83b31c5d3cb79d031e5451641b8c9a2d24eea369d8c"
+  },
+  {
+   "name": "AuroraUnit1",
+   "id": 15,
+   "symbol": "g_primeAuroraUnit1Module",
+   "rso_sha256": "f644e9fac222f89d9bf09171130f22c39d32db28314d155d2ec833cd69b8a85c",
+   "rel_sha256": "0eacca12753c62797f9e76c514aa623814ae07e37e65ad5d7d62cc4a3968d036"
+  },
+  {
+   "name": "AuroraUnit2",
+   "id": 16,
+   "symbol": "g_primeAuroraUnit2Module",
+   "rso_sha256": "799ea055985de977252c495ce0163f4f59f258bd952378ccb8a429f20d7ca142",
+   "rel_sha256": "f0e37131894189c3e6137942198d1606da9ce975e14a1e56dac6ae9f2274ea72"
+  },
+  {
+   "name": "BeastRider",
+   "id": 17,
+   "symbol": "g_primeBeastRiderModule",
+   "rso_sha256": "3cd32d491fa74112013aa77fa649b012f798261519ff7650b58ffdcd04565666",
+   "rel_sha256": "e802d71892d18fcb66d303fd45490196c444d4de33eb4ac4d3c60b0c96660c6e"
+  },
+  {
+   "name": "Berserker",
+   "id": 18,
+   "symbol": "g_primeBerserkerModule",
+   "rso_sha256": "b4ff1004b7878acb0caae5df12e854c77a86668228f26fbcd7b26bac5d7520ad",
+   "rel_sha256": "e17a9c16f64206dd3e51e418cddcfe60ea8e373f0c572c6f06702ab535073841"
+  },
+  {
+   "name": "BlinkWolf",
+   "id": 19,
+   "symbol": "g_primeBlinkWolfModule",
+   "rso_sha256": "6553fd317eecceeb377784b88564055454afc8aae82adfe61423c31e4d5c492e",
+   "rel_sha256": "24f703d347bf277e488ef0635cda967f111380423b3284c45af45c4670a88b84"
+  },
+  {
+   "name": "CombatTrooper",
+   "id": 20,
+   "symbol": "g_primeCombatTrooperModule",
+   "rso_sha256": "09e08585ab53ad2d011652faf339f36f6dba0302a706f560fe722eeb2eb01c59",
+   "rel_sha256": "cd17d9f6c0e6150e86bca295205bec087b53e32759bdf508f2d928f02e681d02"
+  },
+  {
+   "name": "DarkSamus",
+   "id": 21,
+   "symbol": "g_primeDarkSamusModule",
+   "rso_sha256": "37ebba02aba124dec11b112538f8e788559fdda915f3c7b07457e74f0f4f8ee1",
+   "rel_sha256": "942ed7b930179f29bf6cf2c6af112f9efbd1b124451c524c6791c016a6939ae9"
+  },
+  {
+   "name": "DarkSamusEcho",
+   "id": 22,
+   "symbol": "g_primeDarkSamusEchoModule",
+   "rso_sha256": "f4403874d984eee7fc801d330aa1de572a6c871cbc7f5a846fd6ac2f102ff007",
+   "rel_sha256": "1f181ce1f129f71021e2889b27ea4450e335c259e5046144ecc64fd951285a47"
+  },
+  {
+   "name": "DefenseMechanoid",
+   "id": 23,
+   "symbol": "g_primeDefenseMechanoidModule",
+   "rso_sha256": "be10220f11197f7bc6dbfbc31cce8f8fa24823c367dceedb6965d78c48c4d394",
+   "rel_sha256": "82b6a6e582a1f2b5ea07fc41dbd921d15275bcdaaa2fa7fa1c8c79a8d3871bd5"
+  },
+  {
+   "name": "EyePod",
+   "id": 24,
+   "symbol": "g_primeEyePodModule",
+   "rso_sha256": "216f6d2f1504f4d62f9b9481789337e9a3730f18c04b089ad6f9ff975bf79ca3",
+   "rel_sha256": "40aa80e9d1f8d700cdcf2c8b06d9728ec484ab9c4ce4fbbcee1cf7cddef94996"
+  },
+  {
+   "name": "FargullHatcher",
+   "id": 25,
+   "symbol": "g_primeFargullHatcherModule",
+   "rso_sha256": "168c399ee420e5cb11f1cbcb1e946d1d3a61b6c3f3b9bce71011419c00464346",
+   "rel_sha256": "a6d7dba0c7c25f1bf6614a75ccfeebad54d5ce61fca071f8cbb0cb588dd636fe"
+  },
+  {
+   "name": "FargullHatcherSwarm",
+   "id": 26,
+   "symbol": "g_primeFargullHatcherSwarmModule",
+   "rso_sha256": "c743fab8c466fa4f8b39a6c8b1ebd0a101f891077b42c0042380258abec1b819",
+   "rel_sha256": "c6e2f1acf594be90e5374d841de794d1b7dd096dc7351c36103f315c97cec413"
+  },
+  {
+   "name": "FlyingPirate",
+   "id": 27,
+   "symbol": "g_primeFlyingPirateModule",
+   "rso_sha256": "13bfa36024eb85e110ce6759c6667ac37f657da47a8fbc1fcc89998baca84d15",
+   "rel_sha256": "bce6666cd1c25fb5c182550487a55387fc63fa857c4012c35ce0f8d189e1c737"
+  },
+  {
+   "name": "Gandrayda",
+   "id": 28,
+   "symbol": "g_primeGandraydaModule",
+   "rso_sha256": "e589b2e6106c47f4638b40ed823f19f71846bee8f00f1208eae01c75bb2caca3",
+   "rel_sha256": "d94fb2c9401ecb779a895e85c366cf7d9422623f3bed9f8eaf011224e82e0d10"
+  },
+  {
+   "name": "GellSac",
+   "id": 29,
+   "symbol": "g_primeGellSacModule",
+   "rso_sha256": "061273d8b4e4dc72969989bc76a33835e60b71266cc44da508493064c6df9f2e",
+   "rel_sha256": "3d75f84baa79e423bc1b5693bc826427a6c1ecbb172b82be73ab6318f46f50f6"
+  },
+  {
+   "name": "Ghor",
+   "id": 30,
+   "symbol": "g_primeGhorModule",
+   "rso_sha256": "1b0029f933f4802b7ee04534483320bd8918173b8541e4af07b97cf07e29177c",
+   "rel_sha256": "e5fcd72e26ca045ab500ed0fb5808db35758ccb7eb2e9f23a17d9ea6f186622f"
+  },
+  {
+   "name": "GragnolFlyer",
+   "id": 31,
+   "symbol": "g_primeGragnolFlyerModule",
+   "rso_sha256": "f7d4ada16bc7e0ce8c0601ecd6214b95308e7b728169df402464481b4e80357e",
+   "rel_sha256": "358b7dace2e12d84a8f744f69ce34e40a8335ca8085bef51165207bfd9776ae3"
+  },
+  {
+   "name": "KorbaMaw",
+   "id": 32,
+   "symbol": "g_primeKorbaMawModule",
+   "rso_sha256": "b0d74a99f03edd671f9be4496fb0a4322bdc57c708084bddfe887ebc4905295f",
+   "rel_sha256": "152b57fb2054a4df9479c91385c877b096a5b50bedd075c7930a3d3caabc5be0"
+  },
+  {
+   "name": "Metaree",
+   "id": 33,
+   "symbol": "g_primeMetareeModule",
+   "rso_sha256": "bc837366b4b1311a8e78c2c62fe875dd39b9c1063564e50a40a85e97879ed0b9",
+   "rel_sha256": "bfa4a42bb25e0188886c6e2d1745e37fcd319c6934be32d1a68a6d78acb77d48"
+  },
+  {
+   "name": "MetroidHatcher",
+   "id": 34,
+   "symbol": "g_primeMetroidHatcherModule",
+   "rso_sha256": "89b80f7458d3013a00230d4385e389795244a60243f32a63a24481b3b11c9609",
+   "rel_sha256": "0bcb626ecb2becde8091d4d9eb9836c85dbb77f0a9c808e95f70d57251307bb5"
+  },
+  {
+   "name": "MetroidHopper",
+   "id": 35,
+   "symbol": "g_primeMetroidHopperModule",
+   "rso_sha256": "49393315c8156e6d6133cde11a45a6d2a542873bbfa6118076aae3a823db8c5e",
+   "rel_sha256": "7b8b28dfb33800c3175941acc5dd98c4850e3eddf81cd2b8334f23e4d87eafb4"
+  },
+  {
+   "name": "MetroidPhazeoid",
+   "id": 36,
+   "symbol": "g_primeMetroidPhazeoidModule",
+   "rso_sha256": "ffe7c71e4a190802bb597fcac8fd5a68ea45eefd7f483a8bf96783c83511add9",
+   "rel_sha256": "952f7b5026aecc7f9060362a16c645071bdf5ad5b515d3ec2766e9003263b5fb"
+  },
+  {
+   "name": "MinorIng",
+   "id": 37,
+   "symbol": "g_primeMinorIngModule",
+   "rso_sha256": "c930775bca1aee356146f50321516765cd3ccf28b42c7ed439008c323f8c6af1",
+   "rel_sha256": "7164e1552d2cd78b8a7ea709f179a45eec3cd25efab8fccb7a83bffe1e363fc8"
+  },
+  {
+   "name": "MysteryFlyer",
+   "id": 38,
+   "symbol": "g_primeMysteryFlyerModule",
+   "rso_sha256": "2bcb2c31d8d4cd9826ce6dc8dac74faed96f2f38191e8e6a445224b9afc3ff2e",
+   "rel_sha256": "2348f4d5b93d0340564ee592b125770daca3c6d674f1ec01ae5d621908495bc7"
+  },
+  {
+   "name": "NoseTurret",
+   "id": 39,
+   "symbol": "g_primeNoseTurretModule",
+   "rso_sha256": "a2ab8056cc29e29ce859f352151712fcd1a4f1fd37221cc035382a57226d2b80",
+   "rel_sha256": "e6af115e06d76c7f6320a18ac2cffdc827fd35b1acfb0b22e366d09ea36b6612"
+  },
+  {
+   "name": "Parasite",
+   "id": 40,
+   "symbol": "g_primeParasiteModule",
+   "rso_sha256": "4a8cab8ba1b2d4a2d13862d2c2c0764e3988f2de3a86da9418d1415cbaf3f315",
+   "rel_sha256": "a7e3bfb62244d61e3f630fcabd6bb9e8b4fb0ce79bc0e4127183fecc9c3f272e"
+  },
+  {
+   "name": "Phaazoid",
+   "id": 41,
+   "symbol": "g_primePhaazoidModule",
+   "rso_sha256": "5eeb4084002326e52c06053909e028ff51edf8603255934ebbcea8c5df248853",
+   "rel_sha256": "29b1727dc0539d5d831e748c92a82c4ea5c120da197e462e9aa92027737c2729"
+  },
+  {
+   "name": "PhazonHarvester",
+   "id": 42,
+   "symbol": "g_primePhazonHarvesterModule",
+   "rso_sha256": "e274c37b5a698d8bcc081a25ea45349dccdd2c25ab46733438350ae797f02fa1",
+   "rel_sha256": "dc206516f5f2b241c9346e44a48d32e6f2c8a734fa160454914b603fb600d7f5"
+  },
+  {
+   "name": "PhazonLeech",
+   "id": 43,
+   "symbol": "g_primePhazonLeechModule",
+   "rso_sha256": "2d10ca9836b5951f33eaa8da7489cde2cb8c367bdd237d3f205d1326c9a9f09c",
+   "rel_sha256": "cd8444cece3bf910d22a04188cc1b14b6524ff3f0ae1b70b56a19bc7f4d67fee"
+  },
+  {
+   "name": "PhazonPuffer",
+   "id": 44,
+   "symbol": "g_primePhazonPufferModule",
+   "rso_sha256": "63bbb93d9db16b2fed0cf5fec8666df564a26b64f92556782b914c6e75c38576",
+   "rel_sha256": "46972e0db98ca06e2289aca657218608ca4f6ecb6619324e2b2122e0292bbae8"
+  },
+  {
+   "name": "PhazonTentacle",
+   "id": 45,
+   "symbol": "g_primePhazonTentacleModule",
+   "rso_sha256": "02116e57a3c5c69d7ee5bfab2f4b560a6b0537b4621c13db7d48a3b836a3f9b2",
+   "rel_sha256": "2c80a947d13b5a3c8621a57206c5de1772f1d935dbdb99f42e28640e5f38ed0d"
+  },
+  {
+   "name": "PillBug",
+   "id": 46,
+   "symbol": "g_primePillBugModule",
+   "rso_sha256": "3b306afe8a5b988aa84059cc48b17234e75adeac52179de0fd628e3786e678a6",
+   "rel_sha256": "09cafa71c4395494e7843a89dcd89bcdabfb27001e6af5ffa59c00b73c6ee795"
+  },
+  {
+   "name": "PirateDrone",
+   "id": 47,
+   "symbol": "g_primePirateDroneModule",
+   "rso_sha256": "b6e3bfc047ad781db527403ea0fb5302e76a001cd42b7322147887197de9f503",
+   "rel_sha256": "ba39924849ae8c63b6cb54944dc198070ce9dcb7799d76b957e7b4a5b4e63e71"
+  },
+  {
+   "name": "Puffer",
+   "id": 48,
+   "symbol": "g_primePufferModule",
+   "rso_sha256": "cdeeed81105966d876fa92d29002e723c528d5f2c0a5d149c9c631cb2c778d81",
+   "rel_sha256": "762ec7f83e0604c98e1f91fff5fd0c499e7dde2d757efbcc2dd428f27f766fec"
+  },
+  {
+   "name": "ReptilicusHunter",
+   "id": 49,
+   "symbol": "g_primeReptilicusHunterModule",
+   "rso_sha256": "e6277d9ccd2471220260c42f4030e9c3e5ad592b14cdc009cfd6b1b50647fab1",
+   "rel_sha256": "cde02fb938232a32a1216fd3f019d499c86613a50e74a4e4993a2b4e56e0c7fe"
+  },
+  {
+   "name": "Ridley1",
+   "id": 50,
+   "symbol": "g_primeRidley1Module",
+   "rso_sha256": "e0b863197f7a11377b535fb3ee92e8856e03310071dd201cdd57aaf8c052d60d",
+   "rel_sha256": "325857337fe31366f0f89048ee37ee73d8019d03649a02a56b5a06953bba91a3"
+  },
+  {
+   "name": "Rundas",
+   "id": 51,
+   "symbol": "g_primeRundasModule",
+   "rso_sha256": "1f8fa365346430da96ada3a5e83fb8a7f4ef4bc0debc8b618d6c366fe885c2a2",
+   "rel_sha256": "433e80e4de6026ebb5bb5d42db8c1c2ca536dbcad8b5b80b9468d2d9016f122c"
+  },
+  {
+   "name": "ScriptAIFuse",
+   "id": 52,
+   "symbol": "g_primeAIFuseModule",
+   "rso_sha256": "2b610c64e4fdc07604247fef324af5fc0946bd06e7c5c88aade100b10df292f6",
+   "rel_sha256": "7237a6ae6f82f00f606d4b831bcad5773d35ddaf29c0eafb0bb34e99797ae183"
+  },
+  {
+   "name": "ScriptActorMorph",
+   "id": 53,
+   "symbol": "g_primeActorMorphModule",
+   "rso_sha256": "4ab81a307d102f3d9d0ba572b04be45f8671b03460fb8357f5dafb73f92aa6c7",
+   "rel_sha256": "1046fb812609a6b3b538ad183c62b2a964d24469e01e36b2b51dbc181d50c5c5"
+  },
+  {
+   "name": "ScriptCable",
+   "id": 54,
+   "symbol": "g_primeCableModule",
+   "rso_sha256": "f88d84081e49668dd41746f148f47424e95db9ff08a4e9b11c45e596023371f7",
+   "rel_sha256": "72f38ff70c11c90bb4f6416dd4991bd13d3b7147bd93f54255b76c57a23fdc29"
+  },
+  {
+   "name": "ScriptContextActionWelding",
+   "id": 55,
+   "symbol": "g_primeContextActionWeldingModule",
+   "rso_sha256": "dec2368d5ca11835f3d9d526a72f3d5f389e575aafdacd908a22e39e85c67914",
+   "rel_sha256": "d7c108b659426f3ec6d7a6362e2e2534e26509fa3ad3851542a8621053019fe6"
+  },
+  {
+   "name": "ScriptLODController",
+   "id": 56,
+   "symbol": "g_primeLODControllerModule",
+   "rso_sha256": "78c418204f81581c9e957c64638794120b2883a91b1ac04c9d5b6f8f301d477d",
+   "rel_sha256": "a2fdcccae9a1d754eaa936c67377f434c61743afe843465c60cfda258afd22e7"
+  },
+  {
+   "name": "ScriptPhysicsDebris",
+   "id": 57,
+   "symbol": "g_primePhysicsDebrisModule",
+   "rso_sha256": "99d04a6977df1f487452430c131666b2cf31e6cb2c2aba349e337d78c53b670a",
+   "rel_sha256": "a3b67dd0d1791031d22048801169e2ed2b69fa9e39287c894d5fdeb5b375adb5"
+  },
+  {
+   "name": "ScriptSnagVineHelper",
+   "id": 58,
+   "symbol": "g_primeSnagVineHelperModule",
+   "rso_sha256": "fa4364e37273df8fc20dbc9bf82fd00aec47183108c767a2e7a6cef01b58f7d9",
+   "rel_sha256": "13986d89252c4a155c44d3208284f77ab700e7b1d36cfdfd230b82e64db2bf3c"
+  },
+  {
+   "name": "ScriptTeamAiMgr",
+   "id": 59,
+   "symbol": "g_primeTeamAiMgrModule",
+   "rso_sha256": "e24fcad9199200a229e0cb15910e27377885a8fd636046f24dd28f54fc714745",
+   "rel_sha256": "e582781424ecceee222a5f0b576792bf56043ad028698cb2e77f79954520af45"
+  },
+  {
+   "name": "ScriptWater",
+   "id": 60,
+   "symbol": "g_primeWaterModule",
+   "rso_sha256": "0fbfa43d6d83e4576daa5394761125ac6e4cda5dcea22b1a3d9653f92d11f63d",
+   "rel_sha256": "a1a9bd14c0b0433c6a79fe8207165b310073a47cf4365ffeb310e4346ec99e64"
+  },
+  {
+   "name": "ScriptWorldTeleporterAttributes",
+   "id": 61,
+   "symbol": "g_primeWorldTeleporterAttributesModule",
+   "rso_sha256": "8568899f9520f3cf2484da278952f6b8b3db0b238fa10bd62d0c33c48b2c01ea",
+   "rel_sha256": "b8285ba1d23014d775a05458bdfc5154d8908eb17c98c2648a9fea24d1ccad5f"
+  },
+  {
+   "name": "SeedBoss1",
+   "id": 62,
+   "symbol": "g_primeSeedBoss1Module",
+   "rso_sha256": "32cd3cb77485defb45bf86c5ab452544da00aa423902a6a2365fd9cc7c820951",
+   "rel_sha256": "a8d097ee5b7c32b87a202a1cafd0f835a9d63ec7de7fa21d7985e5fa24962fb6"
+  },
+  {
+   "name": "SeedBoss2",
+   "id": 63,
+   "symbol": "g_primeSeedBoss2Module",
+   "rso_sha256": "be50f50b5b927336e086e37bf6bb5180913ffb9f1a3348ddf4db994f34e12303",
+   "rel_sha256": "b715321b42e419ac32ef506446971570d425a1035cde79f901adf30abc8ffd5f"
+  },
+  {
+   "name": "SeedBoss2Bot",
+   "id": 64,
+   "symbol": "g_primeSeedBoss2BotModule",
+   "rso_sha256": "b440d72c2482348b2b0dd085d4e38dc86090edfa6d8076ff3d340febc07b6bc0",
+   "rel_sha256": "b5996e493786fccb0e6cb12d689957be64c3b339e2140c5944d817eedf3afd4e"
+  },
+  {
+   "name": "SeedBoss3",
+   "id": 65,
+   "symbol": "g_primeSeedBoss3Module",
+   "rso_sha256": "94306c597dbadadfd0323417efb799193a914198861620661636a03d5810e919",
+   "rel_sha256": "ea97a5bd32f12407b55e57dcc65a0d3ffb74bb6c890c32d96ae776c28a62e1f8"
+  },
+  {
+   "name": "ShellBug",
+   "id": 66,
+   "symbol": "g_primeShellBugModule",
+   "rso_sha256": "8ba0013d69f3489ddf6cd2bc198c802214a5b15bab42345aa9d210ad40c583f1",
+   "rel_sha256": "c8a1476e6405f7d400d2da143530ae9becfeaf3e868286cea569bcef9f2d9ac3"
+  },
+  {
+   "name": "Ship",
+   "id": 67,
+   "symbol": "g_primeShipModule",
+   "rso_sha256": "37d4e06fc6006e6c9baa126b5ed120c7ee50c5bbed4185bbf72a89a7c5176bab",
+   "rel_sha256": "200d135938e333e93e8b2e4d0724bfdf32b381b642f334c4238d9dff94b9b0db"
+  },
+  {
+   "name": "SpacePirate",
+   "id": 68,
+   "symbol": "g_primeSpacePirateModule",
+   "rso_sha256": "fa8370cb5e8d201a219af027d235b5fd714c646719ced7c603aa37558fad9f08",
+   "rel_sha256": "7c2ec77ff1c89e2064a8d8b130ea8fe68e2fabcc74215b046f9e9e374bbaf53e"
+  },
+  {
+   "name": "Sprite",
+   "id": 69,
+   "symbol": "g_primeSpriteModule",
+   "rso_sha256": "baac974beb018d7cfa9faea0c3cdfa8a45c189c143f028b986d43aaa52513d97",
+   "rel_sha256": "a67e56969d41af50e3c280706236fdd219df9d57086baa339fe682df4b2e25d5"
+  },
+  {
+   "name": "SteamBot",
+   "id": 70,
+   "symbol": "g_primeSteamBotModule",
+   "rso_sha256": "9f07eae44f3bf9ac6421f3ccf7786d570dc49c811a220a47b3f816d2e0fb20cc",
+   "rel_sha256": "3f47957d9ce8c467c36e75ccdd56e348732224792ddcb2f01272b5524f1dc5a0"
+  },
+  {
+   "name": "SteamDrone",
+   "id": 71,
+   "symbol": "g_primeSteamDroneModule",
+   "rso_sha256": "eb9261eca8368eb54830d70cf92ad384dfe160d712e92a263178a7df827de474",
+   "rel_sha256": "65142f196b769534f10c43d0adb297904e0621c02d3b00f8c0a6d74f6d6d4fb8"
+  },
+  {
+   "name": "SteamLord",
+   "id": 72,
+   "symbol": "g_primeSteamLordModule",
+   "rso_sha256": "93b1a629043759f52c19eca58ad79cd8c613a821ac27cd8f40c18a2654335287",
+   "rel_sha256": "53df52c849fe4e141fb4ccbc72b4a1a214ed0b99cfbad924a2758d21a737e492"
+  },
+  {
+   "name": "SwarmBot",
+   "id": 73,
+   "symbol": "g_primeSwarmBotModule",
+   "rso_sha256": "e8c0bb2486af5cb718235746b971c234265aada8444d8a32ba157a190dd17e76",
+   "rel_sha256": "ef7f1472f939494ff475c76feee9ed8f8fde884922d5cc2a2aaa15f676f5d45c"
+  },
+  {
+   "name": "VenomWeed",
+   "id": 74,
+   "symbol": "g_primeVenomWeedModule",
+   "rso_sha256": "ed5f9c01cace75a1007b534afe941fd46516e36e73cafbe903a8885e13d65736",
+   "rel_sha256": "1234869f40d5cf47ad43e55a88a2b07d01e0db739c1d41d9e21a6d01ff471dcf"
+  }
+ ]
+}

@@ -8,9 +8,13 @@ add_library(aurora_gx STATIC
         lib/gfx/dds_io.cpp
         lib/gfx/tex_copy_conv.cpp
         lib/gfx/tex_palette_conv.cpp
+        lib/gfx/tex_cmpr_decode.cpp
         lib/gfx/texture.cpp
         lib/gfx/texture_convert.cpp
         lib/gfx/texture_replacement.cpp
+        lib/gfx/texture_upscale.cpp
+        lib/gfx/post_process.cpp
+        lib/gfx/gpu_timing.cpp
         lib/gx/command_processor.cpp
         lib/gx/fifo.cpp
         lib/gx/frame_interpolation.cpp

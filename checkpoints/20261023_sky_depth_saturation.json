@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "request": "Planet and starfield missing behind the Federation fleet (gunship approach) and space missing from G.F.S. Olympus windows",
+  "diagnosis": [
+    "F7 draw dump (frame 7662): draws 0-22 are the sky layers (512x512 textures, rotation-only view matrix, XF viewport sz=0, depth compare LEQUAL, no depth write); they were submitted but did not appear.",
+    "User-run experiment A (no depth test for collapsed-range draws) made the planet and stars appear, so the depth test rejected them; experiment B (far plane moved out) was not needed.",
+    "Full-precision dump: Prime's XF viewport uses oz=16777216, one past the 24-bit EFB maximum 0xFFFFFF. Hardware saturates to 0xFFFFFF (equal to the 0xFFFFFF clear) and LEQUAL passes; Aurora converted it to exactly 1.0, which under reversed-Z lands just beyond the cleared depth (16777215/16777216) and fails GreaterEqual."
+  ],
+  "fix": "aurora-main/lib/gx/command_processor.cpp: logical viewport znear/zfar from XF are clamped to 16777215/16777216 like the hardware saturation. Non-collapsed ranges change by at most one 24-bit unit at the far end.",
+  "diagnostic_tooling_kept": "F7 or a Logs/captures/request file dumps the next frame's GX draws and EFB copies (<base>.draws.txt) and its presented image (<base>.bmp): aurora-main/lib/gfx/draw_dump.hpp, aurora_request_draw_dump, runtime settings_overlay RequestDrawDump.",
+  "experiments_removed": "AuroraSetBackgroundDepthExperiment, WII_COMPILED_BACKGROUND_EXPERIMENT and the F1 Diagnostico checkboxes were removed after the fix was confirmed.",
+  "validation": {
+    "user": "Planet, fleet background and cockpit starfield visible without experiments (2026-10-23)",
+    "build": "fix build linked and ran unattended to the hangar with no fatal log lines; experiment-removal build pending (game was open)"
+  }
+}

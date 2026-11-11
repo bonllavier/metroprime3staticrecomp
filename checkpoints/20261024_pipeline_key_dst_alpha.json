@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-24",
+  "game": "RM3E01_00",
+  "symptom": "Revisiting an area already recorded with F8 still compiled new pipelines.",
+  "analysis": {
+    "cache": "UserData/Cache/pipeline_cache.db: 13,463 GX v20 rows saved (the cache works).",
+    "duplicates": "Near-duplicate pairs (rows that differ in 3 words or fewer), using offsets from an offsetof probe built with the project flags:",
+    "pairs_by_field": {
+      "ShaderConfig.dstAlpha (2732) + PipelineConfig.dstAlpha (2764)": 1507,
+      "TevStage kcSel/kaSel (+72/+76 of each 132-byte stage)": "about 2000",
+      "ColorChannelConfig diffFn/attnFn/lightingEnabled (2412..2420)": 1283,
+      "vtxStride word (8)": 1368
+    },
+    "dst_alpha": "30 distinct values (0, 4, 8 ... 80, 128, 255, ...). Ignoring them collapses 13,463 rows to 10,619, with up to 25 variants of one pipeline. Prime animates the value (interaction highlight, scan visor IDs), so revisits meet values not seen before."
+  },
+  "fix": [
+    "aurora pipeline.hpp: GXPipelineConfigVersion 21; normalize_dst_alpha_key() stores dstAlpha in both configs as 0 (enabled) or UINT32_MAX (none).",
+    "gx.cpp populate_pipeline_config: normalizes after shader_dst_alpha(); the fidelity detector uses the real value.",
+    "shader.cpp: 'prev.a = ubuf.dst_alpha.x' from a trailing uniform field instead of a baked constant; shader_info.cpp adds the vec4 to uniformSize and build_uniform appends g_gxState.dstAlpha/255.",
+    "command_processor.cpp: DrawData.dstAlpha (blend-constant path) takes the draw's live g_gxState.dstAlpha.",
+    "pipeline_cache.cpp: migrate_gx_pipeline_cache_v20 rewrites v20 rows as v21 and merges rows that differ only in dstAlpha (keeping the earliest first_frame_used); the v19 migration also normalizes. The seed is merged before the migrations, so the shipped v20 seed converts at boot."
+  ],
+  "validation": {
+    "build": "linked 2026-10-24",
+    "layout_check": "Uniform field order: WGSL struct and build_uniform both end ... tex size_bias, dst_alpha; every earlier field is a multiple of 16 bytes.",
+    "user": "pending: red outline on interactive objects, scan visor colours, fewer new pipelines on revisits"
+  },
+  "next": "kcSel/kaSel to per-stage uniforms (about 2000 pairs) and the channel lighting functions (1283 pairs). Re-run prime_pipeline_seed.py merge after the next session so the seed becomes v21.",
+  "result_recording_211716": {
+    "lost_ms": {
+      "pipelines": 3114,
+      "cpu": 3190,
+      "disc": 214
+    },
+    "ge80ms": {
+      "pipelines": 16,
+      "cpu": 1
+    },
+    "before_205056": {
+      "pipelines": 7277,
+      "ge80ms": 47
+    },
+    "boot": "Migration v20 -> v21: 13,463 rows -> 11,519 pipelines; the first boot after the shader change re-prewarmed in 28.7 s (new DXIL), later boots use the blob cache.",
+    "in_game_compiles": "398 pipelines, 94% new shader modules, average 2.4 ms module + 22.0 ms pipeline (Tint/DXC/driver), 9.7 s of worker time.",
+    "game_thread_overhead": "Interrupt poll 3.7% + 1.9% full path (was 6.8%); FIFO 2.9% (was 6.7%)."
+  },
+  "konst_key_v22": {
+    "change": "GXPipelineConfigVersion 22. normalize_konst_key() sets every stage's kcSel/kaSel to 0x08 in the key. ShaderInfo.konstStages marks stages with a KONST colour or alpha argument; the shader reads ubuf.konst<N>.rgb/.a, and build_uniform computes them from the live g_gxState.tevStages[N] selection and kcolors (fractions (8-s)/8; K0-K3 rgb; Kn_R/G/B/A broadcast; unsourced encodings 0). The fields sit after the kcolor fields in both the WGSL struct and the writer. Migrations: v19 and same-layout v20/v21 -> v22 through normalize_pipeline_key, merging duplicates. KSEL BP writes call mark_pipeline_state_dirty, so the uniforms are rebuilt.",
+    "validation": {
+      "build": "linked 2026-10-24",
+      "user": "pending: visuals (TEV konst colours on materials, red outline, scan visor), fewer compiles on revisits"
+    }
+  },
+  "result_v22_first_session": {
+    "migration": "v20 seed rows 12,872 -> 2,488 and local v21 rows 11,930 -> 2,603 pipelines: konst selection was the dominant duplicator.",
+    "boot": "Prewarm of 2,590 pipelines in 63.6 s (Dawn blob cache 3,619/9,161 hits, 5,542 stores); one-time, because every shader's WGSL changed.",
+    "recordings": {
+      "215051": {
+        "pipelines_lost_ms": 3241,
+        "ge80": 12
+      },
+      "215418": {
+        "pipelines_lost_ms": 1498,
+        "ge80": 8
+      },
+      "215622": {
+        "pipelines_lost_ms": 4282,
+        "ge80": 21,
+        "cpu_lost_ms": 2208
+      }
+    },
+    "in_game_compiles": "235 compiles (81% new modules), average 34.9 ms module + 145.7 ms pipeline = about 180 ms (v21 session: about 24 ms). Hypothesis: neither the Dawn blob cache nor the driver shader cache had the new shader code yet; to be confirmed next session.",
+    "telemetry_fix": "Detailed [pipeline-compile] lines are now skipped while gfx::pipeline_prewarm_active(), so the 600-line budget covers in-game compiles.",
+    "seed": "Regenerated as v22: 2,846 rows, 11.2 MiB (was 12,873 rows, 50.8 MiB). Clear pipelines are no longer excluded as Mario Kart's; they are game-independent."
+  }
+}

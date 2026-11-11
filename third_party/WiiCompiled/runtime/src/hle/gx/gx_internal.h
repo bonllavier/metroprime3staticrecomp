@@ -352,6 +352,7 @@ void MarkTexObjsDirtyForRange(uint32_t addr, uint32_t size);
 // over their destination. This is the allocation-reuse generation boundary
 // for copy textures; it must be called for every data-cache store/flush range.
 void InvalidateEfbCopyDestinationsForRange(uint32_t addr, uint32_t size);
+void InvalidateEfbCopyDestinationsForRangeNow(uint32_t addr, uint32_t size);
 GXTlutObj* CreateHostTlutObj(uint32_t addr);
 void MarkHostTlutObjConstructed(uint32_t addr);
 GXTlutObj* GetHostTlutObj(uint32_t addr);

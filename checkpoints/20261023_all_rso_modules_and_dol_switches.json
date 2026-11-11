@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-23",
+  "game": "RM3E01_00",
+  "request": "Proactively translate the RSO modules/callbacks that fail with 'Missing translated function' as the story advances, instead of discovering them one by one in manual QA",
+  "principle": "A relocatable module cannot hold an absolute code address without a relocation. Every indirectly reachable entry (prolog/epilog/unresolved, ctors/dtors, exports, vtable/data pointers, HA/LO callbacks) is listed by the module's own relocation tables; the only relocated text targets that are not entries are switch case labels, recognised by the dispatch that indexes them (addi table@l -> lwzx -> mtctr -> bctr) and bounded by the cmplwi/bgt guard, with one relocation per entry.",
+  "changes": {
+    "recomp/tools/discover_prime_rso_roots.py": "Static root and jump-table discovery for any RSO; validated on the 13 reviewed modules: every manually curated root is found automatically (plus 38 not yet reached ones, all real function starts) and the manually excluded switch tables (Friendly 16, MapScreen 34) are found.",
+    "recomp/config/RM3E01_00/rso_modules.json": "Central table of the 74 disc modules: id, descriptor symbol, RSO sha256 and deterministic synthetic REL sha256. Ids/symbols of the first 13 unchanged.",
+    "recomp/tools/prepare_prime_rso_translation.py": "Table-driven; adds the discovered roots to the reviewed ones (kept as assertions: reviewed roots must be a subset) and passes relocation-proven jump tables to the translator.",
+    "Translator.Core JumpTableDetector": "JumpTableOverrides (bctr -> targets) consulted before the bound heuristic; empty by default; overrides must stay inside the function window or translation fails.",
+    "recomp/tools/RsoRuntimeTranslator": "Applies module jump tables and fails if a reached switch leaves a case label untranslated. --dol-repair loads recomp/config/RM3E01_00/dol_jump_tables.json.",
+    "recomp/tools/emit_prime_rso_registry.py, audit_prime_rso_address_taken.py, build_prime_runtime.ps1, runtime cmake/PublicProducts.cmake": "Read the central table; the wrapper writes recomp/.tools/rso-runtime/modules.cmake for CMake (fallback: the previous 13).",
+    "recomp/tools/audit_prime_dol_switches.py + dol_jump_tables.json": "Audit of 204 MWCC switch dispatches in main.dol: 19 functions (26 dispatches) had translated switches missing guard-bounded cases (e.g. 0x802E6D20: cmplwi r4,9 -> 10 cases, 3 emitted). They are retranslated through the existing DOL repair path; prepare_prime_runtime_hooks.py checks every original table entry against the DOL and the repaired cases."
+  },
+  "results": {
+    "modules": 74,
+    "functions": 13405,
+    "covered_nonzero_text_words": "871265 / 871490 (99.974%); the rest are unreachable blr/b after unconditional branches and one unreferenced DarkSamus function (text+0x18264, no relocation or branch reaches it)",
+    "unsupported_instructions": 0,
+    "independent_relocation_verification": "74/74 PASS",
+    "address_taken_audit": "PASS, 13405 functions, 0 missing",
+    "module_identification": "section-size signatures unique across the 74 modules",
+    "rso_switch_fix_example": "DarkSamus text+0xE290: heuristic emitted 1 of 16 cases; relocation-proven table restores all 16",
+    "dol_switch_audit": "19 functions repaired; re-audit 0 functions with missing cases"
+  },
+  "limits": "Translation coverage is not runtime validation: later areas still need play to exercise graphics/HLE paths and module lifecycle. Not a matching reconstruction of the RSO classes. The DOL switch audit is heuristic (no relocations in the DOL).",
+  "build": "pending at checkpoint creation"
+}

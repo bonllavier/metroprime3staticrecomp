@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-24",
+  "game": "RM3E01_00",
+  "request": "Bring only the useful upstream aurora changes into the project's fork (no wholesale replacement)",
+  "upstream": "https://github.com/encounter/aurora (main, latest 8e356df6, 2026-10-20); patches downloaded to the scratchpad and reviewed as text before porting",
+  "reviewed": [
+    {"commit": "26371ceb (#293)", "result": "partly ported", "detail": "Hardware->GX min-filter table was already fixed in the fork; ported the signed LOD bias encoding (static_cast<u8>(static_cast<int>(32 * bias)), the old float->u8 cast was undefined for negative bias)."},
+    {"commit": "e938637c + 2bf0825c (#291)", "result": "ported", "detail": "GX_TG_COLOR0/1 texgen sources read the colour-channel outputs (out.cc0/out.cc1) instead of the raw vertex colour, keeping the fork's (rgb, 1.0) form; shader_info marks the channel as sampled when only a texgen uses it."},
+    {"commit": "3094e04d (#262)", "result": "already present", "detail": "Pre-stage colour operands for packed TEV alpha compares were already implemented."},
+    {"commit": "ca307d7f (#265)", "result": "not needed", "detail": "Indexed XF loads are handled generically; identity texture-matrix writes are ignored harmlessly as upstream intends."},
+    {"commit": "tex_copy_conv depth formats", "result": "ported", "detail": "GX_CTF_Z4 (top 4 bits, I4), Z8M, Z8L, Z16L as upstream; sample-format compatibility and the RM3E01 raw-BP adapter accept them. GX_TF_Z16 changed to upstream semantics (I = Z[23:16], A = Z[15:8]): the SDK encodes Z16 as the RG8 channel copy (nibble 0xB, seen in the scan visor); the fork had RA8 semantics with alpha 255 and lost the middle byte."}
+  ],
+  "not_ported": "AuroraSetDrawsBlocking (async pipelines; the fork already has skip_unready_pipelines), readback API, diagnostics/validation/stub commits without effect on Prime.",
+  "validation": {
+    "build": "linked 2026-10-24 01:44",
+    "tests": "mkw_gx_fifo_storage_tests passes (scan-visor Z16/Z8L/Z8M/Z4 decode cases). Aurora's own gtest suite (tests/gx_fifo_test.cpp, Z16 contract test updated) is not built in this configuration.",
+    "user": "pending: scan visor and general visuals"
+  }
+}

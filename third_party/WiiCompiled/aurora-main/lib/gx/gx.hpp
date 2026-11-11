@@ -1,5 +1,6 @@
 #pragma once
 #include <dolphin/gx.h>
+#include <aurora/gfx.h>
 #include <aurora/math.hpp>
 
 #include "../internal.hpp"
@@ -7,9 +8,12 @@
 #include "../gfx/texture.hpp"
 
 #include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
 #include <algorithm>
 #include <type_traits>
 #include <cstring>
+#include <vector>
+#include <atomic>
 #include <bitset>
 #include <memory>
 #include <array>
@@ -47,7 +51,65 @@ constexpr float GX_LARGE_NUMBER = -1048576.0f;
 #endif
 
 namespace aurora::gx {
-constexpr bool UsePerPixelLighting = false;
+// Runtime toggle (aurora_set_per_pixel_lighting): copied into ShaderConfig::perPixelLighting
+// when a pipeline config is built, so each mode has its own shader/pipeline cache rows.
+extern std::atomic<bool> g_perPixelLighting;
+// "Enhanced metal" (aurora_set_enhanced_metal): per-pixel environment reflection, Fresnel and
+// specular highlights on lit, per-pixel-lit materials that use a normal-based texgen (Prime's metal).
+// The strength reaches the shader through the uniform header pad (no pipeline key change).
+extern std::atomic<bool> g_enhancedMetal;
+// Per-draw metal parameters, set by the command processor for the draw being recorded (GX producer
+// thread only): skin gets strength 0, an enhanced-material class its own strength and parameters.
+// build_uniform stages them instead of the global enhanced-metal values when active.
+struct DrawMetalOverride {
+  bool active = false;
+  float strength = 0.0f;
+  uint32_t params = 0;  // roughness | metallic << 8 | edge << 16 | detail << 24, each 0..255
+  int8_t extSlot = -1;   // g_materialExt slot of this draw's class; -1 = neutral (skin)
+};
+extern DrawMetalOverride g_drawMetal;
+// Enhanced materials (F1 > Video): textures listed per class get the PBR metal shading even when
+// the game gives them no reflection map (ship hulls). Per class: strength (f32 bits) << 32 | params.
+extern std::atomic<bool> g_enhancedMaterials;
+extern std::array<std::atomic<uint64_t>, 16> g_materialClasses;
+// Extended material parameters per class (AuroraMaterialExt as floats, plus the animation time the
+// uniform carries in slot 7), staged as the trailing mat_ext uniform of enhanced-metal shaders.
+// Slot 0: the generic enhanced metal.
+constexpr size_t MaterialExtFloats = 32;
+extern std::array<std::array<std::atomic<float>, MaterialExtFloats>, 16> g_materialExt;
+extern std::atomic<float> g_enhancedMetalStrength;
+// Packed 8-bit parameters (uniform pad.y): roughness | metallic << 8 | edge << 16 | detail << 24.
+extern std::atomic<uint32_t> g_enhancedMetalParams;
+// World surfaces with baked lightmaps (experimental, F1 > Effects), each level on its own:
+// environment material (level 1) and the lights of the frame's lit draws borrowed for highlights
+// (level 2). Unclassified surfaces use material slot EnvMaterialClass.
+extern std::atomic<bool> g_envMaterial;
+extern std::atomic<bool> g_envBorrowedLights;
+constexpr uint8_t EnvMaterialClass = 15;
+// Further lighting improvements (F1 > Effects > World lighting), each on its own:
+// litRooms: the environment material also on lightmapped walls lit by GX lights (with those lights);
+// softHighlights: the added highlights roll off towards white instead of clipping;
+// linearBlend: added light combined in linear space (more physical, brighter highlights);
+// smoothLightmaps: smoothstep-weighted lightmap filtering (no diamond/stair artefacts, same taps);
+// areaReflections: the procedural environment tinted with the frame's measured colours (above /
+// below the horizon), read back from the GPU a few frames late; softShadows: PCF on projected shadows.
+extern std::atomic<bool> g_litRoomMaterial;
+extern std::atomic<bool> g_softHighlights;
+extern std::atomic<bool> g_linearBlend;
+extern std::atomic<bool> g_smoothLightmaps;
+extern std::atomic<bool> g_areaReflections;
+extern std::atomic<bool> g_softShadows;
+// Modern lighting, level 1 (F1 > Video, docs/iluminacion_motor.md). engineLights: the engine's own
+// light lists (RM3E01 CLight, world space, sent by the runtime every game frame) replace the borrowed
+// lights for world highlights, light shafts and contact shadows; extraDynamicLights: lit lightmapped
+// world pieces that got the engine's maximum of 4 lights receive the overlapping dynamic lights it left
+// out in the free GX slots 4-7 (uniform only, no new pipeline); lightmapDither: the baked lightmap
+// sample is dithered by half a step, which breaks the 8-bit bands of dark gradients.
+extern std::atomic<bool> g_engineLightsOption;
+extern std::atomic<bool> g_extraDynamicLights;
+extern std::atomic<bool> g_lightmapDither;
+// Trailing lit_ext uniform of material shaders (after mat_ext): flags, area colour above, below.
+constexpr size_t LitExtFloats = 12;
 constexpr bool UseReversedZ = true;
 
 constexpr u32 MaxTextures = GX_MAX_TEXMAP;
@@ -268,6 +330,31 @@ struct Light {
   bool operator!=(const Light& rhs) const { return !(*this == rhs); }
 };
 static_assert(sizeof(Light) == 80);
+// Level 2: lights the game loaded for its lit draws (actors) during the last complete frame, in
+// view space, reused as highlight-only lights on lightmapped world surfaces. GX producer thread.
+constexpr size_t MaxBorrowedLights = 4;
+// Lights of the environment material's uniform (env_lights): up to 4 borrowed ones, or up to 8 of the
+// engine's own lights (modern lighting). Engine lights carry their range in color.a: +radius for a
+// static light (baked into the lightmap: highlights only where the lightmap is lit), -radius for a
+// dynamic one; env_light_mask.y = 1 marks that mode, so the borrowed path keeps its exact maths.
+constexpr size_t MaxEnvLights = 8;
+struct BorrowedLights {
+  std::array<Light, MaxEnvLights> lights{};
+  uint32_t count = 0;
+};
+extern BorrowedLights g_borrowedLights;
+// Engine lights of the current game frame for the environment material (GX producer thread).
+// Valid when `frame` is the current frame or the one before.
+struct EngineEnvLights {
+  std::array<Light, MaxEnvLights> lights{};
+  uint32_t count = 0;
+  uint32_t frame = UINT32_MAX;
+};
+extern EngineEnvLights g_engineEnvLights;
+// Game thread: the engine's light lists of the latest game frame (world space), copied under a lock.
+void set_engine_lights(const AuroraEngineLight* lights, uint32_t count);
+// GX producer thread: copies the latest list into `out` when it changed since `generation` (updated).
+bool take_engine_lights(std::vector<AuroraEngineLight>& out, uint64_t& generation);
 struct Fog {
   Vec4<float> color;
   float a = 0.f;
@@ -472,6 +559,15 @@ void set_display_copy_present_source() noexcept;
 void evict_copy_texture(const void* dest) noexcept;
 // Drops retired GX copy targets so they cannot outlive the destination they were recycled for.
 void prune_copy_texture_pool(const void* dest) noexcept;
+// Bytes of pool textures not yet in `seen` (which is extended); spares are entries only the pool references.
+u64 copy_texture_pool_bytes(absl::flat_hash_set<const void*>& seen) noexcept;
+size_t prune_copy_texture_pool_spares(size_t keep, u32 idleFrames) noexcept;
+// Once per second: keeps the GPU memory held by EFB copy textures (per guest
+// destination, retained until the guest rewrites that memory) under a budget by
+// evicting the destinations idle for longest. Without it a long session on a
+// game that keeps allocating new copy destinations exhausts video memory
+// (D3D12 CreateHeap E_OUTOFMEMORY after ~40 minutes, 2026-10-25).
+void enforce_copy_texture_budget() noexcept;
 void evict_texture_object(u32 texObjId) noexcept;
 void evict_tlut_object(u32 tlutObjId) noexcept;
 void invalidate_static_texture_cache() noexcept;
@@ -518,14 +614,40 @@ static inline bool copy_texture_format_compatible(GXTexFmt copyFmt, u32 sampleFm
   if (static_cast<u32>(copyFmt) == sampleFmt) {
     return true;
   }
+  // Indexed sampling of a copy reads its bytes as palette indices: any 8-bit (4-bit) copy can be
+  // sampled as C8 (C4) and goes through the dynamic palette conversion, which takes the index from
+  // the copy texture's R channel. RM3E01's scan visor samples its alpha object-ID copy (A8) as C8
+  // to colour scannable objects. C14X2 would need a 16-bit index conversion and stays unmatched.
+  if (sampleFmt == GX_TF_C8) {
+    switch (copyFmt) {
+    case GX_CTF_A8:
+    case GX_CTF_R8:
+    case GX_CTF_G8:
+    case GX_CTF_B8:
+    case GX_TF_I8:
+    case GX_TF_Z8:
+    case GX_CTF_Z8M:
+    case GX_CTF_Z8L:
+      return true;
+    default:
+      return false;
+    }
+  }
+  if (sampleFmt == GX_TF_C4) {
+    return copyFmt == GX_CTF_R4 || copyFmt == GX_TF_I4 || copyFmt == GX_CTF_Z4;
+  }
 
   switch (copyFmt) {
   case GX_CTF_R4:
+  case GX_CTF_Z4:
     return sampleFmt == GX_TF_I4;
   case GX_CTF_R8:
   case GX_CTF_G8:
   case GX_CTF_B8:
   case GX_CTF_A8:
+  case GX_TF_Z8:
+  case GX_CTF_Z8M:
+  case GX_CTF_Z8L:
     return sampleFmt == GX_TF_I8 || sampleFmt == GX_TF_A8;
   case GX_CTF_RA4:
     return sampleFmt == GX_TF_IA4;
@@ -533,6 +655,7 @@ static inline bool copy_texture_format_compatible(GXTexFmt copyFmt, u32 sampleFm
   case GX_CTF_RG8:
   case GX_CTF_GB8:
   case GX_TF_Z16:
+  case GX_CTF_Z16L:
     return sampleFmt == GX_TF_IA8;
   case GX_CTF_YUVA8:
     return sampleFmt == GX_TF_RGBA8;
@@ -559,7 +682,18 @@ struct ShaderConfig {
   u8 lineMode : 2 = 0; // 1 = GX_LINES, 2 = GX_LINESTRIP, 3 = GX_POINTS
   u8 dualTexEnabled : 1 = 0;
   u8 fogRangeAdjust : 1 = 0;
-  u8 pad1 : 4 = 0;
+  // GX XF lighting evaluated per fragment instead of per vertex (same formula and
+  // 8-bit rounding, interpolated normal/position). Bit was padding (zero) before.
+  u8 perPixelLighting : 1 = 0;
+  // Enhanced metal variant (only with perPixelLighting and a GX_TG_NRM texgen). Bit was padding.
+  u8 enhancedMetal : 1 = 0;
+  // Ubershader key marker (uber.hpp: pad1 = 1). Must stay this bit: pipeline_cache.db relies on it,
+  // and valid_pipeline_config rejects persisted rows that have it set.
+  u8 pad1 : 1 = 0;
+  // Environment material variant: a world surface drawn with a baked lightmap and no GX lighting
+  // (env_lightmap_stage) gets the enhanced-metal block, lit by the lightmap and borrowed lights.
+  // The last free bit (zero in every recorded recipe, so their keys do not change).
+  u8 envMaterial : 1 = 0;
   u8 numTexGens = 0;
   u32 zTexture = 0; // bias[0:23], format[24:25], op[26:27]; 0 disables shader depth output.
   std::array<AttrConfig, MaxVtxAttr> attrs;
@@ -571,6 +705,9 @@ struct ShaderConfig {
   AlphaCompare alphaCompare;
   std::array<IndStage, MaxIndStages> indStages{};
   u32 numIndStages = 0;
+  // Destination alpha the fragment writes itself (UINT32_MAX = none); see
+  // shader_dst_alpha() in gx.cpp.
+  u32 dstAlpha = UINT32_MAX;
 
   bool operator==(const ShaderConfig& rhs) const { return memcmp(this, &rhs, sizeof(*this)) == 0; }
 };
@@ -689,6 +826,51 @@ inline TevStageTextureDependency tev_stage_texture_dependency(const ShaderConfig
   return dependency;
 }
 
+// Soft projected shadow variant flag. ShaderConfig has no free bit left, so it lives in an explicit
+// padding byte of the first colour channel (zero in every recorded recipe and GX state copy).
+inline bool shader_soft_shadow(const ShaderConfig& config) noexcept { return config.colorChannels[0]._p1 != 0; }
+inline void set_shader_soft_shadow(ShaderConfig& config) noexcept { config.colorChannels[0]._p1 = 1; }
+
+// TEV stage sampling a texture through a texgen from the vertex position (projected texture), and
+// the draw multiplies it into the frame: Prime's projected character shadows. -1 when none.
+inline int shadow_projection_stage(const ShaderConfig& config) noexcept {
+  for (u32 i = 0; i < config.tevStageCount; ++i) {
+    const auto dependency = tev_stage_texture_dependency(config, i);
+    if (!dependency.combinerUsesTexture || !dependency.canSampleTexture || dependency.texCoordId < 0) continue;
+    if (config.tcgs[static_cast<u32>(dependency.texCoordId)].src == GX_TG_POS) return static_cast<int>(i);
+  }
+  return -1;
+}
+
+// TEV stage that samples the baked lightmap of Prime's world geometry, -1 when the draw has none.
+// Pattern (F7 31/10/2026, Olympus): a stage samples the lightmap into a colour register instead of
+// PREV (C0 = raster + lightmap * C1), and a later stage multiplies that register with the diffuse
+// texture (C0 * diffuse * 2, nothing added). The lightmap uses the first UV set, the diffuse the
+// second; the TEV structure, not the UV set, identifies it.
+inline int env_lightmap_stage(const ShaderConfig& config) noexcept {
+  const auto readsColor = [](const TevStage& stage, GXTevColorArg arg) {
+    const auto& c = stage.colorPass;
+    return c.a == arg || c.b == arg || c.c == arg || c.d == arg;
+  };
+  for (u32 i = 0; i < config.tevStageCount; ++i) {
+    const auto& stage = config.tevStages[i];
+    const auto dependency = tev_stage_texture_dependency(config, i);
+    if (!dependency.combinerUsesTexture || !dependency.canSampleTexture) continue;
+    if (!readsColor(stage, GX_CC_TEXC) || stage.colorOp.outReg == GX_TEVPREV || stage.colorPass.d == GX_CC_CPREV) continue;
+    const GXTevColorArg reg = stage.colorOp.outReg == GX_TEVREG0   ? GX_CC_C0
+                              : stage.colorOp.outReg == GX_TEVREG1 ? GX_CC_C1
+                                                                   : GX_CC_C2;
+    for (u32 j = i + 1; j < config.tevStageCount; ++j) {
+      const auto& later = config.tevStages[j];
+      // A pure product (d = 0): an added term (d = PREV) is an emissive or detail mask instead.
+      if (readsColor(later, reg) && readsColor(later, GX_CC_TEXC) && later.colorPass.d == GX_CC_ZERO &&
+          tev_stage_texture_dependency(config, j).canSampleTexture)
+        return static_cast<int>(i);
+    }
+  }
+  return -1;
+}
+
 inline bool shader_uses_fixed_texcoord_state(const ShaderConfig& config) noexcept {
   for (u32 i = 0; i < config.tevStageCount; ++i) {
     if (tev_stage_texture_dependency(config, i).needsFixedTexcoordState) {
@@ -744,6 +926,8 @@ struct ShaderInfo {
   std::bitset<MaxTexCoord> sampledTexCoords;
   std::bitset<MaxTextures> sampledTextures;
   std::bitset<MaxKColors> sampledKColors;
+  // Stages with a KONST color or alpha argument: one konst<N> vec4 uniform each (rgb, a).
+  std::bitset<MaxTevStages> konstStages;
   std::bitset<MaxColorChannels / 2> sampledColorChannels;
   // TEV color and alpha outputs are independently addressable.
   std::bitset<MaxTevRegs> loadsTevRegRgb;
@@ -759,6 +943,10 @@ struct ShaderInfo {
   u32 uniformSize = 0;
   bool usesFog : 1 = false;
   bool lightingEnabled : 1 = false;
+  bool usesDstAlpha : 1 = false; // trailing dst_alpha uniform (vec4f, value in x)
+  bool usesMaterialExt : 1 = false; // trailing mat_ext uniform (array<vec4f, 8>), enhanced metal
+  bool usesEnvLights : 1 = false;   // environment material: env_lights + env_light_mask after mat_ext
+  bool uber : 1 = false;         // ubershader layout: UberData block follows dst_alpha (see uber.hpp)
   u8 lineMode : 2 = 0;
 };
 struct BindGroupRanges {
@@ -767,7 +955,13 @@ struct BindGroupRanges {
 void populate_pipeline_config(PipelineConfig& config, GXPrimitive primitive, GXVtxFmt fmt) noexcept;
 wgpu::RenderPipeline build_pipeline(const PipelineConfig& config, ArrayRef<wgpu::VertexBufferLayout> vtxBuffers,
                                     wgpu::ShaderModule shader, const char* label) noexcept;
+// WGSL source of the specialised shader for `config`; needs no device (see shader.cpp).
+std::string build_shader_source(const ShaderConfig& config) noexcept;
 wgpu::ShaderModule build_shader(const ShaderConfig& config) noexcept;
+struct UberConfig;
+// Ubershader of an UberConfig (uber.hpp): same vertex stage, TEV read from the uniform buffer.
+std::string build_uber_shader_source(const UberConfig& config) noexcept;
+wgpu::ShaderModule build_uber_shader(const UberConfig& config) noexcept;
 GXBindGroups build_bind_groups(const ShaderInfo& info) noexcept;
 void notify_copy_texture_created() noexcept;
 

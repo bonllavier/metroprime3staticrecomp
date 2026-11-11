@@ -19,6 +19,8 @@ if (AURORA_ENABLE_GX)
     gx_test_stubs.cpp
     texture_bind_group_cache_key_test.cpp
     renderer_regression_test.cpp
+    shader_golden_test.cpp
+    ../lib/gx/shader.cpp
     ../lib/gfx/efb_ram_encoder.cpp
     # GX API implementations (encoders)
     ../lib/dolphin/gx/GXBump.cpp
@@ -52,7 +54,11 @@ if (AURORA_ENABLE_GX)
     ../lib/dolphin/gx
   )
 
-  target_compile_definitions(gx_fifo_tests PRIVATE AURORA TARGET_PC)
+  # shader_golden_test.cpp reads the shipped pipeline seed and the recorded hashes of its shaders.
+  target_compile_definitions(gx_fifo_tests PRIVATE AURORA TARGET_PC
+    AURORA_SEED_DB="${CMAKE_CURRENT_SOURCE_DIR}/../../runtime/assets/pipeline/RM3E01_00/initial_pipeline_cache.db"
+    AURORA_GOLDEN_FILE="${CMAKE_CURRENT_SOURCE_DIR}/golden/shader_golden.txt"
+    AURORA_UBER_GOLDEN_FILE="${CMAKE_CURRENT_SOURCE_DIR}/golden/uber_golden.txt")
 
   target_link_libraries(gx_fifo_tests PRIVATE
     gtest
@@ -63,6 +69,7 @@ if (AURORA_ENABLE_GX)
     absl::btree
     dawn::dawncpp_headers
     TracyClient
+    sqlite3
     ${AURORA_SDL3_TARGET}
   )
 
@@ -93,6 +100,19 @@ if (TARGET aurora::dvd)
 
   gtest_discover_tests(dvd_tests)
 endif ()
+
+# Retention policy of the persistent Dawn blob cache: pure SQLite, no GPU.
+add_executable(blob_cache_policy_tests blob_cache_policy_test.cpp)
+target_compile_features(blob_cache_policy_tests PRIVATE cxx_std_20)
+target_link_libraries(blob_cache_policy_tests PRIVATE gtest gtest_main sqlite3)
+gtest_discover_tests(blob_cache_policy_tests)
+
+# Pure renderer decisions (anisotropy, texture offset, readback slots, copy budget).
+add_executable(render_policy_tests render_policy_test.cpp)
+target_compile_features(render_policy_tests PRIVATE cxx_std_20)
+target_include_directories(render_policy_tests PRIVATE ../lib/gx)
+target_link_libraries(render_policy_tests PRIVATE gtest gtest_main)
+gtest_discover_tests(render_policy_tests)
 
 add_executable(os_alloc_tests
   os_alloc_test.cpp

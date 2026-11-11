@@ -41,3 +41,6 @@ qa/control/
 # Local tool outputs
 tools/prime_icons/out/
 third_party/reshade/Screenshots/
+
+# Per-machine link to the translator output (Windows junction / Linux symlink)
+/third_party/WiiCompiled/generated

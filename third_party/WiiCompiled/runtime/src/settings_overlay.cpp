@@ -2931,6 +2931,8 @@ void DrawPrimeEffectsOptions() {
     }
     if (changed) PostEffects::Apply();
     if (const char* note = aurora_post_process_status_note(); note && *note) ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "%s", note);
+#if defined(_WIN32)
+    // ReShade is bundled for Direct3D 12 on Windows only; other hosts hide the section.
     ImGui::Separator();
     ImGui::TextUnformatted("ReShade (bundled, optional)");
     {
@@ -2947,6 +2949,7 @@ void DrawPrimeEffectsOptions() {
             ::ShellExecuteA(nullptr, "open", folder.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
         }
     }
+#endif
 }
 
 void DrawPrimeOptionsPanel() {

@@ -641,7 +641,13 @@ void Login(const std::string& username, char* password, size_t capacity) {
     // which the server worker wipes after sending) before this returns.
     rc_client_begin_login_with_password(g_raClient, username.c_str(), password, LoggedIn, reinterpret_cast<void*>(1));
 #endif
-    if (password && capacity) ::SecureZeroMemory(password, capacity);
+    if (password && capacity) {
+#if defined(_WIN32)
+        ::SecureZeroMemory(password, capacity);
+#else
+        ::explicit_bzero(password, capacity);  // not elided by the optimizer, like SecureZeroMemory
+#endif
+    }
 }
 
 void Logout() {

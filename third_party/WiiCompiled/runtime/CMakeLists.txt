@@ -432,6 +432,17 @@ else()
         endif()
         set_target_properties(mkw_macos_native_compile PROPERTIES UNITY_BUILD OFF)
     endif()
+    # Linux port bring-up: compile every runtime source (with the selected game
+    # profile) without translated shards, so host-specific gaps show up per file.
+    option(MKW_LINUX_RUNTIME_COMPILE_CHECK "Compile-only check of the runtime sources on Linux" OFF)
+    if(MKW_PLATFORM_LINUX AND MKW_LINUX_RUNTIME_COMPILE_CHECK)
+        mkw_add_runtime_library(mkw_linux_runtime_check OBJECT ${SOURCES})
+        if(MKW_GAME_PROFILE_RM3E01_00)
+            target_compile_definitions(mkw_linux_runtime_check PRIVATE MKW_GAME_PROFILE_RM3E01_00=1)
+        endif()
+        # One object per file so each failure is attributed to its own source.
+        set_target_properties(mkw_linux_runtime_check PROPERTIES UNITY_BUILD OFF)
+    endif()
     add_custom_target(mkw_platform_paths_check DEPENDS mkw_platform)
     message(STATUS "Translated product targets disabled (MKW_BUILD_PRODUCTS=OFF)")
 endif()

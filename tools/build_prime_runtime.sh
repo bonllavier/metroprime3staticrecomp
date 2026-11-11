@@ -146,4 +146,21 @@ for image in tex1_832x456_0a2f3408cab0cbcc_14.png tex1_832x456_550dd77642afbb04_
     [[ -f "$strap_source/$image" ]] || die "Start-up screen missing: $strap_source/$image"
     cp -f "$strap_source/$image" "$strap_target/"
 done
+
+# Release default configuration (keyboard/mouse, key and pad icons, renderer and effects),
+# taken from the template in package_release.ps1 so both platforms ship the same defaults.
+# The runtime copies it to UserData/Config.toml on the first run only. ReShade is not part
+# of the Linux port, so its section is dropped.
+step 'default configuration'
+python3 -I - recomp/tools/package_release.ps1 "$build_dir/Config.default.toml" <<'PY' || die 'Default configuration extraction failed'
+import re, sys
+source = open(sys.argv[1], encoding='utf-8-sig').read().replace('\r\n', '\n')
+match = re.search(r"@'\n(# Corruption_3 PC - default configuration.*?)\n'@ \| Set-Content[^\n]*Config\.default\.toml", source, re.S)
+if not match:
+    sys.exit('Config.default.toml template not found in package_release.ps1')
+text = re.sub(r"\[reshade\]\n(?:[^\[\n][^\n]*\n|\n)*", "", match.group(1) + "\n")
+if '[prime]' not in text or 'keyboard_icons = true' not in text or '[reshade]' in text:
+    sys.exit('Unexpected Config.default.toml template')
+open(sys.argv[2], 'w', encoding='utf-8', newline='\n').write(text)
+PY
 echo "built: $(find "$build_dir" -maxdepth 1 -type f -name 'Corruption_3 PC' -print)"

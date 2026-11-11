@@ -104,4 +104,6 @@ Las pantallas propias del port que sustituyen a las de la correa (`runtime/asset
 
 Rendimiento (RTX 3050, i7-4790, X11): 60 FPS estables tras la precarga. Durante el primer minuto (precarga de 11.371 pipelines desde la caché) baja a ~22-29 FPS; pendiente de optimizar.
 
+Configuración por defecto: `build_prime_runtime.sh` genera `Config.default.toml` con la plantilla de `package_release.ps1` (sin la sección ReShade); el juego la copia a `UserData/Config.toml` solo en el primer arranque. Sin ella faltaban `keyboard_icons`, vista con ratón y los ajustes de la versión publicada, y el juego mostraba los botones del Wiimote.
+
 Pendiente de QA manual: ratón, mando (iconos Xbox/PlayStation), teclado, logros, F1/F9/F12, rendimiento con la caché caliente, Wayland.

@@ -17,6 +17,11 @@
 #endif
 #include <windows.h>
 #include <vector>
+#elif defined(__linux__)
+#include <pthread.h>
+#include <sys/resource.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 #endif
 
 namespace HostThreads {
@@ -68,6 +73,21 @@ inline void SetCurrentRole(Role role, const wchar_t* name) {
     }
     SetThreadPriority(GetCurrentThread(), priority);
     if (name) SetThreadDescription(GetCurrentThread(), name);
+#elif defined(__linux__)
+    // Per-thread nice: background work yields (allowed to anyone); raising the game
+    // and GX threads needs CAP_SYS_NICE and is skipped without it.
+    int nice = 0;
+    switch (role) {
+    case Role::Game:
+    case Role::Gx: nice = -5; break;
+    case Role::Background: nice = 5; break;
+    }
+    setpriority(PRIO_PROCESS, static_cast<id_t>(syscall(SYS_gettid)), nice);
+    if (name) {
+        char shortName[16] = {};  // pthread names: 15 characters
+        for (size_t i = 0; i < 15 && name[i]; ++i) shortName[i] = name[i] < 0x80 ? static_cast<char>(name[i]) : '?';
+        pthread_setname_np(pthread_self(), shortName);
+    }
 #else
     (void)role;
     (void)name;

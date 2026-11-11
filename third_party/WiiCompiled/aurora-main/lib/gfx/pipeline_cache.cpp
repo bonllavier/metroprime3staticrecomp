@@ -9,6 +9,8 @@
 #endif
 #include <windows.h>
 #include <aurora/host_cores.h>
+#elif defined(__linux__)
+#include <aurora/host_cores.h>
 #endif
 
 #include "clear.hpp"
@@ -1090,7 +1092,7 @@ static void pipeline_worker() {
 #ifdef TRACY_ENABLE
   tracy::SetThreadName("Pipeline compilation thread");
 #endif
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__linux__)
   // A burst of compiles must not run on the game thread's hyperthread sibling (host_cores.h).
   aurora::host_cores::keep_off_game_core();
 #endif

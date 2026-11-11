@@ -41,6 +41,11 @@
 using std::max;
 using std::min;
 #include <gdiplus.h>
+#else
+#include "host_https.h"
+#include <SDL3/SDL.h>
+#include <dlfcn.h>
+#include <pthread.h>
 #endif
 
 namespace PrimeAchievements {
@@ -255,9 +260,180 @@ void ImageWorker() {
         g_raImagesReady.push_back(std::move(image));
     }
 }
+
+void NameThisThread(const char* name) { ::SetThreadDescription(::GetCurrentThread(), WidenUtf8(name).c_str()); }
+void WipeSecret(void* data, size_t size) { ::SecureZeroMemory(data, size); }
+constexpr const char* kPlatformName = "Windows";
+#else  // !_WIN32: libcurl (HostHttps), libsecret and SDL take the Windows APIs' places.
+// Identity on hosts whose strings are UTF-8 already; keeps the shared code below unchanged.
+std::string WidenUtf8(const std::string& text) { return text; }
+
+void NameThisThread(const char* name) { pthread_setname_np(pthread_self(), name); }  // 15 characters max
+void WipeSecret(void* data, size_t size) { if (data && size) ::explicit_bzero(data, size); }
+constexpr const char* kPlatformName = "Linux";
+
+// One HTTPS request (never plain HTTP). The body of a login carries the
+// password or token: it is neither logged nor kept after the call.
+struct HttpResult {
+    int status = 0;  // 0: no response (network error)
+    std::string body;
+};
+HttpResult HttpsRequest(const std::string& url, const std::string* post, const char* contentType, const std::string& agent) {
+    HttpResult result;
+    std::vector<std::string> headers;
+    if (post) headers.push_back(std::string("Content-Type: ") + (contentType ? contentType : "application/x-www-form-urlencoded"));
+    const HostHttps::Response response = HostHttps::Request(url, post, headers, agent, 30);
+    if (response.ok) {
+        result.status = static_cast<int>(response.status);
+        result.body = response.body.size() > (16u << 20) ? response.body.substr(0, 16u << 20) : response.body;
+    }
+    return result;
+}
+
+// --- session token, Secret Service (GNOME Keyring, KWallet, KeePassXC...) ----
+// libsecret is loaded at run time; its schema struct and calls are a stable C
+// ABI. Without a running secret service the session is simply not remembered
+// (the player logs in again next time): the token is never written in clear.
+struct SecretSchemaAttribute { const char* name; int type; };
+struct SecretSchema {
+    const char* name;
+    int flags;
+    SecretSchemaAttribute attributes[32];
+    int reserved;
+    void* reserved1; void* reserved2; void* reserved3; void* reserved4; void* reserved5; void* reserved6; void* reserved7;
+};
+struct GErrorView { uint32_t domain; int code; char* message; };
+struct SecretApi {
+    int (*store)(const SecretSchema*, const char*, const char*, const char*, void*, GErrorView**, ...) = nullptr;
+    char* (*lookup)(const SecretSchema*, void*, GErrorView**, ...) = nullptr;
+    int (*clear)(const SecretSchema*, void*, GErrorView**, ...) = nullptr;
+    void (*wipe)(char*) = nullptr;   // secret_password_free: zeroes then frees
+    void (*errorFree)(GErrorView*) = nullptr;
+    bool ready = false;
+};
+const SecretApi& Secrets() {
+    static SecretApi api;
+    static std::once_flag once;
+    std::call_once(once, [] {
+        void* secret = dlopen("libsecret-1.so.0", RTLD_NOW | RTLD_LOCAL);
+        void* glib = dlopen("libglib-2.0.so.0", RTLD_NOW | RTLD_LOCAL);
+        if (!secret || !glib) return;
+        api.store = reinterpret_cast<decltype(api.store)>(dlsym(secret, "secret_password_store_sync"));
+        api.lookup = reinterpret_cast<decltype(api.lookup)>(dlsym(secret, "secret_password_lookup_sync"));
+        api.clear = reinterpret_cast<decltype(api.clear)>(dlsym(secret, "secret_password_clear_sync"));
+        api.wipe = reinterpret_cast<decltype(api.wipe)>(dlsym(secret, "secret_password_free"));
+        api.errorFree = reinterpret_cast<decltype(api.errorFree)>(dlsym(glib, "g_error_free"));
+        api.ready = api.store && api.lookup && api.clear && api.wipe && api.errorFree;
+    });
+    return api;
+}
+// SECRET_SCHEMA_NONE = 0, SECRET_SCHEMA_ATTRIBUTE_STRING = 0.
+const SecretSchema kTokenSchema{"io.github.corruption3pc.RetroAchievements", 0, {{"account", 0}, {nullptr, 0}}, 0,
+                                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+constexpr const char* kTokenAccount = "session";
+
+void ReportSecretError(const char* what, GErrorView* error) {
+    RT_LOG(RT_TAG_RUNTIME) << "[achievements] secret service " << what << ": "
+                           << (error && error->message ? error->message : "unavailable") << std::endl;
+    if (error) Secrets().errorFree(error);
+}
+
+bool SaveCredentials(const std::string& username, const std::string& token) {
+    const SecretApi& api = Secrets();
+    if (!api.ready) {
+        RT_LOG(RT_TAG_RUNTIME) << "[achievements] libsecret not installed; the session is not remembered" << std::endl;
+        return false;
+    }
+    std::string plain = username + '\n' + token;
+    GErrorView* error = nullptr;
+    const bool ok = api.store(&kTokenSchema, "default", "Corruption_3 PC RetroAchievements session", plain.c_str(), nullptr,
+                              &error, "account", kTokenAccount, static_cast<char*>(nullptr)) != 0;
+    WipeSecret(plain.data(), plain.size());
+    if (!ok) ReportSecretError("store", error);
+    return ok;
+}
+
+bool LoadCredentials(std::string& username, std::string& token) {
+    const SecretApi& api = Secrets();
+    if (!api.ready) return false;
+    GErrorView* error = nullptr;
+    char* secret = api.lookup(&kTokenSchema, nullptr, &error, "account", kTokenAccount, static_cast<char*>(nullptr));
+    if (!secret) {
+        if (error) ReportSecretError("lookup", error);
+        return false;
+    }
+    std::string plain(secret);
+    api.wipe(secret);
+    const size_t split = plain.find('\n');
+    const bool ok = split != std::string::npos && split > 0 && split + 1 < plain.size();
+    if (ok) {
+        username = plain.substr(0, split);
+        token = plain.substr(split + 1);
+    }
+    WipeSecret(plain.data(), plain.size());
+    return ok;
+}
+
+void DeleteCredentials() {
+    const SecretApi& api = Secrets();
+    if (!api.ready) return;
+    GErrorView* error = nullptr;
+    api.clear(&kTokenSchema, nullptr, &error, "account", kTokenAccount, static_cast<char*>(nullptr));
+    if (error) ReportSecretError("clear", error);
+}
+
+// --- images ---------------------------------------------------------------
+std::mutex g_raImageMutex;
+std::condition_variable g_raImageWake;
+std::deque<std::string> g_raImageQueue;
+std::vector<std::string> g_raImagesRequested;
+std::vector<Image> g_raImagesReady;
+std::once_flag g_raImageThreadStarted;
+
+bool DecodePng(const std::string& bytes, Image& image) {
+    SDL_IOStream* stream = SDL_IOFromConstMem(bytes.data(), bytes.size());
+    if (!stream) return false;
+    SDL_Surface* loaded = SDL_LoadPNG_IO(stream, true);
+    if (!loaded) return false;
+    SDL_Surface* rgba = SDL_ConvertSurface(loaded, SDL_PIXELFORMAT_RGBA32);
+    SDL_DestroySurface(loaded);
+    if (!rgba) return false;
+    bool ok = false;
+    if (rgba->w > 0 && rgba->w <= 1024 && rgba->h > 0 && rgba->h <= 1024) {
+        image.width = static_cast<uint32_t>(rgba->w);
+        image.height = static_cast<uint32_t>(rgba->h);
+        image.rgba.resize(size_t(image.width) * image.height * 4);
+        for (uint32_t y = 0; y < image.height; ++y)
+            std::memcpy(image.rgba.data() + size_t(y) * image.width * 4,
+                        static_cast<const uint8_t*>(rgba->pixels) + ptrdiff_t(y) * rgba->pitch, size_t(image.width) * 4);
+        ok = true;
+    }
+    SDL_DestroySurface(rgba);
+    return ok;
+}
+
+void ImageWorker() {
+    NameThisThread("RA images");
+    const std::string agent = std::string("Corruption3PC/") + PRIME_PORT_VERSION;
+    for (;;) {
+        std::string url;
+        {
+            std::unique_lock lock(g_raImageMutex);
+            g_raImageWake.wait(lock, [] { return !g_raImageQueue.empty(); });
+            url = std::move(g_raImageQueue.front());
+            g_raImageQueue.pop_front();
+        }
+        Image image;
+        image.url = url;
+        const HttpResult response = HttpsRequest(url, nullptr, nullptr, agent);
+        if (!(response.status == 200 && DecodePng(response.body, image))) image.width = image.height = 0;
+        std::lock_guard lock(g_raImageMutex);
+        g_raImagesReady.push_back(std::move(image));
+    }
+}
 #endif  // _WIN32
 
-#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE) && defined(_WIN32)
+#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE)
 rc_client_t* g_raClient = nullptr;
 std::once_flag g_raClientCreated;
 std::atomic<bool> g_raLoggedIn{false}, g_raGameRequested{false};
@@ -273,14 +449,14 @@ std::mutex g_raJobMutex;
 std::condition_variable g_raJobWake;
 std::deque<ServerJob> g_raJobs;
 
-std::wstring UserAgent() {
+auto UserAgent() {
     char clause[128] = {};
     if (g_raClient) rc_client_get_user_agent_clause(g_raClient, clause, sizeof(clause));
-    return WidenUtf8(std::string("Corruption3PC/") + PRIME_PORT_VERSION + " (Windows) " + clause);
+    return WidenUtf8(std::string("Corruption3PC/") + PRIME_PORT_VERSION + " (" + kPlatformName + ") " + clause);
 }
 
 void ServerWorker() {
-    ::SetThreadDescription(::GetCurrentThread(), L"RetroAchievements server");
+    NameThisThread("RA server");
     for (;;) {
         ServerJob job;
         {
@@ -290,7 +466,7 @@ void ServerWorker() {
             g_raJobs.pop_front();
         }
         const HttpResult http = HttpsRequest(job.url, job.hasPost ? &job.post : nullptr, job.contentType.c_str(), UserAgent());
-        if (!job.post.empty()) ::SecureZeroMemory(job.post.data(), job.post.size());
+        if (!job.post.empty()) WipeSecret(job.post.data(), job.post.size());
         rc_api_server_response_t response{};
         response.body = http.body.c_str();
         response.body_length = http.body.size();
@@ -483,7 +659,7 @@ void BeginLoadGame() {
         g_raGame.state = GameState::Loading;
     }
     std::thread([] {
-        ::SetThreadDescription(::GetCurrentThread(), L"RetroAchievements identify");
+        NameThisThread("RA identify");
         const auto path = RuntimeConfigFile::ResolvedPrimeIsoPath();
         const std::string utf8 = RuntimeConfigFile::PathToUtf8(path);
         rc_client_begin_identify_and_load_game(g_raClient, RC_CONSOLE_WII, utf8.c_str(), nullptr, 0, GameLoaded, nullptr);
@@ -568,7 +744,7 @@ void LoginWithSavedToken() {
         g_raAccount.username = username;
     }
     rc_client_begin_login_with_token(g_raClient, username.c_str(), token.c_str(), LoggedIn, nullptr);
-    ::SecureZeroMemory(token.data(), token.size());
+    WipeSecret(token.data(), token.size());
 }
 
 void Start() {
@@ -584,11 +760,11 @@ void Start() {
     }
     if (state != LoginState::LoggingIn) LoginWithSavedToken();
 }
-#endif  // MKW_PRIME_RCHEEVOS_AVAILABLE && _WIN32
+#endif  // MKW_PRIME_RCHEEVOS_AVAILABLE
 }  // namespace
 
 bool Available() {
-#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE) && defined(_WIN32)
+#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE)
     return true;
 #else
     return false;
@@ -609,7 +785,7 @@ void SetEnabled(bool enabled) {
     RuntimeConfigFile::SetPrimeOption(&RuntimeUserConfig::primeAchievements, "achievements", enabled);
     // The game as shipped while achievements run.
     PrimeFov::SetBlocked(enabled);
-#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE) && defined(_WIN32)
+#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE)
     if (enabled) {
         Start();
     } else if (g_raClient) {
@@ -629,7 +805,7 @@ Account GetAccount() {
 }
 
 void Login(const std::string& username, char* password, size_t capacity) {
-#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE) && defined(_WIN32)
+#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE)
     EnsureClient();
     {
         std::lock_guard lock(g_raMutex);
@@ -651,7 +827,7 @@ void Login(const std::string& username, char* password, size_t capacity) {
 }
 
 void Logout() {
-#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE) && defined(_WIN32)
+#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE)
     if (g_raClient) {
         rc_client_unload_game(g_raClient);
         rc_client_logout(g_raClient);
@@ -674,7 +850,7 @@ Game GetGame() {
         std::lock_guard lock(g_raMutex);
         game = g_raGame;
     }
-#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE) && defined(_WIN32)
+#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE)
     if (g_raClient && game.state == GameState::Loaded) {
         char text[256] = {};
         rc_client_get_rich_presence_message(g_raClient, text, sizeof(text));
@@ -686,7 +862,7 @@ Game GetGame() {
 
 std::vector<AchievementGroup> GetAchievements() {
     std::vector<AchievementGroup> groups;
-#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE) && defined(_WIN32)
+#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE)
     if (!g_raClient || !rc_client_is_game_loaded(g_raClient)) return groups;
     rc_client_achievement_list_t* list = rc_client_create_achievement_list(
         g_raClient, RC_CLIENT_ACHIEVEMENT_CATEGORY_CORE, RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_PROGRESS);
@@ -738,7 +914,6 @@ std::vector<std::string> ChallengeBadges() {
 }
 
 void RequestImage(const std::string& url) {
-#if defined(_WIN32)
     if (url.rfind("https://", 0) != 0) return;
     std::call_once(g_raImageThreadStarted, [] { std::thread(ImageWorker).detach(); });
     {
@@ -748,25 +923,18 @@ void RequestImage(const std::string& url) {
         g_raImageQueue.push_back(url);
     }
     g_raImageWake.notify_one();
-#else
-    (void)url;
-#endif
 }
 
 std::vector<Image> TakeImages() {
-#if defined(_WIN32)
     std::lock_guard lock(g_raImageMutex);
     std::vector<Image> images = std::move(g_raImagesReady);
     g_raImagesReady.clear();
     return images;
-#else
-    return {};
-#endif
 }
 
 void Frame() {
     LoadOptions();
-#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE) && defined(_WIN32)
+#if defined(MKW_PRIME_RCHEEVOS_AVAILABLE)
     static bool started = false;
     const bool enabled = g_raEnabled.load();
     if (!started) {

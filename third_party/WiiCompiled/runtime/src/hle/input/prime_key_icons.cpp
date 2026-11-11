@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdlib>
 #include <cstring>
 #include <cwctype>
 #include <string>
@@ -22,6 +23,9 @@
 using std::max;
 using std::min;
 #include <gdiplus.h>
+#else
+#include "hle/prime_icon_canvas.h"
+#include <cmath>
 #endif
 
 namespace PrimeKeyIcons {
@@ -166,8 +170,24 @@ std::string WindowsKeyName(SDL_Scancode scancode) {
 
 bool SpanishUi() { return PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_SPANISH; }
 #else
-std::string WindowsKeyName(SDL_Scancode) { return {}; }
-bool SpanishUi() { return true; }
+// SDL resolves the scancode through the active layout (X11 XKB / Wayland
+// xkbcommon): Ñ on a Spanish layout, Q for the A position on AZERTY. Single
+// characters come back upper-case already; named keys keep SDL's English names.
+std::string WindowsKeyName(SDL_Scancode scancode) {
+    const SDL_Keycode key = SDL_GetKeyFromScancode(scancode, SDL_KMOD_NONE, false);
+    if (key == SDLK_UNKNOWN) return {};
+    const char* name = SDL_GetKeyName(key);
+    return name ? std::string(name) : std::string();
+}
+
+// The UI language of the session (LC_ALL > LC_MESSAGES > LANG), like Windows' UI language.
+bool SpanishUi() {
+    for (const char* variable : {"LC_ALL", "LC_MESSAGES", "LANG"}) {
+        const char* value = std::getenv(variable);
+        if (value && *value) return std::strncmp(value, "es", 2) == 0;
+    }
+    return false;
+}
 #endif
 }  // namespace
 
@@ -193,7 +213,11 @@ std::string KeyLabel(unsigned code) {
         {SDL_SCANCODE_RETURN, "Enter"}, {SDL_SCANCODE_ESCAPE, "Esc"}, {SDL_SCANCODE_LSHIFT, "Shift"},
         {SDL_SCANCODE_RSHIFT, "Shift"}, {SDL_SCANCODE_LCTRL, "Ctrl"}, {SDL_SCANCODE_RCTRL, "Ctrl"},
         {SDL_SCANCODE_LALT, "Alt"}, {SDL_SCANCODE_RALT, "Alt Gr"}, {SDL_SCANCODE_TAB, "Tab"},
+#if defined(_WIN32)
         {SDL_SCANCODE_LGUI, "Win"}, {SDL_SCANCODE_RGUI, "Win"},
+#else
+        {SDL_SCANCODE_LGUI, "Super"}, {SDL_SCANCODE_RGUI, "Super"},
+#endif
         {SDL_SCANCODE_UP, "\xE2\x86\x91"}, {SDL_SCANCODE_DOWN, "\xE2\x86\x93"},
         {SDL_SCANCODE_LEFT, "\xE2\x86\x90"}, {SDL_SCANCODE_RIGHT, "\xE2\x86\x92"},
     };
@@ -442,6 +466,181 @@ bool RenderPadIcon(const std::filesystem::path& path, unsigned width, unsigned h
 }  // namespace
 #endif
 
+#if !defined(_WIN32)
+// The same pictures drawn with PrimeIconCanvas (no GDI+): identical geometry,
+// colours and row flip; text uses a bold system sans instead of Segoe UI/Arial.
+namespace {
+using PrimeIconCanvas::Canvas;
+using PrimeIconCanvas::Point;
+constexpr uint32_t kCapFill = 0xEB1C2028u, kCapBorder = 0xFFECF0F8u, kInk = 0xFFFFFFFFu;
+
+// Largest em size (from `start`, 8% steps) whose text fits the box.
+bool FitText(const std::vector<std::string>& lines, float maxWidth, float maxLineHeight, float start, float& size) {
+    for (size = start; size >= 6.0f; size *= 0.92f) {
+        bool fits = true;
+        for (const auto& line : lines) {
+            float w = 0, h = 0;
+            if (!Canvas::Measure(line, size, w, h)) return false;
+            if (w > maxWidth || h > maxLineHeight) { fits = false; break; }
+        }
+        if (fits) return true;
+    }
+    return false;
+}
+
+bool RenderKeyCap(const std::filesystem::path& path, unsigned width, unsigned height, const std::vector<std::string>& lines) {
+    constexpr unsigned kScale = 4;
+    const int W = static_cast<int>(width * kScale), H = static_cast<int>(height * kScale);
+    Canvas canvas(W, H);
+    const float margin = static_cast<float>(std::min(W, H)) * 0.06f;
+    const float capX = margin, capY = margin, capW = W - 2 * margin, capH = H - 2 * margin;
+    const float radius = std::min(capW, capH) * 0.22f;
+    canvas.FillRoundRect(capX, capY, capW, capH, radius, kCapFill);
+    canvas.StrokeRoundRect(capX, capY, capW, capH, radius, std::max(2.0f, static_cast<float>(std::min(W, H)) * 0.035f), kCapBorder);
+    const float inner = capW * 0.84f;
+    const float lineBudget = capH * 0.84f / static_cast<float>(lines.size());
+    float size = 0;
+    if (!FitText(lines, inner, lineBudget, std::min(lineBudget * 0.8f, static_cast<float>(H) * 0.6f), size)) return false;
+    const float lineHeight = capH * 0.84f / static_cast<float>(lines.size());
+    const float top = capY + (capH - lineHeight * lines.size()) / 2;
+    for (size_t i = 0; i < lines.size(); ++i)
+        canvas.Text(lines[i], capX, top + lineHeight * static_cast<float>(i), capW, lineHeight, size, kInk);
+    return canvas.SaveFlippedPng(path);
+}
+
+void DrawPadGlyph(Canvas& g, float bx, float by, float bw, float bh, const PrimeGamepad::Glyph& glyph) {
+    const float side = std::min(bw, bh);
+    const float cx = bx + bw / 2, cy = by + bh / 2;
+    const uint32_t symbol = glyph.color;  // 0xAARRGGBB, as GDI+ Color(a, r, g, b) reads it
+    const float borderWidth = std::max(2.0f, side * 0.05f);
+    const auto text = [&](const std::string& value, float x, float y, float w, float h, uint32_t ink) {
+        if (value.empty()) return;
+        float size = 0;
+        if (FitText({value}, w * 0.86f, h * 0.9f, h * 0.62f, size)) g.Text(value, x, y, w, h, size, ink);
+    };
+    const float dirX = static_cast<float>(glyph.dirX), dirY = static_cast<float>(-glyph.dirY);
+    const auto arrow = [&](float x, float y, float size, uint32_t color) {
+        const float length = std::sqrt(dirX * dirX + dirY * dirY);
+        if (!(length > 0)) return;
+        const float ux = dirX / length, uy = dirY / length, px = -uy, py = ux;
+        g.FillPolygon({{x + ux * size, y + uy * size},
+                       {x - ux * size * 0.2f + px * size * 0.7f, y - uy * size * 0.2f + py * size * 0.7f},
+                       {x - ux * size * 0.2f - px * size * 0.7f, y - uy * size * 0.2f - py * size * 0.7f}},
+                      color);
+    };
+    const float dx = cx - side * 0.44f, dy = cy - side * 0.44f, dd = side * 0.88f;
+    switch (glyph.shape) {
+    case PrimeGamepad::Shape::Round:
+    case PrimeGamepad::Shape::Cross:
+    case PrimeGamepad::Shape::Circle:
+    case PrimeGamepad::Shape::Square:
+    case PrimeGamepad::Shape::Triangle: {
+        g.FillEllipse(dx, dy, dd, dd, kCapFill);
+        g.StrokeEllipse(dx, dy, dd, dd, borderWidth, kCapBorder);
+        const float mark = side * 0.09f, r = side * 0.22f;
+        if (glyph.shape == PrimeGamepad::Shape::Cross) {
+            g.Line(cx - r, cy - r, cx + r, cy + r, mark, symbol);
+            g.Line(cx - r, cy + r, cx + r, cy - r, mark, symbol);
+        } else if (glyph.shape == PrimeGamepad::Shape::Circle) {
+            g.StrokeEllipse(cx - r, cy - r, 2 * r, 2 * r, mark, symbol);
+        } else if (glyph.shape == PrimeGamepad::Shape::Square) {
+            g.StrokeRect(cx - r * 0.9f, cy - r * 0.9f, 1.8f * r, 1.8f * r, mark, symbol);
+        } else if (glyph.shape == PrimeGamepad::Shape::Triangle) {
+            g.StrokePolygon({{cx, cy - r * 1.05f}, {cx - r * 1.1f, cy + r * 0.75f}, {cx + r * 1.1f, cy + r * 0.75f}}, mark, symbol);
+        } else {
+            text(glyph.text, dx, dy, dd, dd, symbol);
+        }
+        break;
+    }
+    case PrimeGamepad::Shape::Shoulder: {
+        const float h = std::min(bh * 0.62f, bw * 0.7f), w = std::min(bw * 0.92f, h * 2.2f);
+        g.FillRoundRect(cx - w / 2, cy - h / 2, w, h, h * 0.35f, kCapFill);
+        g.StrokeRoundRect(cx - w / 2, cy - h / 2, w, h, h * 0.35f, borderWidth, kCapBorder);
+        text(glyph.text, cx - w / 2, cy - h / 2, w, h, kInk);
+        break;
+    }
+    case PrimeGamepad::Shape::Dpad: {
+        const float arm = side * 0.28f, half = side * 0.42f;
+        g.FillRect(cx - arm / 2, cy - half, arm, 2 * half, 0xF0464A54u);
+        g.FillRect(cx - half, cy - arm / 2, 2 * half, arm, 0xF0464A54u);
+        if (glyph.dirX != 0 || glyph.dirY != 0) {
+            const float ax = cx + dirX * half * 0.55f, ay = cy + dirY * half * 0.55f;
+            g.FillRect(ax - arm / 2, ay - arm / 2, arm, arm, 0xFFF5F5FAu);
+        }
+        break;
+    }
+    case PrimeGamepad::Shape::Stick: {
+        g.FillEllipse(dx, dy, dd, dd, kCapFill);
+        g.StrokeEllipse(dx, dy, dd, dd, borderWidth, kCapBorder);
+        g.StrokeEllipse(cx - side * 0.3f, cy - side * 0.3f, side * 0.6f, side * 0.6f, side * 0.04f, 0xFF969CAAu);
+        arrow(cx + dirX * side * 0.3f, cy + dirY * side * 0.3f, side * 0.14f, 0xFFF5F5FAu);
+        text(glyph.text, cx - side * 0.3f, cy - side * 0.3f, side * 0.6f, side * 0.6f, kInk);
+        break;
+    }
+    }
+}
+
+bool RenderPadIcon(const std::filesystem::path& path, unsigned width, unsigned height,
+                   const std::vector<PrimeGamepad::Glyph>& glyphs) {
+    constexpr unsigned kScale = 4;
+    const int W = static_cast<int>(width * kScale), H = static_cast<int>(height * kScale);
+    Canvas g(W, H);
+    const float w = static_cast<float>(W), h = static_cast<float>(H);
+    if (glyphs.size() == 1) {
+        DrawPadGlyph(g, 0, 0, w, h, glyphs[0]);
+    } else if (w >= h * 1.5f) {
+        DrawPadGlyph(g, 0, 0, w / 2, h, glyphs[0]);
+        DrawPadGlyph(g, w / 2, 0, w / 2, h, glyphs[1]);
+    } else {
+        DrawPadGlyph(g, 0, 0, w * 0.62f, h * 0.62f, glyphs[0]);
+        DrawPadGlyph(g, w * 0.38f, h * 0.38f, w * 0.62f, h * 0.62f, glyphs[1]);
+    }
+    return g.SaveFlippedPng(path);
+}
+}  // namespace
+#endif
+
+// Drawing backend shared by Generate/GeneratePadIcons: GDI+ on Windows,
+// PrimeIconCanvas elsewhere. Label text is IconText (UTF-16 for GDI+, UTF-8 otherwise).
+namespace {
+#if defined(_WIN32)
+using IconText = std::wstring;
+IconText ToIconText(const std::string& utf8) { return Widen(utf8); }
+size_t IconTextLength(const IconText& text) { return text.size(); }
+struct IconBackend {
+    GdiplusSession session;
+    CLSID png{};
+    bool ready = false;
+    IconBackend() { ready = session.ok && PngEncoder(png); }
+    bool KeyCap(const std::filesystem::path& path, unsigned w, unsigned h, const std::vector<IconText>& lines) {
+        return RenderKeyCap(path, w, h, lines, png);
+    }
+    bool Pad(const std::filesystem::path& path, unsigned w, unsigned h, const std::vector<PrimeGamepad::Glyph>& glyphs) {
+        return RenderPadIcon(path, w, h, glyphs, png);
+    }
+    static const char* Missing() { return "GDI+ unavailable"; }
+};
+#else
+using IconText = std::string;
+IconText ToIconText(const std::string& utf8) { return utf8; }
+size_t IconTextLength(const IconText& text) {  // code points, like the UTF-16 length for these labels
+    size_t count = 0;
+    for (unsigned char c : text) count += (c & 0xC0u) != 0x80u;
+    return count;
+}
+struct IconBackend {
+    bool ready = PrimeIconCanvas::Canvas::FontAvailable();
+    bool KeyCap(const std::filesystem::path& path, unsigned w, unsigned h, const std::vector<IconText>& lines) {
+        return RenderKeyCap(path, w, h, lines);
+    }
+    bool Pad(const std::filesystem::path& path, unsigned w, unsigned h, const std::vector<PrimeGamepad::Glyph>& glyphs) {
+        return RenderPadIcon(path, w, h, glyphs);
+    }
+    static const char* Missing() { return "no bold sans TrueType font"; }
+};
+#endif
+}  // namespace
+
 const char* PadVariant(PrimeGamepad::Style style) {
     switch (style) {
     case PrimeGamepad::Style::Xbox: return "pad_xbox";
@@ -453,10 +652,8 @@ const char* PadVariant(PrimeGamepad::Style style) {
 }
 
 size_t GeneratePadIcons(const std::filesystem::path& userDataDirectory, PrimeGamepad::Style style) {
-#if defined(_WIN32)
-    GdiplusSession session;
-    CLSID png{};
-    if (!session.ok || !PngEncoder(png)) return 0;
+    IconBackend backend;
+    if (!backend.ready) return 0;
     using PrimeGamepad::Input;
     // The pad input shown for a Wii action: its primary binding, else the secondary.
     const auto bound = [](const char* action) {
@@ -527,24 +724,17 @@ size_t GeneratePadIcons(const std::filesystem::path& userDataDirectory, PrimeGam
             }
             if (glyphs.empty()) continue;  // unbound: the game's own Wii picture stays
             if (glyphs.size() > 2) glyphs.resize(2);
-            if (RenderPadIcon(folder / (std::string(spec.file) + ".png"), spec.width, spec.height, glyphs, png)) ++written;
+            if (backend.Pad(folder / (std::string(spec.file) + ".png"), spec.width, spec.height, glyphs)) ++written;
         }
     }
     RT_LOG(RT_TAG_RUNTIME) << "[prime-pad-icons] " << written << " icons written for " << PadVariant(style) << std::endl;
     return written;
-#else
-    (void)userDataDirectory;
-    (void)style;
-    return 0;
-#endif
 }
 
 size_t Generate(const std::filesystem::path& userDataDirectory) {
-#if defined(_WIN32)
-    GdiplusSession session;
-    CLSID png{};
-    if (!session.ok || !PngEncoder(png)) {
-        RT_LOG(RT_TAG_RUNTIME) << "[prime-key-icons] GDI+ unavailable; icons not generated" << std::endl;
+    IconBackend backend;
+    if (!backend.ready) {
+        RT_LOG(RT_TAG_RUNTIME) << "[prime-key-icons] " << IconBackend::Missing() << "; icons not generated" << std::endl;
         return 0;
     }
     const auto folder = userDataDirectory / "texture_replacements" / "keyboard_icons";
@@ -558,35 +748,32 @@ size_t Generate(const std::filesystem::path& userDataDirectory) {
     for (const auto& entry : std::filesystem::directory_iterator(folder, ec))
         if (entry.is_regular_file(ec) && entry.path().extension() == ".png") std::filesystem::remove(entry.path(), ec);
 
-    const auto label = [](const char* action) { return Widen(KeyLabel(PrimaryBinding(action))); };
+    const auto label = [](const char* action) { return ToIconText(KeyLabel(PrimaryBinding(action))); };
+    const IconText slash = ToIconText(" / "), space = ToIconText(" ");
     size_t written = 0;
     for (const auto& spec : kTable) {
-        std::vector<std::wstring> lines;
+        std::vector<IconText> lines;
         if (spec.actionA && spec.actionB) {
-            lines = {label(spec.actionA) + L" / " + label(spec.actionB)};
+            lines = {label(spec.actionA) + slash + label(spec.actionB)};
             // long pairs on two lines
-            if (lines[0].size() > 9) lines = {label(spec.actionA), label(spec.actionB)};
+            if (IconTextLength(lines[0]) > 9) lines = {label(spec.actionA), label(spec.actionB)};
         } else if (spec.actionA) {
             lines = {label(spec.actionA)};
         } else if (spec.fixed && std::strcmp(spec.fixed, "stick") == 0) {
-            lines = {label("stick_up"), label("stick_left") + L" " + label("stick_down") + L" " + label("stick_right")};
+            lines = {label("stick_up"), label("stick_left") + space + label("stick_down") + space + label("stick_right")};
         } else if (spec.fixed && std::strcmp(spec.fixed, "dpad") == 0) {
-            lines = {label("dpad_up") + L" " + label("dpad_down"), label("dpad_left") + L" " + label("dpad_right")};
+            lines = {label("dpad_up") + space + label("dpad_down"), label("dpad_left") + space + label("dpad_right")};
         } else if (spec.fixed) {
-            lines = {Widen(spec.fixed)};
+            lines = {ToIconText(spec.fixed)};
         }
         if (lines.empty()) continue;
         const auto path = folder / (std::string(spec.file) + ".png");
-        if (RenderKeyCap(path, spec.width, spec.height, lines, png)) ++written;
+        if (backend.KeyCap(path, spec.width, spec.height, lines)) ++written;
         else RT_LOG(RT_TAG_RUNTIME) << "[prime-key-icons] failed to render " << spec.file << std::endl;
     }
     RT_LOG(RT_TAG_RUNTIME) << "[prime-key-icons] " << written << "/" << kTable.size() << " icons written to "
                            << folder.string() << std::endl;
     return written;
-#else
-    (void)userDataDirectory;
-    return 0;
-#endif
 }
 
 }  // namespace PrimeKeyIcons

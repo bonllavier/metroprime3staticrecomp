@@ -1,5 +1,5 @@
 #include "host_threads.h"
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__linux__)
 #include <aurora/host_cores.h>
 #endif
 extern "C" void InstallDxgiFrameLatencyLimit(unsigned frames);
@@ -1556,6 +1556,11 @@ int RuntimeMain(int argc, char** argv) {
             RT_LOG(RT_TAG_RUNTIME) << "[host-cpu] game_core_mask=0x" << std::hex
                                    << static_cast<uint64_t>(aurora::host_cores::game_core_mask()) << std::dec
                                    << " (WII_COMPILED_GAME_CORE=0 disables it)" << std::endl;
+#elif defined(__linux__)
+            // Background workers stay off this core and its sibling; the game thread runs on it.
+            aurora::host_cores::prefer_game_core();
+            RT_LOG(RT_TAG_RUNTIME) << "[host-cpu] game_core_mask=0x" << std::hex << aurora::host_cores::game_core_mask()
+                                   << std::dec << " (WII_COMPILED_GAME_CORE=0 disables it)" << std::endl;
 #endif
         }
         PrimeHostOptions::ApplyAtStartup();

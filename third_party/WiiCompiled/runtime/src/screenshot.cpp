@@ -16,6 +16,9 @@
 #if defined(_WIN32)
 #include <windows.h>
 #include <gdiplus.h>
+#else
+#include <SDL3/SDL.h>
+#include <sys/stat.h>
 #endif
 
 namespace fs = std::filesystem;
@@ -99,6 +102,15 @@ bool BmpToJpeg(const fs::path& bmp, const fs::path& jpg) {
     Gdiplus::GdiplusShutdown(token);
     return ok;
 }
+#else
+// SDL has no JPEG writer; PNG keeps the frame lossless.
+bool BmpToPng(const fs::path& bmp, const fs::path& png) {
+    SDL_Surface* image = SDL_LoadBMP(bmp.c_str());
+    if (!image) return false;
+    const bool ok = SDL_SavePNG(image, png.c_str());
+    SDL_DestroySurface(image);
+    return ok;
+}
 #endif
 
 } // namespace
@@ -113,6 +125,13 @@ std::string BuildId() {
             const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS*>(base + dos->e_lfanew);
             stamp = nt->FileHeader.TimeDateStamp;
             imageSize = nt->OptionalHeader.SizeOfImage;
+        }
+#else
+        // The executable's modification time and size stand in for the PE link stamp.
+        struct stat info{};
+        if (stat("/proc/self/exe", &info) == 0) {
+            stamp = static_cast<uint32_t>(info.st_mtime);
+            imageSize = static_cast<uint32_t>(info.st_size);
         }
 #endif
         // FNV-1a over the link time, image size and version: stable for one executable.
@@ -145,7 +164,11 @@ bool Take() {
     }
     const std::string name = std::string("Corruption3PC_v") + PRIME_PORT_VERSION + "_" + BuildId() + "_" + Stamp();
     const fs::path bmp = folder / (name + ".bmp");
+#if defined(_WIN32)
     const fs::path jpg = folder / (name + ".jpg");
+#else
+    const fs::path jpg = folder / (name + ".png");
+#endif
     aurora_request_screenshot(Utf8(bmp).c_str());
     std::thread([bmp, jpg] {
         std::error_code error;
@@ -153,6 +176,11 @@ bool Take() {
         if (WaitForFile(bmp, std::chrono::milliseconds(4000))) {
 #if defined(_WIN32)
             if (BmpToJpeg(bmp, jpg)) {
+                fs::remove(bmp, error);
+                saved = true;
+            }
+#else
+            if (BmpToPng(bmp, jpg)) {
                 fs::remove(bmp, error);
                 saved = true;
             }

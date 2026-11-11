@@ -515,6 +515,9 @@ void PrimeKeyboardMouseHandleEvent(const SDL_Event& event) {
 #if defined(_WIN32)
         if(window)primePointerWindow=static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window),
             SDL_PROP_WINDOW_WIN32_HWND_POINTER,nullptr));
+#else
+        // Other hosts capture with SDL relative mode: the motion is the event's own delta.
+        if(PrimeMouseLook::Capturing())PrimeMouseLook::AddMotion(event.motion.xrel,event.motion.yrel);
 #endif
     }
 }

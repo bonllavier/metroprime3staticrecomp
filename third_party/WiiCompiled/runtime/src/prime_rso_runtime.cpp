@@ -14,8 +14,12 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#if defined(_WIN32)
 #include <windows.h>
 #include <bcrypt.h>
+#else
+#include <mbedtls/sha256.h>
+#endif
 
 // Title / file-select front end (its RSO is bound while the menus run): host
 // overlays that belong to gameplay stay hidden meanwhile.
@@ -44,6 +48,15 @@ bool GuestRam(uint32_t address) {
 }
 
 std::string Sha256(const std::vector<uint8_t>& bytes) {
+#if !defined(_WIN32)
+    std::array<uint8_t, 32> digest{};
+    if (mbedtls_sha256(bytes.data(), bytes.size(), digest.data(), 0) != 0)
+        throw std::runtime_error("RSO validation hash failed");
+    std::string text;
+    constexpr char hex[] = "0123456789abcdef";
+    for (uint8_t value : digest) { text += hex[value >> 4]; text += hex[value & 15]; }
+    return text;
+#else
     BCRYPT_ALG_HANDLE algorithm = nullptr;
     if (BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_SHA256_ALGORITHM, nullptr, 0) != 0)
         throw std::runtime_error("Cannot initialize RSO validation hash");
@@ -64,6 +77,7 @@ std::string Sha256(const std::vector<uint8_t>& bytes) {
     constexpr char hex[] = "0123456789abcdef";
     for (uint8_t value : digest) { text += hex[value >> 4]; text += hex[value & 15]; }
     return text;
+#endif
 }
 
 uint32_t Address(const Binding& value, uint32_t nominal) {

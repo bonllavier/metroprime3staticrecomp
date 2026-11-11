@@ -29,6 +29,8 @@
 #endif
 #include <windows.h>
 #include <aurora/host_cores.h>
+#elif defined(__linux__)
+#include <aurora/host_cores.h>
 #endif
 
 namespace aurora::gfx {
@@ -102,7 +104,7 @@ private:
     const unsigned count = std::clamp(hardware / 2, 1u, 6u);
     for (unsigned i = 0; i < count; ++i) {
       m_threads.emplace_back([this] {
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__linux__)
         aurora::host_cores::keep_off_game_core();
 #endif
         for (;;) {
@@ -932,6 +934,9 @@ private:
     m_thread = std::thread([this] {
 #if defined(_WIN32)
       SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+      aurora::host_cores::keep_off_game_core();
+#elif defined(__linux__)
+      aurora::host_cores::set_thread_nice(5);
       aurora::host_cores::keep_off_game_core();
 #endif
       t_serialDecode = true;

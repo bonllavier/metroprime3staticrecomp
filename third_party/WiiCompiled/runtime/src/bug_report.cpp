@@ -29,6 +29,11 @@
 #include <dxgi.h>
 #include <intrin.h>
 #include <gdiplus.h>
+#else
+#include <SDL3/SDL.h>
+#include <cpuid.h>
+#include <cstdlib>
+#include <sys/utsname.h>
 #endif
 
 namespace fs = std::filesystem;
@@ -233,6 +238,106 @@ void OpenInExplorer(const fs::path& file) {
     const std::wstring arguments = L"/select,\"" + file.wstring() + L"\"";
     ::ShellExecuteW(nullptr, L"open", L"explorer.exe", arguments.c_str(), nullptr, SW_SHOWNORMAL);
 }
+#else
+std::string ReadFirstLine(const fs::path& path) {
+    std::ifstream in(path);
+    std::string line;
+    std::getline(in, line);
+    return line;
+}
+
+std::string OsVersion() {
+    std::string pretty;
+    std::ifstream release("/etc/os-release");
+    for (std::string line; std::getline(release, line);) {
+        if (line.rfind("PRETTY_NAME=", 0) != 0) continue;
+        pretty = line.substr(12);
+        if (pretty.size() >= 2 && pretty.front() == '"' && pretty.back() == '"') pretty = pretty.substr(1, pretty.size() - 2);
+        break;
+    }
+    utsname uts{};
+    std::ostringstream text;
+    text << (pretty.empty() ? "Linux" : pretty);
+    if (uname(&uts) == 0) text << ", kernel " << uts.release << " " << uts.machine;
+    if (const char* session = std::getenv("XDG_SESSION_TYPE")) text << ", session " << session;
+    return text.str();
+}
+
+std::string CpuBrand() {
+    unsigned regs[4]{};
+    char brand[49]{};
+    for (unsigned i = 0; i < 3; ++i) {
+        if (!__get_cpuid(0x80000002u + i, &regs[0], &regs[1], &regs[2], &regs[3])) return "unknown";
+        std::memcpy(brand + i * 16, regs, 16);
+    }
+    std::string text(brand);
+    while (!text.empty() && text.front() == ' ') text.erase(text.begin());
+    return text.empty() ? "unknown" : text;
+}
+
+std::string MemoryGiB() {
+    std::ifstream meminfo("/proc/meminfo");
+    double totalKiB = -1, availableKiB = -1;
+    for (std::string key; meminfo >> key;) {
+        double value = 0;
+        std::string unit;
+        meminfo >> value >> unit;
+        if (key == "MemTotal:") totalKiB = value;
+        else if (key == "MemAvailable:") availableKiB = value;
+    }
+    if (totalKiB < 0) return "unknown";
+    std::ostringstream text;
+    text << std::fixed << std::setprecision(1) << totalKiB / (1024.0 * 1024.0) << " GiB total, "
+         << std::max(availableKiB, 0.0) / (1024.0 * 1024.0) << " GiB free";
+    return text.str();
+}
+
+// PCI ids and kernel driver of each DRM card; the proprietary NVIDIA driver also
+// reports its version. Names are resolved by the reader (lspci -nn).
+std::string GpuAdapters() {
+    std::ostringstream text;
+    std::error_code ec;
+    for (const auto& entry : fs::directory_iterator("/sys/class/drm", ec)) {
+        const std::string name = entry.path().filename().string();
+        if (name.rfind("card", 0) != 0 || name.find('-') != std::string::npos) continue;
+        const fs::path device = entry.path() / "device";
+        const std::string vendor = ReadFirstLine(device / "vendor"), id = ReadFirstLine(device / "device");
+        if (vendor.empty()) continue;
+        std::error_code linkEc;
+        const std::string driver = fs::read_symlink(device / "driver", linkEc).filename().string();
+        if (text.tellp() > 0) text << "; ";
+        text << name << " pci " << vendor << ":" << id << " driver " << (driver.empty() ? "unknown" : driver);
+    }
+    if (const std::string nvidia = ReadFirstLine("/proc/driver/nvidia/version"); !nvidia.empty()) text << "; " << nvidia;
+    return text.tellp() > 0 ? text.str() : "none reported";
+}
+
+std::string UiLanguage() {
+    for (const char* variable : {"LC_ALL", "LC_MESSAGES", "LANG"})
+        if (const char* value = std::getenv(variable); value && *value) return value;
+    return "unknown";
+}
+
+std::string PrimaryDisplay() {
+    const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
+    if (!mode) return "unknown";
+    return std::to_string(mode->w) + "x" + std::to_string(mode->h);
+}
+
+bool ConvertBmpToPng(const fs::path& bmp, const fs::path& png) {
+    SDL_Surface* image = SDL_LoadBMP(bmp.c_str());
+    if (!image) return false;
+    const bool ok = SDL_SavePNG(image, png.c_str());
+    SDL_DestroySurface(image);
+    return ok;
+}
+
+// The desktop's file manager on the reports folder (xdg-open).
+void OpenInExplorer(const fs::path& file) {
+    const std::string url = "file://" + file.parent_path().string();
+    if (!SDL_OpenURL(url.c_str()))
+        RT_LOG(RT_TAG_RUNTIME) << "[bug-report] could not open " << url << ": " << SDL_GetError() << std::endl;
+}
 #endif
 
 bool WaitForStableFile(const fs::path& path, std::chrono::milliseconds timeout) {
@@ -270,9 +375,7 @@ void Worker(std::string trigger) {
     const fs::path png = folder / "screenshot.png";
     aurora_request_frame_capture(0, Utf8(bmp).c_str()); // 0 = next presented frame
     bool screenshot = WaitForStableFile(bmp, std::chrono::milliseconds(4000));
-#if defined(_WIN32)
     if (screenshot && ConvertBmpToPng(bmp, png)) fs::remove(bmp, ec);
-#endif
 
     // 2. Logs of this run: transcript plus any crash artifacts already written.
     const fs::path runDirectory = RuntimeCrash::RunLogDirectory();
@@ -319,6 +422,13 @@ void Worker(std::string trigger) {
         summary << "memory: " << MemoryGiB() << "\n";
         summary << "gpu: " << GpuAdapters() << "\n";
         summary << "primary display: " << ::GetSystemMetrics(SM_CXSCREEN) << "x" << ::GetSystemMetrics(SM_CYSCREEN) << "\n";
+#else
+        summary << "os: " << OsVersion() << "\n";
+        summary << "ui language: " << UiLanguage() << "\n";
+        summary << "cpu: " << CpuBrand() << "\n";
+        summary << "memory: " << MemoryGiB() << "\n";
+        summary << "gpu: " << GpuAdapters() << "\n";
+        summary << "primary display: " << PrimaryDisplay() << "\n";
 #endif
         summary << "graphics api: " << RuntimeConfigFile::GraphicsApi() << "\n";
         summary << "display mode: " << RuntimeConfigFile::DisplayMode("windowed") << "\n";
@@ -337,7 +447,7 @@ void Worker(std::string trigger) {
                   "3. Tell us WHERE you were in the game (planet, room, what you were doing) and what went wrong.\n"
                   "   The area name is the most useful detail: with it the problem can be reproduced directly.\n\n"
                   "The zip contains only: a screenshot, this run's console.log, crash_*.txt if the game crashed,\n"
-                  "your Config.toml (settings and key bindings), system.txt (Windows build, CPU, RAM, GPU) and\n"
+                  "your Config.toml (settings and key bindings), system.txt (OS version, CPU, RAM, GPU) and\n"
                   "save/ with your Metroid Prime 3 save (save.bin, banner.bin) so the reported spot can be loaded.\n"
                   "No game data and no personal files are included; feel free to open the files first.\n";
     }
@@ -365,9 +475,7 @@ void Worker(std::string trigger) {
                            << " screenshot=" << screenshot << " transcript=" << transcript
                            << " crash_files=" << crashFiles << " save_files=" << saveFiles << std::endl;
     SetStatus("Report saved: " + Utf8(zipPath));
-#if defined(_WIN32)
     OpenInExplorer(zipPath);
-#endif
     g_busy.store(false);
 }
 

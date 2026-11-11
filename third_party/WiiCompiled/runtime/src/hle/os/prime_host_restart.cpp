@@ -28,6 +28,19 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#else
+#include <cerrno>
+#include <chrono>
+#include <fstream>
+#include <iterator>
+#include <thread>
+#include <vector>
+#include <poll.h>
+#include <signal.h>
+#include <spawn.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+extern char** environ;
 #endif
 
 namespace {
@@ -65,17 +78,64 @@ bool PrimeRelaunchSelf() {
     CloseHandle(process.hProcess);
     return true;
 }
+#else
+std::string SelfExecutable() {
+    std::string exe(4096, '\0');
+    const ssize_t length = readlink("/proc/self/exe", exe.data(), exe.size() - 1);
+    if (length <= 0) return {};
+    exe.resize(static_cast<size_t>(length));
+    return exe;
+}
+
+// Starts `program` with `args` (args[0] included); the child inherits the
+// environment, which names this process as the one to wait for.
+bool SpawnWithParentMarker(const std::string& program, std::vector<std::string> args, pid_t& child) {
+    std::vector<char*> argv;
+    for (auto& arg : args) argv.push_back(arg.data());
+    argv.push_back(nullptr);
+    const std::string parent = std::to_string(getpid());
+    setenv(kPrimeRestartParentVariable, parent.c_str(), 1);
+    const int error = posix_spawn(&child, program.c_str(), nullptr, nullptr, argv.data(), environ);
+    unsetenv(kPrimeRestartParentVariable);
+    if (error != 0) {
+        RT_LOG(RT_TAG_OS) << "[prime-restart] spawn failed program=" << program << " errno=" << error << std::endl;
+        return false;
+    }
+    return true;
+}
+
+bool PrimeRelaunchSelf() {
+    const std::string exe = SelfExecutable();
+    if (exe.empty()) return false;
+    std::vector<std::string> args{exe};
+    // --iso is the only argument. When it failed and the player picked another
+    // image in the dialog, the relaunch must not bring the failing one back.
+    if (!RuntimeConfigFile::PrimeIsoOverride().empty()) {
+        std::ifstream cmdline("/proc/self/cmdline", std::ios::binary);
+        const std::string raw((std::istreambuf_iterator<char>(cmdline)), std::istreambuf_iterator<char>());
+        args.clear();
+        for (size_t start = 0; start < raw.size();) {
+            const size_t end = raw.find('\0', start);
+            args.emplace_back(raw.substr(start, end == std::string::npos ? std::string::npos : end - start));
+            if (end == std::string::npos) break;
+            start = end + 1;
+        }
+        if (args.empty()) args.push_back(exe);
+    }
+    pid_t child = 0;
+    if (!SpawnWithParentMarker(exe, std::move(args), child)) return false;
+    RT_LOG(RT_TAG_OS) << "[prime-restart] relaunched pid=" << child << std::endl;
+    return true;
+}
 #endif
 }  // namespace
 
 extern "C" bool PrimeHostOsRestart(CpuContext* ctx) {
     RT_LOG(RT_TAG_OS) << "[prime-restart] OSRestart reset_code=0x" << std::hex << (ctx ? ctx->gpr[3] : 0u)
                       << std::dec << ": relaunching the game" << std::endl;
-#if defined(_WIN32)
     // Whether or not the relaunch started, this process ends: rebooting is the
     // only thing the guest expects after OSRestart.
     PrimeRelaunchSelf();
-#endif
     ExitForAuroraWindowClose();
 }
 
@@ -114,9 +174,22 @@ void PrimeStartTrilogy() {
         CloseHandle(process.hProcess);
         ExitForAuroraWindowClose();
     }
-#endif
     throw std::runtime_error("This disc is Metroid Prime Trilogy, but its menu could not be started:\n  Corruption_3 Trilogy Menu.exe\n\n"
                              "It must be next to this executable.");
+#else
+    (void)kTrilogyMenu;
+    std::string exe = SelfExecutable();
+    if (!exe.empty()) {
+        const std::string menu = exe.substr(0, exe.find_last_of('/') + 1) + "Corruption_3 Trilogy Menu";
+        pid_t child = 0;
+        if (SpawnWithParentMarker(menu, {menu}, child)) {
+            RT_LOG(RT_TAG_OS) << "[prime-trilogy] started the Trilogy menu pid=" << child << std::endl;
+            ExitForAuroraWindowClose();
+        }
+    }
+    throw std::runtime_error("This disc is Metroid Prime Trilogy, but its menu could not be started:\n  Corruption_3 Trilogy Menu\n\n"
+                             "It must be next to this executable.");
+#endif
 }
 
 // Start of RuntimeMain: a process started by PrimeHostOsRestart lets its parent
@@ -132,5 +205,27 @@ void PrimeWaitForRestartedParent() {
         WaitForSingleObject(process, 15000);
         CloseHandle(process);
     }
+#else
+    const char* value = std::getenv(kPrimeRestartParentVariable);
+    if (value == nullptr || value[0] == 0) return;
+    const pid_t parent = static_cast<pid_t>(std::strtol(value, nullptr, 10));
+    unsetenv(kPrimeRestartParentVariable);
+    if (parent <= 0) return;
+    constexpr int kTimeoutMs = 15000;
+#if defined(SYS_pidfd_open)
+    // Linux 5.3+: a pidfd becomes readable when the process exits.
+    const int fd = static_cast<int>(syscall(SYS_pidfd_open, parent, 0));
+    if (fd >= 0) {
+        pollfd waiter{fd, POLLIN, 0};
+        poll(&waiter, 1, kTimeoutMs);
+        close(fd);
+        return;
+    }
+    if (errno == ESRCH) return;  // already gone
+#endif
+    // Older kernels: probe until the process is gone.
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(kTimeoutMs);
+    while (kill(parent, 0) == 0 && std::chrono::steady_clock::now() < deadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
 #endif
 }

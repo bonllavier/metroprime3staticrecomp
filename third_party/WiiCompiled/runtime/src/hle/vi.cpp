@@ -260,6 +260,10 @@ void SleepPreciselyUntil(Clock::time_point deadline, bool finishWithSpin = false
     while (Clock::now() < deadline) {
 #if defined(_WIN32)
         YieldProcessor();
+#elif defined(__x86_64__)
+        __builtin_ia32_pause();
+#elif defined(__aarch64__)
+        __asm__ __volatile__("yield");
 #endif
     }
 }

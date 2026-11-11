@@ -161,6 +161,10 @@ void Main() {
     aurora::host_cores::keep_off_game_core();
     HostThreads::SetCurrentRole(HostThreads::Role::Gx, nullptr);
     g_nativeThreadId.store(GetCurrentThreadId(), std::memory_order_release);
+#elif defined(__linux__)
+    aurora::host_cores::keep_off_game_core();
+    HostThreads::SetCurrentRole(HostThreads::Role::Gx, L"Prime GX consumer");
+    g_nativeThreadId.store(aurora::host_cores::native_thread_id(), std::memory_order_release);
 #endif
     auto& s = S();
     while (!s.stop.load(std::memory_order_acquire)) {

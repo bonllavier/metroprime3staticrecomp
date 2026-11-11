@@ -1,4 +1,7 @@
 ﻿#include "hle_stubs.h"
+#if defined(__linux__)
+#include <aurora/host_cores.h>
+#endif
 #include "isa/big_endian.h"
 #include "hle/dvd_contract.h"
 #include "hle/prime_performance.h"
@@ -1514,6 +1517,8 @@ std::once_flag g_started;
 void WorkerMain() {
 #if defined(_WIN32)
     SetThreadDescription(GetCurrentThread(), L"Prime disc reads");
+#elif defined(__linux__)
+    aurora::host_cores::set_thread_name("Prime disc");
 #endif
     for (;;) {
         Job job;

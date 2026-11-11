@@ -17,6 +17,9 @@
 #include <windows.h>
 #include <winhttp.h>
 #include <shellapi.h>
+#else
+#include "host_https.h"
+#include <SDL3/SDL.h>
 #endif
 
 namespace UpdateCheck {
@@ -115,6 +118,21 @@ bool HttpsGet(const std::wstring& host, const std::wstring& path, std::string& b
     ::WinHttpCloseHandle(session);
     return ok;
 }
+#else
+bool HttpsGet(const std::string& host, const std::string& path, std::string& body, std::string& error) {
+    const HostHttps::Response response = HostHttps::Request(
+        "https://" + host + path, nullptr,
+        {"Accept: application/vnd.github+json", "X-GitHub-Api-Version: 2022-11-28"},
+        std::string("Corruption3PC/") + PRIME_PORT_VERSION, 8);
+    if (!response.ok) {
+        error = "request failed (" + response.error + ", offline?)";
+        return false;
+    }
+    body = response.body.size() > (1u << 20) ? response.body.substr(0, 1u << 20) : response.body;
+    if (response.status == 200) return true;
+    error = "HTTP " + std::to_string(response.status) + (response.status == 404 ? " (repository not found)" : "");
+    return false;
+}
 #endif
 
 void Worker() {
@@ -126,13 +144,16 @@ void Worker() {
         status.state = State::Failed; status.message = "repository URL not configured";
         Set(status); g_running.store(false); return;
     }
-#if defined(_WIN32)
     std::string body, error;
     // Anonymous, public endpoint (no token). /releases/latest skips prereleases,
     // and every 0.x build is published as one, so read the list and take the
     // highest version (drafts are never listed without authentication).
+#if defined(_WIN32)
     const std::wstring path = Widen("/repos/" + owner + "/" + repo + "/releases?per_page=30");
     if (!HttpsGet(L"api.github.com", path, body, error)) {
+#else
+    if (!HttpsGet("api.github.com", "/repos/" + owner + "/" + repo + "/releases?per_page=30", body, error)) {
+#endif
         status.state = State::Failed; status.message = error;
         RT_LOG(RT_TAG_RUNTIME) << "[update-check] failed: " << error << std::endl;
         Set(status); g_running.store(false); return;
@@ -157,9 +178,6 @@ void Worker() {
     }
     RT_LOG(RT_TAG_RUNTIME) << "[update-check] current=" << PRIME_PORT_VERSION << " latest=" << tag
                            << " state=" << static_cast<int>(status.state) << std::endl;
-#else
-    status.state = State::Failed; status.message = "not supported on this platform";
-#endif
     Set(status);
     g_running.store(false);
 }
@@ -194,6 +212,10 @@ void OpenDownloadPage() {
     const Status status = Get();
     const std::string url = status.downloadUrl.empty() ? std::string(PRIME_PORT_REPOSITORY) + "/releases" : status.downloadUrl;
     ::ShellExecuteW(nullptr, L"open", Widen(url).c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+#else
+    const Status status = Get();
+    const std::string url = status.downloadUrl.empty() ? std::string(PRIME_PORT_REPOSITORY) + "/releases" : status.downloadUrl;
+    SDL_OpenURL(url.c_str());  // xdg-open: the default browser
 #endif
 }
 

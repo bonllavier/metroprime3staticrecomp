@@ -82,6 +82,13 @@ std::atomic<HWND> g_hwnd{nullptr};
 std::atomic<int32_t> g_centerX{0}, g_centerY{0};
 POINT g_savedCursor{};
 bool g_savedCursorValid = false;
+#else
+// Other hosts capture with SDL relative mouse mode (XInput2 raw motion on X11,
+// relative-pointer + pointer-constraints on Wayland, where the cursor cannot be
+// warped by the client). Motion arrives as SDL xrel/yrel events (kpad.cpp).
+std::atomic<SDL_Window*> g_window{nullptr};
+float g_savedCursorX = 0, g_savedCursorY = 0;  // host thread only
+bool g_savedCursorValid = false;               // host thread only
 #endif
 
 int64_t NowNs() {
@@ -220,7 +227,7 @@ void NoteWindow(SDL_Window* window) {
     auto* hwnd = static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
     if (hwnd) g_hwnd.store(hwnd);
 #else
-    (void)window;
+    if (window) g_window.store(window);
 #endif
 }
 void NoteFocus(bool focused) {
@@ -297,6 +304,39 @@ void ServiceHost() {
         const bool hostTookMouse = !g_enabled.load() || !g_focused.load() || InputBindings::InputBlocked();
         if (hostTookMouse && g_savedCursorValid) SetCursorPos(g_savedCursor.x, g_savedCursor.y);
         else if (hwnd != nullptr && WindowCenter(hwnd, center, rect)) SetCursorPos(center.x, center.y);
+        DropMotion();
+        static unsigned traces = 0;
+        if (traces++ < 16)
+            RT_LOG(RT_TAG_RUNTIME) << "[prime-mouse-look] capture=0 cursor=" << (hostTookMouse ? "restored" : "centre") << std::endl;
+    }
+#else
+    SDL_Window* window = g_window.load();
+    const bool want = window != nullptr && g_enabled.load() && g_focused.load() && !InputBindings::InputBlocked() && Active();
+    if (want) {
+        if (!g_capturing.load()) {
+            g_savedCursorValid = (SDL_GetMouseFocus() == window);
+            if (g_savedCursorValid) SDL_GetMouseState(&g_savedCursorX, &g_savedCursorY);
+            if (!SDL_SetWindowRelativeMouseMode(window, true)) {
+                static unsigned failures = 0;
+                if (failures++ < 4)
+                    RT_LOG(RT_TAG_RUNTIME) << "[prime-mouse-look] relative mode unavailable: " << SDL_GetError() << std::endl;
+                return;
+            }
+            DropMotion();
+            g_capturing.store(true);
+            static unsigned traces = 0;
+            if (traces++ < 16) RT_LOG(RT_TAG_RUNTIME) << "[prime-mouse-look] capture=1 (relative mode)" << std::endl;
+        }
+        return;
+    }
+    if (g_capturing.exchange(false)) {
+        if (window) SDL_SetWindowRelativeMouseMode(window, false);
+        // Same rule as Windows: the host taking the mouse restores the cursor,
+        // the game closing the gate continues from the centre (the reticle).
+        const bool hostTookMouse = !g_enabled.load() || !g_focused.load() || InputBindings::InputBlocked();
+        int width = 0, height = 0;
+        if (window && hostTookMouse && g_savedCursorValid) SDL_WarpMouseInWindow(window, g_savedCursorX, g_savedCursorY);
+        else if (window && SDL_GetWindowSize(window, &width, &height)) SDL_WarpMouseInWindow(window, width * 0.5f, height * 0.5f);
         DropMotion();
         static unsigned traces = 0;
         if (traces++ < 16)

@@ -11,6 +11,10 @@
 #include <windows.h>
 #include <commdlg.h>
 #include <shobjidl.h>
+#else
+#include <SDL3/SDL.h>
+#include <atomic>
+#include <mutex>
 #endif
 
 namespace PrimeDiscPicker {
@@ -94,6 +98,74 @@ int Message(const std::string& text, UINT flags) {
 }
 
 } // namespace
+#else
+namespace {
+
+// SDL3's file dialog: the desktop portal (GNOME, KDE, ...) or zenity/kdialog.
+// It is asynchronous, so the caller pumps events until the callback ran.
+struct DialogState {
+    std::atomic<bool> done{false};
+    std::mutex mutex;
+    std::filesystem::path chosen;
+    bool failed = false;
+};
+
+void SDLCALL OnFileChosen(void* user, const char* const* files, int) {
+    auto& state = *static_cast<DialogState*>(user);
+    {
+        std::lock_guard lock(state.mutex);
+        if (files == nullptr) state.failed = true;  // the dialog could not be shown
+        else if (files[0] != nullptr) state.chosen = std::filesystem::path(files[0]);
+    }
+    state.done.store(true);
+}
+
+bool ShowFileDialog(std::filesystem::path& chosen) {
+    if (!SDL_WasInit(SDL_INIT_VIDEO) && !SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+        RT_LOG(RT_TAG_DVD) << "[prime-iso-pick] no video subsystem for the dialog: " << SDL_GetError() << std::endl;
+        return false;
+    }
+    static const SDL_DialogFileFilter filters[] = {
+        {"Wii disc images (*.iso, *.rvz, *.wbfs, *.gcz, *.wia, *.ciso)", "iso;rvz;wbfs;gcz;wia;ciso"},
+        {"All files", "*"},
+    };
+    DialogState state;
+    SDL_PropertiesID props = SDL_CreateProperties();
+    SDL_SetPointerProperty(props, SDL_PROP_FILE_DIALOG_FILTERS_POINTER, const_cast<SDL_DialogFileFilter*>(filters));
+    SDL_SetNumberProperty(props, SDL_PROP_FILE_DIALOG_NFILTERS_NUMBER, 2);
+    SDL_SetStringProperty(props, SDL_PROP_FILE_DIALOG_TITLE_STRING,
+                          "Select your Metroid Prime 3: Corruption (USA) or Metroid Prime Trilogy (USA) disc image");
+    SDL_SetBooleanProperty(props, SDL_PROP_FILE_DIALOG_MANY_BOOLEAN, false);
+    SDL_ShowFileDialogWithProperties(SDL_FILEDIALOG_OPENFILE, OnFileChosen, &state, props);
+    while (!state.done.load()) {
+        SDL_PumpEvents();
+        SDL_Delay(10);
+    }
+    SDL_DestroyProperties(props);
+    std::lock_guard lock(state.mutex);
+    if (state.failed) RT_LOG(RT_TAG_DVD) << "[prime-iso-pick] file dialog unavailable: " << SDL_GetError() << std::endl;
+    chosen = state.chosen;
+    return !chosen.empty();
+}
+
+// UTF-8 text with OK/Cancel; true when OK was chosen.
+bool Confirm(const std::string& text, bool warning) {
+    const std::string title = std::string(PRIME_PORT_NAME) + " - Disc image";
+    const SDL_MessageBoxButtonData buttons[] = {
+        {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "OK"},
+        {SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"},
+    };
+    const SDL_MessageBoxData box{warning ? SDL_MESSAGEBOX_WARNING : SDL_MESSAGEBOX_INFORMATION, nullptr,
+                                 title.c_str(), text.c_str(), 2, buttons, nullptr};
+    int pressed = 0;
+    if (!SDL_ShowMessageBox(&box, &pressed)) {
+        RT_LOG(RT_TAG_DVD) << "[prime-iso-pick] message box unavailable: " << SDL_GetError() << std::endl;
+        return true;  // still offer the file dialog
+    }
+    return pressed == 1;
+}
+
+} // namespace
 #endif
 
 std::filesystem::path Prompt(std::string_view reason) {
@@ -126,8 +198,24 @@ std::filesystem::path Prompt(std::string_view reason) {
         }
     }
 #else
-    (void)reason;
-    return {};
+    if (!reason.empty()) {
+        std::string text(reason);
+        text += "\n\nClick OK to choose the disc image (.iso, .rvz, .wbfs, .gcz, .wia or .ciso). "
+                "The path is saved in UserData/Config.toml once the image opens, so this is only asked once.";
+        if (!Confirm(text, false)) return {};
+    }
+    for (;;) {
+        std::filesystem::path chosen;
+        if (!ShowFileDialog(chosen)) return {};
+        const std::string utf8 = RuntimeConfigFile::PathToUtf8(chosen);
+        const PrimeDiscPath::Problem problem = PrimeDiscPath::Check(chosen, utf8);
+        if (problem == PrimeDiscPath::Problem::None && chosen.is_absolute()) return chosen;
+        RT_LOG(RT_TAG_DVD) << "[prime-iso-pick] refused dialog result=" << utf8 << std::endl;
+        const std::string text = "The dialog returned a location that is not a disc image file:\n  " + utf8 + "\n\n" +
+                                 PrimeDiscPath::ProblemText(problem == PrimeDiscPath::Problem::None ? PrimeDiscPath::Problem::ShellLocation : problem) +
+                                 "\n\nClick OK to choose again.";
+        if (!Confirm(text, true)) return {};
+    }
 #endif
 }
 

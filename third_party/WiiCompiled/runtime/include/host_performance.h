@@ -11,6 +11,14 @@
 #include <TlHelp32.h>
 #include <pdh.h>
 #include <pdhmsg.h>
+#else
+#include <cstdlib>
+#include <ctime>
+#include <dirent.h>
+#include <fstream>
+#include <set>
+#include <sstream>
+#include <unistd.h>
 #endif
 
 // Read-only host counters, sampled at most once a second from the UI thread.
@@ -87,12 +95,68 @@ class Sampler {
         }
         result.gpuPercent=std::clamp(maximum,0.0,100.0);
     }
+#else
+    // Linux: CPU from clock_gettime and /proc/self/task; GPU from the DRM fdinfo
+    // engine counters of this process (drm-engine-<name>: <ns> ns), the source
+    // nvtop and intel_gpu_top use. Drivers without them leave gpuReady false.
+    uint64_t previousProcess=0;
+    std::map<uint32_t,uint64_t> previousThreads;
+    std::map<std::string,uint64_t> previousEngines;  // "<client>/<engine>" -> busy ns
+    std::chrono::steady_clock::time_point previousGpu{};
+    static uint64_t processCpuNs() {
+        timespec value{};
+        if(clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&value)!=0)return 0;
+        return uint64_t(value.tv_sec)*1000000000ull+uint64_t(value.tv_nsec);
+    }
+    void SampleGpu(std::chrono::steady_clock::time_point now) {
+        result.gpuReady=false;
+        std::map<std::string,uint64_t> engines;
+        std::set<std::string> clients;
+        if(DIR* dir=opendir("/proc/self/fdinfo")) {
+            while(const dirent* entry=readdir(dir)) {
+                if(entry->d_name[0]=='.')continue;
+                std::ifstream info(std::string("/proc/self/fdinfo/")+entry->d_name);
+                std::string line,client;
+                std::vector<std::pair<std::string,uint64_t>> busy;
+                while(std::getline(info,line)) {
+                    if(line.rfind("drm-client-id:",0)==0)client=line.substr(14);
+                    else if(line.rfind("drm-engine-",0)==0 && line.rfind("drm-engine-capacity",0)!=0) {
+                        const auto colon=line.find(':');
+                        if(colon==std::string::npos)continue;
+                        busy.emplace_back(line.substr(11,colon-11),std::strtoull(line.c_str()+colon+1,nullptr,10));
+                    }
+                }
+                // Several descriptors can share one DRM client: count each client once.
+                if(busy.empty() || !clients.insert(client).second)continue;
+                for(const auto& [engine,ns]:busy)engines[client+"/"+engine]=ns;
+            }
+            closedir(dir);
+        }
+        const double elapsedNs=std::chrono::duration<double,std::nano>(now-previousGpu).count();
+        if(previousGpu!=std::chrono::steady_clock::time_point{} && elapsedNs>0 && !engines.empty()) {
+            std::map<std::string,double> perEngine;  // summed over clients
+            for(const auto& [key,ns]:engines) {
+                const auto old=previousEngines.find(key);
+                if(old==previousEngines.end() || ns<old->second)continue;
+                perEngine[key.substr(key.find('/')+1)]+=100.0*double(ns-old->second)/elapsedNs;
+            }
+            double maximum=-1;
+            for(const auto& [engine,percent]:perEngine)
+                if(percent>maximum){maximum=percent;result.gpuEngine=engine;}
+            if(maximum>=0){result.gpuPercent=std::clamp(maximum,0.0,100.0);result.gpuReady=true;}
+        }
+        previousEngines=std::move(engines);
+        previousGpu=now;
+    }
 #endif
 public:
     Sampler() {
 #if defined(_WIN32)
         SYSTEM_INFO info{};GetSystemInfo(&info);result.logicalProcessors=info.dwNumberOfProcessors;
         InitGpu();
+#else
+        const long online=sysconf(_SC_NPROCESSORS_ONLN);
+        result.logicalProcessors=online>0 ? unsigned(online) : 0;
 #endif
     }
     ~Sampler() {
@@ -138,6 +202,42 @@ public:
         std::sort(result.threads.begin(),result.threads.end(),[](const auto& a,const auto& b){return a.percent>b.percent;});
 #endif
         SampleGpu();
+#else
+        const uint64_t process=processCpuNs();
+        if(!first && process>=previousProcess && result.logicalProcessors) {
+            result.busyLogicalProcessors=double(process-previousProcess)/1e9/elapsed;
+            result.processPercent=100*result.busyLogicalProcessors/result.logicalProcessors;
+            result.ready=true;
+        }
+        previousProcess=process;result.threads.clear();
+#if defined(MKW_PRIME_QA_TOOLS)
+        // Per-thread CPU list (diagnostic builds): utime+stime of /proc/self/task/<tid>/stat.
+        const double tick=double(sysconf(_SC_CLK_TCK));
+        std::map<uint32_t,uint64_t> next;
+        if(DIR* dir=opendir("/proc/self/task"); dir && tick>0) {
+            while(const dirent* entry=readdir(dir)) {
+                if(entry->d_name[0]=='.')continue;
+                std::ifstream stat(std::string("/proc/self/task/")+entry->d_name+"/stat");
+                std::string text;std::getline(stat,text);
+                const auto paren=text.rfind(')');  // the thread name may hold spaces
+                if(paren==std::string::npos)continue;
+                std::istringstream fields(text.substr(paren+2));
+                std::string skip;uint64_t utime=0,stime=0;
+                for(int i=0;i<11;++i)fields>>skip;  // state .. cmajflt (fields 3..13)
+                fields>>utime>>stime;
+                const uint32_t id=uint32_t(std::strtoul(entry->d_name,nullptr,10));
+                const uint64_t current=utime+stime;
+                next[id]=current;
+                const auto old=previousThreads.find(id);
+                if(!first && old!=previousThreads.end() && current>=old->second)
+                    result.threads.push_back({id,100*double(current-old->second)/tick/elapsed});
+            }
+            closedir(dir);
+        }
+        previousThreads=std::move(next);
+        std::sort(result.threads.begin(),result.threads.end(),[](const auto& a,const auto& b){return a.percent>b.percent;});
+#endif
+        SampleGpu(now);
 #endif
         last=now;return result;
     }

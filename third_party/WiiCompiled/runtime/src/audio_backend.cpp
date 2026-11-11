@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <string>
+#include <SDL3/SDL_hints.h>
 #include <iostream>
 
 #include <SDL3/SDL_init.h>
@@ -62,6 +64,42 @@ bool AudioBackend::EnsureInitializedLocked(uint32_t sampleRate, uint32_t channel
         return false;
     }
 
+#if !defined(_WIN32)
+    // Linux has several sound servers. SDL keeps the first driver that initializes, but
+    // a running PipeWire daemon that does not own the devices (PulseAudio systems such as
+    // a default Ubuntu 22.04) initializes with no default playback device at all. Then
+    // the other drivers are tried in SDL's order until one has a default output. An
+    // explicit SDL_AUDIO_DRIVER from the player is respected as is.
+    static bool driverChecked = false;
+    if (!driverChecked) {
+        driverChecked = true;
+        SDL_AudioSpec probe{};
+        int probeFrames = 0;
+        const char* forced = std::getenv("SDL_AUDIO_DRIVER");
+        if (!(forced && *forced) && !SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &probe, &probeFrames)) {
+            const std::string first = SDL_GetCurrentAudioDriver() ? SDL_GetCurrentAudioDriver() : "";
+            RT_LOG(RT_TAG_AUDIO) << "[audio-backend] driver " << first << " has no default playback device ("
+                                 << SDL_GetError() << "); trying the others" << std::endl;
+            bool found = false;
+            for (int i = 0; i < SDL_GetNumAudioDrivers() && !found; ++i) {
+                const std::string name = SDL_GetAudioDriver(i);
+                if (name == first || name == "dummy" || name == "disk") continue;
+                SDL_QuitSubSystem(SDL_INIT_AUDIO);
+                SDL_SetHint(SDL_HINT_AUDIO_DRIVER, name.c_str());
+                found = SDL_InitSubSystem(SDL_INIT_AUDIO) &&
+                        SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &probe, &probeFrames);
+                RT_LOG(RT_TAG_AUDIO) << "[audio-backend] driver " << name << (found ? ": default output found" : ": unusable")
+                                     << std::endl;
+            }
+            if (!found) {  // nothing better: back to SDL's own choice, which logs its error below
+                SDL_QuitSubSystem(SDL_INIT_AUDIO);
+                SDL_ResetHint(SDL_HINT_AUDIO_DRIVER);
+                if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) return false;
+            }
+        }
+    }
+#endif
+
     SDL_AudioSpec spec{};
     spec.format = SDL_AUDIO_S16LE;
     spec.channels = static_cast<int>(channels);
@@ -85,7 +123,11 @@ bool AudioBackend::EnsureInitializedLocked(uint32_t sampleRate, uint32_t channel
     SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec,
                                                         nullptr, nullptr);
     if (!stream) {
-        RT_LOG(RT_TAG_AUDIO) << "SDL_OpenAudioDeviceStream failed: " << SDL_GetError() << std::endl;
+        // Retried for every audio block while no device exists: log the first few and then rarely.
+        static uint64_t failures = 0;
+        if (failures < 8 || failures % 10000 == 0)
+            RT_LOG(RT_TAG_AUDIO) << "SDL_OpenAudioDeviceStream failed (" << failures + 1 << "): " << SDL_GetError() << std::endl;
+        ++failures;
         return false;
     }
 

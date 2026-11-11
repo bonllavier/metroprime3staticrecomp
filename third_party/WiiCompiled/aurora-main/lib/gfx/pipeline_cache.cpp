@@ -1236,6 +1236,11 @@ static void load_pipeline_cache_entries(ShaderType type, uint32_t configVersion,
     if (config.version != configVersion) {
       continue;
     }
+    // Recipes recorded on another backend (the shipped seed comes from D3D12 sessions) can use
+    // an MSAA level this one cannot build; they are kept in the database, just not compiled.
+    if (!webgpu::sample_count_supported(config.msaaSamples)) {
+      continue;
+    }
     if constexpr (std::is_same_v<PipelineConfig, gx::PipelineConfig>) {
       if (!gx::valid_pipeline_config(config)) {
         Log.warn("Removing invalid cached GX pipeline configuration (hash {:016X})", static_cast<uint64_t>(storedHash));

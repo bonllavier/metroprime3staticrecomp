@@ -847,6 +847,12 @@ bool initialize(AuroraBackend auroraBackend) {
   auto presentMode = best_present_mode();
   Log.info("Using surface format {}, present mode {}", magic_enum::enum_name(surfaceFormat),
            magic_enum::enum_name(presentMode));
+  if (!sample_count_supported(g_config.msaa)) {
+    const uint32_t fallback = g_config.msaa > 4 ? 4 : 1;
+    Log.warn("MSAA {}x is not supported by the {} backend; using {}x", g_config.msaa,
+             magic_enum::enum_name(g_backendType), fallback);
+    g_config.msaa = fallback;
+  }
   const auto size = window::get_window_size();
   g_graphicsConfig = GraphicsConfig{
       .surfaceConfiguration =

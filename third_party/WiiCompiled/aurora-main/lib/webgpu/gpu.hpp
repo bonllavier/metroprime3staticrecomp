@@ -51,6 +51,13 @@ extern wgpu::Device g_device;
 extern wgpu::Queue g_queue;
 extern wgpu::Surface g_surface;
 extern wgpu::BackendType g_backendType;
+// MSAA sample counts the active backend can build pipelines for. Dawn's Vulkan backend
+// (VulkanSampleCount) maps only 1 and 4, the WebGPU core counts, and aborts on any other;
+// D3D12 and Metal also accept 2 and 8.
+inline bool sample_count_supported(uint32_t samples) noexcept {
+  if (samples == 1 || samples == 4) return true;
+  return (samples == 2 || samples == 8) && g_backendType != wgpu::BackendType::Vulkan;
+}
 extern GraphicsConfig g_graphicsConfig;
 extern TextureWithSampler g_frameBuffer;
 extern TextureWithSampler g_frameBufferResolved;

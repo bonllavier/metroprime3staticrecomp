@@ -32,18 +32,17 @@ public:
 
     void BindRoot(uint32_t id, CpuContext* cpu) {
         if (root_ || !id || !cpu) throw std::runtime_error("Invalid root continuation binding");
-#if defined(_WIN32)
-        if (!IsThreadAFiber()) throw std::runtime_error("Host thread is not a fiber");
+        // The root is the host context already running the guest (a Windows fiber,
+        // a libco context elsewhere); HostContext names it on every host.
+        const HostContext::Handle current = HostContext::Current();
+        if (!current) throw std::runtime_error("Host thread is not a cooperative context");
         auto record = std::make_unique<Record>();
-        record->handle = GetCurrentFiber();
+        record->handle = current;
         record->externalCpu = cpu;
         record->owner = this;
         record->id = id;
         records_.emplace(id, std::move(record));
         root_ = active_ = id;
-#else
-        throw std::runtime_error("Experimental Prime continuation transport requires Windows");
-#endif
     }
 
     // Returns only when the source host stack is selected again. The caller

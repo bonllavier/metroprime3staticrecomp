@@ -107,6 +107,12 @@ python3 -B recomp/tools/prepare_prime_runtime_hooks.py || die 'Runtime overlay v
 # Fold pipelines this machine has recorded into the shipped seed (portable recipes only).
 python3 -B recomp/tools/prime_pipeline_seed.py merge --cache "$build_dir/UserData/Cache/pipeline_cache.db" ||
     die 'Pipeline seed merge failed'
+# The section-blob assembly is host specific (ELF section flags, absolute .incbin
+# paths): a copy generated on Windows (COFF, G:/...) does not assemble here.
+# The blobs and data_sections_init.cpp it writes are byte-identical across hosts.
+step 'data section blobs'
+dotnet recomp/third_party/WiiCompiled/translator/src/Translator.Cli/bin/Release/net8.0/Translator.Cli.dll generate-data-init \
+    --project recomp/config/RM3E01_00/project_full_conservative.yml >/dev/null || die 'Data section blob generation failed'
 step 'build shards'
 dotnet recomp/third_party/WiiCompiled/translator/src/Translator.Cli/bin/Release/net8.0/Translator.Cli.dll emit-build-shards \
     --project recomp/config/RM3E01_00/project_full_conservative.yml \

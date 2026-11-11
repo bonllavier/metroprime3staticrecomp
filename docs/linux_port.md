@@ -87,4 +87,15 @@ Dependencias externas al repo `recomp` que el pipeline lee por ruta relativa (co
 | Validación SHA-256 de los RSO | BCrypt | mbedTLS (`mbedtls_sha256`) | implementado |
 | Latencia DXGI | `IDXGISwapChain2` | no aplica (modos de presentación de Vulkan) | no aplica |
 | Cursor leído en el instante de KPAD | `GetCursorPos` | eventos SDL (hasta un fotograma más tarde) | diferencia conocida |
+| Raíz de las continuaciones de hilos Prime | `GetCurrentFiber` | `HostContext::Current()` (libco) en todos los backends | implementado; el juego arranca |
+| Salida de audio | WASAPI vía SDL | SDL; si el controlador elegido no tiene salida por defecto (PipeWire activo en un sistema PulseAudio, p. ej. Ubuntu 22.04) prueba los demás (ALSA → PulseAudio) | implementado; audio real comprobado |
+| MSAA 2x/8x (opción F1 y recetas de la semilla grabadas en D3D12) | D3D12 los admite | el backend Vulkan de Dawn solo 1x/4x: 2x→1x, 8x→4x y recetas no compatibles no se precompilan | implementado (antes abortaba al arrancar) |
 | Vigilante de parones (diagnóstico F8, QA) | temporizadores de alta resolución + Toolhelp32 | — | pendiente (solo diagnóstico) |
+
+## Primer arranque en Linux (2026-11-11)
+
+Ubuntu 22.04, X11, RTX 3050 (Vulkan, driver 580), RVZ leído con `nod`: el juego llega a la pantalla de seguridad de la correa del Wiimote a ~55 FPS con la caché de shaders vacía (11.364 en compilación), audio por ALSA→PulseAudio, 97 entradas/salidas RSO y cambios de hilo del invitado sin errores. Ejecutable de 213 MB; necesita glibc 2.35 y `libpng16.so.16` del build (empaquetar para distribuir).
+
+Correcciones que hizo falta aplicar: `data_sections_init_blobs.S` regenerado en el host (el de Windows es COFF con rutas `G:/`), MSAA no admitido por Vulkan, raíz de continuaciones sin fibras de Windows y selección de controlador de audio.
+
+Pendiente de QA manual: ratón, mando (iconos Xbox/PlayStation), teclado, logros, F1/F9/F12, rendimiento con la caché caliente, Wayland.

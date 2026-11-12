@@ -87,3 +87,16 @@ Por eso se ensancha en origen, en el viewport y en las cámaras de interfaz.
 - Tras el vídeo (frame 5080), el viewport de rayos X aparece una sola vez, al crearse, y no vuelve a dibujarse. Desde el frame 5242 se recalcula un único viewport por frame, el del jugador. Las capturas no tienen recuadro ni doble exposición.
 - 59,68 FPS de media (mínimo 54,9), con `system_busy` al 100 % por otros procesos (VS Code, Python, dotnet) y el juego al 17-24 % de la CPU.
 - Pendiente (usuario): el puntero en los laterales con el retículo libre, menús y visores. No se ha comprobado si alguna pantalla del juego limita el cursor por su cuenta.
+
+## Corrección del 12/11/2026 (tarde): la flecha del menú de pausa
+
+**Síntoma (usuario, F7 `capture_20261112_163137`/`163141`, Linux, 21:9 y 32:9):** en el menú de pausa, los botones reaccionan con la flecha a un lado, hacia fuera, y no encima de ellos.
+
+**Causa:** los botones se dibujan con la cámara de interfaz ensanchada y el juego comprueba el puntero con las cuentas en 16:9 de esa cámara. Eso coincide con el puntero escalado en `kpad.cpp`: el punto real del puntero está sobre el botón cuando reacciona. La flecha la dibuja aparte `CGuiCursor::Render` (`0x800CB65C`) mediante `0x800CB45C`, que pone un ortográfico de 640 unidades sobre el EFB (`SetOrtho`, retorno `0x800CB4F8`) y dibuja la flecha en la posición del puntero dentro de él. El juego toma esas 640 unidades por la imagen 16:9, pero en ultrawide cubren todo el EFB ensanchado, así que la flecha quedaba `factor` veces más hacia fuera (1,333 en 21:9, 2 en 32:9) y estirada en horizontal. En la captura, la flecha está en x = −0,75 y el punto real en −0,56, dentro del botón resaltado (−0,67..−0,54).
+
+**Arreglo:** `PrimeWidescreenFlush` (`0x803EB060`) ensancha ese ortográfico alrededor del centro cuando quien llama a `SetOrtho` es `0x800CB4F8`. Solo cambia lo que recibe el GX; el estado de proyección del juego conserva sus 640 unidades. Los demás ortográficos (fundidos y capas 2D de pantalla completa) no cambian.
+
+**Pruebas:**
+- Repetición `hangar_uw21` con `WII_COMPILED_PRIME_PROJECTION_TRACE=1`: `ortho 803E91C4<800CB4F8<800CB6B0 … widened factor=1.33333` con 21:9, y sin ensanchar durante los vídeos (factor 1).
+- La captura del mapa muestra la flecha con su forma de 16:9.
+- Pendiente (usuario): comprobar con el ratón que los botones del menú reaccionan bajo la flecha, en 21:9 y 32:9.

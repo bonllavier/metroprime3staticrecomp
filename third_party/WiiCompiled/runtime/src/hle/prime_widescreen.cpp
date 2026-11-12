@@ -33,6 +33,13 @@ constexpr uint32_t kGraphicsViewport = 0x8059E188u;
 // (CGuiCamera draw 0x80433BD8 and DrawSqueezedForWidescreen 0x80433CF8).
 constexpr uint32_t kGuiCameraPerspectiveReturn = 0x80433C80u;
 constexpr uint32_t kGuiCameraSqueezedPerspectiveReturn = 0x80433DA8u;
+// The pointer arrow of the menus: CGuiCursor::Render (0x800CB65C) calls 0x800CB45C, which sets a
+// 640-unit ortho over the EFB (return address of that SetOrtho call) and draws the arrow at the
+// pointer's position in it. The game takes those 640 units for the 16:9 picture, but with ultrawide
+// they span the whole wider EFB, so the arrow sat `factor` times further out than the point the menus
+// hit-test (their cameras keep 16:9 math, matching the pointer scaled in kpad.cpp): buttons reacted
+// beside the arrow, and the arrow was stretched (user, F7 12/11/2026 16:31, 21:9 and 32:9).
+constexpr uint32_t kGuiCursorOrthoReturn = 0x800CB4F8u;
 // CGameViewport vtable (constructor 0x800BDC50) and its "active" bit: 0x800BDFE0
 // writes it (bit 7 of +0x58 = argument), and only active viewports are rendered
 // and rebuilt. 0x802B2094 calls 0x800BE0DC for every active viewport each frame,
@@ -289,6 +296,22 @@ extern "C" void PrimeWidescreenFlush(uint32_t perspective, uint32_t sp, double* 
     ScreenSize(sw, sh);
     CurrentViewport(vw, vh);
     const uint32_t lr = Valid(sp) && Valid(Memory::Read32(sp) + 4) ? Memory::Read32(Memory::Read32(sp) + 4) : 0;
+    // Return address into the caller of SetOrtho / SetPerspective (one frame above `lr`).
+    uint32_t caller = 0;
+    if (Valid(sp)) {
+        const uint32_t frame = Memory::Read32(sp);
+        if (Valid(frame)) {
+            const uint32_t up = Memory::Read32(frame);
+            if (Valid(up + 4)) caller = Memory::Read32(up + 4);
+        }
+    }
+    if (!perspective && g_factor > 1.0f && caller == kGuiCursorOrthoReturn) {
+        // Only what the GX receives: the game's projection state keeps its 640 units.
+        const Frustum wide = WidenFrustum(frustum, g_factor);
+        *left = wide.left;
+        *right = wide.right;
+        widened = FrustumAspect(wide);
+    }
     if (perspective && g_factor > 1.0f && FlushPolicy() == 1 && CoversScreen(vw, vh, sw, sh)) {
         bool fromViewport = false;
         for (size_t i = 0; i < g_widenedCount; ++i) {

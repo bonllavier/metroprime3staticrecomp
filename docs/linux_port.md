@@ -2,6 +2,14 @@
 
 Rama `linux-port`. Objetivo: el mismo ejecutable que en Windows, compilado de forma nativa para Linux x86_64 con Aurora (Dawn/Vulkan + SDL3), leyendo la imagen de disco del jugador en tiempo de ejecución.
 
+## Estado actual (2026-11-11, `linux-port` 3234e72b)
+
+- El juego arranca y se juega en Linux a 60 FPS estables (Ubuntu 22.04, X11, RTX 3050 con driver 580, i7-4790), con audio y lectura del RVZ en tiempo de ejecución. Se comprobó una partida nueva desde el arranque.
+- Precarga de shaders: ~15 s con la caché caliente, ~4-5 min sin caché, con un máximo de ~2,3 GB de memoria.
+- Funciona: pantallas propias de la correa, configuración por defecto de la versión publicada (iconos de teclado, vista con ratón, efectos), icono de la ventana, guardado de la caché Vulkan.
+- Implementado sin QA del usuario: iconos de mando Xbox/PlayStation (se generan al usar un mando por primera vez), logros, F1/F9/F12, Wayland, Wiimote por Bluetooth (no investigado).
+- Las ramas Windows (`parallel-experiment`) y Linux (`linux-port`) parten de 6902d704. Los cambios de Linux van bajo `#if defined(__linux__)` o son correcciones comunes descritas aquí; el árbol de Windows se adelanta por fast-forward desde `linux-port` cuando no tiene trabajo propio pendiente.
+
 ## Entorno de desarrollo verificado
 
 Ubuntu 22.04, NVIDIA RTX 3050 (driver 580), todo dentro de un disco dedicado montado en `/mnt/mp3port`:
@@ -111,4 +119,67 @@ Rendimiento (RTX 3050, i7-4790, X11): 60 FPS estables. Precarga con caché calie
 
 Configuración por defecto: `build_prime_runtime.sh` genera `Config.default.toml` con la plantilla de `package_release.ps1` (sin la sección ReShade); el juego la copia a `UserData/Config.toml` solo en el primer arranque. Sin ella faltaban `keyboard_icons`, vista con ratón y los ajustes de la versión publicada, y el juego mostraba los botones del Wiimote.
 
-Pendiente de QA manual: ratón, mando (iconos Xbox/PlayStation), teclado, logros, F1/F9/F12, rendimiento con la caché caliente, Wayland.
+## Ejecutar y probar
+
+```bash
+cd /mnt/mp3port/builds/RM3E01_00_runtime_linux        # portable.txt: UserData/ vive aquí
+./"Corruption_3 PC" --iso "/mnt/mp3port/iso/Metroid Prime 3 - Corruption (USA).rvz"
+```
+
+- Recompilar tras tocar el runtime o Aurora: `source /mnt/mp3port/env.sh; cmake --build /mnt/mp3port/builds/RM3E01_00_runtime_linux --target WiiCompiled --parallel 6` (de 1 a 3 minutos). `build_prime_runtime.sh` solo hace falta si cambian traducciones, RSO, hooks, shards, el `Config.default.toml` o las pantallas de la correa.
+- Logs: `UserData/Logs/base_<epoch>_pid<PID>/console.log`. Líneas útiles:
+  - `[present-latency] frames=N` cada 10 s (600 = 60 FPS).
+  - `Pipeline prewarm finished: N pipelines in S s (Dawn blob cache: hits/lookups, stores)`: con la caché caliente, 100 % de aciertos y 0 stores.
+  - `[pipeline-compile-summary]` durante la compilación.
+- Una sola instancia: lanzar con un comando simple, `cd dir; ./juego ... & pid=$!` (nunca dentro de una cadena `&&` ni de una subshell, porque `$!` capturaría la subshell). Comprobar el PID antes de usar `kill`. Si queda una instancia viva, el usuario ve dos ventanas y las medidas no valen.
+- Antes de lanzar una prueba, comprobar si el usuario tiene el juego abierto (`pgrep -af "Corruption_3 PC"`). No cerrar su instancia sin preguntarle.
+- Pruebas pesadas (caché vacía, cambios de memoria o de hilos): lanzar junto al juego `tools/linux_diag/watchdog.sh PID LOG`, que registra la memoria cada segundo y cierra el juego si quedan menos de 1,5 GB libres. Una prueba sin él congeló la PC del usuario y obligó a reiniciar (2026-11-11).
+- Nunca capturar la ventana raíz ni el escritorio para ver el juego: expuso ventanas privadas del usuario. Usar la captura del juego o pedirla al usuario.
+
+## No romper lo que funciona
+
+Cada punto describe un comportamiento verificado; cambiarlo exige volver a medir.
+
+| Lugar | Qué debe seguir así | Qué pasa si se rompe |
+|---|---|---|
+| `aurora-main/lib/webgpu/gpu.cpp`, `serialize_pipeline_caches` | rama Linux que llama a `dawn::native::PerformIdleTasks` | la caché Vulkan no se guarda y cada arranque recompila (>9 min) |
+| `gpu.cpp`, toggles del dispositivo | `vulkan_monolithic_pipeline_cache` activo; `enable_spirv_validation` desactivado en Release | cualquier toggle nuevo o retirado cambia las claves de la caché de Dawn y el siguiente arranque recompila todo (~4-5 min); la validación SPIR-V multiplica la precarga por 4-8 |
+| `aurora-main/lib/gx/pipeline.cpp`, `MaxCachedShaderModules` | la caché de módulos de shader está acotada (256, LRU) | Dawn retiene ~1 MB de programa Tint por módulo vivo: más de 7 GB en un arranque sin caché y la PC se congela |
+| `aurora-main/lib/gfx/pipeline_cache.cpp`, `WorkerTier` | en Linux, un grupo urgente a nice 0 y uno de precarga/puenteadas a nice 10; juntos no superan `pipeline_worker_count()` | sin bajar la prioridad, los FPS caen mientras compila; sin el tope, se duplican los hilos que compilan a la vez. Un hilo sin `CAP_SYS_NICE` no puede volver a bajar su nice: no cambiar la prioridad por compilación como en Windows |
+| `aurora-main/lib/window.cpp`, `SDL_SyncWindow` | en Linux solo tras un cambio de ventana pedido (`request_window_sync`) | en X11/KDE cuesta unos 10 ms por fotograma (~35-50 FPS) |
+| `tools/build_prime_runtime.sh` | copia las 8 pantallas de la correa y genera `Config.default.toml` a partir de la plantilla de `package_release.ps1` | vuelven las pantallas del Wiimote o los botones del Wii en lugar de los iconos de teclado. La configuración por defecto se edita en `package_release.ps1`, nunca en una copia aparte |
+| `runtime/cmake/PublicProducts.cmake` + `ico_to_rgba_source.py` | el icono de Linux sale del mismo `MetroidPrime3PCPort.ico` | la ventana queda sin icono |
+| `UserData/Config.toml` | el juego lo crea una vez a partir de `Config.default.toml` | un `Config.toml` antiguo sin las claves de la versión publicada desactiva funciones; hacer una copia de respaldo antes de cambiarlo |
+| Código común con Windows | las diferencias van bajo `#if defined(__linux__)` / `_WIN32`; los cambios comunes se documentan en esta página | se rompe el build o el comportamiento de Windows, que no se puede compilar desde Linux |
+
+Otras reglas del entorno:
+- No instalar `libjack-dev` (desinstala el audio de Ubuntu Studio).
+- No hacer commits en el `.git` anidado de `third_party/WiiCompiled`.
+- La imagen de disco es de solo lectura, y no se publican datos del disco, claves ni partidas.
+- ReShade queda fuera de Linux por decisión del usuario.
+
+## Diagnóstico (`tools/linux_diag`)
+
+- **Muestreo de pilas sin `perf`** (en Ubuntu `ptrace_scope=1`):
+  - Compilar `ptracer.c` (`gcc -O2 -shared -fPIC -o ptracer.so ptracer.c`).
+  - Lanzar el juego con `LD_PRELOAD=.../ptracer.so`.
+  - Tomar varias muestras con `gdb -p PID -batch -ex "thread apply all bt 25"` y agruparlas por función.
+  - Por este método se encontró la validación SPIR-V. Guardar `ptracer.so` fuera de `/tmp`, que se vacía al reiniciar; si falta, `LD_PRELOAD` falla sin avisar y `gdb` no puede enganchar.
+- **Memoria** (no hay heaptrack ni valgrind):
+  - `alloctrack.c` es una biblioteca para `LD_PRELOAD` que agrupa por pila de 8 marcos los bloques vivos de 16 KiB o más, y los `mmap` anónimos de 256 KiB o más.
+  - Cada 20 s escribe en `ALLOCTRACK_OUT` las pilas principales y el mapa de módulos. Las direcciones se resuelven con `addr2line -f -C -e "Corruption_3 PC" <dirección - base>`.
+  - Por este método se encontró la retención de programas Tint.
+  - `MALLOC_ARENA_MAX=2` sirve para descartar que el crecimiento sea fragmentación de glibc.
+- **`watchdog.sh`**: ver «Ejecutar y probar».
+
+## Pendiente
+
+- QA del usuario: mando (iconos Xbox/PlayStation), ratón, F1/F9/F12, logros, Wayland.
+- Caídas a 30-48 FPS durante una compilación sin caché, que solo ocurre en el primer arranque.
+- Wiimote por Bluetooth.
+- Ocultar MSAA 2x/8x en Vulkan.
+- Vigilante de parones F8.
+- Empaquetado (AppImage o tar con `libpng16`, más un lanzador `.desktop` con el icono).
+- Revisar las 101 funciones en que difiere el traductor actual.
+- Hacer el pipeline autosuficiente (hoy necesita archivos del árbol de Windows).
+- El comentario de `[paths]` en la configuración por defecto muestra una ruta de Windows.

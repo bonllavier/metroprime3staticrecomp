@@ -1116,6 +1116,8 @@ enum class WorkerTier : uint8_t { Any, Urgent, Low };
 constexpr int LowTierCompileNice = 10;
 #endif
 
+static size_t pipeline_worker_count();
+
 static void pipeline_worker(WorkerTier tier) {
 #ifdef TRACY_ENABLE
   tracy::SetThreadName("Pipeline compilation thread");
@@ -1142,7 +1144,15 @@ static void pipeline_worker(WorkerTier tier) {
         for (const auto& queued : g_priorityPipelines) (queued.bridged ? bridgedQueued : urgentQueued) = true;
         bool backgroundQueued = !g_backgroundPipelines.empty();
         if (tier == WorkerTier::Urgent) bridgedQueued = backgroundQueued = false;
-        if (tier == WorkerTier::Low) urgentQueued = false;
+        if (tier == WorkerTier::Low) {
+          // The two Linux pools together never compile more at once than the single Windows pool: a low-tier
+          // worker waits while the pool's worth of compiles already runs (urgent ones count). With twelve
+          // concurrent driver compiles a cold-cache launch stalled the whole desktop (2026-11-11).
+          urgentQueued = false;
+          const size_t active =
+              g_activeUrgentPipelineWorkers + g_activeBridgedPipelineWorkers + g_activeBackgroundPipelineWorkers;
+          if (active >= pipeline_worker_count()) bridgedQueued = backgroundQueued = false;
+        }
         const size_t inPlayCap =
             gx::policy::in_play_compile_cap(physical_core_count(), g_skipUnreadyGxPipelines.load(std::memory_order_relaxed));
         slot = gx::policy::pick_compile_slot(urgentQueued, bridgedQueued, g_activeBridgedPipelineWorkers,

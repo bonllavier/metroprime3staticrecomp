@@ -9,12 +9,15 @@
 #include "shader_info.hpp"
 #include "tracy/Tracy.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <memory>
 #include <cstdlib>
 #include <mutex>
+#include <utility>
+#include <vector>
 
 #include <absl/container/flat_hash_map.h>
 
@@ -49,10 +52,37 @@ struct CachedShaderModule {
   std::condition_variable ready;
   wgpu::ShaderModule module;
   bool compiling = true;
+  uint64_t lastUse = 0;
 };
 
 std::mutex sShaderModuleCacheMutex;
 absl::flat_hash_map<ShaderConfig, std::shared_ptr<CachedShaderModule>, ShaderConfigHash> sShaderModuleCache;
+uint64_t sShaderModuleUseClock = 0;
+
+// Dawn keeps the parsed Tint program (AST + semantic info, ~1 MB) of a shader module for as long as the
+// application holds a reference to it; it is dropped when the last external reference goes (pipelines keep
+// internal ones only). Holding every module forever therefore kept ~11k programs alive on a cold-cache launch
+// (7+ GB, the desktop froze, 2026-11-11). The cache only serves pipelines of one shader built close together
+// (blend/depth variants), so it keeps the most recently used modules; an evicted one is rebuilt on demand,
+// which is cheap once Dawn's blob cache holds its parse.
+constexpr size_t MaxCachedShaderModules = 256;
+
+// Caller holds sShaderModuleCacheMutex. Trims to the cap in batches so the scan stays rare.
+void evict_shader_modules_locked() {
+  if (sShaderModuleCache.size() <= MaxCachedShaderModules + MaxCachedShaderModules / 4) {
+    return;
+  }
+  std::vector<std::pair<uint64_t, ShaderConfig>> finished;
+  finished.reserve(sShaderModuleCache.size());
+  for (const auto& [config, entry] : sShaderModuleCache) {
+    if (!entry->compiling) finished.emplace_back(entry->lastUse, config);
+  }
+  const size_t excess = sShaderModuleCache.size() - MaxCachedShaderModules;
+  const size_t count = std::min(excess, finished.size());
+  std::partial_sort(finished.begin(), finished.begin() + count, finished.end(),
+                    [](const auto& a, const auto& b) { return a.first < b.first; });
+  for (size_t i = 0; i < count; ++i) sShaderModuleCache.erase(finished[i].second);
+}
 
 // Pipeline compile telemetry: how long each new GX pipeline takes, split into the shader
 // module (WGSL generation + Dawn parse) and the render pipeline (Tint -> HLSL -> DXC -> PSO).
@@ -73,6 +103,7 @@ wgpu::ShaderModule cached_shader_module(const ShaderConfig& config) {
     } else {
       entry = it->second;
       entry->ready.wait(lock, [&] { return !entry->compiling; });
+      entry->lastUse = ++sShaderModuleUseClock;
       return entry->module;
     }
   }
@@ -83,6 +114,8 @@ wgpu::ShaderModule cached_shader_module(const ShaderConfig& config) {
     std::lock_guard lock{sShaderModuleCacheMutex};
     entry->module = module;
     entry->compiling = false;
+    entry->lastUse = ++sShaderModuleUseClock;
+    evict_shader_modules_locked();
   }
   entry->ready.notify_all();
   return module;
@@ -100,6 +133,7 @@ wgpu::ShaderModule cached_uber_shader_module(const PipelineConfig& config) {
     } else {
       entry = it->second;
       entry->ready.wait(lock, [&] { return !entry->compiling; });
+      entry->lastUse = ++sShaderModuleUseClock;
       return entry->module;
     }
   }
@@ -109,6 +143,8 @@ wgpu::ShaderModule cached_uber_shader_module(const PipelineConfig& config) {
     std::lock_guard lock{sShaderModuleCacheMutex};
     entry->module = module;
     entry->compiling = false;
+    entry->lastUse = ++sShaderModuleUseClock;
+    evict_shader_modules_locked();
   }
   entry->ready.notify_all();
   return module;

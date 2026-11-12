@@ -739,6 +739,14 @@ bool initialize(AuroraBackend auroraBackend) {
     // Exact timestamps for the diagnostic GPU timing (quantized to 100 us otherwise).
     std::vector<const char*> disableToggles;
     if (gpuTimingRequested) disableToggles.push_back("timestamp_quantization");
+#ifdef NDEBUG
+    // Dawn runs the SPIR-V validator on every Tint output before vkCreateShaderModule, even when the
+    // SPIR-V comes from the blob cache: 70 % of the boot prewarm on Linux (gdb samples, 2026-11-11),
+    // ~65 s for 11k cached pipelines against ~7 s for D3D12. Kept with WII_COMPILED_VALIDATE_GPU.
+    if (g_backendType == wgpu::BackendType::Vulkan && !std::getenv("WII_COMPILED_VALIDATE_GPU")) {
+      disableToggles.push_back("enable_spirv_validation");
+    }
+#endif
     const wgpu::DawnTogglesDescriptor togglesDescriptor({
         .nextInChain = &cacheDescriptor,
         .enabledToggleCount = enableToggles.size(),

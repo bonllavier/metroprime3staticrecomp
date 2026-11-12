@@ -41,10 +41,10 @@ The scripts expect this repository to be checked out as a folder named **`recomp
 ```
 
 ```bash
-git clone -b parallel-experiment https://github.com/bonllavier/metroprime3staticrecomp.git <workspace>/recomp
+git clone https://github.com/bonllavier/metroprime3staticrecomp.git <workspace>/recomp
 ```
 
-Use `-b linux-port` for the Linux line; today both branches point at the same commit.
+`main` builds both Windows and Linux.
 
 Keep the workspace on a disk with **~25 GB free**. The translated sources, the build tree and the
 caches are large, and a full Windows build used about 13 GB.

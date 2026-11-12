@@ -14,7 +14,7 @@ The build reads a few files from it, and the game reads the image itself while i
 | Platform | State |
 | --- | --- |
 | Windows 10/11 x64 (Direct3D 12 or Vulkan) | Main platform. Public test builds are released. The campaign start (G.F.S. Olympus, Norion, Bryyo up to Rundas) plays at or near 60 FPS. |
-| Linux x86-64 (Vulkan, X11 tested) | Native port on branch `linux-port`. Boots and plays at a stable 60 FPS; 120 FPS frame interpolation matches Windows. Not packaged yet. See [`docs/linux_port.md`](docs/linux_port.md). |
+| Linux x86-64 (Vulkan, X11 tested) | Native port, same source tree. Boots and plays at a stable 60 FPS; 120 FPS frame interpolation matches Windows. Not packaged yet. See [`docs/linux_port.md`](docs/linux_port.md). |
 | *Metroid Prime Trilogy* (`R3ME01`) | Prime 3 from the Trilogy disc boots to the ship cockpit in local test builds. Not released. See [`docs/trilogy_r3me01.md`](docs/trilogy_r3me01.md). |
 | Other platforms | Not started. [`PORTING.md`](PORTING.md) describes what a new platform needs. |
 
@@ -38,9 +38,8 @@ What the port adds on top of the original game (all switchable in the **F1** ove
 
 | Branch | Content |
 | --- | --- |
-| `parallel-experiment` | Windows development line. The work done for the Linux port is merged into it by fast-forward. |
-| `linux-port` | Linux port: build scripts, platform equivalents, Linux fixes. Currently the same commit as `parallel-experiment`. |
-| `main` | Early baseline of the static recompilation, kept for history. |
+| `main` | The project: Windows and Linux from one source tree. Clone and build this one. |
+| `parallel-experiment`, `linux-port` | Kept for experiments. They started the Windows and Linux lines and were merged into `main` on 2026-11-11; they may fall behind it. |
 
 Linux-specific code is guarded by `#if defined(__linux__)`, Windows-specific code by `_WIN32`, and
 changes that affect every platform are listed in the docs. One source tree builds both.

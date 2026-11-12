@@ -1,6 +1,6 @@
 # Port de Linux (recompilación estática RM3E01_00)
 
-Rama `linux-port`. Objetivo: el mismo ejecutable que en Windows, compilado de forma nativa para Linux x86_64 con Aurora (Dawn/Vulkan + SDL3), leyendo la imagen de disco del jugador en tiempo de ejecución.
+Rama `main` (el port de Linux empezó en `linux-port`, que se conserva para experimentos). Objetivo: el mismo ejecutable que en Windows, compilado de forma nativa para Linux x86_64 con Aurora (Dawn/Vulkan + SDL3), leyendo la imagen de disco del jugador en tiempo de ejecución.
 
 ## Estado actual (2026-11-11, `linux-port` 3234e72b)
 
@@ -8,7 +8,7 @@ Rama `linux-port`. Objetivo: el mismo ejecutable que en Windows, compilado de fo
 - Precarga de shaders: ~15 s con la caché caliente, ~4-5 min sin caché, con un máximo de ~2,3 GB de memoria.
 - Funciona: pantallas propias de la correa, configuración por defecto de la versión publicada (iconos de teclado, vista con ratón, efectos), icono de la ventana, guardado de la caché Vulkan.
 - Implementado sin QA del usuario: iconos de mando Xbox/PlayStation (se generan al usar un mando por primera vez), logros, F1/F9/F12, Wayland, Wiimote por Bluetooth (no investigado).
-- Las ramas Windows (`parallel-experiment`) y Linux (`linux-port`) parten de 6902d704. Los cambios de Linux van bajo `#if defined(__linux__)` o son correcciones comunes descritas aquí; el árbol de Windows se adelanta por fast-forward desde `linux-port` cuando no tiene trabajo propio pendiente.
+- Desde el 11 de noviembre de 2026, Windows y Linux se desarrollan en una sola rama, `main`, y las dos copias de trabajo (NTFS y `/mnt/mp3port/src/recomp`) usan esa rama. `parallel-experiment` y `linux-port` se conservan para experimentos y pueden quedarse atrás. Los cambios de Linux van bajo `#if defined(__linux__)`, y las correcciones comunes se describen aquí. Para pasar trabajo de una copia a la otra: commit, push a `main` y `git pull --ff-only` en la otra.
 
 ## Entorno de desarrollo verificado
 

@@ -77,6 +77,11 @@ bool refresh_surface(bool recreate = true);
 // Asks for a present mode that never blocks (see g_nonBlockingPresent). True when the surface has to
 // be reconfigured for it to apply.
 bool set_non_blocking_present(bool enabled) noexcept;
+// [video] vsync: present with Fifo. True when the surface has to be reconfigured for the change.
+bool set_vsync(bool enabled) noexcept;
+bool vsync() noexcept;
+// The surface's current present mode, for the settings overlay.
+const char* present_mode_name() noexcept;
 void resize_swapchain(uint32_t width, uint32_t height, uint32_t native_width, uint32_t native_height,
                       bool force = false);
 TextureWithSampler create_render_texture(uint32_t width, uint32_t height, bool multisampled);

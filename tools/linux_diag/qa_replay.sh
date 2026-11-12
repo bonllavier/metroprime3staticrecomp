@@ -2,7 +2,8 @@
 # Linux counterpart of recomp/qa/qa_replay.ps1: replays a recorded QA session unattended on a private
 # profile (the recording's save and settings; the shader caches shared with the build's profile through a
 # symlink) and prints the per-window frame rate. Needs a QA build (build_prime_runtime.sh --qa).
-#   tools/linux_diag/qa_replay.sh NAME [LABEL] [VAR=value ...]
+#   tools/linux_diag/qa_replay.sh NAME [LABEL] [VAR=value | cfg:section.key=value ...]
+# cfg: arguments override the recording's Config.toml (e.g. cfg:video.frame_interpolation_fps=120).
 # Recordings: $QA_RECORDINGS (default: the Windows tree's recomp/qa/recordings, private, never published).
 set -euo pipefail
 script_dir=$(dirname "$(readlink -f "$0")")
@@ -26,7 +27,10 @@ run_dir=$qa_root/runs/$name/$(date +%Y%m%d_%H%M%S)_$label
 mkdir -p "$run_dir"
 export WII_COMPILED_QA_USER_DATA=$profile WII_COMPILED_QA_REPLAY=$rec/inputs.txt WII_COMPILED_QA_REPLAY_EXIT=10 \
        WII_COMPILED_QA_TAP_INTRO=1 WII_COMPILED_PRIME_KEYBOARD_MOUSE=1 WII_COMPILED_PRIME_PERFORMANCE_TRACE=1
-for pair in "$@"; do export "$pair"; done
+for pair in "$@"; do
+    if [[ $pair == cfg:* ]]; then python3 -I "$script_dir/set_config.py" "$profile/Config.toml" "${pair#cfg:}"
+    else export "$pair"; fi
+done
 cd "$build"
 ./"Corruption_3 PC" --iso "$iso" > "$run_dir/stdout.log" 2>&1 &
 pid=$!
@@ -44,4 +48,7 @@ low=$(echo "$fps" | awk '{n=0; for(i=1;i<=NF;i++) if ($i<57) n++; print n "/" NF
 finished=$(grep -c '\[qa-replay\] finished' "$run_dir/console.log" || true)
 echo "recording=$name label=$label finished=$finished mean_fps=$mean windows_below_57=$low"
 echo "fps: $fps"
+# Images actually presented (frame interpolation adds inserted ones): present-latency lines, every 10 s.
+presented=$(grep -oE '\[present-latency\] frames=[0-9]+' "$run_dir/console.log" | sed 's/.*frames=//' | tail -n +2 | awk '{printf "%.0f ", $1/10}')
+echo "presented_per_s: $presented"
 echo "run: $run_dir"

@@ -47,6 +47,9 @@ struct RuntimeUserConfig {
     std::optional<uint32_t> frameInterpolationFps;
     // [video] frame_interpolation_low_latency: show each real frame at once, inserted images predicted past it.
     std::optional<bool> frameInterpolationLowLatency;
+    // [video] vsync: present in step with the display's refresh (no tearing, presentation capped at the
+    // refresh rate). Off by default, as before the option existed.
+    std::optional<bool> vsync;
     std::optional<bool> frameInterpolationDisplaySync;
     std::optional<bool> metalFxSpatialUpscaling;
     std::optional<bool> skipUnreadyPipelines;
@@ -415,6 +418,7 @@ inline void EnsureConfigFile() {
               "force_16_9 = false\n"
               "resolution_multiplier = 1.0\n"
               "frame_interpolation_fps = 0\n"
+              "vsync = false\n"
               "display_mode = \"windowed\"\n"
               "graphics_api = \"auto\"\n"
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
@@ -762,6 +766,7 @@ inline RuntimeUserConfig ParseConfigDocument(const toml::value& document) {
     }
     config.frameInterpolationLowLatency =
         FindConfigValue<bool>(document, "video", "frame_interpolation_low_latency");
+    config.vsync = FindConfigValue<bool>(document, "video", "vsync");
     config.frameInterpolationDisplaySync =
         FindConfigValue<bool>(document, "video", "frame_interpolation_display_sync");
     config.metalFxSpatialUpscaling =
@@ -1039,6 +1044,10 @@ inline bool SetFrameInterpolationFps(uint32_t value) {
     return WriteSetting("video", "frame_interpolation_fps", std::to_string(value));
 }
 
+inline bool SetVsync(bool value) {
+    Mutable().vsync = value;
+    return WriteSetting("video", "vsync", value ? "true" : "false");
+}
 inline bool SetFrameInterpolationLowLatency(bool value) {
     Mutable().frameInterpolationLowLatency = value;
     return WriteSetting("video", "frame_interpolation_low_latency", value ? "true" : "false");
@@ -1457,6 +1466,7 @@ inline bool FrameInterpolationDisplaySync(bool fallback = true) {
     return Get().frameInterpolationDisplaySync.value_or(fallback);
 }
 
+inline bool Vsync(bool fallback = false) { return Get().vsync.value_or(fallback); }
 inline bool FrameInterpolationLowLatency(bool fallback = false) {
     return Get().frameInterpolationLowLatency.value_or(fallback);
 }

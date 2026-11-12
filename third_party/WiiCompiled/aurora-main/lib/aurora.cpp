@@ -2798,6 +2798,30 @@ void aurora_get_present_timing(AuroraPresentTiming* timing) {
     *timing = aurora::snapshot_present_timing();
   }
 }
+void aurora_set_vsync(bool enabled) {
+#ifdef AURORA_ENABLE_GX
+  if (aurora::webgpu::set_vsync(enabled)) {
+    aurora::request_surface_reconfigure();
+  }
+#else
+  (void)enabled;
+#endif
+}
+const char* aurora_get_present_mode_name() {
+#ifdef AURORA_ENABLE_GX
+  return aurora::webgpu::present_mode_name();
+#else
+  return "none";
+#endif
+}
+bool aurora_get_vsync() {
+#ifdef AURORA_ENABLE_GX
+  return aurora::webgpu::vsync();
+#else
+  return false;
+#endif
+}
+
 void aurora_set_frame_interpolation_fps(uint32_t targetFps) {
 #ifdef AURORA_ENABLE_GX
   aurora::gx::set_frame_interpolation_fps(targetFps);

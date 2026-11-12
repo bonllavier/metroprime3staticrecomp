@@ -2294,6 +2294,20 @@ void DrawPrimeVideoOptions() {
     ImGui::Separator();
 #endif
 
+    // V-Sync: Fifo presentation (aurora_set_vsync). Takes effect at the next frame.
+    bool vsync = aurora_get_vsync();
+    if (ImGui::Checkbox("V-Sync (no tearing)", &vsync)) {
+        aurora_set_vsync(vsync);
+        RuntimeConfigFile::SetVsync(vsync);
+    }
+    ImGui::TextDisabled("Each image waits for the monitor's refresh: no tearing, about one refresh more latency.");
+    ImGui::TextDisabled("Present mode in use: %s.", aurora_get_present_mode_name());
+    if (vsync && g_frameInterpolationMode != 0 && std::strcmp(aurora_get_present_mode_name(), "Fifo") == 0)
+        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.3f, 1.0f),
+                           "This driver has no Mailbox mode: with V-Sync the interpolated rate falls back to 60.\n"
+                           "For more than 60, turn V-Sync off.");
+    ImGui::Separator();
+
     // Aurora frame interpolation: the game keeps its 60 Hz logic and VI timing;
     // the renderer inserts transform-interpolated images between two logical
     // frames (decision of 2026-10-25: allowed because only the host layer changes).
@@ -3141,6 +3155,7 @@ void InitializeRuntimeSettings() noexcept {
     aurora_set_frame_interpolation_low_latency(RuntimeConfigFile::FrameInterpolationLowLatency(false));
     aurora_set_frame_interpolation_display_sync(RuntimeConfigFile::FrameInterpolationDisplaySync(true));
     aurora_set_frame_interpolation_fps(FrameInterpolationTarget());
+    aurora_set_vsync(RuntimeConfigFile::Vsync(false));
     aurora_set_display_mode(static_cast<AuroraDisplayMode>(g_displayMode));
     g_displayMode = static_cast<int>(aurora_get_display_mode());
     aurora_set_disable_copy_filter(g_disableCopyFilter);

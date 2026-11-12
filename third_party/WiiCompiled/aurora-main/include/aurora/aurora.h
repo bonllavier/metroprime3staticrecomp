@@ -171,6 +171,12 @@ const AuroraEvent* aurora_update();
 // Select before starting frames. Hardware EFB contents survive VI scanout;
 // translated guests that copy and draw across host frames need this policy.
 void aurora_set_efb_persistence(bool enabled);
+// V-Sync ([video] vsync): present in step with the display's refresh (Fifo). Callable before
+// aurora_initialize; afterwards the surface is reconfigured at the next frame.
+void aurora_set_vsync(bool enabled);
+bool aurora_get_vsync(void);
+// Present mode of the window surface now: "Fifo", "Mailbox", "Immediate", ...
+const char* aurora_get_present_mode_name(void);
 bool aurora_begin_frame();
 void aurora_end_frame();
 typedef void (*AuroraFrameWorkerWaitCallback)();

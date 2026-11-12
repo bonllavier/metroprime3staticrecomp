@@ -109,6 +109,8 @@ enhanced_metal_detail = 1.00
 enhanced_materials = true
 texture_upscale = 0
 frame_interpolation_fps = 0
+# V-Sync: wait for the monitor refresh (no tearing, a little more latency). F1 > Video.
+vsync = false
 disable_copy_filter = true
 skip_unready_pipelines = true
 # While a material's shader compiles, draw with a generic one that reads the material from memory

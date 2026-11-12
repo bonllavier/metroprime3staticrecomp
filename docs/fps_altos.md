@@ -2,6 +2,34 @@
 
 Petición del usuario (5 de noviembre de 2026): dar a quien tenga un PC mejor la posibilidad de superar los 60 FPS, sin dañar el juego ni RetroAchievements. El usuario no puede verlo en su monitor. La política de lógica a 60 Hz sigue en pie (`AGENTS.md`): nada de esto toca la lógica.
 
+
+## V-Sync (`[video] vsync`, F1 > Video; 11 de noviembre de 2026)
+
+Opción pedida por los usuarios. Está desactivada por defecto, que deja la presentación como estaba.
+
+- **Off:** Aurora elige el modo.
+  - Direct3D 12 en Windows y Vulkan en Linux con X11 + NVIDIA presentan con Immediate, que puede producir tearing.
+  - Con la interpolación activa se usa Mailbox si la superficie lo ofrece: no bloquea y no produce tearing.
+- **On:**
+  - Con interpolación, Mailbox si existe.
+  - En el resto de casos, Fifo: espera al refresco del monitor, sin tearing, con un refresco más de latencia aproximadamente.
+  - Se aplica en el siguiente fotograma, sin reiniciar. F1 muestra el modo de presentación en uso.
+- **Fifo con interpolación.**
+  - `Present()` se bloquea hasta el refresco con el candado del dispositivo tomado, y la mitad de los fotogramas del juego pasan de su retrazado.
+  - La interpolación baja entonces a una imagen por fotograma, es decir, 60.
+  - Linux X11 + NVIDIA no ofrece Mailbox (solo Fifo, FifoRelaxed e Immediate), así que ahí V-Sync y más de 60 son incompatibles. F1 lo avisa en naranja.
+- **Medido en Linux** (RTX 3050, monitor de 120 Hz, repetición `hangar_1x_window`):
+
+  | Configuración | FPS medios |
+  |---|---|
+  | V-Sync off a 60 | 59,84 |
+  | V-Sync on a 60 | 59,82 |
+  | Interpolación a 120 sin V-Sync | 116,15 (Windows con la misma ruta: 116,0-116,7) |
+  | Interpolación a 120 con V-Sync (Fifo), ventana | 59,87 |
+  | Interpolación a 120 con V-Sync (Fifo), pantalla completa sin bordes | 59,59 |
+
+- **Pendiente en Windows:** comprobar que D3D12 ofrece Mailbox con la interpolación activa (lo indica el registro "Surface offers present mode") y medir V-Sync a 60 y a 120.
+
 ## Qué se implementó
 
 F1 > Video, «Frame rate above 60 (interpolated)», clave `[video] frame_interpolation_fps`:

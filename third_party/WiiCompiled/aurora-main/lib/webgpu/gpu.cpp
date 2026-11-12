@@ -120,6 +120,9 @@ RenderTargetSize clamp_frame_buffer_size(uint32_t width, uint32_t height) noexce
 // encoding and through it the game: the output stays at the refresh rate and the game's own frames
 // drop by half. Mailbox never blocks and shows the newest image at each refresh, without tearing.
 std::atomic_bool g_nonBlockingPresent{false};
+// Player option [video] vsync: Fifo, which waits for the display's refresh (no tearing, presentation
+// capped at the refresh rate, one more refresh of latency). Off keeps the choice below.
+std::atomic_bool g_vsync{false};
 
 wgpu::PresentMode best_present_mode() {
   const auto supports = [](const wgpu::PresentMode candidate) {
@@ -138,6 +141,16 @@ wgpu::PresentMode best_present_mode() {
                                              : wgpu::PresentMode::Immediate;
     if (supports(requested)) return requested;
     Log.warn("Requested present mode {} is not offered by this surface", forced);
+  }
+  if (g_vsync.load(std::memory_order_acquire)) {
+    // With frame interpolation, Mailbox shows the newest image at each refresh without tearing and never
+    // blocks. Fifo blocks Present() until the refresh with the device lock held: half the game's frames then
+    // overran their retrace and the interpolation fell back to 60 (Linux X11 + NVIDIA, which offers no
+    // Mailbox; QA replay hangar_1x_window, 2026-11-11). Fifo is the one mode every surface must offer.
+    if (g_nonBlockingPresent.load(std::memory_order_acquire) && supports(wgpu::PresentMode::Mailbox)) {
+      return wgpu::PresentMode::Mailbox;
+    }
+    if (supports(wgpu::PresentMode::Fifo)) return wgpu::PresentMode::Fifo;
   }
   // Vulkan prefers Mailbox, every other backend Immediate. Under window capture the Vulkan driver
   // cannot flip and Immediate leaks about a megabyte per present until the device is lost.
@@ -974,6 +987,21 @@ void release_surface() noexcept {
 bool set_non_blocking_present(bool enabled) noexcept {
   const bool previous = g_nonBlockingPresent.exchange(enabled, std::memory_order_acq_rel);
   return previous != enabled && g_initialized.load(std::memory_order_acquire);
+}
+
+bool set_vsync(bool enabled) noexcept {
+  const bool previous = g_vsync.exchange(enabled, std::memory_order_acq_rel);
+  return previous != enabled && g_initialized.load(std::memory_order_acquire);
+}
+bool vsync() noexcept { return g_vsync.load(std::memory_order_acquire); }
+const char* present_mode_name() noexcept {
+  switch (g_graphicsConfig.surfaceConfiguration.presentMode) {
+  case wgpu::PresentMode::Fifo: return "Fifo";
+  case wgpu::PresentMode::FifoRelaxed: return "FifoRelaxed";
+  case wgpu::PresentMode::Immediate: return "Immediate";
+  case wgpu::PresentMode::Mailbox: return "Mailbox";
+  default: return "unknown";
+  }
 }
 
 bool refresh_surface(bool recreate) {

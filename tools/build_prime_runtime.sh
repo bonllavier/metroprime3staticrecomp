@@ -11,16 +11,22 @@
 #   decomp/orig/RM3E01_00 (build-time only; the game reads the image at run time)
 #   generated/RM3E01_00_conservative base translation
 #
-# Usage: recomp/tools/build_prime_runtime.sh [-j JOBS] [--build-dir DIR]
+# Usage: recomp/tools/build_prime_runtime.sh [-j JOBS] [--build-dir DIR] [--qa | --public]
+#   --qa      test build with the private QA tools (F5/F7 draw dumps, F8 stack profile, F9 panel),
+#             like the Windows test builds; never package it (package_release.ps1 refuses it).
+#   --public  build without them. Without either flag the build directory keeps its current choice.
 set -euo pipefail
 
 jobs=$(nproc)
+qa_tools=
 task_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 build_dir=${MP3_BUILD_DIR:-$task_root/recomp/build/RM3E01_00_runtime_linux}
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -j|--jobs) jobs=$2; shift 2 ;;
         --build-dir) build_dir=$2; shift 2 ;;
+        --qa) qa_tools=ON; shift ;;
+        --public) qa_tools=OFF; shift ;;
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -128,6 +134,7 @@ cmake -S recomp/third_party/WiiCompiled/runtime -B "$build_dir" -G Ninja \
     -DMKW_GAME_PROFILE_RM3E01_00=ON \
     "-DMKW_PRIME_NOD_SOURCE_DIR=$task_nod" \
     "-DMKW_PRIME_RSO_DIR=$task_root/recomp/.tools/rso-runtime/rhbm" \
+    ${qa_tools:+"-DMKW_PRIME_QA_TOOLS=$qa_tools"} \
     '-DCMAKE_C_FLAGS_RELEASE=-O3 -DNDEBUG' || die 'Prime runtime graph configuration failed'
 step 'build'
 cmake --build "$build_dir" --target WiiCompiled --parallel "$jobs" || die 'Runtime build failed'

@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <ctime>
 #include <fstream>
+#include <sstream>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -23,6 +24,15 @@ uint64_t PrimeDvdBytesReadTotal();  // hle/storage/dvd.cpp
 #include <Windows.h>
 #include <psapi.h>
 #include <dbghelp.h>
+#elif defined(__linux__) && defined(MKW_PRIME_QA_TOOLS)
+#include <cerrno>
+#include <csignal>
+#include <cstring>
+#include <execinfo.h>
+#include <map>
+#include <sys/syscall.h>
+#include <ucontext.h>
+#include <unistd.h>
 #endif
 
 namespace StackProfiler {
@@ -310,11 +320,217 @@ void Run(std::vector<uint32_t> threadIds, double seconds, std::filesystem::path 
     }
     SetStatus(std::to_string(samples) + " muestras -> " + path.string());
 }
+#elif defined(__linux__) && defined(MKW_PRIME_QA_TOOLS)
+// Linux has no SuspendThread/GetThreadContext for another thread of the process: each sample sends
+// a real-time signal to the target thread (tgkill), whose handler records the interrupted
+// instruction pointer and unwinds its own stack with the unwinder behind backtrace(). Same output
+// format as Windows (v3), so summarize_stack_profile.py reads both; ELF modules are listed from
+// /proc/self/maps with the load base of each file.
+constexpr unsigned kLinuxMaxFrames = 64;
+// 0 idle, 1 requested, 2 handler writing, 3 written.
+std::atomic<int> g_sampleState{0};
+std::atomic<pid_t> g_sampleTarget{0};
+uint64_t g_sampleFrames[kLinuxMaxFrames];
+unsigned g_sampleDepth = 0;
+
+void SampleHandler(int, siginfo_t*, void* raw) {
+    const int savedErrno = errno;
+    if (static_cast<pid_t>(syscall(SYS_gettid)) == g_sampleTarget.load(std::memory_order_acquire)) {
+        int expected = 1;
+        if (g_sampleState.compare_exchange_strong(expected, 2, std::memory_order_acq_rel)) {
+            void* frames[kLinuxMaxFrames + 2];
+            const int depth = backtrace(frames, kLinuxMaxFrames + 2);
+            unsigned out = 0;
+#if defined(__x86_64__)
+            const auto* context = static_cast<const ucontext_t*>(raw);
+            g_sampleFrames[out++] = static_cast<uint64_t>(context->uc_mcontext.gregs[REG_RIP]);
+#else
+            (void)raw;
+#endif
+            // frames[0] is this handler and frames[1] the signal trampoline; frames[2] is the
+            // interrupted instruction again (already recorded from the context on x86-64).
+            for (int i = 3; i < depth && out < kLinuxMaxFrames; ++i)
+                g_sampleFrames[out++] = reinterpret_cast<uint64_t>(frames[i]);
+            g_sampleDepth = out;
+            g_sampleState.store(3, std::memory_order_release);
+        }
+    }
+    errno = savedErrno;
+}
+
+uint64_t ThreadCpuTicks(uint32_t tid) {
+    std::ifstream stat("/proc/self/task/" + std::to_string(tid) + "/stat");
+    std::string text((std::istreambuf_iterator<char>(stat)), std::istreambuf_iterator<char>());
+    const auto close = text.rfind(')');
+    if (close == std::string::npos) return 0;
+    // Fields after the command: state is field 3; utime and stime are fields 14 and 15.
+    std::istringstream rest(text.substr(close + 2));
+    std::string field;
+    uint64_t utime = 0, stime = 0;
+    for (int index = 3; rest >> field; ++index) {
+        if (index == 14) utime = std::strtoull(field.c_str(), nullptr, 10);
+        if (index == 15) { stime = std::strtoull(field.c_str(), nullptr, 10); break; }
+    }
+    return utime + stime;
+}
+
+struct LinuxModule { uint64_t base, end; std::string path; };
+
+std::vector<LinuxModule> ListModules() {
+    std::map<std::string, LinuxModule> byPath;
+    std::ifstream maps("/proc/self/maps");
+    std::string line;
+    while (std::getline(maps, line)) {
+        unsigned long long start = 0, end = 0, offset = 0;
+        char perms[8] = {};
+        int pathStart = 0;
+        if (std::sscanf(line.c_str(), "%llx-%llx %7s %llx %*s %*s %n", &start, &end, perms, &offset, &pathStart) < 4) continue;
+        if (pathStart <= 0 || pathStart >= static_cast<int>(line.size()) || line[pathStart] != '/') continue;
+        const std::string path = line.substr(pathStart);
+        auto [it, inserted] = byPath.try_emplace(path, LinuxModule{start - offset, end, path});
+        if (!inserted) {
+            it->second.base = std::min<uint64_t>(it->second.base, start - offset);
+            it->second.end = std::max<uint64_t>(it->second.end, end);
+        }
+    }
+    std::vector<LinuxModule> modules;
+    for (auto& [_, module] : byPath) modules.push_back(module);
+    return modules;
+}
+
+void Run(std::vector<uint32_t> threadIds, double seconds, std::filesystem::path outputDirectory) {
+    struct Finish { ~Finish() { g_running.store(false, std::memory_order_release); } } finish;
+    // The first backtrace() loads the unwinder; it must not happen inside the signal handler.
+    void* warm[4];
+    backtrace(warm, 4);
+    const int signal = SIGRTMIN + 4;
+    struct sigaction action{}, previous{};
+    action.sa_sigaction = SampleHandler;
+    action.sa_flags = SA_SIGINFO | SA_RESTART;
+    sigemptyset(&action.sa_mask);
+    if (sigaction(signal, &action, &previous) != 0) {
+        SetStatus("no se pudo instalar la señal de muestreo");
+        return;
+    }
+    const pid_t pid = getpid();
+    const uint32_t threadId = threadIds.front();
+    std::vector<uint64_t> data;
+    data.reserve(size_t(seconds * 1100.0) * 25 * threadIds.size());
+    unsigned samples = 0, failures = 0;
+    const uint64_t cpuStart = ThreadCpuTicks(threadId);
+    const auto start = std::chrono::steady_clock::now();
+    const auto end = start + std::chrono::duration<double>(seconds);
+    SetStatus("grabando...");
+    constexpr uint64_t kSweepMarker = ~uint64_t{0};
+    std::vector<uint64_t> counters;
+    uint64_t lastCounters[4] = {~uint64_t{0}, 0, 0, 0};
+    while (std::chrono::steady_clock::now() < end) {
+        const uint64_t nowUs = uint64_t(std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - start).count());
+        data.push_back(kSweepMarker);
+        data.push_back(nowUs);
+        const AuroraStats* stats = aurora_get_stats();
+        const uint64_t current[4] = {aurora_get_present_count(), PrimeDvdBytesReadTotal(),
+                                     aurora_get_texture_upload_bytes_total(),
+                                     stats ? uint64_t(stats->createdPipelines) : 0};
+        if (!std::equal(current, current + 4, lastCounters)) {
+            std::copy(current, current + 4, lastCounters);
+            counters.push_back(nowUs);
+            counters.insert(counters.end(), current, current + 4);
+        }
+        for (const uint32_t tid : threadIds) {
+            g_sampleTarget.store(static_cast<pid_t>(tid), std::memory_order_release);
+            g_sampleState.store(1, std::memory_order_release);
+            if (syscall(SYS_tgkill, pid, static_cast<pid_t>(tid), signal) != 0) {
+                g_sampleState.store(0, std::memory_order_release);
+                ++failures;
+                continue;
+            }
+            // A running thread answers within microseconds; one blocked in the kernel runs the
+            // handler as soon as it is scheduled. Give up after 5 ms (counted as a failure).
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(5);
+            while (g_sampleState.load(std::memory_order_acquire) != 3 && std::chrono::steady_clock::now() < deadline)
+                std::this_thread::yield();
+            int expected = 1;
+            if (g_sampleState.compare_exchange_strong(expected, 0, std::memory_order_acq_rel)) {
+                ++failures;  // never ran: cancelled before the handler could claim it
+                continue;
+            }
+            while (g_sampleState.load(std::memory_order_acquire) != 3) std::this_thread::yield();
+            if (g_sampleDepth) {
+                data.push_back(tid);
+                data.push_back(g_sampleDepth);
+                data.insert(data.end(), g_sampleFrames, g_sampleFrames + g_sampleDepth);
+                ++samples;
+            } else {
+                ++failures;
+            }
+            g_sampleState.store(0, std::memory_order_release);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    g_sampleTarget.store(0, std::memory_order_release);
+    sigaction(signal, &previous, nullptr);
+    const double elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+    const double cpuMs = double(ThreadCpuTicks(threadId) - cpuStart) * 1000.0 / double(sysconf(_SC_CLK_TCK));
+
+    std::error_code ec;
+    std::filesystem::create_directories(outputDirectory, ec);
+    char name[64];
+    const std::time_t now = std::time(nullptr);
+    std::tm local{};
+    localtime_r(&now, &local);
+    std::strftime(name, sizeof(name), "stack_profile_%Y%m%d_%H%M%S.txt", &local);
+    const auto path = outputDirectory / name;
+    std::ofstream out(path);
+    if (!out) {
+        SetStatus("no se pudo escribir " + path.string());
+        return;
+    }
+    out << "# stack_profile v3\n";
+    out << "tid " << threadId << " seconds " << elapsed << " thread_cpu_ms " << cpuMs
+        << " samples " << samples << " failures " << failures << "\n";
+    out << "threads";
+    for (const uint32_t id : threadIds) out << " " << id;
+    out << "\n";
+    std::error_code exeError;
+    const auto exe = std::filesystem::read_symlink("/proc/self/exe", exeError);
+    for (const auto& m : ListModules()) {
+        out << "module 0x" << std::hex << m.base << " 0x" << (m.end - m.base) << std::dec << " " << m.path << "\n";
+        // Marks the executable and lets the summarizer refuse symbols from a rebuilt one.
+        std::error_code sizeError;
+        if (!exeError && m.path == exe.string())
+            out << "exe_size " << std::filesystem::file_size(m.path, sizeError) << " " << m.path << "\n";
+    }
+    const auto ms = [](uint64_t us) {
+        char text[32];
+        std::snprintf(text, sizeof(text), "%.3f", us / 1000.0);
+        return std::string(text);
+    };
+    for (size_t i = 0; i + 5 <= counters.size(); i += 5)
+        out << "c " << ms(counters[i]) << " " << counters[i + 1] << " " << counters[i + 2] << " "
+            << counters[i + 3] << " " << counters[i + 4] << "\n";
+    out << std::hex;
+    for (size_t i = 0; i < data.size();) {
+        if (data[i] == kSweepMarker) {
+            out << "s " << ms(data[i + 1]) << "\n";
+            i += 2;
+            continue;
+        }
+        const uint64_t sampleThread = data[i++];
+        const size_t depth = data[i++];
+        out << "t " << std::dec << sampleThread << std::hex;
+        for (size_t f = 0; f < depth; ++f) out << " " << data[i + f];
+        out << "\n";
+        i += depth;
+    }
+    SetStatus(std::to_string(samples) + " muestras -> " + path.string());
+}
 #endif
 }  // namespace
 
 bool Start(std::vector<uint32_t> threadIds, double seconds, const std::filesystem::path& outputDirectory) {
-#if defined(_WIN32) && defined(MKW_PRIME_QA_TOOLS)
+#if (defined(_WIN32) || defined(__linux__)) && defined(MKW_PRIME_QA_TOOLS)
     bool expected = false;
     if (threadIds.empty() || !g_running.compare_exchange_strong(expected, true)) return false;
     std::thread(Run, std::move(threadIds), seconds, outputDirectory).detach();

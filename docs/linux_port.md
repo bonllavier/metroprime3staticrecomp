@@ -106,6 +106,7 @@ Dependencias externas al repo `recomp` que el pipeline lee por ruta relativa (co
 | Caché de módulos de shader de Aurora | — | Dawn conserva el programa Tint (~1 MB) de cada módulo mientras la aplicación lo referencia; la caché los guardaba todos: ~11.000 módulos (>7 GB) en un arranque sin caché y la PC se congeló. Ahora guarda los 256 más recientes (afecta a todas las plataformas) | implementado: compilación completa sin caché en 256 s con 2,3 GB como máximo |
 | Núcleos físicos (`in_play_compile_cap`) | `GetLogicalProcessorInformationEx` | listas distintas de `thread_siblings_list` (antes: lógicos / 2, erróneo sin SMT) | implementado |
 | Icono de la ventana | recurso `prime_port.rc` (`MetroidPrime3PCPort.ico`) leído con `LoadImageW` | la entrada de 128×128 del mismo `.ico` se decodifica al compilar (`cmake/ico_to_rgba_source.py`, solo biblioteca estándar de Python) a píxeles RGBA enlazados en el ejecutable; `main.cpp` los pasa a Aurora (`SDL_SetWindowIcon`) | implementado |
+| Herramientas de QA (`MKW_PRIME_QA_TOOLS`): F5/F7 volcado de dibujos, F9 panel, F8 perfil de pilas | build de prueba con `-DMKW_PRIME_QA_TOOLS=ON`; F8 suspende hilos (`SuspendThread`/`GetThreadContext` + `StackWalk64`) | `build_prime_runtime.sh --qa`. F8 manda una señal de tiempo real (`tgkill`) a cada hilo, que registra su RIP y se desenrolla con `backtrace()`, en el mismo formato v3; `summarize_stack_profile.py` reconoce el ELF (base de carga, `nm`/`c++filt` del sistema). El fotograma y el presentador ya informan su TID real en Linux | implementado y comprobado: F8 automático de 10 s con 35.431 muestras de 5 hilos y 4 fallos; F7 guarda BMP, lista de dibujos y texturas |
 | Vigilante de parones (diagnóstico F8, QA) | temporizadores de alta resolución + Toolhelp32 | — | pendiente (solo diagnóstico) |
 
 ## Primer arranque en Linux (2026-11-11)
@@ -127,13 +128,17 @@ cd /mnt/mp3port/builds/RM3E01_00_runtime_linux        # portable.txt: UserData/ 
 ./"Corruption_3 PC" --iso "/mnt/mp3port/iso/Metroid Prime 3 - Corruption (USA).rvz"
 ```
 
+- El build de trabajo (`/mnt/mp3port/builds/RM3E01_00_runtime_linux`) es de prueba, con las herramientas de QA (`--qa`, F5/F7/F8/F9), como los builds de prueba de Windows. Un paquete público se compila con `--public` en otro directorio.
+  - F7 y F5 guardan en `UserData/Logs/captures`; también se piden creando un archivo `request` vacío allí.
+  - F8 guarda en `UserData/Logs/profiles` y se resume con `tools/summarize_stack_profile.py`.
+  - `WII_COMPILED_STACK_PROFILE_AT=<s>` graba 10 s sin intervención.
 - Recompilar tras tocar el runtime o Aurora: `source /mnt/mp3port/env.sh; cmake --build /mnt/mp3port/builds/RM3E01_00_runtime_linux --target WiiCompiled --parallel 6` (de 1 a 3 minutos). `build_prime_runtime.sh` solo hace falta si cambian traducciones, RSO, hooks, shards, el `Config.default.toml` o las pantallas de la correa.
 - Logs: `UserData/Logs/base_<epoch>_pid<PID>/console.log`. Líneas útiles:
   - `[present-latency] frames=N` cada 10 s (600 = 60 FPS).
   - `Pipeline prewarm finished: N pipelines in S s (Dawn blob cache: hits/lookups, stores)`: con la caché caliente, 100 % de aciertos y 0 stores.
   - `[pipeline-compile-summary]` durante la compilación.
 - Una sola instancia: lanzar con un comando simple, `cd dir; ./juego ... & pid=$!` (nunca dentro de una cadena `&&` ni de una subshell, porque `$!` capturaría la subshell). Comprobar el PID antes de usar `kill`. Si queda una instancia viva, el usuario ve dos ventanas y las medidas no valen.
-- Antes de lanzar una prueba, comprobar si el usuario tiene el juego abierto (`pgrep -af "Corruption_3 PC"`). No cerrar su instancia sin preguntarle.
+- Antes de lanzar una prueba, comprobar si el usuario tiene el juego abierto (`pgrep -af "Corruption_3 PC"`). Si hace falta para corregir errores o validar una corrección, se puede cerrar su instancia sin preguntar (directiva del usuario, 2026-11-11); avisar en la respuesta.
 - Pruebas pesadas (caché vacía, cambios de memoria o de hilos): lanzar junto al juego `tools/linux_diag/watchdog.sh PID LOG`, que registra la memoria cada segundo y cierra el juego si quedan menos de 1,5 GB libres. Una prueba sin él congeló la PC del usuario y obligó a reiniciar (2026-11-11).
 - Nunca capturar la ventana raíz ni el escritorio para ver el juego: expuso ventanas privadas del usuario. Usar la captura del juego o pedirla al usuario.
 

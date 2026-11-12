@@ -12,11 +12,16 @@ from bisect import bisect_right
 from collections import Counter
 from pathlib import Path
 import re
+import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 NM = ROOT / 'recomp/.tools/portable-tools/llvm-mingw/bin/llvm-nm.exe'
 CXXFILT = ROOT / 'recomp/.tools/portable-tools/llvm-mingw/bin/llvm-cxxfilt.exe'
+# Linux profiles (ELF executable): the host's llvm-nm/nm and llvm-cxxfilt/c++filt.
+if not NM.exists():
+    NM = Path(shutil.which('llvm-nm') or shutil.which('nm') or 'nm')
+    CXXFILT = Path(shutil.which('llvm-cxxfilt') or shutil.which('c++filt') or 'c++filt')
 
 
 def load_symbols(exe):
@@ -55,6 +60,7 @@ def main():
     a = p.parse_args()
 
     modules, samples, header, tids, times = [], [], '', [], []
+    exe_path = None
     now = 0.0
     for line in a.profile.read_text(encoding='utf-8', errors='replace').splitlines():
         if line.startswith('module '):
@@ -79,6 +85,7 @@ def main():
             header = line
         elif line.startswith('exe_size '):
             _, size, path = line.split(' ', 2)
+            exe_path = path
             if Path(path).exists() and Path(path).stat().st_size != int(size):
                 raise SystemExit(f'{path} was rebuilt since this profile; symbols would be wrong')
     modules.sort()
@@ -92,9 +99,14 @@ def main():
     if a.window:
         lo, hi = (float(x) * 1000.0 for x in a.window.split(','))
         samples = [s for s, t in zip(samples, times) if lo <= t <= hi]
+    # Windows: the .exe module, linked at 0x140000000. Linux: the module named by exe_size, a PIE
+    # whose symbol values are offsets from its load base.
     exe = next((m for m in modules if m[2].lower().endswith('.exe')), None)
-    addresses, names = load_symbols(Path(exe[2])) if exe else ([], [])
     preferred = 0x140000000
+    if exe is None and exe_path:
+        exe = next((m for m in modules if m[2] == exe_path), None)
+        preferred = 0
+    addresses, names = load_symbols(Path(exe[2])) if exe else ([], [])
 
     cache = {}
 

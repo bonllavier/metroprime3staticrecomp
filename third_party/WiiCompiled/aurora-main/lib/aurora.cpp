@@ -31,6 +31,9 @@
 #include "system_info.hpp"
 #include "tracy/Tracy.hpp"
 
+#if defined(__linux__)
+#include <aurora/host_cores.h>
+#endif
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -277,6 +280,8 @@ std::atomic<uint32_t> g_presenterNativeId{0};
 uint32_t current_native_thread_id() noexcept {
 #ifdef _WIN32
   return static_cast<uint32_t>(GetCurrentThreadId());
+#elif defined(__linux__)
+  return host_cores::native_thread_id();
 #else
   return 0;
 #endif

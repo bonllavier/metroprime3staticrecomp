@@ -75,6 +75,9 @@ bool PrimeFrontEndActive();  // prime_rso_runtime.cpp: title / file-select menus
 extern "C" void PAD_HLE_SetRumbleEnabled(bool enabled);
 #include <dolphin/vi.h>
 #include <aurora/aurora.h>
+#if defined(__linux__)
+#include <aurora/host_cores.h>
+#endif
 #include <aurora/gfx.h>
 
 extern "C" int g_gxFrameCount;
@@ -1282,7 +1285,11 @@ void RequestDrawDump(const char* trigger, uint32_t frames = 1) {
     std::filesystem::create_directories(DrawDumpDirectory(), error);
     const std::time_t now = std::time(nullptr);
     std::tm local{};
+#if defined(_WIN32)
     localtime_s(&local, &now);
+#else
+    localtime_r(&now, &local);
+#endif
     char name[64];
     std::strftime(name, sizeof(name), "capture_%Y%m%d_%H%M%S", &local);
     const auto base = DrawDumpDirectory() / name;
@@ -1300,7 +1307,7 @@ constexpr double kF8ProfileSeconds = 120.0;
 
 // F8 records without the F9 panel; this keeps the recording visible.
 void DrawProfileRecordingNotice() {
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__linux__)
     static bool wasRunning=false;
     static std::chrono::steady_clock::time_point startedAt, finishedAt;
     const bool running=StackProfiler::IsRunning();
@@ -3148,10 +3155,14 @@ void InitializeRuntimeSettings() noexcept {
     InputBindings::SetInputBlocked(false);
 }
 
-#if defined(_WIN32) && defined(MKW_PRIME_QA_TOOLS)
+#if (defined(_WIN32) || defined(__linux__)) && defined(MKW_PRIME_QA_TOOLS)
 // The guest thread plus, when enabled, the GX consumer thread.
 std::vector<uint32_t> ProfiledThreads() {
+#if defined(_WIN32)
     std::vector<uint32_t> threads{GetCurrentThreadId()};
+#else
+    std::vector<uint32_t> threads{aurora::host_cores::native_thread_id()};
+#endif
     if (const uint32_t gpu = GxGpuThread::NativeThreadId()) threads.push_back(gpu);
     if (const uint32_t decoder = aurora_get_decoder_thread_id()) threads.push_back(decoder);
     // Frame worker (encode, pipeline waits) and presenter.
@@ -3163,7 +3174,7 @@ std::vector<uint32_t> ProfiledThreads() {
 #endif
 
 void HandleEvents(const AuroraEvent* events) noexcept {
-#if defined(_WIN32) && defined(MKW_PRIME_QA_TOOLS)
+#if (defined(_WIN32) || defined(__linux__)) && defined(MKW_PRIME_QA_TOOLS)
     // WII_COMPILED_STACK_PROFILE_AT=<seconds>: one unattended capture, for
     // validating the profiler without input.
     static const auto profileAt = [] {
@@ -3252,7 +3263,7 @@ void HandleEvents(const AuroraEvent* events) noexcept {
             g_showRemoteMotion = !g_showRemoteMotion;
         }
 #endif
-#if defined(_WIN32) && defined(MKW_PRIME_QA_TOOLS)
+#if (defined(_WIN32) || defined(__linux__)) && defined(MKW_PRIME_QA_TOOLS)
         if (!g_rebind.active && IsToggleKey(ev->sdl, SDL_SCANCODE_F9)) {
             g_showPerformanceDiagnostics=!g_showPerformanceDiagnostics;
         }

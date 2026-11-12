@@ -1,6 +1,6 @@
-# Metroid Prime 3: Corruption — static recompilation (source)
+# corruption3 — static recompilation (source)
 
-Source of **Corruption_3 PC**, a native PC port of *Metroid Prime 3: Corruption* (Wii, USA, `RM3E01`
+Source of **corruption3**, a native PC port of a Wii game (USA release, game ID `RM3E01`,
 revision 0) by **bonllavier**. The game's PowerPC code is translated ahead of time into C++ and
 compiled for the host, so no emulator or virtual machine runs at play time. A native runtime
 (high-level emulation of the Wii OS and libraries, graphics through Aurora/WebGPU) runs the
@@ -15,7 +15,7 @@ The build reads a few files from it, and the game reads the image itself while i
 | --- | --- |
 | Windows 10/11 x64 (Direct3D 12 or Vulkan) | Main platform. Public test builds are released. The campaign start (G.F.S. Olympus, Norion, Bryyo up to Rundas) plays at or near 60 FPS. |
 | Linux x86-64 (Vulkan, X11 tested) | Native port, same source tree. Boots and plays at a stable 60 FPS; 120 FPS frame interpolation matches Windows. Not packaged yet. See [`docs/linux_port.md`](docs/linux_port.md). |
-| *Metroid Prime Trilogy* (`R3ME01`) | Prime 3 from the Trilogy disc boots to the ship cockpit in local test builds. Not released. See [`docs/trilogy_r3me01.md`](docs/trilogy_r3me01.md). |
+| Trilogy compilation disc (`R3ME01`) | corruption3 from the compilation disc boots to the ship cockpit in local test builds. Not released. See [`docs/trilogy_r3me01.md`](docs/trilogy_r3me01.md). |
 | Other platforms | Not started. [`PORTING.md`](PORTING.md) describes what a new platform needs. |
 
 What the port adds on top of the original game (all switchable in the **F1** overlay):
@@ -85,7 +85,7 @@ Generated and private material is ignored by Git: `input/`, `generated/`, `build
 
 ## Legal
 
-This repository contains no Nintendo code or data. The translated C++ is generated locally from
+This repository contains no code or data from the original game. The translated C++ is generated locally from
 your own disc and is never committed or distributed (it is derived from the game). Builds must not
 bundle disc files, extracted resources, keys or saves. The ISO/RVZ is opened read-only.
 
@@ -94,8 +94,8 @@ The project builds on WiiCompiled and is licensed under the **GNU General Public
 [`third_party/WiiCompiled/THIRD-PARTY-NOTICES.md`](third_party/WiiCompiled/THIRD-PARTY-NOTICES.md)
 and the license files next to each component.
 
-Not affiliated with, endorsed by, or associated with Nintendo or Retro Studios. *Metroid* and
-*Metroid Prime* are trademarks of Nintendo.
+Not affiliated with, endorsed by, or associated with the original game's developer or publisher.
+All trademarks belong to their respective owners.
 
 ## Credits
 
@@ -103,5 +103,5 @@ Not affiliated with, endorsed by, or associated with Nintendo or Retro Studios. 
 - [Aurora](https://github.com/encounter/aurora), [Dawn](https://dawn.googlesource.com/dawn), [SDL3](https://www.libsdl.org/): graphics, window and input.
 - [nod](https://github.com/encounter/nod): reading the disc image (ISO, RVZ, WIA, WBFS, GCZ).
 - [rcheevos](https://github.com/RetroAchievements/rcheevos): RetroAchievements.
-- [PrimeDecomp](https://github.com/PrimeDecomp/prime) and the Metroid Prime modding community: reference for the engine's structures.
+- [PrimeDecomp](https://github.com/PrimeDecomp/prime) and the game's modding community: reference for the engine's structures.
 - [Dolphin](https://dolphin-emu.org/): reference for hardware behaviour and the texture replacement format.

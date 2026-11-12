@@ -5,7 +5,7 @@ Scripts de solo lectura sobre la copia extraída del disco (`PRIME_ICONS_FILES`,
 runtime lleva embebida en `runtime/src/hle/input/prime_key_icons.cpp` y que se guarda en
 `recomp/config/RM3E01_00/keyboard_icon_textures.json`.
 
-- `pak_probe.py`: lector de paks de Prime 3 (versión 2: secciones STRG/RSHD/DATA, recursos CMPD).
+- `pak_probe.py`: lector de paks de corruption3 (versión 2: secciones STRG/RSHD/DATA, recursos CMPD).
 - `lzo_txtr.py`: LZO1X en Python puro y la segmentación de 16 KB con tamaño `s16` por segmento
   (negativo = sin comprimir); decodifica los recursos y arma hojas de contacto PNG.
 - `icon_probe.py`: cabecera TXTR (formato Retro → formato GX), decodificación I4/I8/IA4/IA8/

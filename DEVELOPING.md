@@ -4,10 +4,10 @@ How to build and run the port from source on **Windows** or **Linux**, starting 
 this repository and your own copy of the game. Nothing in this guide downloads or distributes game
 data. Every game-derived file is produced locally from your disc and stays out of Git.
 
-> **Game revision.** The project targets *Metroid Prime 3: Corruption* USA, game ID **`RM3E01`, revision 0**.
+> **Game revision.** The project targets the corruption3 game, USA release, game ID **`RM3E01`, revision 0**.
 > Its `main.dol` must have SHA-256 `6b550f221602074747a2e61b0aa064203fd493f6865dfb3b1a912682065e6104`
 > (SHA-1 `3e81f9b09dfb1e7c02e22b9c6c48a4a1390224b2`). The scripts refuse any other revision.
-> The *Metroid Prime Trilogy* (`R3ME01`) and PAL (`RM3P01`) discs have their own pipelines under
+> The Trilogy compilation (`R3ME01`) and PAL (`RM3P01`) discs have their own pipelines under
 > `tools/trilogy` and `titles/`; start with RM3E01.
 
 ## 1. Overview of the pipeline

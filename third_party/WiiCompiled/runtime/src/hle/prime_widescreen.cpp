@@ -33,10 +33,18 @@ constexpr uint32_t kGraphicsViewport = 0x8059E188u;
 // (CGuiCamera draw 0x80433BD8 and DrawSqueezedForWidescreen 0x80433CF8).
 constexpr uint32_t kGuiCameraPerspectiveReturn = 0x80433C80u;
 constexpr uint32_t kGuiCameraSqueezedPerspectiveReturn = 0x80433DA8u;
-// CGameViewport vtable (constructor 0x800BDC50) and its "update the projection" flag.
+// CGameViewport vtable (constructor 0x800BDC50) and its "active" bit: 0x800BDFE0
+// writes it (bit 7 of +0x58 = argument), and only active viewports are rendered
+// and rebuilt. 0x802B2094 calls 0x800BE0DC for every active viewport each frame,
+// which recomputes the aspect through 0x800BF0C4 -> 0x800BE034, so a new factor
+// reaches the view on the next frame without touching the game's state.
+// Never set this bit: 0x8006AAC0 creates "xray_viewport" (500x200, the X-ray
+// visor's window in the middle of the EFB) and "cinematic_viewport" inactive;
+// setting the bit on them (12/11/2026) drew a grey box of stale X-ray frames
+// over the visor and rendered the world twice.
 constexpr uint32_t kGameViewportVtable = 0x80591498u;
 constexpr uint32_t kGameViewportFlags = 0x58u;
-constexpr uint8_t kGameViewportDirty = 0x80u;  // bit set by 0x800BDFE0, read by 0x800BE0DC
+constexpr uint8_t kGameViewportActive = 0x80u;
 
 std::mutex g_settingMutex;
 Setting g_setting{};
@@ -47,10 +55,8 @@ float g_factor = 1.0f;
 float g_targetAspect = kBaseAspect;
 bool g_presented = false;
 uint32_t g_frame = 0;
-std::array<uint32_t, 8> g_viewports{};
-// Aspects this factor produced in 0x800BE034. The game recomputes a viewport's
-// aspect only when the viewport is marked for update, and keeps using it, so
-// the list lives until the factor changes.
+// Aspects this factor produced in 0x800BE034 (and the GUI cameras), for the
+// test build's flush policy; the list lives until the factor changes.
 std::array<float, 8> g_widenedAspects{};
 size_t g_widenedCount = 0;
 void RememberWidened(float aspect) {
@@ -105,14 +111,6 @@ void ScreenSize(uint32_t& width, uint32_t& height) {
     g_screenHeight = std::max(g_screenHeight, h);
     width = g_screenWidth;
     height = g_screenHeight;
-}
-
-void MarkViewportsDirty() {
-    for (uint32_t viewport : g_viewports) {
-        if (!Valid(viewport, kGameViewportFlags + 1) || Memory::Read32(viewport) != kGameViewportVtable) continue;
-        Memory::Write8(viewport + kGameViewportFlags,
-                       static_cast<uint8_t>(Memory::Read8(viewport + kGameViewportFlags) | kGameViewportDirty));
-    }
 }
 
 #if defined(MKW_PRIME_QA_TOOLS)
@@ -229,27 +227,26 @@ void PrimeWidescreenOnSurface(uint32_t surfaceWidth, uint32_t surfaceHeight) {
     // The 16:9 presentation policy keeps its shape at this aspect (4:3 keeps FIT).
     AuroraSetFixedAspect(target);
     g_presented = true;
-    if (factorChanged) {
-        g_widenedCount = 0;
-        MarkViewportsDirty();
-    }
+    if (factorChanged) g_widenedCount = 0;
     RT_LOG(RT_TAG_CONFIG) << "[prime-ultrawide] aspect=" << target << " factor=" << factor
                           << " setting=" << Format(LoadedSetting()) << " window=" << surfaceWidth << "x" << surfaceHeight
                           << (widescreen ? "" : " (4:3 mode: off)") << std::endl;
 }
 
+// Entry of 0x800BF0C4 (a viewport's aspect is being recomputed). Read only: the
+// test build's trace records whether the viewport was active.
 extern "C" void PrimeWidescreenNoteViewport(uint32_t viewport) {
-    if (!Valid(viewport) || Memory::Read32(viewport) != kGameViewportVtable) return;
-    for (uint32_t known : g_viewports) {
-        if (known == viewport) return;
-    }
-    for (uint32_t& slot : g_viewports) {
-        if (slot == 0 || !Valid(slot) || Memory::Read32(slot) != kGameViewportVtable) {
-            slot = viewport;
-            return;
-        }
-    }
-    g_viewports[g_frame % g_viewports.size()] = viewport;
+#if defined(MKW_PRIME_QA_TOOLS)
+    if (!TraceEnabled() || !Valid(viewport, kGameViewportFlags + 1) || Memory::Read32(viewport) != kGameViewportVtable) return;
+    const bool active = (Memory::Read8(viewport + kGameViewportFlags) & kGameViewportActive) != 0;
+    char key[64];
+    std::snprintf(key, sizeof(key), "viewport-object %08X %s", viewport, active ? "active" : "inactive");
+    auto [it, inserted] = g_traceCounts.emplace(key, 0);
+    ++it->second;
+    if (inserted && g_traceKeys++ < 400) RT_LOG(RT_TAG_RUNTIME) << "[prime-uw-trace] new " << key << " frame=" << g_frame << std::endl;
+#else
+    (void)viewport;
+#endif
 }
 
 // End of 0x800BE034: the aspect the game computed for a w x h viewport.

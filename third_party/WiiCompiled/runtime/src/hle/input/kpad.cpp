@@ -286,6 +286,7 @@ PPC_NATIVE_OVERRIDE(8019812C, KPAD__GetUnifiedWpadStatus_HLE, int32_t,
 #include "hle/prime_gamepad_runtime.h"
 #include "hle/prime_remote_debug.h"
 #include "hle/prime_input_latency.h"
+#include "hle/prime_widescreen.h"
 #include <SDL3/SDL_properties.h>
 #if defined(_WIN32)
 #ifndef NOMINMAX
@@ -685,6 +686,11 @@ extern "C" bool PrimeInputTryReadKpad(CpuContext* ctx) {
     }
     // Mouse look: the game sees a centred pointer; CPlayer's hooks turn the camera.
     if(PrimeMouseLook::Active()) {input.pointerValid=true;input.pointerX=0;input.pointerY=0;}
+    // Ultrawide (Hor+): the game's pointer spans the 16:9 picture, x = +-1 at its
+    // edges, and the HUD and the 3D view extend past them linearly. Scale x so the
+    // mouse (mapped over the whole presented image) and the pad reach the sides.
+    // The game takes pos as given; recordings keep their unscaled values.
+    if(input.pointerValid) input.pointerX*=PrimeWidescreen::ShownFactor();
     PrimeInputLatency::NoteInputRead();
     if(InputBindings::InputBlocked()) input={};
     if(PrimePerformance::Enabled()) {
@@ -718,7 +724,8 @@ extern "C" bool PrimeInputTryReadKpad(CpuContext* ctx) {
         // Sensor-bar marks as the IR camera sees them: the image moves opposite to
         // the pointer, the marks close in with distance and turn with the twist
         // (the same direction as the KPAD horizon below).
-        const float centerX=512.0f-input.pointerX*400.0f, centerY=384.0f-input.pointerY*300.0f;
+        // Clamped to the camera (ultrawide pointers go past the 16:9 edge).
+        const float centerX=std::clamp(512.0f-input.pointerX*400.0f,0.0f,1023.0f), centerY=384.0f-input.pointerY*300.0f;
         const float half=100.0f/std::max(input.pointerDistance,0.25f);
         sample.irValid=true;
         sample.irDots[0][0]=centerX-half*rollCos;sample.irDots[0][1]=centerY-half*rollSin;

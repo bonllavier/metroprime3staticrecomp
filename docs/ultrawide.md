@@ -23,7 +23,8 @@ En 4:3 no hace nada. Se aplica en vivo.
   - los planos de descarte, con `0x8036F6AC (aspect, near, far, transform, fov)`, a partir de la amplitud horizontal `fov/2 * aspect`;
   - la matriz de proyección `+0xD0` (`0x803E9384`), que usan `CGameViewport::ConvertToScreenSpace`/`ToWorldSpace`/`ToNormalisedSpace`.
   
-  Solo lo hace cuando el bit 0x80 de `CGameViewport+0x58` está activo. Ese bit lo pone `0x800BDFE0`.
+  Solo lo hace con el viewport activo: el bit 0x80 de `CGameViewport+0x58`, que escribe `0x800BDFE0` (bit 7 = argumento). `0x802B2094` llama cada frame a `0x800BE0DC` para cada viewport activo, y este recalcula el aspecto (`0x800BF0C4` → `0x800BE034`). Un factor nuevo llega así al frame siguiente sin tocar el estado del juego.
+- `0x8006AAC0` crea por zona `player_viewport` (activo), `xray_viewport` (500x200 desde `gpTweakGui`, centrado en el EFB: la ventana del visor de rayos X) y `cinematic_viewport`, estos dos inactivos.
 - Los otros llamadores de `0x800BE034` son `0x802D3850`, que pasa `CGraphics::mViewport` (`0x8059E188`: left, top, width, height), y `0x800BEE48`.
 - `CGraphics::SetPerspective` es `0x803E91D4` (fov, aspect, near, far) y `SetOrtho` es `0x803E9158`. Ambas guardan el estado `lbl_805CDCE0` (byte de perspectiva; left, right, top, bottom, near, far) y llaman a `0x803EB060`, que construye la matriz con `C_MTXFrustum` (`0x80506538`) o `C_MTXOrtho` (`0x805066C0`) y llama a `GXSetProjection`.
 - Las cámaras de interfaz (`CGuiCamera`, `0x80433BD8`) tienen su propio aspecto en `+0xD4` (tipo en `+0xCC`: 0 perspectiva, 1 ortográfica, l/r/t/b/n/f en `+0xD0..+0xE4`). `DrawSqueezedForWidescreen` es su variante de 16:9.
@@ -35,7 +36,7 @@ En 4:3 no hace nada. Se aplica en vivo.
 - **Runtime** `runtime/src/hle/prime_widescreen.cpp`, en el hilo del juego:
   - `PrimeWidescreenOnSurface`, en cada frame desde `UpdateMkwDynamicAspectSurface`:
     - calcula la forma y llama a `AuroraSetFixedAspect`;
-    - si cambia el factor, marca como sucios los `CGameViewport` vistos (vtable `0x80591498`, bit 0x80 de `+0x58`), para que el juego recalcule proyección y descarte;
+    - si cambia el factor, no toca los `CGameViewport`: los activos se recalculan solos cada frame (ver arriba);
     - mientras el decodificador de vídeo (`0x804EB174`) produce frames y 20 frames después, presenta en 16:9 con factor 1. Así los vídeos THP, que se dibujan como un cuadro a pantalla completa, no se estiran.
   - `PrimeWidescreenViewportAspect`, gancho posterior de `0x800BE034`: multiplica el aspecto por el factor solo para el viewport que cubre la pantalla. Así coinciden proyección, descarte y conversiones a pantalla, y el FOV vertical no cambia.
   - `PrimeWidescreenGuiAspect`, a la entrada de `CGraphics::SetPerspective` (`0x803E91D4`): multiplica el aspecto si quien llama es una cámara de interfaz (retorno `0x80433C80` o `0x80433DA8`). El estado de proyección del juego guarda el valor ensanchado, de modo que las copias que el juego guarda y restaura (`0x80045DB8`, `0x80048250`) siguen coherentes.
@@ -70,3 +71,19 @@ Por eso se ensancha en origen, en el viewport y en las cámaras de interfaz.
 - Cinemáticas en tiempo real: usan el viewport, así que deberían ser Hor+.
 - Coste de GPU en 3440x1440 nativo (34 % más píxeles que 2560x1440).
 - Trilogy: el mapa de direcciones traslada las constantes; falta verlo dentro de MP3 desde el menú de Trilogy.
+
+## Corrección del 12/11/2026: recuadro gris, imágenes antiguas y puntero
+
+**Síntoma (usuario, capturas y F7 `capture_20261112_064751`/`065105`, 1920x687):** con ultrawide, un recuadro gris en el centro del visor con imágenes de otros momentos, una doble exposición translúcida sobre todo el visor y caídas a 48-69 FPS. Además, el puntero del ratón no salía del área 16:9.
+
+**Causa:** la primera versión ponía el bit 0x80 de `+0x58` en todos los `CGameViewport` cuando cambiaba el factor (al terminar un vídeo THP o al cambiar la opción o la ventana), creyendo que era un bit de «recalcular». Es el bit de activación (`0x800BDFE0`). Con él se encendían `xray_viewport`, que dibuja la vista de rayos X en el centro del EFB (viewport `70,124,500x200`, copias I8/CI8 compuestas en el pase final: el recuadro gris), y `cinematic_viewport`, que renderiza el mundo por segunda vez. La traza de la grabación `hangar_uw21` del 11/11 ya lo mostraba en el frame 5108 (viewport 500x200 desde `0x8006B070`), tras el vídeo que acaba en el frame 5079; ninguna de las 679 capturas F7 anteriores en 16:9 contiene ese viewport.
+
+**Arreglo:** el runtime no escribe nunca ese bit. El gancho de `0x800BF0C4` solo lee: en la build de pruebas, la traza registra cada objeto viewport y si está activo (`viewport-object`).
+
+**Puntero:** para el juego, `pos.x = ±1` son los bordes de la imagen 16:9, y el HUD y la vista 3D se extienden más allá de forma lineal. `PrimeInputTryReadKpad` multiplica la X por el factor mostrado: el ratón, mapeado sobre toda la imagen presentada, y el mando llegan a los laterales. Los puntos IR simulados se limitan a la cámara (0..1023). Las grabaciones QA guardan los valores sin escalar.
+
+**Pruebas:**
+- Repetición `hangar_uw21`, etiqueta `xrayfix` (`qa/runs/hangar_uw21/20261112_071034_xrayfix`, ISO RM3E01 con `CORRUPTION3_ISO`), que termina sin errores.
+- Tras el vídeo (frame 5080), el viewport de rayos X aparece una sola vez, al crearse, y no vuelve a dibujarse. Desde el frame 5242 se recalcula un único viewport por frame, el del jugador. Las capturas no tienen recuadro ni doble exposición.
+- 59,68 FPS de media (mínimo 54,9), con `system_busy` al 100 % por otros procesos (VS Code, Python, dotnet) y el juego al 17-24 % de la CPU.
+- Pendiente (usuario): el puntero en los laterales con el retículo libre, menús y visores. No se ha comprobado si alguna pantalla del juego limita el cursor por su cuenta.

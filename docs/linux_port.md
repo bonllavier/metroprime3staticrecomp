@@ -167,6 +167,28 @@ Otras reglas del entorno:
 - La imagen de disco es de solo lectura, y no se publican datos del disco, claves ni partidas.
 - ReShade queda fuera de Linux por decisión del usuario.
 
+## Mandos que el kernel no reconoce (8BitDo Ultimate 2C 2,4 GHz, 2026-11-12)
+
+En modo X-input, el receptor del 8BitDo Ultimate 2C (`2dc8:310a`) expone el mando como interfaz Xbox 360: clase `ff`, subclase `5d`, protocolo `01`. El driver `xpad` de kernels antiguos (5.15) no conoce ese ID y deja la interfaz sin driver. Solo aparecen el "teclado" y el "ratón" del receptor, y ni SDL ni el juego ven un mando. Con el mando apagado, el receptor se presenta como `2dc8:301c` ("8BitDo IDLE").
+
+- **Comprobar:**
+  - `lsusb` muestra el receptor.
+  - `ls /dev/input/js*` no muestra nada.
+  - En `/sys/bus/usb/devices/<puerto>:1.0/` no hay driver.
+- **Arreglo (necesita `sudo`, lo ejecuta el usuario):**
+
+  ```bash
+  sudo modprobe xpad
+  echo 2dc8 310a | sudo tee /sys/bus/usb/drivers/xpad/new_id
+  # permanente: regla udev que repite lo anterior al conectar el receptor
+  echo 'ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="2dc8", ATTR{idProduct}=="310a", RUN+="/sbin/modprobe xpad", RUN+="/bin/sh -c '"'"'echo 2dc8 310a > /sys/bus/usb/drivers/xpad/new_id'"'"'"' | sudo tee /etc/udev/rules.d/99-8bitdo-ultimate-2c.rules
+  sudo udevadm control --reload-rules
+  ```
+
+- **Resultado:** aparece como "Generic X-Box pad" (`/dev/input/js0`, con ACL `uaccess` para el usuario). SDL 3.4 le aplica el mapeo Xbox estándar, y todos los botones, gatillos y sticks llegan con su nombre.
+- **Verificación:** se hizo con un programa de prueba enlazado al mismo `libSDL3.a` del build, que imprime los eventos de gamepad.
+- **Configuración:** si el mando no respondía cuando se intentó mapearlo, revisar `[prime_pad]` en `Config.toml`. Ahí quedó `a = ["guide"]`, es decir, disparar y confirmar en el botón Home, y por eso parecía que el mando no hacía nada en los menús.
+
 ## Diagnóstico (`tools/linux_diag`)
 
 - **Muestreo de pilas sin `perf`** (en Ubuntu `ptrace_scope=1`):

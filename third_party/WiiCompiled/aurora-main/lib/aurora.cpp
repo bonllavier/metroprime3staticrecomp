@@ -3048,6 +3048,7 @@ void aurora_set_post_process(const AuroraPostProcess* settings) {
   c.glowFix = settings->glowFix;
   c.wallSsr = settings->wallSsr;
   c.wallSsrStrength = settings->wallSsrStrength;
+  c.ssaoUnderEffects = settings->ssaoUnderEffects;
   c.color = settings->color; c.brightness = settings->brightness; c.contrast = settings->contrast;
   c.saturation = settings->saturation; c.gamma = settings->gamma; c.temperature = settings->temperature;
   c.vignette = settings->vignette;
@@ -3062,7 +3063,8 @@ void aurora_get_post_process(AuroraPostProcess* settings) {
                                 c.ssaoSamples, c.ssaoBias, c.ssaoPower, c.ssaoFadeDistance, c.ssaoEdgeSharpness,
                                 c.bloomWorldOnly, c.ssaoGlowProtect, c.ssaoSkipMarked, c.ssr, c.ssrStrength,
                                 c.ssrRoughness, c.ssrRelief, c.specOcclusion, c.lightShafts,
-                                c.lightShaftsIntensity, c.glowFix, c.wallSsr, c.wallSsrStrength};
+                                c.lightShaftsIntensity, c.glowFix, c.wallSsr, c.wallSsrStrength,
+                                c.ssaoUnderEffects};
 }
 void aurora_set_ssao_exclude_textures(const uint64_t* hashes, size_t count) {
   aurora::gfx::post::set_ssao_exclude_textures(hashes, hashes != nullptr ? count : 0);

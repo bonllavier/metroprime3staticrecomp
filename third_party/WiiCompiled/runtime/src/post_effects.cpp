@@ -32,6 +32,7 @@ AuroraPostProcess FromConfig() {
     p.ssaoEdgeSharpness = c.effectsSsaoEdge.value_or(0.52f);
     p.ssaoGlowProtect = c.effectsSsaoGlow.value_or(1.0f);
     p.ssaoSkipMarked = c.effectsSsaoSkipFace.value_or(true);
+    p.ssaoUnderEffects = c.effectsSsaoUnderEffects.value_or(true);
     p.color = c.effectsColor.value_or(false);
     p.brightness = c.effectsBrightness.value_or(0.0f);
     p.contrast = c.effectsContrast.value_or(1.0f);

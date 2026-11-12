@@ -83,6 +83,8 @@ Se aplican en:
 
 | 24 | (Nueva función, 08/11/2026) Iluminación moderna, nivel 1: sombras de contacto y exposición automática | — | Comparten el punto de aplicación, la profundidad acumulada y la instantánea, pero **no cambian ningún pase del SSAO**: `modern_scene()` corre después de `kSsao` y sus desenfoques y escribe una copia de la instantánea (`g_litScene`, alfa conservado); `kSsr` y `kSsaoApply` leen esa copia en vez de `g_sceneColor`. Con ambas opciones apagadas se usa `g_sceneColor` como antes. `wants_depth`/`wants_scene_color` también las cuentan, para que la profundidad y la instantánea existan con el SSAO apagado. Objetos `Pass` propios (el desenfoque de contacto reutiliza solo el texto de `kSsaoBlur`). Ver `iluminacion_motor.md` | Pendiente de QA del usuario |
 
+| 25 | El SSAO se ve encima de la niebla, las explosiones y las partículas: la profundidad de la pared de detrás «se nota» sobre el efecto (usuario, 12/11/2026, Windows y Linux) | Los efectos se dibujan dentro del bloque del mundo, con mezcla y **sin escribir profundidad**. El SSAO lee la profundidad de la superficie de detrás y oscurece el color final, que ya incluye el efecto. Es el caso #17 en general | **Máscara graduada de efectos.** Al grabar cada dibujo, `command_processor` marca `ssaoEffect` si mezcla (`GX_BM_BLEND` o `GX_BM_SUBTRACT`, salvo One/Zero) y no escribe Z. `render_impl` agrupa esos dibujos en tramos como los de cobertura (#19): copia el color antes y `kEffectDiff` escribe después cuánto cambió cada texel, `smoothstep(1,5/255, 48/255, Δ)`, como 0..0,49 con fusión por máximo en la misma máscara R8. No alcanza las marcas binarias de la cara y el visor (1,0, leídas como > 0,5). `kSsaoApply` hace `ao = mix(ao, 1, cobertura)` y reduce el reflejo de suelos y paredes en la misma proporción. Opción `[effects] ssao_under_effects` (F1 > Effects, «SSAO under fog and effects», activa por defecto). En la vista `WII_COMPILED_POST_DEBUG_VIEW=mask` los efectos salen en cian, proporcional a la cobertura. Sin pipelines nuevos del juego ni toggles de Dawn: la caché no cambia | Implementado. Repetición `hangar_1x_window` en Linux con la vista de máscara y 19 capturas: el cian cae en explosiones, chispas, fogonazo del cañón, llamas, vapor y luces (0 a 15 % de la imagen); suelos y paredes sin efectos conservan el SSAO; 59,91 FPS de media. Los dibujos luminosos sobre el suelo (plataforma de aterrizaje, estación de guardado) también quitan el SSAO del suelo de debajo. Pendiente de QA del usuario en niebla densa y en Windows |
+
 ## Reglas que no deben romperse
 
 - La profundidad se calcula sobre **texels enteros** (`texel_of` / `texel_pos`). No volver a muestrear
@@ -107,6 +109,7 @@ Se aplican en:
   pass (#10).
 - Una cámara con la banda de profundidad al final (empieza en 0,9 o más) es un fondo lejano: nunca
   gana a la cámara del mundo por número de dibujos (#21).
+- Los efectos transparentes (mezcla sin escritura de Z) solo **atenúan** el SSAO con la máscara graduada (0..0,49). No escribir 1,0 por ellos: eso es la exclusión binaria de la cara y el visor (#25).
 - Los efectos nuevos de la escena modifican una **copia** de la instantánea, nunca los pases del SSAO
   ni `g_sceneColor` (#24): así el SSAO sigue igual con ellos encendidos o apagados.
 

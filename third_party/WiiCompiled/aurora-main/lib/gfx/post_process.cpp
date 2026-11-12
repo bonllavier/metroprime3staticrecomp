@@ -327,12 +327,22 @@ constexpr std::string_view kSsaoApply = R"(
   // so the low-poly face counted as "wall" facet by facet (darker triangles along the nose, F7
   // 05/11/2026 23:16).
   var marked = false;
+  var effect = 0.0;
   if (P.e.y > 0.5) {
     let md = vec2<f32>(textureDimensions(faceMask));
     let mq = vec2<i32>(in.pos.xy * md / vec2<f32>(textureDimensions(src)));
-    marked = textureLoad(faceMask, clamp(mq, vec2<i32>(0), vec2<i32>(md) - vec2<i32>(1)), 0).r > 0.5;
+    let m = textureLoad(faceMask, clamp(mq, vec2<i32>(0), vec2<i32>(md) - vec2<i32>(1)), 0).r;
+    marked = m > 0.5;
     if (marked) { ao = 1.0; }
-    if (P.d.x > 5.5) { return vec4<f32>(select(texel.rgb * 0.3, vec3<f32>(1.0, 0.2, 0.8), marked), texel.a); }
+    // 0..0.49: an effect (fog, explosion, particles) drawn over the world here, by how much it changed
+    // the picture. Its colour is in this texel too, so the occlusion of what lies behind fades with it.
+    effect = select(clamp(m / 0.49, 0.0, 1.0), 0.0, marked);
+    ao = mix(ao, 1.0, effect);
+    // Mask view: magenta = excluded (face, visor glass), cyan = effect coverage (fog, explosions).
+    if (P.d.x > 5.5) {
+      let shown = mix(texel.rgb * 0.3, vec3<f32>(0.1, 0.9, 1.0), effect);
+      return vec4<f32>(select(shown, vec3<f32>(1.0, 0.2, 0.8), marked), texel.a);
+    }
   }
   if (P.d.x > 4.5 && P.d.x < 5.5) { return vec4<f32>(vec3<f32>(texel.a), texel.a); }  // diagnostic: glow mask
   // Diagnostic: occlusion / normal only, on pixels that have world depth in this block.
@@ -342,7 +352,7 @@ constexpr std::string_view kSsaoApply = R"(
     let r = textureLoad(reflTex, vec2<i32>(in.pos.xy), 0);
     // Specular occlusion (P.f.z): creases the ambient occlusion darkens reflect less too.
     let occl = select(1.0, ao, P.f.z > 0.5 && P.f.x > 0.5);
-    outc = mix(outc, r.rgb, clamp(r.a, 0.0, 1.0) * occl);
+    outc = mix(outc, r.rgb, clamp(r.a, 0.0, 1.0) * occl * (1.0 - effect));
   }
   // Light shafts (P.f.w), added at quarter resolution with bilinear upsampling.
   if (P.f.w > 0.5) {
@@ -639,6 +649,21 @@ constexpr std::string_view kCoverDiff = R"(
 }
 )";
 
+// Effect runs (fog, explosions, particles drawn without depth over the world): how strongly the run
+// changed each texel, from 0 (untouched) to full coverage at a change of 48/255. Stored as 0..0.49 and
+// combined with max blending, so it never reaches the binary marks (1.0, read as > 0.5) of the face and
+// cover runs: kSsaoApply fades the occlusion and the reflections by it instead of removing them.
+constexpr std::string_view kEffectDiff = R"(
+@group(0) @binding(3) var efbColor: texture_2d<f32>;
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+  let q = vec2<i32>(in.pos.xy);
+  let d = abs(textureLoad(efbColor, q, 0) - textureLoad(src, q, 0));
+  let cover = smoothstep(1.5 / 255.0, 48.0 / 255.0, max(max(d.r, d.g), d.b));
+  if (cover <= 0.0) { discard; }
+  return vec4<f32>(0.49 * cover, 0.0, 0.0, 1.0);
+}
+)";
+
 // ------------------------------------------------------------------------------------------
 // Modern lighting, level 1 (docs/iluminacion_motor.md). These passes only change the world snapshot
 // that kSsaoApply writes back into the EFB; the SSAO passes above are untouched.
@@ -882,8 +907,10 @@ webgpu::TextureWithSampler g_coverBefore;  // EFB colour before a cover run
 wgpu::TextureFormat g_coverFormat = wgpu::TextureFormat::Undefined;
 // Exclusion mask state (render thread). g_faceBefore / g_faceDepth: R32Float raw depth at EFB depth
 // size; g_faceMask: R8Unorm, 1 = excluded, kept for the whole world block like the accumulation.
+std::atomic<bool> g_effectsOption{false};  // (ssao || ssr || wallSsr) && ssaoUnderEffects
 std::atomic<bool> g_excludeOption{false};  // (ssao || ssr || wallSsr) && ssaoSkipMarked, read per draw without the lock
 webgpu::TextureWithSampler g_faceBefore, g_faceDepth, g_faceMask;
+Pass g_effectDiff;  // kEffectDiff, max-blended into g_faceMask
 bool g_faceDepthPending = false;  // the current pass has face depth to finalize at its merge
 bool g_faceMaskDirty = false;     // the mask has marked texels (cleared with the accumulation)
 bool g_faceMaskNew = false;       // just created: cleared before the first texel is marked
@@ -1214,6 +1241,10 @@ void set_ssao_cover_textures(const uint64_t* hashes, size_t count) {
   texture_replacement::set_texture_tag_list(texture_replacement::TagSsaoCover, hashes, count);
 }
 
+bool ssao_effects_active() {
+  return g_effectsOption.load(std::memory_order_acquire) && webgpu::g_graphicsConfig.msaaSamples <= 1;
+}
+
 bool ssao_exclude_active() {
   return (texture_replacement::texture_tags_listed() &
           (texture_replacement::TagNoSsao | texture_replacement::TagSsaoCover)) != 0 &&
@@ -1221,7 +1252,7 @@ bool ssao_exclude_active() {
 }
 
 void face_before(const wgpu::CommandEncoder& encoder, const wgpu::TextureView& depthView, const wgpu::Extent3D& size,
-                 bool cover) {
+                 bool cover, bool graduated) {
   if (!depthView || !ensure_face_targets(size)) return;
   ensure_pipelines(webgpu::g_graphicsConfig.surfaceConfiguration.format);
   if (g_faceMaskNew) {  // a new mask texture is cleared once, before anything is marked in it
@@ -1238,6 +1269,9 @@ void face_before(const wgpu::CommandEncoder& encoder, const wgpu::TextureView& d
       g_coverFormat = efb.format;
       build_pass(g_coverDiff, Layout::TwoTextures, kCoverDiff, "Post SSAO cover diff", wgpu::TextureFormat::R8Unorm);
     }
+    if (graduated && !g_effectDiff.pipeline)
+      build_pass(g_effectDiff, Layout::TwoTextures, kEffectDiff, "Post SSAO effect cover", wgpu::TextureFormat::R8Unorm,
+                 true);
     const wgpu::TexelCopyTextureInfo from{.texture = efb.texture};
     const wgpu::TexelCopyTextureInfo to{.texture = g_coverBefore.texture};
     const wgpu::Extent3D extent{size.width, size.height, 1};
@@ -1248,13 +1282,15 @@ void face_before(const wgpu::CommandEncoder& encoder, const wgpu::TextureView& d
 }
 
 void face_after(const wgpu::CommandEncoder& encoder, const wgpu::TextureView& depthView, const wgpu::Extent3D& size,
-                bool cover) {
+                bool cover, bool graduated) {
   if (cover) {
     const auto& efb = webgpu::g_frameBuffer;
-    if (!g_coverBefore.texture || !g_coverDiff.pipeline || !efb.view || g_coverBefore.size.width != size.width ||
+    const Pass& diff = graduated ? g_effectDiff : g_coverDiff;
+    if (!g_coverBefore.texture || !diff.pipeline || !efb.view || g_coverBefore.size.width != size.width ||
         g_coverBefore.size.height != size.height || g_faceMask.size.width != size.width)
       return;
-    run(encoder, g_coverDiff, Params{}, g_coverBefore.view, &efb.view, g_faceMask.view, "Post SSAO cover mask", true);
+    run(encoder, diff, Params{}, g_coverBefore.view, &efb.view, g_faceMask.view,
+        graduated ? "Post SSAO effect mask" : "Post SSAO cover mask", true);
     g_faceMaskDirty = true;
     ++g_faceRuns;
     return;
@@ -1272,6 +1308,8 @@ void set_config(const Config& config) {
   g_config = config;
   // The mask also keeps floor and wall reflections off the listed textures (kSsaoApply).
   g_excludeOption.store((config.ssao || config.ssr || config.wallSsr) && config.ssaoSkipMarked,
+                        std::memory_order_release);
+  g_effectsOption.store((config.ssao || config.ssr || config.wallSsr) && config.ssaoUnderEffects,
                         std::memory_order_release);
   g_shaftsWanted.store(config.lightShafts, std::memory_order_release);
 }
@@ -1696,7 +1734,8 @@ static wgpu::TextureView modern_scene(const wgpu::CommandEncoder& encoder, const
       p.c[0] = temporal ? static_cast<float>(g_contactFrame % 4u) * 0.25f : 0.0f;
       p.d[2] = scaleX;
       p.d[3] = scaleY;
-      const bool masked = config().ssaoSkipMarked && g_faceMaskDirty && g_faceMask.view;
+      const auto mc = config();
+      const bool masked = (mc.ssaoSkipMarked || mc.ssaoUnderEffects) && g_faceMaskDirty && g_faceMask.view;
       p.e[0] = masked ? 1.0f : 0.0f;
       run(encoder, g_contact, p, g_sceneColor.view, &g_depthAccum.view, g_contactA.view, "Post contact shadows", false,
           &g_lightsTex.view, masked ? &g_faceMask.view : &g_dummyTexture.view);
@@ -1965,7 +2004,7 @@ bool apply_ssao_in_frame(const wgpu::CommandEncoder& encoder, bool firstInGameFr
   // The snapshot holds the world colour; the result overwrites the whole EFB colour.
   Params applyParams = p;
   applyParams.e[0] = c.ssaoGlowProtect;
-  const bool masked = c.ssaoSkipMarked && g_faceMaskDirty && g_faceMask.view;
+  const bool masked = (c.ssaoSkipMarked || c.ssaoUnderEffects) && g_faceMaskDirty && g_faceMask.view;
   applyParams.e[1] = masked ? 1.0f : 0.0f;
   applyParams.f[0] = c.ssao ? 1.0f : 0.0f;
   applyParams.f[1] = ssr ? 1.0f : 0.0f;
@@ -2139,7 +2178,7 @@ void apply(const wgpu::CommandEncoder& encoder, const webgpu::TextureWithSampler
 
 void shutdown() {
   g_sharpen = g_fxaa = g_bright = g_blurH = g_blurV = g_composite = g_ssao = g_ssaoBlur = g_ssaoBlur2 = g_ssaoApply =
-      g_color = g_depthMerge = g_faceSnapshot = g_faceDiff = g_faceFinalize = g_coverDiff = Pass{};
+      g_color = g_depthMerge = g_faceSnapshot = g_faceDiff = g_faceFinalize = g_coverDiff = g_effectDiff = Pass{};
   g_coverBefore = {};
   g_coverFormat = wgpu::TextureFormat::Undefined;
   g_faceBefore = {};

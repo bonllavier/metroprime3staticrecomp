@@ -26,6 +26,8 @@ struct DrawData {
   bool ssaoExclude = false;
   // Transparent draw of the SSAO cover list (visor glass): no occlusion where it changes the colour.
   bool ssaoCover = false;
+  // Transparent effect over the world (blended, no depth write): graduated SSAO cover (post::ssao_effects_active).
+  bool ssaoEffect = false;
   // GX z-update was on: the draw may write depth (SSAO depth merges skip passes that cannot).
   bool depthWrite = true;
   // ... and the write may move a texel's depth away from the camera (compare off = Always, or a

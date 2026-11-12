@@ -3398,6 +3398,13 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
   const bool ssaoExclude = (drawTags & gfx::texture_replacement::TagNoSsao) != 0 && gfx::post::ssao_exclude_active();
   const bool ssaoCover =
       !ssaoExclude && (drawTags & gfx::texture_replacement::TagSsaoCover) != 0 && gfx::post::ssao_exclude_active();
+  // Fog, explosions, particles, glows: blended over what is already drawn and without depth, so the SSAO
+  // would read the surface behind them. A blend that only copies the source (One, Zero) is opaque.
+  const bool ssaoEffect =
+      !ssaoExclude && !ssaoCover && !g_gxState.depthUpdate &&
+      (g_gxState.blendMode == GX_BM_BLEND || g_gxState.blendMode == GX_BM_SUBTRACT) &&
+      !(g_gxState.blendMode == GX_BM_BLEND && g_gxState.blendFacSrc == GX_BL_ONE && g_gxState.blendFacDst == GX_BL_ZERO) &&
+      gfx::post::ssao_effects_active();
   g_drawMetal = {};
   gfx::post::note_draw();
   gfx::push_draw_command(DrawData{
@@ -3418,6 +3425,7 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
       .uberUniformRange = uberUniformRange,
       .ssaoExclude = ssaoExclude,
       .ssaoCover = ssaoCover,
+      .ssaoEffect = ssaoEffect,
       .depthWrite = g_gxState.depthUpdate,
       .depthWriteUnordered =
           g_gxState.depthUpdate &&

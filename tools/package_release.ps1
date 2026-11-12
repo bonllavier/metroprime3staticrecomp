@@ -173,6 +173,8 @@ ssao_edge_sharpness = 0.52
 ssao_glow_protect = 1.0
 # No ambient occlusion on Samus' face behind the visor and on her body out of the suit.
 ssao_skip_face = true
+# Fog, explosions and particles keep their colour: no occlusion of the surface behind them.
+ssao_under_effects = true
 # World lighting (experimental, each one on its own): environment material on the baked-light walls
 # and floors, highlights from the room's character lights, and reflections on smooth floors (SSR).
 env_material = true

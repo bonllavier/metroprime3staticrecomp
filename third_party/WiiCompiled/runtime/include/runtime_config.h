@@ -109,6 +109,8 @@ struct RuntimeUserConfig {
     // [effects]: Aurora image effects on the presented frame (F1 > Effects, all live).
     std::optional<bool> effectsSharpen, effectsFxaa, effectsBloom, effectsSsao, effectsColor, effectsBloomWorldOnly;
     std::optional<bool> effectsSsaoSkipFace;
+    // [effects] ssao_under_effects: no occlusion (and no floor reflection) through fog, explosions and particles.
+    std::optional<bool> effectsSsaoUnderEffects;
     // World lighting (experimental, F1 > Effects), each level on its own: environment material on
     // lightmapped walls and floors, borrowed lights for their highlights, floor reflections (SSR).
     std::optional<bool> effectsEnvMaterial, effectsEnvLights, effectsSsr;
@@ -655,6 +657,7 @@ inline RuntimeUserConfig ParseConfigDocument(const toml::value& document) {
     config.effectsSsaoEdge = FindConfigValue<float>(document, "effects", "ssao_edge_sharpness");
     config.effectsSsaoGlow = FindConfigValue<float>(document, "effects", "ssao_glow_protect");
     config.effectsSsaoSkipFace = FindConfigValue<bool>(document, "effects", "ssao_skip_face");
+    config.effectsSsaoUnderEffects = FindConfigValue<bool>(document, "effects", "ssao_under_effects");
     config.effectsEnvMaterial = FindConfigValue<bool>(document, "effects", "env_material");
     config.effectsEnvLights = FindConfigValue<bool>(document, "effects", "env_borrowed_lights");
     config.effectsSsr = FindConfigValue<bool>(document, "effects", "ssr");

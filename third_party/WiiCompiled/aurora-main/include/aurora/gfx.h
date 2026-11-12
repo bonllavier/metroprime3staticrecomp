@@ -154,6 +154,7 @@ typedef struct AuroraPostProcess {
   bool glowFix;              // the game's glow blurred at its native footprint (no ghost copies)
   bool wallSsr;              // experimental: screen-space reflections on smooth walls too
   float wallSsrStrength;     // 0..1
+  bool ssaoUnderEffects;     // fog, explosions and particles drawn over the world do not get occlusion
 } AuroraPostProcess;
 void aurora_set_post_process(const AuroraPostProcess* settings);
 void aurora_get_post_process(AuroraPostProcess* settings);

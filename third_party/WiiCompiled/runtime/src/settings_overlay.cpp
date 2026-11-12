@@ -2858,6 +2858,17 @@ void DrawPrimeEffectsOptions() {
                 ImGui::SetTooltip("Her face behind the visor glass gets no occlusion; the helmet and suit keep it. On by default.");
         }
 #endif
+        {
+            bool underEffects = cfg.effectsSsaoUnderEffects.value_or(true);
+            if (ImGui::Checkbox("SSAO under fog and effects", &underEffects)) {
+                RuntimeConfigFile::SetEffectsOption(&RuntimeUserConfig::effectsSsaoUnderEffects, "ssao_under_effects",
+                                                    underEffects);
+                changed = true;
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Fog, explosions and particles are drawn over the occlusion instead of being darkened\n"
+                                  "by the surface behind them (also keeps floor reflections off them). On by default.");
+        }
         if (ImGui::Button("Reset SSAO")) {
             RuntimeConfigFile::SetEffectsFloat(&RuntimeUserConfig::effectsSsaoRadius, "ssao_radius", 1.0f);
             RuntimeConfigFile::SetEffectsFloat(&RuntimeUserConfig::effectsSsaoIntensity, "ssao_intensity", 0.70f);

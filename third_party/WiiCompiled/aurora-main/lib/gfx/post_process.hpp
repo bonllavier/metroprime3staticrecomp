@@ -49,6 +49,7 @@ struct Config {
   bool glowFix = true;           // soften the game's glow source copy to its native footprint
   bool wallSsr = false;          // experimental: the floor reflections also on smooth walls
   float wallSsrStrength = 0.35f; // 0..1
+  bool ssaoUnderEffects = true;  // occlusion and reflections fade under fog, explosions and particles
   bool bloomWorldOnly = true;
   bool color = false;        // colour grading
   float brightness = 0.0f;   // -0.5..0.5
@@ -174,11 +175,17 @@ void set_ssao_exclude_textures(const uint64_t* hashes, size_t count);
 // Transparent textures (no depth write): the mask takes every pixel whose colour they change.
 void set_ssao_cover_textures(const uint64_t* hashes, size_t count);
 bool ssao_exclude_active();             // SSAO and the option are on and the list is not empty
+// Transparent effects drawn over the world (blended, no depth write: fog, explosions, particles): they
+// sit in front of the depth the SSAO reads, so the occlusion of the surface behind them darkened the
+// effect itself. Runs of such draws are measured by colour like the cover runs, but graduated: the
+// occlusion fades with how much the effect changed the picture (ssao_under_effects).
+bool ssao_effects_active();
 // `cover`: the run is of transparent draws; it is compared by colour instead of depth.
+// `graduated` (with `cover`): an effect run; the mask gets how strongly the colour changed.
 void face_before(const wgpu::CommandEncoder& encoder, const wgpu::TextureView& depthView, const wgpu::Extent3D& size,
-                 bool cover = false);
+                 bool cover = false, bool graduated = false);
 void face_after(const wgpu::CommandEncoder& encoder, const wgpu::TextureView& depthView, const wgpu::Extent3D& size,
-                bool cover = false);
+                bool cover = false, bool graduated = false);
 
 void shutdown();
 

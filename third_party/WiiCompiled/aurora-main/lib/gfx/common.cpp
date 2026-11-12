@@ -2127,17 +2127,23 @@ static void render_impl(std::vector<RenderPass>& renderPasses, wgpu::CommandEnco
     // Runs of draws that sample a texture of the SSAO exclusion list (Samus' face): the pass is
     // encoded in segments so the depth before and after each run can be compared (post::face_*).
     // Each run is of one kind: depth (opaque face) or cover (transparent visor glass, by colour).
-    struct ExcludeRun { size_t begin, end; bool cover; };
+    // Effect runs (fog, explosions, particles: post::ssao_effects_active) are cover runs measured with a
+    // graduated mask instead.
+    struct ExcludeRun { size_t begin, end; bool cover; bool graduated; };
     std::vector<ExcludeRun> excludeRuns;
-    if (accumulateDepth && worldPass[i] && passInfo.msaaSamples == 1 && passInfo.depthView && post::ssao_exclude_active()) {
-      int open = 0;  // 0 none, 1 depth run, 2 cover run
+    if (accumulateDepth && worldPass[i] && passInfo.msaaSamples == 1 && passInfo.depthView &&
+        (post::ssao_exclude_active() || post::ssao_effects_active())) {
+      int open = 0;  // 0 none, 1 depth run, 2 cover run, 3 effect run
       for (size_t j = 0; j < passInfo.commands.size(); ++j) {
         const auto& c = passInfo.commands[j];
         if (c.type != CommandType::Draw) continue;  // viewport / scissor changes do not close a run
         const bool gx = c.data.draw.type == ShaderType::GX;
-        const int kind = gx && c.data.draw.gx.ssaoExclude ? 1 : gx && c.data.draw.gx.ssaoCover ? 2 : 0;
+        const int kind = gx && c.data.draw.gx.ssaoExclude ? 1
+                         : gx && c.data.draw.gx.ssaoCover ? 2
+                         : gx && c.data.draw.gx.ssaoEffect ? 3
+                                                           : 0;
         if (kind != 0 && kind == open) excludeRuns.back().end = j + 1;
-        else if (kind != 0) excludeRuns.push_back({j, j + 1, kind == 2});
+        else if (kind != 0) excludeRuns.push_back({j, j + 1, kind >= 2, kind == 3});
         open = kind;
       }
     }
@@ -2169,9 +2175,9 @@ static void render_impl(std::vector<RenderPass>& renderPasses, wgpu::CommandEnco
       };
       for (const auto& run : excludeRuns) {
         if (run.begin > at || firstSegment) segment(run.begin);  // the first one also performs the pass' clears
-        post::face_before(cmd, passInfo.depthView, passInfo.depthSize, run.cover);
+        post::face_before(cmd, passInfo.depthView, passInfo.depthSize, run.cover, run.graduated);
         segment(run.end);
-        post::face_after(cmd, passInfo.depthView, passInfo.depthSize, run.cover);
+        post::face_after(cmd, passInfo.depthView, passInfo.depthSize, run.cover, run.graduated);
       }
       segment(passInfo.commands.size());
     }

@@ -98,6 +98,7 @@ inline void prefer_game_core() noexcept {
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
+#include <SDL3/SDL_thread.h>
 #include <set>
 #include <string>
 #include <utility>
@@ -196,6 +197,12 @@ inline void keep_off_game_core() noexcept {
 // So the thread is left free; the core stays reserved because the heavy workers avoid it. This call
 // only captures the masks before anything is restricted.
 inline void prefer_game_core() noexcept { (void)game_core_mask(); }
+
+// Windows' THREAD_PRIORITY_ABOVE_NORMAL for the game, GX, decoder and frame threads. A desktop user may
+// not lower a nice value (RLIMIT_NICE 0), so SDL asks the session's RealtimeKit over D-Bus when plain
+// setpriority fails (nice -10, the grant SDL already obtains for its audio and the presenter threads).
+// Needs SDL's D-Bus context, i.e. after SDL_Init; false when neither path is allowed.
+inline bool raise_thread_priority() noexcept { return SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_HIGH); }
 
 // Per-thread nice value (Linux schedules threads individually). Raising above
 // normal needs CAP_SYS_NICE or an RLIMIT_NICE grant and is silently skipped otherwise.

@@ -69,7 +69,7 @@ void ensure_decoder_started() {
 #elif defined(__linux__)
           aurora::host_cores::set_thread_name("Aurora GX dec");
           aurora::host_cores::keep_off_game_core();
-          aurora::host_cores::set_thread_nice(-5);
+          aurora::host_cores::raise_thread_priority();
           g_decoderNativeId.store(aurora::host_cores::native_thread_id(), std::memory_order_release);
 #endif
         },

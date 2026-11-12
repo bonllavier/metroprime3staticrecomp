@@ -1787,6 +1787,11 @@ int RuntimeMain(int argc, char** argv) {
         if (PrimeGamepadRuntime::IconsEnabled()) auroraConfig.allowTextureReplacements = true;
 #endif
         const AuroraInfo auroraInfo = aurora_initialize(0, nullptr, &auroraConfig);
+#if defined(__linux__)
+        // The game thread's role was set before SDL had its D-Bus context; ask RealtimeKit again now.
+        RT_LOG(RT_TAG_RUNTIME) << "[host-cpu] game thread high priority: "
+                               << (aurora::host_cores::raise_thread_priority() ? "granted" : SDL_GetError()) << std::endl;
+#endif
         PostEffects::Apply();
         {
             const auto& vc = RuntimeConfigFile::Get();

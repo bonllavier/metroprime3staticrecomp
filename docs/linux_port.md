@@ -90,7 +90,7 @@ Dependencias externas al repo `recomp` que el pipeline lee por ruta relativa (co
 | Logros (RetroAchievements) | WinHTTP + DPAPI + GDI+ | `HostHttps` + Secret Service por `libsecret` (`dlopen`; sin servicio de secretos la sesión no se recuerda y nunca se guarda en claro) + `SDL_LoadPNG_IO`; rcheevos v12.5.0 fijado en `.tools/rcheevos` | implementado, pendiente de QA |
 | Overlay de rendimiento F9 | `GetProcessTimes`, Toolhelp32, PDH `GPU Engine` | `CLOCK_PROCESS_CPUTIME_ID`, `/proc/self/task/*/stat`, DRM fdinfo `drm-engine-*` (amdgpu, i915/xe, nouveau; el driver propietario de NVIDIA puede no publicarlo) | implementado |
 | Núcleo reservado para el juego | `GetLogicalProcessorInformationEx`, `SetThreadAffinityMask`, `SetThreadIdealProcessor` (sugerencia, no se hereda) | `/sys/.../thread_siblings_list`, `pthread_setaffinity_np`. Los trabajadores pesados (hilo GX, decodificador, compilación de shaders, texturas) quedan fuera del núcleo del juego. Se usa la máscara del proceso capturada al arrancar, y el hilo del juego no se fija. i7-4790: CPU 3+7 libres para el juego; 0-2 y 4-6 para los trabajadores | corregido 2026-11-11: antes el hilo del juego se fijaba a 3+7, sus hilos hijos heredaban esa máscara y `keep_off_game_core` calculaba una máscara vacía. El hilo GX, el decodificador y la compilación corrían todos en ese núcleo. Repetición `hangar_1x_window`: de 44,6 FPS (70/105 ventanas < 57) a 59,4 (1/80, la del arranque) |
-| Prioridad y nombre de hilos | `SetThreadPriority`, `SetThreadDescription` | `setpriority` por hilo (fondo +5; subir juego/GX requiere `CAP_SYS_NICE`), `pthread_setname_np` | implementado |
+| Prioridad y nombre de hilos | `SetThreadPriority` (juego, GX, decodificador y fotograma por encima de lo normal; compilación y texturas por debajo), `SetThreadDescription` | el usuario no puede bajar su nice (`RLIMIT_NICE` 0), así que la subida va por `SDL_SetCurrentThreadPriority(HIGH)`, que pide nice -10 a RealtimeKit por D-Bus (`host_cores::raise_thread_priority`). El hilo del juego lo repite tras `aurora_initialize`, cuando SDL ya tiene D-Bus. Fondo: nice 5 / 10. `pthread_setname_np` | implementado 2026-11-11: juego, GX, decodificador, fotograma y presentador a -10 comprobados con `ps -L`. `hangar_1x_window`: 59,4 → 59,84 FPS (2/80 ventanas a 55) |
 | Espera activa al final del retrace VI | `YieldProcessor` | `pause` (x86) / `yield` (ARM) | implementado |
 | Validación SHA-256 de los RSO | BCrypt | mbedTLS (`mbedtls_sha256`) | implementado |
 | Latencia DXGI | `IDXGISwapChain2` | no aplica (modos de presentación de Vulkan); la opción F1 "Single-frame present queue" se oculta | no aplica |
@@ -153,6 +153,7 @@ Cada punto describe un comportamiento verificado; cambiarlo exige volver a medir
 | `aurora-main/lib/gx/pipeline.cpp`, `MaxCachedShaderModules` | la caché de módulos de shader está acotada (256, LRU) | Dawn retiene ~1 MB de programa Tint por módulo vivo: más de 7 GB en un arranque sin caché y la PC se congela |
 | `aurora-main/lib/gfx/pipeline_cache.cpp`, `WorkerTier` | en Linux, un grupo urgente a nice 0 y uno de precarga/puenteadas a nice 10; juntos no superan `pipeline_worker_count()` | sin bajar la prioridad, los FPS caen mientras compila; sin el tope, se duplican los hilos que compilan a la vez. Un hilo sin `CAP_SYS_NICE` no puede volver a bajar su nice: no cambiar la prioridad por compilación como en Windows |
 | `aurora-main/include/aurora/host_cores.h` (Linux) | `keep_off_game_core` usa `process_affinity_mask()`, capturada antes de restringir ningún hilo; `prefer_game_core` no fija el hilo del juego | los hilos creados por el hilo del juego heredan su núcleo, y el GX, el decodificador y la compilación se amontonan en él: 30-50 FPS |
+| Prioridades en Linux (`host_threads.h`, `fifo.cpp`, `aurora.cpp`, `main.cpp`) | juego, GX, decodificador y fotograma piden prioridad alta por SDL/RealtimeKit; no volver a `setpriority(-5)`, que falla en silencio | esos hilos compiten a nice 0 con el escritorio y la compilación urgente |
 | `aurora-main/lib/window.cpp`, `SDL_SyncWindow` | en Linux solo tras un cambio de ventana pedido (`request_window_sync`) | en X11/KDE cuesta unos 10 ms por fotograma (~35-50 FPS) |
 | `tools/build_prime_runtime.sh` | copia las 8 pantallas de la correa y genera `Config.default.toml` a partir de la plantilla de `package_release.ps1` | vuelven las pantallas del Wiimote o los botones del Wii en lugar de los iconos de teclado. La configuración por defecto se edita en `package_release.ps1`, nunca en una copia aparte |
 | `runtime/cmake/PublicProducts.cmake` + `ico_to_rgba_source.py` | el icono de Linux sale del mismo `MetroidPrime3PCPort.ico` | la ventana queda sin icono |
@@ -185,6 +186,22 @@ Otras reglas del entorno:
   - Resultados en `/mnt/mp3port/builds/qa/runs`.
 - **Hilos y núcleos en vivo**: `grep Cpus_allowed_list /proc/PID/task/*/status` y `voluntary_ctxt_switches` por hilo. Así se encontró el núcleo compartido.
 - **Análisis de F8 con libc**: `nm -D` no tiene las funciones internas de libc. Para un desplazamiento concreto, `gdb -batch -ex "info symbol 0x…" /lib/x86_64-linux-gnu/libc.so.6`: por ejemplo, el retorno del `syscall` futex dentro de `pthread_cond_signal`.
+
+## Revisión Windows → Linux de reparto de CPU/GPU (2026-11-11)
+
+Funciones de Windows que influyen en el rendimiento y su estado en Linux:
+
+- Núcleo reservado y afinidades: corregido (ver la tabla).
+- Prioridades de hilos: equivalente por RealtimeKit.
+- Prioridad por compilación: dos grupos fijos.
+- Núcleos físicos: equivalente.
+- Temporizadores de alta resolución (`CreateWaitableTimerExW` + `timeBeginPeriod`) en el ritmo VI y la presentación: no hace falta nada en Linux, porque `sleep_until` usa hrtimers. El kernel lowlatency tiene un margen de temporizador de 50 µs que absorbe la espera activa final.
+- Opciones de compilación: iguales en las dos plataformas (`-O3`, perfil x86-64-v3).
+- Sin equivalente por ahora, sin efecto en los FPS de juego:
+  - observador de refresco DXGI (`display_refresh.cpp`, solo para la interpolación de fotogramas);
+  - cola de presentación DXGI;
+  - vigilante de parones F8 (diagnóstico).
+- Sistema: Turbo Boost desactivado en este PC (`intel_pstate/no_turbo`).
 
 ## Pendiente
 

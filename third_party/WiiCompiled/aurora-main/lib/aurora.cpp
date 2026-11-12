@@ -361,6 +361,10 @@ void frame_worker_main() noexcept {
   // threads only, never with background compiles or decodes.
   SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
   SetThreadDescription(GetCurrentThread(), L"Aurora frame worker");
+#elif defined(__linux__)
+  host_cores::set_thread_name("Aurora frame");
+  if (!host_cores::raise_thread_priority())
+    Log.warn("Could not raise the frame worker thread priority: {}", SDL_GetError());
 #endif
 
 #ifdef AURORA_ENABLE_GX

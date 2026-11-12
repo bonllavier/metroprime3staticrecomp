@@ -22,6 +22,7 @@
 #include <sys/resource.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <SDL3/SDL_thread.h>
 #endif
 
 namespace HostThreads {
@@ -74,15 +75,12 @@ inline void SetCurrentRole(Role role, const wchar_t* name) {
     SetThreadPriority(GetCurrentThread(), priority);
     if (name) SetThreadDescription(GetCurrentThread(), name);
 #elif defined(__linux__)
-    // Per-thread nice: background work yields (allowed to anyone); raising the game
-    // and GX threads needs CAP_SYS_NICE and is skipped without it.
-    int nice = 0;
-    switch (role) {
-    case Role::Game:
-    case Role::Gx: nice = -5; break;
-    case Role::Background: nice = 5; break;
-    }
-    setpriority(PRIO_PROCESS, static_cast<id_t>(syscall(SYS_gettid)), nice);
+    // Background work yields with a higher nice (allowed to anyone). The game and GX threads ask for
+    // high priority through SDL, which uses RealtimeKit when the user may not lower nice itself
+    // (aurora/host_cores.h raise_thread_priority); before SDL_Init that request can fail, so main.cpp
+    // repeats it for the game thread once Aurora is up.
+    if (role == Role::Background) setpriority(PRIO_PROCESS, static_cast<id_t>(syscall(SYS_gettid)), 5);
+    else SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_HIGH);
     if (name) {
         char shortName[16] = {};  // pthread names: 15 characters
         for (size_t i = 0; i < 15 && name[i]; ++i) shortName[i] = name[i] < 0x80 ? static_cast<char>(name[i]) : '?';

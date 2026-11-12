@@ -483,6 +483,9 @@ void SystemBridge::DumpCrashHeuristics(std::ostream& os, const CpuContext* cpu,
 
 // MEM2 space reserved at startup for the runtime FST.
 extern "C" uint32_t g_dvdFstReservedBase = 0;
+// Guest block for the motion prompt replacements (hle/prime_motion_text.cpp), below the DVD FST.
+extern "C" uint32_t g_primeTextScratchBase = 0;
+extern "C" uint32_t g_primeTextScratchSize = 0;
 extern "C" uint32_t g_dvdFstReservedSize = 0;
 
 void SystemBridge::SeedLowMemDefaults(const Memory::Config& config) {
@@ -589,7 +592,15 @@ void SystemBridge::SeedLowMemDefaults(const Memory::Config& config) {
         // Reserve FST memory before guest code can use this part of the arena.
         g_dvdFstReservedSize = kDvdFstReserveSize;
         g_dvdFstReservedBase = ipcBufLo - kDvdFstReserveSize;
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        // 16 KiB under the FST for the motion prompt texts the CStringTable hook hands to the game.
+        constexpr uint32_t kPrimeTextScratchSize = 0x4000u;
+        g_primeTextScratchSize = kPrimeTextScratchSize;
+        g_primeTextScratchBase = g_dvdFstReservedBase - kPrimeTextScratchSize;
+        const uint32_t mem2ArenaHi = g_primeTextScratchBase;
+#else
         const uint32_t mem2ArenaHi = g_dvdFstReservedBase;
+#endif
 
         entries.push_back({0x80003118u, mem2Size, "Physical MEM2 size", true});
         entries.push_back({0x8000311Cu, mem2Size, "Simulated MEM2 size", true});

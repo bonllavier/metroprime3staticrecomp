@@ -61,6 +61,47 @@ Evidencia: checkpoints 20261021_prime_keyboard_mouse_windows_input.json,
 20261021_prime_keyboard_mouse_negative_checks.json y
 20261021_prime_keyboard_mouse_boot.json. Todos viven en ../checkpoints/.
 
+## Textos de gestos con la tecla o el botón asignado (11 de noviembre de 2026)
+
+En los modos de teclado/ratón y de mando, las indicaciones que piden mover el Wii Remote o el Nunchuk nombran la entrada asignada. Por ejemplo, "Push the Wii Remote toward the screen to activate thrusters." pasa a "Press E to activate thrusters." o a "RB + R stick up" con mando. Se cubren 15 indicaciones en sus cinco idiomas (75 cadenas):
+- empujar, tirar y propulsores;
+- girar a cada lado y girar sin más;
+- inclinar arriba y abajo;
+- apuntar;
+- Rotosalto de la Morfosfera;
+- lanzar y tirar del lazo;
+- punto de enganche y toma de energía;
+- sacudir el Nunchuk.
+
+Con el Wii Remote real (modo teclado/ratón desactivado) no se cambia nada.
+
+- **Dónde.**
+  - `CStringTable::GetString` (0x803CDB38) pasa el texto UTF-8 de la tabla a la vista prestada de 0x803FC164 y luego lo convierte a cadena ancha (0x803CC6A8).
+  - El hook de `prepare_prime_runtime_hooks.py` llama a `PrimeMotionTextOverride` (`runtime/src/hle/prime_motion_text.cpp`) justo antes de construir la vista y le cambia el puntero (r4).
+  - El juego convierte y libera su copia como siempre, sin límites de longitud ni recuentos de referencias que tocar.
+  - Las tablas de 16 bits (la otra rama) no se tocan.
+- **Cómo reconoce las indicaciones.**
+  - Por el FNV-1a 64 del texto exacto, en `prime_motion_text_hashes.inc`, generado del disco con `tools/prime_icons/motion_text_hashes.py`.
+  - El código no contiene texto del juego; solo los reemplazos, escritos para el port.
+  - Se conservan el `&just=center;` inicial y el salto de línea final. Las etiquetas `&image=` de los iconos de fijar blanco y enganche van dentro del reemplazo.
+- **Qué entrada nombra.**
+  - En teclado, la tecla o el botón de ratón principal de la acción (`KeyLabel`, la misma etiqueta que los iconos). Las flechas se escriben Up/Down/Left/Right porque la fuente del juego no tiene esos glifos.
+  - Con mando, la del dispositivo usado por última vez (`PrimeGamepadRuntime::CurrentDevice`):
+    - empujar, tirar y girar: botón de movimiento + dirección del stick derecho;
+    - resto de gestos: su botón, o la combinación de la capa de movimiento.
+  - Si una acción no tiene asignación se deja el texto original.
+  - Un cambio de asignación se ve la próxima vez que el juego pide el texto.
+- **Memoria.**
+  - Bloque de 16 KiB reservado bajo la FST del DVD (`system_bridge.cpp`, perfil RM3E01): el MEM2 arena hi baja 16 KiB.
+  - La vista solo se lee durante `GetString`, así que bastan 16 ranuras rotatorias de 1 KiB.
+- **Pruebas.**
+  - En builds de QA, cada reemplazo deja `[prime-motion-text] prompt=… language=… device=… text=…` en el log.
+  - Las cadenas que parecen de gesto pero no están en la tabla dejan `unknown prompt fnv=…`. "Nunchuk is required." aparece así a propósito: no es un gesto.
+- **Trilogy (R3ME01).**
+  - `make_title_tree.py` traslada el hook por `address_map.json`: 0x803CDB38→0x803CC1C8, 0x803FC164→0x803FABDC.
+  - Comprobado: el prólogo `9421ffe0` y el ancla aparecen una vez en la traducción de Trilogy.
+  - Si Trilogy redacta alguna indicación de otra forma, sale como `unknown prompt` en un build de QA. Para añadirla, regenerar la tabla con las dos extracciones: `MOTION_TEXT_ROOTS="<RM3E01 files>;<Trilogy files/MP3>" python tools/prime_icons/motion_text_hashes.py` (separador `;` en Windows y `:` en Linux).
+
 ## Batería del Wiimote siempre llena (25 de octubre de 2026)
 
 - **Síntoma.** "Warning: Wii Remote Batteries Are Low" permanente y el indicador del casco vacío.

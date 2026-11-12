@@ -72,6 +72,8 @@ def main() -> None:
         # Game language (prime_host_options.cpp): the choice between English and the console language.
         0x802F1378: "9421fff0",  # language index prologue
         0x802F13A4: "880ddd40",  # lbz r0,-0x22C0(r13): PAL/EuRGB60 video flag that opens the console language
+        # Motion prompts (hle/prime_motion_text.cpp): CStringTable::GetString hands its UTF-8 text to the char view.
+        0x803CDB38: "9421ffe0",  # GetString prologue
         # Photo mode (hle/prime_photo_mode.h): the per-frame game update, called once by the main loop.
         0x802EBAF4: "9421ffa0",  # game update prologue
         0x802EDFCC: "4bffdb29",  # bl 0x802EBAF4 (main loop)
@@ -126,7 +128,7 @@ def main() -> None:
         if address not in (0x803BBF38, 0x8054A6D8, 0x805013D4, 0x80259474, 0x80259978, 0x802598B0, 0x802599FC, 0x804EE4A8, 0x804EB174, 0x80353F70, 0x803540A8, 0x804F66B8, 0x804F6A2C, 0x804D9138, 0x804D9E20, 0x804E6BD4, 0x804E01C4, 0x804D2644, 0x8050D4A0, 0x804D9850, 0x804E6E14,
                            0x802ED6C4, 0x804E57C4, 0x804E5850,
                            0x804DF8C8, 0x804DF8F4, 0x804DF924, 0x804DF954, 0x804DF980, 0x8017A4B4, 0x801799A8, 0x801522E0, 0x80151F64, 0x8036BC98, 0x8007F904,
-                           0x8009CF90, 0x8007F2A4, 0x802B2668, 0x80316A1C, 0x802EBAF4, 0x803E9A34, 0x802F1378,
+                           0x8009CF90, 0x8007F2A4, 0x802B2668, 0x80316A1C, 0x802EBAF4, 0x803E9A34, 0x802F1378, 0x803CDB38,
                            0x801ACAB8, 0x8000C918, 0x800BE034, 0x800BF0C4, 0x803EB060, 0x803E91D4):
             continue
         original = (BASE / "functions" / raw_relative_path).read_bytes()
@@ -229,6 +231,15 @@ def main() -> None:
                 '#include "guest_abi/guest_abi.h"\n'+f'extern "C" bool {helper}(CpuContext*);')
             anchor=f'extern "C" void func_{address:08X}(CpuContext* MKW_RESTRICT ctx)\n{{'
             source=replace_once(source,anchor,anchor+f'\n    if ({helper}(ctx)) return;')
+        elif address == 0x803CDB38:
+            # A Wii Remote/Nunchuk motion prompt is swapped for one naming the bound key or pad input
+            # right before the borrowed char view (0x803FC164) is built from it; the game then converts
+            # and owns that text as usual (hle/prime_motion_text.cpp).
+            source=replace_once(source,'#include "guest_abi/guest_abi.h"',
+                '#include "guest_abi/guest_abi.h"\nextern "C" uint32_t PrimeMotionTextOverride(uint32_t);')
+            source=replace_once(source,'    InvokeDirectCpu<0x803FC164u>(ctx);\n',
+                '    ctx->gpr[4] = PrimeMotionTextOverride(static_cast<uint32_t>(ctx->gpr[4]));\n'
+                '    InvokeDirectCpu<0x803FC164u>(ctx);\n')
         elif address == 0x802F1378:
             # Language: with a non-English choice the NTSC gate reads as PAL, so the game
             # uses its own console-language path (index from SCGetLanguage, Dutch -> English).

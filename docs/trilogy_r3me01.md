@@ -166,4 +166,8 @@ Si cambian los hooks, hay que pasar por la cadena completa (`make_address_map.py
 2. Revisar los campos de los gestos: las direcciones están mapeadas, pero sus campos no se han contrastado. La comparación general: 87,1 % de las funciones emparejadas sin cambios salvo direcciones, 2,3 % con offsets distintos, 10,6 % con cambios o reordenación de instrucciones.
 3. Guardar en MP3, comprobar que el progreso aparece en la ranura del menú, y volver al menú desde el juego (`OSExec /rs5fe_p.dol`, sin probar).
 4. Probar `Corruption_3 PC.exe` sin el ejecutable del menú al lado (error esperado en el selector) y con el perfil real del usuario.
-5. Decidir el empaquetado público y los textos. `[update-check]` también corre en los ejecutables de Trilogy.
+5. Textos de gestos con la tecla o el botón asignado (ver `entrada_teclado_raton.md`).
+   - El hook se traslada solo y su ancla está comprobada.
+   - Falta añadir a la tabla las cadenas de `MP3/RS5.PAK` que no coincidan con RM3E01 (hay que leer la imagen de Trilogy, que está en Windows).
+   - Comprobar en juego con un build de QA (`unknown prompt`).
+6. Decidir el empaquetado público y los textos. `[update-check]` también corre en los ejecutables de Trilogy.

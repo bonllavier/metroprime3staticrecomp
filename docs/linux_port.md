@@ -89,7 +89,7 @@ Dependencias externas al repo `recomp` que el pipeline lee por ruta relativa (co
 | Entrada y tipo de mando | SDL3 | SDL3 (HIDAPI/hidraw, evdev, udev) | ya era común |
 | Logros (RetroAchievements) | WinHTTP + DPAPI + GDI+ | `HostHttps` + Secret Service por `libsecret` (`dlopen`; sin servicio de secretos la sesión no se recuerda y nunca se guarda en claro) + `SDL_LoadPNG_IO`; rcheevos v12.5.0 fijado en `.tools/rcheevos` | implementado, pendiente de QA |
 | Overlay de rendimiento F9 | `GetProcessTimes`, Toolhelp32, PDH `GPU Engine` | `CLOCK_PROCESS_CPUTIME_ID`, `/proc/self/task/*/stat`, DRM fdinfo `drm-engine-*` (amdgpu, i915/xe, nouveau; el driver propietario de NVIDIA puede no publicarlo) | implementado |
-| Núcleo reservado para el juego | `GetLogicalProcessorInformationEx`, `SetThreadAffinityMask`, `SetThreadIdealProcessor` | `/sys/.../thread_siblings_list`, `pthread_setaffinity_np`; el hilo del juego se fija al núcleo (Linux no tiene "procesador ideal"). i7-4790: CPU 3+7 para el juego, 0-2 y 4-6 para el resto | implementado |
+| Núcleo reservado para el juego | `GetLogicalProcessorInformationEx`, `SetThreadAffinityMask`, `SetThreadIdealProcessor` (sugerencia, no se hereda) | `/sys/.../thread_siblings_list`, `pthread_setaffinity_np`. Los trabajadores pesados (hilo GX, decodificador, compilación de shaders, texturas) quedan fuera del núcleo del juego. Se usa la máscara del proceso capturada al arrancar, y el hilo del juego no se fija. i7-4790: CPU 3+7 libres para el juego; 0-2 y 4-6 para los trabajadores | corregido 2026-11-11: antes el hilo del juego se fijaba a 3+7, sus hilos hijos heredaban esa máscara y `keep_off_game_core` calculaba una máscara vacía. El hilo GX, el decodificador y la compilación corrían todos en ese núcleo. Repetición `hangar_1x_window`: de 44,6 FPS (70/105 ventanas < 57) a 59,4 (1/80, la del arranque) |
 | Prioridad y nombre de hilos | `SetThreadPriority`, `SetThreadDescription` | `setpriority` por hilo (fondo +5; subir juego/GX requiere `CAP_SYS_NICE`), `pthread_setname_np` | implementado |
 | Espera activa al final del retrace VI | `YieldProcessor` | `pause` (x86) / `yield` (ARM) | implementado |
 | Validación SHA-256 de los RSO | BCrypt | mbedTLS (`mbedtls_sha256`) | implementado |
@@ -152,6 +152,7 @@ Cada punto describe un comportamiento verificado; cambiarlo exige volver a medir
 | `gpu.cpp`, toggles del dispositivo | `vulkan_monolithic_pipeline_cache` activo; `enable_spirv_validation` desactivado en Release | cualquier toggle nuevo o retirado cambia las claves de la caché de Dawn y el siguiente arranque recompila todo (~4-5 min); la validación SPIR-V multiplica la precarga por 4-8 |
 | `aurora-main/lib/gx/pipeline.cpp`, `MaxCachedShaderModules` | la caché de módulos de shader está acotada (256, LRU) | Dawn retiene ~1 MB de programa Tint por módulo vivo: más de 7 GB en un arranque sin caché y la PC se congela |
 | `aurora-main/lib/gfx/pipeline_cache.cpp`, `WorkerTier` | en Linux, un grupo urgente a nice 0 y uno de precarga/puenteadas a nice 10; juntos no superan `pipeline_worker_count()` | sin bajar la prioridad, los FPS caen mientras compila; sin el tope, se duplican los hilos que compilan a la vez. Un hilo sin `CAP_SYS_NICE` no puede volver a bajar su nice: no cambiar la prioridad por compilación como en Windows |
+| `aurora-main/include/aurora/host_cores.h` (Linux) | `keep_off_game_core` usa `process_affinity_mask()`, capturada antes de restringir ningún hilo; `prefer_game_core` no fija el hilo del juego | los hilos creados por el hilo del juego heredan su núcleo, y el GX, el decodificador y la compilación se amontonan en él: 30-50 FPS |
 | `aurora-main/lib/window.cpp`, `SDL_SyncWindow` | en Linux solo tras un cambio de ventana pedido (`request_window_sync`) | en X11/KDE cuesta unos 10 ms por fotograma (~35-50 FPS) |
 | `tools/build_prime_runtime.sh` | copia las 8 pantallas de la correa y genera `Config.default.toml` a partir de la plantilla de `package_release.ps1` | vuelven las pantallas del Wiimote o los botones del Wii en lugar de los iconos de teclado. La configuración por defecto se edita en `package_release.ps1`, nunca en una copia aparte |
 | `runtime/cmake/PublicProducts.cmake` + `ico_to_rgba_source.py` | el icono de Linux sale del mismo `MetroidPrime3PCPort.ico` | la ventana queda sin icono |
@@ -177,11 +178,19 @@ Otras reglas del entorno:
   - Por este método se encontró la retención de programas Tint.
   - `MALLOC_ARENA_MAX=2` sirve para descartar que el crecimiento sea fragmentación de glibc.
 - **`watchdog.sh`**: ver «Ejecutar y probar».
+- **`qa_replay.sh NOMBRE [ETIQUETA] [VAR=valor…]`**: equivalente de `qa/qa_replay.ps1`.
+  - Repite una grabación de QA (las privadas viven en el árbol de Windows, `recomp/qa/recordings`) con un perfil aparte (`/mnt/mp3port/builds/qa/profile`), que comparte la caché de shaders, y con el vigilante de memoria.
+  - Imprime los FPS por ventana. Necesita un build `--qa`.
+  - Para A/B de rendimiento: `hangar_1x_window`, unos 6,5 minutos.
+  - Resultados en `/mnt/mp3port/builds/qa/runs`.
+- **Hilos y núcleos en vivo**: `grep Cpus_allowed_list /proc/PID/task/*/status` y `voluntary_ctxt_switches` por hilo. Así se encontró el núcleo compartido.
+- **Análisis de F8 con libc**: `nm -D` no tiene las funciones internas de libc. Para un desplazamiento concreto, `gdb -batch -ex "info symbol 0x…" /lib/x86_64-linux-gnu/libc.so.6`: por ejemplo, el retorno del `syscall` futex dentro de `pthread_cond_signal`.
 
 ## Pendiente
 
 - QA del usuario: mando (iconos Xbox/PlayStation), ratón, F1/F9/F12, logros, Wayland.
-- Caídas a 30-48 FPS durante una compilación sin caché, que solo ocurre en el primer arranque.
+- Caídas a 30-48 FPS durante una compilación sin caché (solo en el primer arranque). Volver a medirlas con la corrección de núcleos: los trabajadores de compilación también estaban en el núcleo del juego.
+- El Turbo Boost del i7-4790 está desactivado en este sistema (`/sys/devices/system/cpu/intel_pstate/no_turbo` = 1): 3,6 GHz fijos frente a hasta 4,0 en Windows. Es un ajuste del sistema o de la BIOS, no del port.
 - Wiimote por Bluetooth.
 - Ocultar MSAA 2x/8x en Vulkan.
 - Vigilante de parones F8.

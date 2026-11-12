@@ -128,8 +128,26 @@ inline uint64_t parse_cpu_list(const std::string& text) noexcept {
   return mask;
 }
 
+// The process's logical processors, captured on first use. sched_getaffinity(0) answers for the calling
+// thread, and a thread inherits its creator's mask: once any thread is restricted, its children would
+// report that restriction as "the process" (2026-11-11: keep_off_game_core computed process & ~game = 0
+// on threads created by the game thread and left the GX consumer and decoder on the game core).
+inline uint64_t process_affinity_mask() noexcept {
+  static const uint64_t mask = []() -> uint64_t {
+    cpu_set_t allowed;
+    CPU_ZERO(&allowed);
+    if (sched_getaffinity(0, sizeof(allowed), &allowed) != 0) return 0;
+    uint64_t result = 0;
+    for (int cpu = 0; cpu < 64; ++cpu)
+      if (CPU_ISSET(cpu, &allowed)) result |= uint64_t{1} << cpu;
+    return result;
+  }();
+  return mask;
+}
+
 inline uint64_t game_core_mask() noexcept {
   static const uint64_t mask = []() -> uint64_t {
+    (void)process_affinity_mask();  // captured before any thread is restricted
     if (const char* value = std::getenv("WII_COMPILED_GAME_CORE"); value != nullptr && value[0] == '0') return 0;
     cpu_set_t allowed;
     CPU_ZERO(&allowed);
@@ -169,18 +187,15 @@ inline void set_thread_affinity(uint64_t mask) noexcept {
 inline void keep_off_game_core() noexcept {
   const uint64_t game = game_core_mask();
   if (game == 0) return;
-  cpu_set_t allowed;
-  CPU_ZERO(&allowed);
-  if (sched_getaffinity(0, sizeof(allowed), &allowed) != 0) return;
-  uint64_t process = 0;
-  for (int cpu = 0; cpu < 64; ++cpu)
-    if (CPU_ISSET(cpu, &allowed)) process |= uint64_t{1} << cpu;
-  set_thread_affinity(process & ~game);
+  set_thread_affinity(process_affinity_mask() & ~game);
 }
 
-// For the game thread: Linux has no "ideal processor" hint, so the thread is
-// placed on the game core, which every background worker already avoids.
-inline void prefer_game_core() noexcept { set_thread_affinity(game_core_mask()); }
+// For the game thread. Windows only sets an ideal processor (a hint, not inherited). Linux has no hint,
+// and pinning the game thread made every thread it creates inherit the game core: the GX consumer,
+// decoder, disc and driver threads all ran on that one core (FPS 30-50 in F8 profiles, 2026-11-11).
+// So the thread is left free; the core stays reserved because the heavy workers avoid it. This call
+// only captures the masks before anything is restricted.
+inline void prefer_game_core() noexcept { (void)game_core_mask(); }
 
 // Per-thread nice value (Linux schedules threads individually). Raising above
 // normal needs CAP_SYS_NICE or an RLIMIT_NICE grant and is silently skipped otherwise.

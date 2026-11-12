@@ -478,7 +478,11 @@ void DrawWiiRemoteSettings(uint32_t selectedGamePort) {
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Takes effect on the next launch. Turn this off if you use a Mayflash DolphinBar.");
     }
+#if defined(__linux__)
+    ImGui::TextDisabled("Pairing: system Bluetooth settings (or bluetoothctl) > add device, then press 1+2");
+#else
     ImGui::TextDisabled("Pairing: Windows Settings > Bluetooth > Add device, then press 1+2");
+#endif
     ImGui::TextDisabled("(or the red SYNC button) on the remote. Leave the PIN empty.");
     ImGui::TextDisabled("A remote that was paired before also needs to be turned on with 1+2/SYNC.");
     if (ImGui::Checkbox("Keep scanning for Wii Remotes (like Dolphin's Continuous Scanning)",
@@ -1388,8 +1392,13 @@ void DrawPerformanceDiagnostics() {
             }
         } else ImGui::TextDisabled("CPU: waiting for the first sample...");
         if(host.gpuReady)ImGui::Text("Game GPU: %.1f%% | engine: %s",host.gpuPercent,host.gpuEngine.c_str());
+#if defined(__linux__)
+        else ImGui::TextDisabled("Game GPU: driver counter unavailable (the NVIDIA driver may not publish it) / starting");
+        ImGui::TextDisabled("GPU: DRM driver usage; GPU time in ms is not instrumented");
+#else
         else ImGui::TextDisabled("Game GPU: Windows counter unavailable / starting");
         ImGui::TextDisabled("GPU: Windows usage; GPU time in ms is not instrumented");
+#endif
         const auto* stats=aurora_get_stats();
         if(stats) {
             ImGui::Text("Draws: %u | batched: %u | pending shaders: %u",
@@ -1992,6 +2001,16 @@ void DrawPrimeVideoOptions() {
         RuntimeConfigFile::SetDisplayMode(std::string(kDisplayModeConfigNames[static_cast<size_t>(g_displayMode)]));
     }
 
+#if defined(__linux__)
+    // Dawn has no Direct3D on Linux: main.cpp only accepts auto and vulkan there (d3d12 would be ignored).
+    static constexpr const char* kApis[] = {"Automatic (Vulkan)", "Vulkan"};
+    static constexpr const char* kApiNames[] = {"auto", "vulkan"};
+    const std::string api = RuntimeConfigFile::GraphicsApi();
+    int apiIndex = api == "vulkan" ? 1 : 0;
+    if (ImGui::Combo("Graphics API", &apiIndex, kApis, 2)) RuntimeConfigFile::SetGraphicsApi(kApiNames[apiIndex]);
+    RestartNote();
+    ImGui::TextDisabled("In use: %s. Direct3D 12 is Windows only; Linux renders with Vulkan.", GraphicsApiDisplayName());
+#else
     static constexpr const char* kApis[] = {"Automatic (Direct3D 12)", "Direct3D 12", "Vulkan"};
     static constexpr const char* kApiNames[] = {"auto", "d3d12", "vulkan"};
     const std::string api = RuntimeConfigFile::GraphicsApi();
@@ -1999,6 +2018,7 @@ void DrawPrimeVideoOptions() {
     if (ImGui::Combo("Graphics API", &apiIndex, kApis, 3)) RuntimeConfigFile::SetGraphicsApi(kApiNames[apiIndex]);
     RestartNote();
     ImGui::TextDisabled("In use: %s. Vulkan: slightly lower latency, possible tearing.", GraphicsApiDisplayName());
+#endif
 
     bool copyFilter = !g_disableCopyFilter;
     if (ImGui::Checkbox("Console copy filter (softens the image like the Wii)", &copyFilter)) {
@@ -2486,7 +2506,11 @@ void DrawPrimeControlOptions() {
         ImGui::TextDisabled("Off: play with a real Wii Remote paired over Bluetooth (F10 > Controller settings). Active now: %s.",
                             RuntimeConfigFile::PrimeKeyboardMouseMode() ? "keyboard and mouse" : "Wii Remote");
     }
+#if defined(_WIN32)
     if (ImGui::Checkbox("Hide the Windows cursor while playing", &g_primeHideCursor))
+#else
+    if (ImGui::Checkbox("Hide the mouse cursor while playing", &g_primeHideCursor))
+#endif
         RuntimeConfigFile::SetPrimeOption(&RuntimeUserConfig::primeHideCursor, "hide_cursor", g_primeHideCursor);
     ImGui::TextDisabled("It comes back while F1 or F10 is open.");
     {
@@ -2500,7 +2524,11 @@ void DrawPrimeControlOptions() {
                         "keyboard_icons", false,
                         "Replaces the Wii Remote and Nunchuk button textures (A, B, Z, C, +, -, 1, 2, D-pad, "
                         "stick, gestures) with key caps showing the primary binding of this tab. Generated at startup in "
+#if defined(_WIN32)
                         "UserData/texture_replacements/keyboard_icons; key names follow the Windows display language. The game's text still says 'button'.");
+#else
+                        "UserData/texture_replacements/keyboard_icons; key names follow the keyboard layout. The game's text still says 'button'.");
+#endif
     ImGui::Separator();
     ImGui::TextUnformatted("Aiming sensitivity");
     ImGui::TextWrapped("This is the game's own option, saved in your save file: game menu > Options > "
@@ -2665,10 +2693,13 @@ void DrawPrimePerformanceOptions() {
                         "defer_dl_expansion", false,
                         "With the Aurora decoder thread: lets that thread expand the game's packed draws\n"
                         "when it is not busy, taking load off the GX thread. Takes effect after a restart.");
+#if defined(_WIN32)
+    // A DXGI setting: dxgi_frame_latency.cpp is a no-op on Linux, so the option is not shown there.
     PrimeOptionCheckbox("Single-frame present queue (less latency)", &RuntimeUserConfig::primePresentQueueLimit,
                         "present_queue_limit", true,
                         "Limits the DirectX 12 swap chain queue to one frame: the image shown is the\n"
                         "last one finished, not one from two or three frames ago.");
+#endif
     PrimeOptionCheckbox("Present each frame as soon as it is ready (less latency)",
                         &RuntimeUserConfig::primePresentOnCopy, "present_on_copy", true,
                         "Does not wait for the next retrace to show a finished frame.");

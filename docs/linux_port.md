@@ -93,7 +93,8 @@ Dependencias externas al repo `recomp` que el pipeline lee por ruta relativa (co
 | Prioridad y nombre de hilos | `SetThreadPriority`, `SetThreadDescription` | `setpriority` por hilo (fondo +5; subir juego/GX requiere `CAP_SYS_NICE`), `pthread_setname_np` | implementado |
 | Espera activa al final del retrace VI | `YieldProcessor` | `pause` (x86) / `yield` (ARM) | implementado |
 | Validación SHA-256 de los RSO | BCrypt | mbedTLS (`mbedtls_sha256`) | implementado |
-| Latencia DXGI | `IDXGISwapChain2` | no aplica (modos de presentación de Vulkan) | no aplica |
+| Latencia DXGI | `IDXGISwapChain2` | no aplica (modos de presentación de Vulkan); la opción F1 "Single-frame present queue" se oculta | no aplica |
+| API gráfica (F1 > Video) | Automático (Direct3D 12) / Direct3D 12 / Vulkan | Automático (Vulkan) / Vulkan: Dawn no tiene Direct3D en Linux y `main.cpp` ignora `d3d12` (usa Vulkan). Los textos de F1 sobre Windows (emparejar el Bluetooth, contador de GPU, cursor, idioma de las teclas) tienen su versión Linux | implementado |
 | Cursor leído en el instante de KPAD | `GetCursorPos` | eventos SDL (hasta un fotograma más tarde) | diferencia conocida |
 | Raíz de las continuaciones de hilos Prime | `GetCurrentFiber` | `HostContext::Current()` (libco) en todos los backends | implementado; el juego arranca |
 | Salida de audio | WASAPI vía SDL | SDL; si el controlador elegido no tiene salida por defecto (PipeWire activo en un sistema PulseAudio, p. ej. Ubuntu 22.04) prueba los demás (ALSA → PulseAudio) | implementado; audio real comprobado |

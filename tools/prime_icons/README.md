@@ -18,3 +18,11 @@ runtime lleva embebida en `runtime/src/hle/input/prime_key_icons.cpp` y que se g
 Orden: `tag_scan.py` → `lzo_txtr.py` (hojas para clasificar a ojo) → `icon_table.py`. Las
 texturas del disco están guardadas de abajo arriba; los PNG de reemplazo deben conservar ese orden
 de filas (el generador del runtime los voltea).
+
+## Textos traducidos
+
+- `text_fixes_data.py`: correcciones de los textos alemanes, franceses, españoles e italianos de los
+  discos USA (fragmentos, fragmentos limitados a una cadena y cadenas completas por `ASSETID#índice`).
+- `text_fixes.py`: aplica esas correcciones a todas las tablas STRG de las extracciones de RM3E01 y
+  Trilogy USA (`TEXT_FIX_ROOTS`) y escribe `prime_text_fixes_rules.inc` y `prime_text_fixes_table.inc`
+  para `runtime/src/hle/prime_text_fixes.cpp`. Ver `docs/textos_traducciones.md`.

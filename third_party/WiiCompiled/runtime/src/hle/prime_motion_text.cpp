@@ -13,15 +13,20 @@
 // The prompts are recognized by the FNV-1a 64 of their exact UTF-8 text (generated from the disc by
 // tools/prime_icons/motion_text_hashes.py), so no game text is part of this source. Only the
 // replacements below are. The text is written to a small guest block reserved below the DVD FST
-// (system_bridge.cpp); the view is only read during GetString, so a few rotating slots suffice.
+// (system_bridge.cpp); the view is only read during GetString, so a rotating buffer suffices.
+//
+// The same hook applies the Spanish text fixes (prime_text_fixes.cpp) when the game runs in Spanish,
+// whatever the input mode.
 #include "hle/prime_gamepad.h"
 #include "hle/prime_gamepad_runtime.h"
 #include "hle/prime_key_bindings.h"
 #include "hle/prime_key_icons.h"
+#include "hle/prime_text_fixes.h"
 #include "memory.h"
 #include "runtime_config.h"
 #include "runtime_log.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstring>
@@ -120,14 +125,23 @@ uint64_t Fnv1a64(std::string_view text) {
     return hash;
 }
 
-constexpr size_t kMaxGuestText = 1024;
+// Longest string handled, terminator included. The longest of the USA discs is ~5.6 KB (a logbook
+// entry; Trilogy's menu music list is ~5.1 KB); longer strings are left alone. The scratch block
+// (16 KiB) holds at least one copy of that size.
+constexpr size_t kMaxGuestText = 8192;
 bool ReadGuestText(uint32_t address, std::string& out) {
     out.clear();
-    for (size_t i = 0; i < kMaxGuestText; ++i) {
-        if (!Memory::Contains(address + static_cast<uint32_t>(i))) return false;
-        const char c = static_cast<char>(Memory::Read8(address + static_cast<uint32_t>(i)));
-        if (c == '\0') return true;
-        out.push_back(c);
+    while (out.size() < kMaxGuestText) {
+        // 256-byte aligned chunks: a chunk never crosses into a region the string does not reach.
+        const uint32_t at = address + static_cast<uint32_t>(out.size());
+        const size_t chunk = std::min<size_t>(0x100 - (at & 0xFF), kMaxGuestText - out.size());
+        if (!Memory::Contains(at, chunk)) return false;
+        const char* bytes = reinterpret_cast<const char*>(Memory::GetPointer(at, chunk));
+        if (const void* nul = std::memchr(bytes, 0, chunk)) {
+            out.append(bytes, static_cast<const char*>(nul) - bytes);
+            return true;
+        }
+        out.append(bytes, chunk);
     }
     return false;
 }
@@ -214,19 +228,52 @@ bool LooksLikeMotionPrompt(std::string_view text) {
 }
 
 std::mutex g_mutex;
-uint32_t g_nextSlot = 0;
+uint32_t g_nextOffset = 0;
+
+// Copies `text` into the scratch block and returns its guest address (0 if it does not fit). The
+// block is used as a ring: GetString only reads the copy while it builds its own string.
+uint32_t WriteScratch(const std::string& text) {
+    const uint32_t size = static_cast<uint32_t>((text.size() + 1 + 31) & ~size_t{31});
+    std::lock_guard lock(g_mutex);
+    if (size > g_primeTextScratchSize) return 0;
+    if (g_nextOffset + size > g_primeTextScratchSize) g_nextOffset = 0;
+    const uint32_t address = g_primeTextScratchBase + g_nextOffset;
+    if (!Memory::Contains(address, text.size() + 1)) return 0;
+    uint8_t* out = Memory::GetPointer(address, text.size() + 1);
+    std::memcpy(out, text.data(), text.size());
+    out[text.size()] = 0;
+    g_nextOffset += size;
+    return address;
+}
 
 }  // namespace PrimeMotionTextDetail
 
 // Called on the game thread by the CStringTable::GetString hook with the address of a UTF-8 string;
-// returns the address to build the view from (the same one unless it is a known motion prompt).
+// returns the address to build the view from (the same one unless it is a known motion prompt or a
+// Spanish string with fixes).
 extern "C" uint32_t PrimeMotionTextOverride(uint32_t guestText) {
     using namespace PrimeMotionTextDetail;
-    static const bool enabled = RuntimeConfigFile::PrimeKeyboardMouseMode();
-    if (!enabled || guestText == 0 || g_primeTextScratchBase == 0) return guestText;
+    static const bool motionPrompts = RuntimeConfigFile::PrimeKeyboardMouseMode();
+    static const bool textFixes = PrimeTextFixes::Enabled();
+    if ((!motionPrompts && !textFixes) || guestText == 0 || g_primeTextScratchBase == 0) return guestText;
     std::string original;
     if (!ReadGuestText(guestText, original)) return guestText;
     const uint64_t hash = Fnv1a64(original);
+
+    if (textFixes) {
+        std::string fixed = original;
+        if (PrimeTextFixes::Apply(hash, fixed) && fixed.size() + 1 <= kMaxGuestText) {
+            if (const uint32_t address = WriteScratch(fixed)) {
+#if defined(MKW_PRIME_QA_TOOLS)
+                RT_LOG(RT_TAG_RUNTIME) << "[prime-text-fix] fnv=" << std::hex << hash << std::dec
+                                       << " text=" << fixed.substr(0, 160) << std::endl;
+#endif
+                return address;
+            }
+        }
+    }
+    if (!motionPrompts) return guestText;
+
     const KnownPrompt* known = nullptr;
     for (const auto& entry : kKnown)
         if (entry.hash == hash) { known = &entry; break; }
@@ -251,14 +298,8 @@ extern "C" uint32_t PrimeMotionTextOverride(uint32_t guestText) {
     text += body;
     if (!original.empty() && original.back() == '\n') text.push_back('\n');
     if (text.size() + 1 > kMaxGuestText) return guestText;
-
-    std::lock_guard lock(g_mutex);
-    const uint32_t slots = g_primeTextScratchSize / kMaxGuestText;
-    if (slots == 0) return guestText;
-    const uint32_t address = g_primeTextScratchBase + (g_nextSlot++ % slots) * static_cast<uint32_t>(kMaxGuestText);
-    if (!Memory::Contains(address, text.size() + 1)) return guestText;
-    for (size_t i = 0; i < text.size(); ++i) Memory::Write8(address + static_cast<uint32_t>(i), static_cast<uint8_t>(text[i]));
-    Memory::Write8(address + static_cast<uint32_t>(text.size()), 0);
+    const uint32_t address = WriteScratch(text);
+    if (address == 0) return guestText;
 #if defined(MKW_PRIME_QA_TOOLS)
     RT_LOG(RT_TAG_RUNTIME) << "[prime-motion-text] prompt=" << unsigned(known->prompt) << " language="
                            << unsigned(known->language) << " device=" << (pad ? "pad" : "keyboard") << " text=" << text

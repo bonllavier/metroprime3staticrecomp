@@ -93,7 +93,8 @@ Con el Wii Remote real (modo teclado/ratón desactivado) no se cambia nada.
   - Un cambio de asignación se ve la próxima vez que el juego pide el texto.
 - **Memoria.**
   - Bloque de 16 KiB reservado bajo la FST del DVD (`system_bridge.cpp`, perfil RM3E01): el MEM2 arena hi baja 16 KiB.
-  - La vista solo se lee durante `GetString`, así que bastan 16 ranuras rotatorias de 1 KiB.
+  - La vista solo se lee durante `GetString`, así que el bloque se usa como anillo: cada copia ocupa su tamaño redondeado a 32 bytes (hasta 8 KiB, el límite de lectura).
+  - El mismo hook aplica las correcciones de los textos traducidos en cualquier modo de entrada (ver [textos_traducciones.md](textos_traducciones.md)).
 - **Pruebas.**
   - En builds de QA, cada reemplazo deja `[prime-motion-text] prompt=… language=… device=… text=…` en el log.
   - Las cadenas que parecen de gesto pero no están en la tabla dejan `unknown prompt fnv=…`. "Nunchuk is required." aparece así a propósito: no es un gesto.

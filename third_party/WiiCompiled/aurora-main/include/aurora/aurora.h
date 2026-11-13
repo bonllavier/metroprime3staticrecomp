@@ -212,6 +212,10 @@ void aurora_request_screenshot(const char* outputPath);
 void aurora_request_draw_dump(const char* basePath);
 // The same for `frames` consecutive frames, written as <basePath>_f0 .. _f<frames-1>.
 void aurora_request_draw_dump_burst(const char* basePath, uint32_t frames);
+// Test builds (MKW_PRIME_QA_TOOLS) only, otherwise nothing: with frame interpolation running, saves the
+// first inserted image and the real one of the next `frames` frames as half-size BMPs in `directory`
+// (interp_<n>_<frame>_a_inserted.bmp / _b_real.bmp). Draw dumps and screenshots only see real frames.
+void aurora_request_interpolation_capture(const char* directory, uint32_t frames);
 // Asynchronous GX decoder: the calling (producer) thread only writes GX wire
 // commands; a decoder thread applies them in order. Set before any GX work.
 // Host code that reads or mutates decoder state must aurora_stream_sync first.

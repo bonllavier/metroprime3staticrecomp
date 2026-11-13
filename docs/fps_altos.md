@@ -285,7 +285,26 @@ En la cabina de la nave de Samus, las pantallas verdes de la consola parpadeaban
 
 Corrección: `shader_info.cpp` anota dónde están en el bloque de uniformes las matrices de textura que el dibujo usa (las de la región de posición con ranura ≥ 10 y las post-transform usadas), `record_interpolation_draw` guarda su valor en el fotograma (`InterpolationFrame::textureMatrices`) y al rellenar cada imagen intercalada se interpolan con el mismo peso que la geometría si el paso fue suave (`texture_matrix_moves_smoothly`: giro de hasta 0,2 por coeficiente con su desplazamiento, o un desplazamiento puro de hasta 0,02, un desplazamiento lento). Un salto (una animación que cambia de celda, un giro muy rápido) conserva el valor del fotograma. Se aplican después de la geometría y solo si esta se movió: un esqueleto o una pieza que no se predice en baja latencia deja también sus mapas en el fotograma. Test `TextureMatricesMoveWithTheCameraButNotAcrossJumps`.
 
-Mejora de paso: los reflejos de entorno de todas las superficies metálicas (cabina, armadura) acompañan ya al giro en las imágenes intercaladas. Pendiente de que el usuario lo vea en la nave.
+Mejora de paso: los reflejos de entorno de todas las superficies metálicas (cabina, armadura) acompañan ya al giro en las imágenes intercaladas. El parpadeo que el usuario seguía viendo en la nave tenía otra causa (sección siguiente).
+
+## Pantallas verdes de la nave que se oscurecen al girar (corregido el 12 de noviembre de 2026)
+
+Síntoma: con la interpolación a 120, al girar la cámara de un lado a otro dentro de la nave, los paneles verdes de la consola parpadeaban; a 60 o con la cámara quieta, no. Igual en Windows y en Linux: el código es común.
+
+Cómo se encontró: F5 y F11 solo guardan imágenes reales, así que se añadió **F4** (build de prueba, ver la tabla de abajo), que guarda también las intercaladas. Las capturas mostraron que, cada 6 a 8 fotogramas, la imagen intercalada sacaba las pantallas de la consola derecha casi negras (la base del panel en su sitio, sin el contenido brillante), mientras que las reales de antes y de después estaban bien. Ese ritmo coincidía con el cambio de imagen de las pantallas: el contenido pasa por cuatro estados de animación, uno cada 7 fotogramas. El registro de emparejamiento de la misma captura dio la causa. Cada estado es un dibujo con paleta de matrices (`PNMTXIDX`) distinto, y en el primer fotograma de un estado aparece un dibujo que no estaba en el anterior: los cuatro identificadores nuevos volvían cada 28 fotogramas, justo donde las pantallas se oscurecían.
+
+Causa: ese dibujo no tenía pareja ni ninguna ranura de su paleta con el mismo hueso en un dibujo emparejado, así que la paleta quedaba sin resolver y se dibujaba con las matrices del fotograma real. El panel y sus capas de brillo (sin escritura de profundidad, prueba `LEQUAL`) sí se movían a la cámara de la imagen intercalada. La pantalla y lo que la rodea dejaban de coincidir en profundidad y su contenido quedaba tapado u oculto en esa imagen. Al siguiente fotograma el dibujo ya tenía pareja y volvía a verse. Con la cámara quieta las dos posiciones coinciden, por eso solo pasaba al girar.
+
+Corrección (`gx/frame_interpolation.cpp`, al resolver las ranuras de paleta): si una ranura no encuentra origen entre los dibujos emparejados y hay estimación del movimiento de la cámara, se busca en el fotograma anterior una matriz de paleta que, movida exactamente por ese movimiento (`moves_with_camera`, tolerancia 0,002), dé la actual. Eso solo ocurre con una pieza del escenario quieta respecto al mundo, y esa matriz se usa como su posición anterior. Un hueso animado, como los brazos de Samus, no cae dentro de la tolerancia y sigue como antes, en el estado del fotograma. Coste: la lista de ranuras del fotograma anterior se arma una sola vez, y solo cuando alguna paleta queda sin resolver.
+
+Descartado por el camino, con pruebas del usuario y capturas F4 (la tabla de interruptores de cada prueba quedó fuera del código):
+
+- Interpolar las paletas quietas por el arco de la cámara en vez de por coeficientes: no cambió nada.
+- Girar con la cámara las luces en espacio de vista: técnicamente correcto, pero no era la causa. Se retiró para no cambiar la iluminación sin necesidad; queda como posible mejora.
+- Decodificar las texturas CMPR en cada imagen del grupo.
+- Copias del EFB, el HUD del visor (otra cámara en perspectiva), el ubershader (ningún dibujo lo usó), los efectos (SSAO, iluminación del mundo, «Fix glow ghost copies»), las matrices de textura, el V-Sync, la baja latencia y el rasgado.
+
+Verificación: el usuario confirmó a 120 en la nave que el parpadeo desapareció. Replay `hangar_i120_off` de 4 minutos en Linux con el build final: sin errores, 114 de media, y las bajadas a 60 son las sondas del controlador de tasa, que ya aparecían antes.
 
 ## Lo que queda por comprobar
 
@@ -300,7 +319,7 @@ El usuario tiene un monitor de 120 Hz desde el 7 de noviembre y ese mismo día q
 Límites conocidos de la técnica:
 
 - Solo se interpolan las matrices de los dibujos en perspectiva; una textura que se desplaza o una partícula que nace avanzan a 60 Hz.
-- Un dibujo sin pareja (ni hermano con la misma matriz) se muestra en su estado final.
+- Un dibujo sin pareja (ni hermano con la misma matriz) se muestra en su estado final. Excepción: una paleta nueva cuyas matrices son las del fotograma anterior movidas solo por la cámara (escenario quieto) se interpola desde ellas (12/11/2026).
 - El apuntado sigue recibiendo la entrada a 60 Hz. Una mejora posible, no hecha: girar la cámara en las imágenes intercaladas con el último movimiento del ratón, como la fase 1 del port de Prime 1.
 
 ## Cómo probarlo sin monitor rápido
@@ -318,6 +337,8 @@ Interruptores privados, solo en el build con `MKW_PRIME_QA_TOOLS`:
 | `WII_COMPILED_QA_INTERP_NO_CARRY=1` | Vuelve a repetir lotes sin aplazar la cabeza del fotograma siguiente (comportamiento anterior, solo para comparar) |
 | `WII_COMPILED_QA_DISPLAY_CADENCE=1` | `[display-cadence]` cada 10 s: lo que llegó de verdad a la pantalla según DXGI (imágenes mostradas, refrescos repetidos, imágenes perdidas) |
 | `WII_COMPILED_QA_NO_DISPLAY_SYNC=1` | Entrega sin alinear con el refresco del monitor, para comparar |
+| Tecla **F4** (o un archivo vacío `interp_request` en `UserData/Logs/captures`) | Guarda 3 s (180 fotogramas): por cada fotograma, la primera imagen intercalada y la real que la sigue, a media resolución, en `UserData/Logs/captures/interp_<fecha>/` (`interp_<n>_<fotograma>_a_inserted.bmp` / `_b_real.bmp`). En orden de nombre es lo que mostró la pantalla. Mientras dura, la tasa de imágenes se mantiene fija. Unos 260 MB por captura. Solo en el build de prueba; el público no lleva el código |
+| `tools/interp_capture_check.py <carpetas>` | Analiza capturas F4: marca las intercaladas con muchos píxeles más oscuros o más claros que las dos reales vecinas (parpadeo), comparando con la mediana de la propia captura. Necesita Pillow y numpy |
 | `WII_COMPILED_QA_ALIGN_PHASE`, `_EARLIEST`, `_LATEST` | Fase y márgenes de la alineación (en periodos de refresco) |
 
 El replay registra `[prime-interp]` cada 5 s y `[dxgi-present]` cada 600 llamadas. `WII_COMPILED_GPU_TIMING=1` cambia la clave de caché de Dawn y añade cientos de MB a la caché: solo para diagnóstico.

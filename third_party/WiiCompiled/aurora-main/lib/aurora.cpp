@@ -1998,11 +1998,96 @@ struct InterpCompareReadback {
   uint32_t width = 0;
   uint32_t height = 0;
   uint32_t bytesPerRow = 0;
+  bool bgra = false;
 };
+
+// F4 (aurora_request_interpolation_capture): for the next N frames, the first inserted image and the real
+// one, saved as half-size BMPs. In name order they are what the screen showed: real k-1, the image inserted
+// between k-1 and k, real k. Found the gunship screens that went dark in one inserted image every 7 frames
+// (fps_altos.md).
+struct InterpCaptureState {
+  std::mutex requestMutex;
+  std::filesystem::path requestedDir;
+  uint32_t requestedFrames = 0;
+  std::filesystem::path dir;
+  uint32_t capture = 0;
+  uint32_t remaining = 0;
+  uint32_t frame = 0;
+};
+InterpCaptureState& interp_capture_state() {
+  static InterpCaptureState state;
+  return state;
+}
+// Whether this frame's images are captured; starts a requested capture.
+bool interp_capture_frame() {
+  auto& state = interp_capture_state();
+  if (state.remaining == 0) {
+    std::lock_guard lock(state.requestMutex);
+    if (state.requestedFrames == 0) return false;
+    state.dir = state.requestedDir;
+    state.remaining = state.requestedFrames;
+    state.requestedFrames = 0;
+    state.frame = 0;
+    ++state.capture;
+    gx::detail::g_holdInterpolationRate.store(true, std::memory_order_release);
+    Log.info("[interp-capture] capture {} started: {} frames into {}", state.capture, state.remaining, state.dir.string());
+  }
+  return true;
+}
+void save_interp_capture_bmp(InterpCompareReadback& readback, const std::filesystem::path& path) {
+  wgpu::MapAsyncStatus status = wgpu::MapAsyncStatus::CallbackCancelled;
+  const auto future = readback.buffer.MapAsync(wgpu::MapMode::Read, 0, readback.buffer.GetSize(),
+                                               wgpu::CallbackMode::WaitAnyOnly,
+                                               [&status](wgpu::MapAsyncStatus s, wgpu::StringView) { status = s; });
+  if (g_instance.WaitAny(future, 5000000000) != wgpu::WaitStatus::Success || status != wgpu::MapAsyncStatus::Success) {
+    Log.warn("[interp-capture] readback failed for {}", path.string());
+    return;
+  }
+  const auto* data = static_cast<const uint8_t*>(readback.buffer.GetConstMappedRange(0, readback.buffer.GetSize()));
+  const uint32_t width = readback.width / 2, height = readback.height / 2;
+  const uint32_t rowBytes = (width * 3 + 3) & ~3u;
+  std::vector<uint8_t> file(54 + size_t{rowBytes} * height, 0);
+  const auto put32 = [&](size_t at, uint32_t v) { for (int i = 0; i < 4; ++i) file[at + i] = uint8_t(v >> (8 * i)); };
+  file[0] = 'B';
+  file[1] = 'M';
+  put32(2, uint32_t(file.size()));
+  put32(10, 54);
+  put32(14, 40);
+  put32(18, width);
+  put32(22, height);
+  file[26] = 1;
+  file[28] = 24;
+  put32(34, uint32_t(file.size() - 54));
+  for (uint32_t y = 0; y < height; ++y) {
+    uint8_t* out = file.data() + 54 + size_t{height - 1 - y} * rowBytes;  // BMP rows go bottom-up
+    for (uint32_t x = 0; x < width; ++x) {
+      int sum[3] = {0, 0, 0};
+      for (uint32_t dy = 0; dy < 2; ++dy) {
+        for (uint32_t dx = 0; dx < 2; ++dx) {
+          const uint8_t* px = data + size_t{y * 2 + dy} * readback.bytesPerRow + size_t{x * 2 + dx} * 4;
+          for (int c = 0; c < 3; ++c) sum[c] += px[c];
+        }
+      }
+      const int r = sum[readback.bgra ? 2 : 0] / 4, g = sum[1] / 4, b = sum[readback.bgra ? 0 : 2] / 4;
+      out[x * 3 + 0] = uint8_t(b);
+      out[x * 3 + 1] = uint8_t(g);
+      out[x * 3 + 2] = uint8_t(r);
+    }
+  }
+  readback.buffer.Unmap();
+  // Written off the encoding thread; the readback wait above is the only stall.
+  std::thread([file = std::move(file), path]() {
+    if (FILE* f = std::fopen(path.string().c_str(), "wb")) {
+      std::fwrite(file.data(), 1, file.size(), f);
+      std::fclose(f);
+    }
+  }).detach();
+}
 
 InterpCompareReadback encode_interp_compare_readback(const wgpu::CommandEncoder& encoder,
                                                      const webgpu::TextureWithSampler& texture) {
   InterpCompareReadback readback{.width = texture.size.width, .height = texture.size.height};
+  readback.bgra = texture.format == wgpu::TextureFormat::BGRA8Unorm || texture.format == wgpu::TextureFormat::BGRA8UnormSrgb;
   readback.bytesPerRow = align_to(readback.width * 4, 256);
   const wgpu::BufferDescriptor descriptor{
       .label = "Interpolation compare readback",
@@ -2120,6 +2205,9 @@ std::vector<PresentationJob> encode_sealed_frame(gfx::SealedFrame& sealedFrame, 
     compareGroup = ctx.replayInterpolatedFrames && ctx.interpolatedFrameCount != 0 && ctx.presentNative &&
                    (groups++ % period) == 0;
   }
+  const bool captureFrame = ctx.replayInterpolatedFrames && ctx.interpolatedFrameCount != 0 && ctx.presentNative &&
+                            interp_capture_frame();
+  compareGroup = compareGroup || captureFrame;
 #endif
   // Low-latency mode: the frame goes to the presenter as soon as it is encoded and its inserted images,
   // predicted past it, follow. Otherwise the inserted images lead up to the frame and are encoded first.
@@ -2366,7 +2454,23 @@ std::vector<PresentationJob> encode_sealed_frame(gfx::SealedFrame& sealedFrame, 
     complete_frame_capture(*pendingFrameCapture);
   }
 #if defined(MKW_PRIME_QA_TOOLS)
-  if (compareSlot && compareNative) compare_interp_readbacks(*compareSlot, *compareNative, ctx.logicalFrame);
+  if (compareSlot && compareNative) {
+    if (captureFrame) {
+      auto& state = interp_capture_state();
+      const std::string number = std::to_string(state.frame);
+      const std::string stem = "interp_" + std::to_string(state.capture) + "_" +
+                               std::string(number.size() < 3 ? 3 - number.size() : 0, '0') + number;
+      save_interp_capture_bmp(*compareSlot, state.dir / (stem + "_a_inserted.bmp"));
+      save_interp_capture_bmp(*compareNative, state.dir / (stem + "_b_real.bmp"));
+      ++state.frame;
+      if (--state.remaining == 0) {
+        gx::detail::g_holdInterpolationRate.store(false, std::memory_order_release);
+        Log.info("[interp-capture] capture {} saved", state.capture);
+      }
+    } else {
+      compare_interp_readbacks(*compareSlot, *compareNative, ctx.logicalFrame);
+    }
+  }
 #endif
   for (auto& readback : gfx::draw_dump::g_copyReadbacks) {
     wgpu::MapAsyncStatus status = wgpu::MapAsyncStatus::Error;
@@ -2871,6 +2975,18 @@ void aurora_request_draw_dump(const char* basePath) {
 }
 void aurora_request_draw_dump_burst(const char* basePath, uint32_t frames) {
   aurora::gfx::draw_dump::request(basePath != nullptr ? basePath : "draw_dump", frames);
+}
+void aurora_request_interpolation_capture(const char* directory, uint32_t frames) {
+#if defined(MKW_PRIME_QA_TOOLS)
+  if (directory == nullptr || frames == 0) return;
+  auto& state = aurora::interp_capture_state();
+  std::lock_guard lock(state.requestMutex);
+  state.requestedDir = directory;
+  state.requestedFrames = frames;
+#else
+  (void)directory;
+  (void)frames;
+#endif
 }
 // `frame` 0 means "the next frame presented" (bug reports); any other value is
 // an exact frame number for diagnostics.

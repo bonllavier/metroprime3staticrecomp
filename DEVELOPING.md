@@ -179,6 +179,7 @@ recomp/tools/build_prime_runtime.sh -j 8 --qa
 - **When to run the full script again:** when the translation, the RSO modules, the hooks or the default configuration change.
 - **`--qa` / `-DMKW_PRIME_QA_TOOLS=ON`:** adds the test tools:
   - F5/F7 draw dumps;
+  - F4 captures of the inserted frames that frame interpolation adds;
   - the F8 stack profiler;
   - the F9 performance panel;
   - input recording and replay.
@@ -208,6 +209,7 @@ On Windows, run `Corruption_3 PC.exe --iso "<image>"`, or let it ask for the ima
 | F8 (QA build) + `tools/summarize_stack_profile.py` | Sampling profiler of the game, GX, decoder, frame and presenter threads; reads Windows and Linux profiles |
 | `tools/linux_diag/` | `ptracer.c` (attach gdb without root), `alloctrack.c` (live allocations by call stack), `watchdog.sh` (kills the game below 1.5 GB free RAM) |
 | F7 / F5 (QA build) | Dump the draw list, image and textures of one or 60 frames to `UserData/Logs/captures` |
+| F4 (QA build) | With frame interpolation on, save 3 s of inserted frames next to the real ones (`UserData/Logs/captures/interp_<time>/`, half-size BMPs). Check them with `tools/interp_capture_check.py`, which flags inserted frames darker or brighter than both real neighbours. F5/F7/F11 only see real frames |
 | Runtime unit tests | `MKW_PLATFORM_TESTS_ONLY` builds and the `*_tests` targets of the runtime; run the binaries directly |
 
 [`docs/linux_port.md`](docs/linux_port.md) lists behaviours that were expensive to get right and

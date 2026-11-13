@@ -53,6 +53,9 @@ namespace detail {
 // Defined in frame_interpolation.cpp, exposed so the early-outs below stay inline: the shipped
 // build compiles shards without LTO, so a cross-TU call would land on every draw in the frame.
 extern std::atomic_uint32_t g_frameInterpolationFps;
+// An F4 capture of inserted images is running (test builds): the rate controller holds the rate, since the
+// readbacks slow the encoder and it would otherwise drop the very images being captured.
+extern std::atomic_bool g_holdInterpolationRate;
 } // namespace detail
 
 // 0 when interpolation is disabled; otherwise the configured target in images per second, or

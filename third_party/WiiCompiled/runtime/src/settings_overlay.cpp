@@ -1305,8 +1305,42 @@ bool g_showPerformanceDiagnostics=false;
 // Length of an F8 recording: long enough to walk into a room and play through its loads.
 constexpr double kF8ProfileSeconds = 120.0;
 
+// F4: inserted images of the next 3 s with frame interpolation on, and the real frames between them
+// (half-size BMPs in <capture dir>/interp_<time>); F5/F7/F11 only ever see real frames. Also asked for by
+// an "interp_request" file dropped in the capture dir.
+std::chrono::steady_clock::time_point g_interpolationCaptureShownAt{};
+void RequestInterpolationCapture(const char* trigger) {
+    const std::time_t now = std::time(nullptr);
+    std::tm local{};
+#if defined(_WIN32)
+    localtime_s(&local, &now);
+#else
+    localtime_r(&now, &local);
+#endif
+    char name[64];
+    std::strftime(name, sizeof(name), "interp_%Y%m%d_%H%M%S", &local);
+    const auto directory = DrawDumpDirectory() / name;
+    std::error_code error;
+    std::filesystem::create_directories(directory, error);
+    aurora_request_interpolation_capture(RuntimeConfigFile::PathToUtf8(directory).c_str(), 180);
+    g_interpolationCaptureShownAt = std::chrono::steady_clock::now();
+    RT_LOG(RT_TAG_CONFIG) << "[interp-capture] trigger=" << trigger << " dir=" << RuntimeConfigFile::PathToUtf8(directory)
+                          << std::endl;
+}
+
 // F8 records without the F9 panel; this keeps the recording visible.
 void DrawProfileRecordingNotice() {
+    if(g_interpolationCaptureShownAt.time_since_epoch().count()!=0 &&
+       std::chrono::steady_clock::now()-g_interpolationCaptureShownAt<std::chrono::seconds(4)) {
+        ImGui::SetNextWindowPos(ImVec2(12,44),ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.6f);
+        if(ImGui::Begin("##interp_capture",nullptr,ImGuiWindowFlags_NoDecoration|ImGuiWindowFlags_AlwaysAutoResize|
+                        ImGuiWindowFlags_NoInputs|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoFocusOnAppearing|
+                        ImGuiWindowFlags_NoNav)) {
+            ImGui::TextColored(ImVec4(1,0.3f,0.3f,1),"F4: capturing inserted frames (3 s) to Logs/captures");
+        }
+        ImGui::End();
+    }
 #if defined(_WIN32) || defined(__linux__)
     static bool wasRunning=false;
     static std::chrono::steady_clock::time_point startedAt, finishedAt;
@@ -3234,6 +3268,7 @@ void HandleEvents(const AuroraEvent* events) noexcept {
             nextPoll = now + std::chrono::milliseconds(500);
             std::error_code error;
             if (std::filesystem::remove(DrawDumpDirectory() / "request", error)) RequestDrawDump("request");
+            if (std::filesystem::remove(DrawDumpDirectory() / "interp_request", error)) RequestInterpolationCapture("request");
         }
     }
 #endif
@@ -3282,6 +3317,9 @@ void HandleEvents(const AuroraEvent* events) noexcept {
         // F5: eight consecutive frames, for flicker that lasts a frame.
         if (!g_rebind.active && IsToggleKey(ev->sdl, SDL_SCANCODE_F5)) {
             RequestDrawDump("F5", 60);
+        }
+        if (!g_rebind.active && IsToggleKey(ev->sdl, SDL_SCANCODE_F4)) {
+            RequestInterpolationCapture("F4");
         }
 #endif
 #if defined(MKW_GAME_PROFILE_RM3E01_00)

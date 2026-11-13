@@ -30,6 +30,7 @@
 namespace aurora::gx {
 namespace detail {
 std::atomic_uint32_t g_frameInterpolationFps{0};
+std::atomic_bool g_holdInterpolationRate{false};
 } // namespace detail
 
 namespace {
@@ -1239,6 +1240,27 @@ bool camera_motion(const Mat3x4<float>& previous, const Mat3x4<float>& current, 
   return std::isfinite(angleDegrees) && std::isfinite(distance);
 }
 
+// Whether `current` is `cameraDelta * previous`: a matrix that only moved because the camera did (a piece
+// of scenery standing still). The tolerances cover the game's float products and the estimate of the delta
+// from other draws; an animated bone moves well past them.
+bool moves_with_camera(const Mat3x4<float>& previous, const Mat3x4<float>& current,
+                       const Mat3x4<float>& cameraDelta) noexcept {
+  const std::array<const Vec4<float>*, 3> d{&cameraDelta.m0, &cameraDelta.m1, &cameraDelta.m2};
+  const std::array<const Vec4<float>*, 3> p{&previous.m0, &previous.m1, &previous.m2};
+  const std::array<const Vec4<float>*, 3> c{&current.m0, &current.m1, &current.m2};
+  for (size_t r = 0; r < 3; ++r) {
+    for (size_t k = 0; k < 4; ++k) {
+      float expected = k == 3 ? (*d[r])[3] : 0.0f;
+      for (size_t j = 0; j < 3; ++j) expected += (*d[r])[j] * (*p[j])[k];
+      const float actual = (*c[r])[k];
+      if (!std::isfinite(expected) || !std::isfinite(actual)) return false;
+      const float tolerance = k == 3 ? 2.0e-3f * (std::max)(1.0f, std::abs(actual)) : 2.0e-3f;
+      if (std::abs(expected - actual) > tolerance) return false;
+    }
+  }
+  return true;
+}
+
 // A cut between two shots: most static draws report a camera jump no game camera makes in 1/60 s
 // (Prime units are metres). Interpolating it would show a made-up shot halfway between the two.
 constexpr float kCutAngleDegrees = 35.f;
@@ -2071,6 +2093,9 @@ void process_segment(InterpolationFrame& cur, InterpolationFrame& prev, size_t b
     }
     return palette;
   };
+  // Previous-frame palette slots, gathered the first time a palette needs them (see below).
+  static std::vector<std::pair<size_t, uint32_t>> stillCandidates;
+  bool stillCandidatesBuilt = false;
   for (size_t runStart = 0; runStart < paletteSlotKeys.size();) {
     size_t runEnd = runStart + 1;
     while (runEnd < paletteSlotKeys.size() &&
@@ -2113,6 +2138,43 @@ void process_segment(InterpolationFrame& cur, InterpolationFrame& prev, size_t b
         sourceEntry = previousIndex;
       } else if (candidateHash != sourceHash) {
         ambiguous = true;
+      }
+    }
+    // No matched draw holds this matrix: a palette met for the first time. Prime swaps the gunship's console
+    // screens between four animation states every 7 frames, each a draw of its own, so on the first frame of
+    // a state the screen had no partner, stayed at the frame while the panel and its glow layers moved to the
+    // inserted image's camera, and went dark in that image: the green screens flickered while the camera
+    // turned at 120 (user, 12/11/2026; F4 captures: the four new palettes recur every 28 frames exactly where
+    // the screens darken). A matrix that is exactly the camera's motion applied to a palette matrix of the
+    // previous frame is that piece of scenery standing still: take that matrix as where it was. An animated
+    // bone (Samus' arms) does not land on one within the tolerance and keeps the frame, as before.
+    if (!ambiguous && sourcePosition == nullptr && cur.cameraDeltaValid) {
+      if (!stillCandidatesBuilt) {
+        stillCandidatesBuilt = true;
+        stillCandidates.clear();
+        for (size_t previousIndex = 0; previousIndex < previousTransforms.size(); ++previousIndex) {
+          const auto& previous = previousTransforms[previousIndex].transform;
+          if (!previous.indexedMatrices) {
+            continue;
+          }
+          for (uint32_t slot = 0; slot < MaxPnMtx; ++slot) {
+            if ((previous.usedMatrixMask & (1u << slot)) != 0) {
+              stillCandidates.emplace_back(previousIndex, slot);
+            }
+          }
+        }
+      }
+      const auto& first = paletteSlotKeys[runStart];
+      const auto& currentMatrix =
+          currentTransforms[paletteDraws[first.palette]].transform.indexedMatrices->position[first.slot];
+      for (const auto& [previousIndex, slot] : stillCandidates) {
+        const auto& previous = *previousTransforms[previousIndex].transform.indexedMatrices;
+        if (moves_with_camera(previous.position[slot], currentMatrix, cur.cameraDelta)) {
+          sourcePosition = &previous.position[slot];
+          sourceNormal = &previous.normal[slot];
+          sourceEntry = previousIndex;
+          break;
+        }
       }
     }
     if (ambiguous || sourcePosition == nullptr) {
@@ -2438,7 +2500,8 @@ void report_producer_paced(bool paced) noexcept {
   // Window complete: adjust the target one step at most, then start over. At
   // one decision per window this cannot spam the log or flap within a second.
   // Private QA: keeps the configured rate whatever happens, to exercise it on a slower machine.
-  if (AURORA_DIAGNOSTIC_ENV("WII_COMPILED_QA_INTERP_HOLD_RATE") != nullptr) {
+  if (AURORA_DIAGNOSTIC_ENV("WII_COMPILED_QA_INTERP_HOLD_RATE") != nullptr ||
+      detail::g_holdInterpolationRate.load(std::memory_order_acquire)) {
     s_pacingWindowFrames.store(0, std::memory_order_release);
     s_pacingWindowMisses.store(0, std::memory_order_release);
     return;

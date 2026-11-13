@@ -145,6 +145,32 @@ cd /mnt/mp3port/builds/RM3E01_00_runtime_linux        # portable.txt: UserData/ 
 - Pruebas pesadas (caché vacía, cambios de memoria o de hilos): lanzar junto al juego `tools/linux_diag/watchdog.sh PID LOG`, que registra la memoria cada segundo y cierra el juego si quedan menos de 1,5 GB libres. Una prueba sin él congeló la PC del usuario y obligó a reiniciar (2026-11-11).
 - Nunca capturar la ventana raíz ni el escritorio para ver el juego: expuso ventanas privadas del usuario. Usar la captura del juego o pedirla al usuario.
 
+## Metroid Prime Trilogy USA (R3ME01) en Linux (2026-11-13)
+
+Mismo diseño que en Windows ([trilogy_r3me01.md](trilogy_r3me01.md)): un ejecutable por DOL, junto a `Corruption_3 PC`, con el mismo `UserData`. `Corruption_3 PC` con un disco R3ME01 arranca `Corruption_3 Trilogy Menu`; el menú lanza `Corruption_3 Trilogy MP3` al elegir MP3, y MP3 vuelve al menú.
+
+```bash
+./"Corruption_3 PC" --iso "<Metroid Prime Trilogy (USA).rvz>"   # o directamente ./"Corruption_3 Trilogy Menu" --iso ...
+```
+
+Construcción (sin la cadena de Windows de `dtk`/extracción: se reutilizan de `titles/<título>/` de la copia de Windows `address_map.json`, `dtk/`, `extract/`, `functions.txt` y la traducción base `generated/` sin `build_shards`/`runtime_hooks`; `titles/` está fuera de Git):
+
+```bash
+source /mnt/mp3port/env.sh && cd $MP3PORT/src/recomp      # con el build de RM3E01 hecho (reutiliza sus _deps)
+for t in R3ME01_MP3 R3ME01_FE; do
+  python3 -B tools/trilogy/make_address_map.py $t          # si el runtime usa direcciones nuevas
+  python3 -B tools/trilogy/make_title_tree.py $t
+  python3 -B tools/trilogy/audit_native_collisions.py $t
+  python3 -B tools/trilogy/build_title.py $t               # RSO, reparaciones, hooks, blobs de datos, shards, configure (QA; --public sin QA)
+  cmake --build titles/$t/work/recomp/build/${t}_runtime --target WiiCompiled --parallel 7
+done
+python3 -B tools/trilogy/install_title_exes.py             # copia a builds/RM3E01_00_runtime_linux (o MP3_BUILD_DIR)
+```
+
+- Si solo cambia el runtime: `make_title_tree.py` y `audit_native_collisions.py` de cada título, `cmake --build` e `install_title_exes.py`. **`make_title_tree.py` copia el runtime y el overlay en ese momento**: hay que volver a pasarlo tras cada cambio, o el build compila la copia vieja.
+- Diferencias con Windows: `make_title_tree.py` enlaza con symlinks (en Windows, `mklink /J`); `build_title.py` usa `dotnet` del PATH con `--no-incremental`, regenera `data_sections_init_blobs.S` en el host (como `build_prime_runtime.sh`) y configura como `build_prime_runtime.sh`. Sin cortina al cambiar de ejecutable: la ventana se cierra y se abre otra. `--iso` se pasa de un ejecutable al siguiente (en Windows no; ahí lee `[paths] iso_path`).
+- El mapa de direcciones se regeneró aquí: añade solo las tres direcciones del puntero en ultrawide (`prime_widescreen.cpp`, 12/11); las demás coinciden con las de Windows. Pipeline: MP3 205 switches y menú 203 sin casos perdidos; `ScriptGUIScreenFrontEndUI` de MP3 no enlaza, como en Windows.
+
 ## No romper lo que funciona
 
 Cada punto describe un comportamiento verificado; cambiarlo exige volver a medir.

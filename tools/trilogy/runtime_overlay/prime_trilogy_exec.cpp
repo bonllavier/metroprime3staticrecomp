@@ -31,11 +31,17 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#else
+#include <SDL3/SDL_messagebox.h>
+#include <spawn.h>
+#include <unistd.h>
+extern char** environ;
 #endif
 
 namespace {
 constexpr uint32_t kStateMagic = 0x52334D45u;  // R3ME
 constexpr uint32_t kMaximumRegion = 0x00800000u;
+#if defined(_WIN32)
 constexpr const char* kMenuExecutable = "Corruption_3 Trilogy Menu.exe";
 constexpr const char* kGameExecutable = "Corruption_3 Trilogy MP3.exe";
 constexpr const char* kCurtainVariable = "WII_COMPILED_TRILOGY_CURTAIN";  // "<old window> <old pid>"
@@ -43,6 +49,11 @@ constexpr const wchar_t kCurtainClass[] = L"Corruption3TrilogyCurtain";
 constexpr unsigned kCurtainFrames = 3;   // the presented frames that take it down; the first ones can still be queued
 constexpr DWORD kCurtainWaitMs = 3000;   // the old process waits this long for it, then exits anyway
 constexpr UINT kCurtainLifeMs = 30000;   // a new window that never presents must not stay covered
+#else
+// Linux has no curtain: the old window closes and the new one opens (docs/linux_port.md).
+constexpr const char* kMenuExecutable = "Corruption_3 Trilogy Menu";
+constexpr const char* kGameExecutable = "Corruption_3 Trilogy MP3";
+#endif
 
 std::filesystem::path StatePath() {
     return RuntimeConfigFile::ApplicationDataDirectory() / "trilogy_exec_state.bin";
@@ -249,6 +260,32 @@ std::filesystem::path ExecutableDirectory() {
     }
     return std::filesystem::path(exe).parent_path();
 }
+#else
+// Starts the other executable, passing on --iso when the image came from it, and, like
+// PrimeHostOsRestart, names this process as the one it waits for (prime_host_restart.cpp).
+bool StartExecutable(const std::filesystem::path& executable) {
+    std::vector<std::string> args{executable.string()};
+    if (!RuntimeConfigFile::PrimeIsoOverride().empty()) args.insert(args.end(), {"--iso", RuntimeConfigFile::PrimeIsoOverride()});
+    std::vector<char*> argv;
+    for (auto& arg : args) argv.push_back(arg.data());
+    argv.push_back(nullptr);
+    const std::string parent = std::to_string(getpid());
+    setenv("WII_COMPILED_PRIME_RESTART_PARENT", parent.c_str(), 1);
+    pid_t child = 0;
+    const int error = posix_spawn(&child, args[0].c_str(), nullptr, nullptr, argv.data(), environ);
+    unsetenv("WII_COMPILED_PRIME_RESTART_PARENT");
+    if (error != 0) {
+        RT_LOG(RT_TAG_OS) << "[trilogy-exec] cannot start " << args[0] << " errno=" << error << std::endl;
+        return false;
+    }
+    RT_LOG(RT_TAG_OS) << "[trilogy-exec] started " << args[0] << " pid=" << child << std::endl;
+    return true;
+}
+
+std::filesystem::path ExecutableDirectory() {
+    std::error_code ec;
+    return std::filesystem::read_symlink("/proc/self/exe", ec).parent_path();
+}
 #endif
 }  // namespace
 
@@ -302,6 +339,22 @@ extern "C" bool PrimeTrilogyExec(CpuContext* ctx, uint32_t regionVariable) {
     if (!StartExecutable(target)) {
         RT_LOG(RT_TAG_OS) << "[trilogy-exec] cannot start " << RuntimeConfigFile::PathToUtf8(target) << " error=" << GetLastError() << std::endl;
         MessageBoxW(nullptr, (L"Could not start:\n" + target.wstring()).c_str(), L"Metroid Prime Trilogy", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+    }
+#else
+    const bool game = dol == "/rs5mp3_p.dol";
+    const bool menu = dol == "/rs5fe_p.dol";
+    if (game || menu) {
+        SaveRegion(start, end);
+    } else {
+        std::error_code ec;
+        std::filesystem::remove(StatePath(), ec);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Metroid Prime Trilogy",
+                                 "This port only runs Metroid Prime 3: Corruption from Metroid Prime Trilogy.\n\nReturning to the menu.", nullptr);
+    }
+    const std::filesystem::path target = ExecutableDirectory() / (game ? kGameExecutable : kMenuExecutable);
+    if (!StartExecutable(target)) {
+        const std::string message = "Could not start:\n" + target.string();
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Metroid Prime Trilogy", message.c_str(), nullptr);
     }
 #endif
     ExitForAuroraWindowClose();

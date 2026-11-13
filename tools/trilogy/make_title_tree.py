@@ -70,10 +70,13 @@ OVERRIDE = re.compile(r"\b(gx_stub_|PPC_NATIVE_OVERRIDE(?:_VOID)?\(\s*|GX_FATAL_
 
 
 def link(target: Path, path: Path) -> None:
-    if path.exists():
+    if path.exists() or path.is_symlink():
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["cmd", "/c", "mklink", "/J", str(path), str(target)], check=True, stdout=subprocess.DEVNULL)
+    if os.name == "nt":
+        subprocess.run(["cmd", "/c", "mklink", "/J", str(path), str(target)], check=True, stdout=subprocess.DEVNULL)
+    elif target.exists():  # Linux keeps its toolchain outside the repo (/mnt/mp3port/env.sh)
+        path.symlink_to(target, target_is_directory=True)
 
 
 def identity(text: str, title: str) -> str:

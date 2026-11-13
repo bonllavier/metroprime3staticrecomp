@@ -181,8 +181,11 @@ void PrimeStartTrilogy() {
     std::string exe = SelfExecutable();
     if (!exe.empty()) {
         const std::string menu = exe.substr(0, exe.find_last_of('/') + 1) + "Corruption_3 Trilogy Menu";
+        // The image came from --iso (still set: it passed the disc check), so the menu opens it too.
+        std::vector<std::string> args{menu};
+        if (!RuntimeConfigFile::PrimeIsoOverride().empty()) args.insert(args.end(), {"--iso", RuntimeConfigFile::PrimeIsoOverride()});
         pid_t child = 0;
-        if (SpawnWithParentMarker(menu, {menu}, child)) {
+        if (SpawnWithParentMarker(menu, std::move(args), child)) {
             RT_LOG(RT_TAG_OS) << "[prime-trilogy] started the Trilogy menu pid=" << child << std::endl;
             ExitForAuroraWindowClose();
         }

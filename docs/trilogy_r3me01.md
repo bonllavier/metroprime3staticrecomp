@@ -156,6 +156,8 @@ Caminos para un solo exe, sin decidir:
 
 ## Cambios en RM3E01
 
+**Linux (13/11/2026):** la misma cadena funciona en Linux; ver la sección de Trilogy en [linux_port.md](linux_port.md). Al montarla se vio que el `address_map.json` de Windows es anterior a la corrección del puntero en ultrawide (12/11): sin `make_address_map.py`, `kGuiCursorOrthoReturn` (0x800CB4F8) queda con la dirección de RM3E01 en los ejecutables de Trilogy y esa corrección no se aplica allí. En Windows hay que volver a pasar `make_address_map.py` por cada título antes de la próxima compilación.
+
 Los ejecutables de Trilogy no reciben por sí solos lo que se cambie en las fuentes de RM3E01: `make_title_tree.py` copia el runtime a `titles/`. Si no cambian los hooks, las herramientas ni el traductor, basta con `make_title_tree.py` y `audit_native_collisions.py` de cada título, `ninja WiiCompiled` en `titles/<título>/work/recomp/build/<título>_runtime` e `install_title_exes.py`, con el juego cerrado. Tardó unos 6 minutos el 05/11/2026 (FPS por encima de 60, ver `fps_altos.md`).
 
 Si cambian los hooks, hay que pasar por la cadena completa (`make_address_map.py`, `make_title_tree.py`, `audit_native_collisions.py`, `build_title.py`, ninja e `install_title_exes.py`). El 11/11/2026, al añadir los hooks de ultrawide, se vio que el hook del idioma (`0x802F13A4`, `lbz r0,-0x22C0(r13)`) nunca había llegado a Trilogy: su desplazamiento sobre r13 es el de RM3E01. Ahora `make_title_tree.py` lo lee de la instrucción equivalente de cada DOL, igual que el `lfs` del relleno, y se detiene si esa instrucción deja de ser `lbz r0,d(r13)`. La cadena completa pasó para MP3 y para el menú. La opción de idioma en Trilogy sigue sin probar en pantalla.

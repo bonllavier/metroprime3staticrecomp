@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Runs the RM3E01 pipeline (build_prime_runtime.ps1) on a Trilogy title's work tree."""
+"""Runs the RM3E01 pipeline (build_prime_runtime.ps1, or build_prime_runtime.sh on Linux) on a Trilogy title's work tree.
+
+On Linux, source /mnt/mp3port/env.sh first and build RM3E01 once (its dependencies are reused)."""
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -40,6 +43,20 @@ def modules_json(base: Path) -> list[dict]:
     return sorted(rows, key=lambda row: row["id"])
 
 
+def configure_linux(title: str, work: Path, qa: bool) -> None:
+    """build_prime_runtime.sh's configuration, reusing the sources the Linux RM3E01 build fetched."""
+    builds = Path(os.environ.get("MP3PORT", "/mnt/mp3port")) / "builds"
+    nod = Path(os.environ.get("MP3PORT", "/mnt/mp3port")) / "tools/nod-source"
+    command = ["cmake", "-S", "recomp/third_party/WiiCompiled/runtime", "-B", f"recomp/build/{title}_runtime", "-G", "Ninja",
+               "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_C_COMPILER=clang", "-DCMAKE_CXX_COMPILER=clang++", "-DCMAKE_LINKER_TYPE=LLD",
+               "-DMKW_GAME_PROFILE_RM3E01_00=ON", f"-DMKW_PRIME_NOD_SOURCE_DIR={nod}",
+               f"-DMKW_PRIME_RSO_DIR={work / 'recomp/.tools/rso-runtime/rhbm'}",
+               f"-DMKW_PRIME_QA_TOOLS={'ON' if qa else 'OFF'}", "-DCMAKE_C_FLAGS_RELEASE=-O3 -DNDEBUG"]
+    for source in sorted((builds / "RM3E01_00_runtime_linux/_deps").glob("*-src")):
+        command.append(f"-DFETCHCONTENT_SOURCE_DIR_{source.name[:-4].upper()}={source}")
+    run(work, *command)
+
+
 def configure(title: str, work: Path) -> None:
     """The RM3E01 build's configuration, reusing the sources its dependencies already fetched."""
     tools = ROOT / ".tools/portable-tools"
@@ -71,18 +88,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("title", choices=("R3ME01_MP3", "R3ME01_FE"))
     parser.add_argument("--from-step", default="rso", choices=STEPS)
+    parser.add_argument("--public", action="store_true", help="Linux: build without the QA tools (default: test build, as RM3E01)")
     args = parser.parse_args()
     title = args.title
     base = ROOT / "titles" / title
     work = base / "work"
-    dotnet = str(work / "recomp/.tools/dotnet/dotnet.exe")
+    dotnet = str(work / "recomp/.tools/dotnet/dotnet.exe") if os.name == "nt" else "dotnet"
     rso_tool = "recomp/tools/RsoRuntimeTranslator/bin/Release/net8.0/RsoRuntimeTranslator.dll"
     python = [sys.executable, "-B"]
     start = STEPS.index(args.from_step)
     config = work / f"recomp/config/{title}"
     extract = f"recomp/.tools/disc-extraction-{title.lower()}/files/RSO/Production"
     if start <= 0:
-        run(work, dotnet, "build", "recomp/tools/RsoRuntimeTranslator/RsoRuntimeTranslator.csproj", "-c", "Release", "--nologo")
+        # A fresh tree on Linux has no reference assembly for an incremental build (build_prime_runtime.sh does the same).
+        incremental = () if os.name == "nt" else ("--no-incremental",)
+        run(work, dotnet, "build", "recomp/tools/RsoRuntimeTranslator/RsoRuntimeTranslator.csproj", "-c", "Release", "--nologo", *incremental)
         run(work, dotnet, rso_tool, "--self-test-relocations")
         rows = modules_json(base)
         skipped: dict[str, str] = {}
@@ -146,6 +166,11 @@ def main() -> None:
         print("switch audit after repairs:", report.stdout.strip()[:300], flush=True)
         if '"functions_with_missing_cases": 0' not in report.stdout:
             raise SystemExit("switch cases still missing")
+    if start <= 3 and os.name != "nt":
+        # The section-blob assembly is host specific (build_prime_runtime.sh): a Windows copy does not assemble here.
+        run(work, dotnet, "recomp/third_party/WiiCompiled/translator/src/Translator.Cli/bin/Release/net8.0/Translator.Cli.dll",
+            "generate-data-init", "--project", f"recomp/config/{title}/project_full_conservative.yml")
+        print("data section blobs done", flush=True)
     if start <= 3:
         run(work, dotnet, "recomp/third_party/WiiCompiled/translator/src/Translator.Cli/bin/Release/net8.0/Translator.Cli.dll", "emit-build-shards",
             "--project", f"recomp/config/{title}/project_full_conservative.yml",
@@ -155,7 +180,10 @@ def main() -> None:
             "--out", f"recomp/generated/{title}_conservative/build_shards")
         print("shards done", flush=True)
     if start <= 4:
-        configure(title, work)
+        if os.name == "nt":
+            configure(title, work)
+        else:
+            configure_linux(title, work, qa=not args.public)
         print("configured", flush=True)
 
 

@@ -92,6 +92,31 @@ TEXT_FIX_ROOTS="<RM3E01 files>:<R3ME01 files>" python tools/prime_icons/text_fix
   Esas grabaciones no pasan por los textos corregidos: la prueba en pantalla queda para una partida
   nueva.
 
+## Revisión del español de Corruption (14 de noviembre de 2026)
+
+El usuario notó frases mal adaptadas al jugar en español. Se leyeron los 3.349 pares inglés/español
+distintos de Corruption USA y el usuario eligió qué corregir. La lista privada, con citas del juego, está
+fuera del repositorio (`analysis/textos_es/revision_espanol_corruption.md`). Reglas en la sección
+"Spanish review of 14/11/2026" de `text_fixes_data.py`:
+
+- **Sentido cambiado u opuesto.** Pistas de jefes y escaneos que decían lo contrario (Omega Ridley, Cosechadora de
+  Phazon, el aviso final sobre Samus Oscura, "Estación de Guardado" en lugar de Recarga), o diálogos que
+  perdían el tono (Dane, el soldado del Olympus, el soldado cautivo).
+- **Texto equivocado.** Escaneos con el texto de otro, fichas con otro título (Anhur, Gandrayda),
+  estaciones de tránsito y números cambiados.
+- **Nombres.** Se unifican con la revisión de Trilogy USA: Campo Aislante, Campeón poseído, Visor de
+  Rayos X, Visor de Órdenes, Visor General, Omega Ridley, Estación de tirolina, etc. **El PED (Pila o
+  Tanque de Phazon) se deja como está**, por decisión del usuario.
+- **Adaptaciones** (proyecto "Dread", "Me encanta que los planes salgan bien", babor, timón...) y el
+  inventario en segunda persona.
+- **Erratas:** unas 150.
+
+No se pudieron corregir cinco frases, porque su texto español es idéntico al de otra frase correcta y el
+port las reconoce por el texto: el terminal de la bodega "Está desactivado" (uno está activo), los
+datos del satélite "sobre Éter" (uno es de Tallon IV), el proyector "Se ve la imagen de Ghor" (uno no
+recibe señal), "No se puede bombardear la zona…" (uno es "sin acceso") y "Desactiva el mecanismo de
+seguridad" en un ascensor sin energía.
+
 ## No corregido (limitaciones)
 
 - **Cadenas vacías.** En Trilogy, dos nombres de pistas del menú ("Emperor Ing Spider" y "Metroid
@@ -127,6 +152,6 @@ TEXT_FIX_ROOTS="<RM3E01 files>:<R3ME01 files>" python tools/prime_icons/text_fix
 
 ## Coste
 
-Unos 62 KB en el ejecutable: 21 KB de textos de las reglas, 25 KB de tabla (787 cadenas × 32 B),
-14 KB de punteros de reglas (581 × 24 B) y unos 3 KB de código. Medido compilando el módulo con
-`-O3 -march=x86-64-v3` con las tablas y sin ellas.
+Unos 98 KB en el ejecutable tras la revisión del español (1.115 cadenas, 881 reglas): 95 KB de tablas
+y textos de las reglas y unos 3 KB de código. Antes de la revisión eran 62 KB (787 cadenas, 581 reglas).
+Medido compilando el módulo con `-O3 -march=x86-64-v3` con las tablas y sin ellas.

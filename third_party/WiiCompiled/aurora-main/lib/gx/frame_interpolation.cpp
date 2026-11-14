@@ -241,6 +241,10 @@ struct InterpolationFrame {
   // static draws), found by vote; references matching for draws that have no motion history.
   Mat3x4<float> cameraDelta{};
   bool cameraDeltaValid = false;
+  // Every rigid motion several unique static draws agree on, up to kMaximumMotionClusters, from all of the
+  // frame's segments. In the gunship the cockpit and the space outside move differently (the ship flies),
+  // and the vote above may settle on either; a palette met for the first time is looked up against each.
+  std::vector<Mat3x4<float>> motionClusters;
   // Per transform: already taken by a draw of the next frame. Survives across seals, because the next
   // frame's draws are matched in two parts (before and after the seal that splits them).
   std::vector<uint8_t> claimed;
@@ -1123,6 +1127,7 @@ void recycle_frame(std::unique_ptr<InterpolationFrame> frame) noexcept {
   frame->toPrevious.clear();
   frame->borrowedPrevious.clear();
   frame->cameraDeltaValid = false;
+  frame->motionClusters.clear();
   frame->claimed.clear();
   frame->matchedCount = 0;
   frame->hasIndexedMatrices = false;
@@ -1273,8 +1278,9 @@ bool frame_is_camera_cut(const InterpolationFrame& frame) noexcept {
 // The camera's motion in view space between `prev` and `cur`: current * inverse(previous) of the draws
 // whose exact identity occurs once in both frames, taking the value most of them agree on (static
 // scenery; moving actors disagree). Kept for the frame once found, so its later segment reuses it.
+constexpr size_t kMaximumMotionClusters = 4;
 void estimate_camera_delta(InterpolationFrame& cur, const InterpolationFrame& prev, size_t begin) noexcept {
-  if (cur.cameraDeltaValid) {
+  if (cur.cameraDeltaValid && cur.motionClusters.size() >= kMaximumMotionClusters) {
     return;
   }
   struct Candidate {
@@ -1311,6 +1317,17 @@ void estimate_camera_delta(InterpolationFrame& cur, const InterpolationFrame& pr
   if (candidates.size() < kMinimumSupport) {
     return;
   }
+  const auto toMatrix = [](const Candidate& candidate) noexcept {
+    Mat3x4<float> matrix{};
+    std::array<Vec4<float>*, 3> rows{&matrix.m0, &matrix.m1, &matrix.m2};
+    for (int r = 0; r < 3; ++r) {
+      for (int k = 0; k < 3; ++k) {
+        (*rows[r])[k] = static_cast<float>(candidate.rotation[r][k]);
+      }
+      (*rows[r])[3] = static_cast<float>(candidate.translation[r]);
+    }
+    return matrix;
+  };
   const auto agrees = [](const Candidate& a, const Candidate& b) noexcept {
     for (int r = 0; r < 3; ++r) {
       for (int k = 0; k < 3; ++k) {
@@ -1324,6 +1341,48 @@ void estimate_camera_delta(InterpolationFrame& cur, const InterpolationFrame& pr
     }
     return true;
   };
+  // The distinct motions of this segment, strongest first, for the still-palette lookup.
+  static std::vector<uint8_t> taken;
+  taken.assign(candidates.size(), 0);
+  while (cur.motionClusters.size() < kMaximumMotionClusters) {
+    size_t clusterBest = SIZE_MAX;
+    size_t clusterSupport = 0;
+    size_t remaining = 0;
+    for (size_t i = 0; i < candidates.size(); ++i) remaining += taken[i] ? 0 : 1;
+    const size_t clusterProbes = std::min<size_t>(remaining, 24);
+    for (size_t probe = 0, seen = 0, i = 0; i < candidates.size() && probe < clusterProbes; ++i) {
+      if (taken[i]) continue;
+      if (seen++ != probe * remaining / clusterProbes) continue;
+      ++probe;
+      size_t support = 0;
+      for (size_t j = 0; j < candidates.size(); ++j) {
+        support += !taken[j] && agrees(candidates[i], candidates[j]) ? 1 : 0;
+      }
+      if (support > clusterSupport) {
+        clusterSupport = support;
+        clusterBest = i;
+      }
+    }
+    if (clusterBest == SIZE_MAX || clusterSupport < kMinimumSupport) break;
+    const Candidate chosen = candidates[clusterBest];
+    for (size_t j = 0; j < candidates.size(); ++j) {
+      if (agrees(chosen, candidates[j])) taken[j] = 1;
+    }
+    const Mat3x4<float> matrix = toMatrix(chosen);
+    bool known = false;
+    for (const auto& existing : cur.motionClusters) {
+      bool same = true;
+      for (const auto& [x, y] : {std::pair{&existing.m0, &matrix.m0}, std::pair{&existing.m1, &matrix.m1},
+                                 std::pair{&existing.m2, &matrix.m2}}) {
+        for (int k = 0; k < 4; ++k) same = same && std::abs((*x)[k] - (*y)[k]) <= (k == 3 ? 0.02f : 2.0e-3f);
+      }
+      known = known || same;
+    }
+    if (!known) cur.motionClusters.push_back(matrix);
+  }
+  if (cur.cameraDeltaValid) {
+    return;
+  }
   size_t best = 0;
   size_t bestSupport = 0;
   const size_t probes = std::min<size_t>(candidates.size(), 24);
@@ -1341,14 +1400,7 @@ void estimate_camera_delta(InterpolationFrame& cur, const InterpolationFrame& pr
   if (bestSupport < kMinimumSupport || bestSupport * 4 < candidates.size()) {
     return;
   }
-  const auto& chosen = candidates[best];
-  std::array<Vec4<float>*, 3> rows{&cur.cameraDelta.m0, &cur.cameraDelta.m1, &cur.cameraDelta.m2};
-  for (int r = 0; r < 3; ++r) {
-    for (int k = 0; k < 3; ++k) {
-      (*rows[r])[k] = static_cast<float>(chosen.rotation[r][k]);
-    }
-    (*rows[r])[3] = static_cast<float>(chosen.translation[r]);
-  }
+  cur.cameraDelta = toMatrix(candidates[best]);
   cur.cameraDeltaValid = true;
   s_diagCameraEstimates.fetch_add(1, std::memory_order_relaxed);
 }
@@ -2096,6 +2148,7 @@ void process_segment(InterpolationFrame& cur, InterpolationFrame& prev, size_t b
   // Previous-frame palette slots, gathered the first time a palette needs them (see below).
   static std::vector<std::pair<size_t, uint32_t>> stillCandidates;
   bool stillCandidatesBuilt = false;
+  uint32_t stillLookups = 0, stillUnresolved = 0, stillByOtherMotion = 0;
   for (size_t runStart = 0; runStart < paletteSlotKeys.size();) {
     size_t runEnd = runStart + 1;
     while (runEnd < paletteSlotKeys.size() &&
@@ -2148,7 +2201,7 @@ void process_segment(InterpolationFrame& cur, InterpolationFrame& prev, size_t b
     // the screens darken). A matrix that is exactly the camera's motion applied to a palette matrix of the
     // previous frame is that piece of scenery standing still: take that matrix as where it was. An animated
     // bone (Samus' arms) does not land on one within the tolerance and keeps the frame, as before.
-    if (!ambiguous && sourcePosition == nullptr && cur.cameraDeltaValid) {
+    if (!ambiguous && sourcePosition == nullptr && (cur.cameraDeltaValid || !cur.motionClusters.empty())) {
       if (!stillCandidatesBuilt) {
         stillCandidatesBuilt = true;
         stillCandidates.clear();
@@ -2167,15 +2220,29 @@ void process_segment(InterpolationFrame& cur, InterpolationFrame& prev, size_t b
       const auto& first = paletteSlotKeys[runStart];
       const auto& currentMatrix =
           currentTransforms[paletteDraws[first.palette]].transform.indexedMatrices->position[first.slot];
-      for (const auto& [previousIndex, slot] : stillCandidates) {
-        const auto& previous = *previousTransforms[previousIndex].transform.indexedMatrices;
-        if (moves_with_camera(previous.position[slot], currentMatrix, cur.cameraDelta)) {
-          sourcePosition = &previous.position[slot];
-          sourceNormal = &previous.normal[slot];
-          sourceEntry = previousIndex;
-          break;
+      // The voted camera first, then the frame's other rigid motions (see motionClusters): in the flying
+      // gunship the vote sometimes settled on the space outside, the new screen palettes found no source and
+      // the console screens went dark again in some inserted images (user, 14/11/2026, F4 captures).
+      size_t stillResolvedBy = 0;
+      const size_t deltaCount = (cur.cameraDeltaValid ? 1 : 0) + cur.motionClusters.size();
+      for (size_t deltaIndex = 0; deltaIndex < deltaCount && sourcePosition == nullptr; ++deltaIndex) {
+        const auto& delta = cur.cameraDeltaValid
+                                ? (deltaIndex == 0 ? cur.cameraDelta : cur.motionClusters[deltaIndex - 1])
+                                : cur.motionClusters[deltaIndex];
+        for (const auto& [previousIndex, slot] : stillCandidates) {
+          const auto& previous = *previousTransforms[previousIndex].transform.indexedMatrices;
+          if (moves_with_camera(previous.position[slot], currentMatrix, delta)) {
+            sourcePosition = &previous.position[slot];
+            sourceNormal = &previous.normal[slot];
+            sourceEntry = previousIndex;
+            stillResolvedBy = deltaIndex + (cur.cameraDeltaValid ? 0 : 1);
+            break;
+          }
         }
       }
+      ++stillLookups;
+      if (sourcePosition == nullptr) ++stillUnresolved;
+      else if (stillResolvedBy > 0) ++stillByOtherMotion;
     }
     if (ambiguous || sourcePosition == nullptr) {
       runStart = runEnd;
@@ -2192,6 +2259,13 @@ void process_segment(InterpolationFrame& cur, InterpolationFrame& prev, size_t b
     runStart = runEnd;
   }
 
+#if defined(MKW_PRIME_QA_TOOLS)
+  // During an F4 capture: how the palettes met for the first time were placed (fps_altos.md).
+  if (stillLookups != 0 && detail::g_holdInterpolationRate.load(std::memory_order_relaxed)) {
+    Log.info("[interp-still] lookups={} unresolved={} by_other_motion={} camera_vote={} motions={}", stillLookups,
+             stillUnresolved, stillByOtherMotion, cur.cameraDeltaValid ? 1 : 0, cur.motionClusters.size());
+  }
+#endif
   for (const size_t taskIndex : taskIndices) {
     const auto& task = s_pendingUniformInterpolations[taskIndex];
     if (task.currentTransformIndex >= preparedTransformState.size() ||

@@ -22,6 +22,9 @@
 #include "ppc_runtime.h"
 #include "runtime_config.h"
 #include "runtime_log.h"
+#include "memory.h"
+#include "system_bridge.h"
+#include <cstdio>
 
 #if defined(_WIN32)
 #ifndef NOMINMAX
@@ -136,6 +139,47 @@ extern "C" bool PrimeHostOsRestart(CpuContext* ctx) {
     // Whether or not the relaunch started, this process ends: rebooting is the
     // only thing the guest expects after OSRestart.
     PrimeRelaunchSelf();
+    ExitForAuroraWindowClose();
+}
+
+// The game's own error handler (0x803F6160, called with error, OSContext*, DSISR, DAR). Error 0xFF
+// with DAR 0xD1DD0D1E comes from rs_reallyfatal_printf (0x803F6758), which has just pointed
+// 0x8067DF6C at its formatted message, e.g. "Alloc failed - Heap: ...". On the console the
+// handler blacks the screen and halts; here its message goes to the fatal dialog and the crash
+// folder, and the program ends.
+extern "C" bool PrimeHostGameError(CpuContext* ctx) {
+    const uint32_t error = static_cast<uint32_t>(ctx->gpr[3]);
+    const uint32_t context = static_cast<uint32_t>(ctx->gpr[4]);
+    const uint32_t dsisr = static_cast<uint32_t>(ctx->gpr[5]);
+    const uint32_t dar = static_cast<uint32_t>(ctx->gpr[6]);
+    std::string message;
+    if (error == 0xFFu) {
+        const uint32_t text = Memory::Read32(0x8067DF6Cu);
+        if (text != 0 && Memory::Contains(text, 1u)) {
+            for (uint32_t i = 0; i < 1024u && Memory::Contains(text + i, 1u); ++i) {
+                const char c = static_cast<char>(Memory::Read8(text + i));
+                if (c == '\0') break;
+                message.push_back(c);
+            }
+        }
+        if (message.empty()) message = "(no message)";
+        message = "The game reported a fatal error:\n\n" + message;
+    } else {
+        char line[160];
+        uint32_t srr0 = 0, srr1 = 0;
+        if (context != 0 && Memory::Contains(context + 0x198u, 8u)) {
+            srr0 = Memory::Read32(context + 0x198u);
+            srr1 = Memory::Read32(context + 0x19Cu);
+        }
+        std::snprintf(line, sizeof(line), "The game stopped on its own exception %u.\n\nSRR0 = 0x%08X  SRR1 = 0x%08X\nDSISR = 0x%08X  DAR = 0x%08X",
+                      error, srr0, srr1, dsisr, dar);
+        message = line;
+    }
+    RT_LOG(RT_TAG_OS) << "[prime-game-error] error=" << error << " lr=0x" << std::hex << ctx->lr << std::dec << ": "
+                      << message << std::endl;
+    RuntimeCrash::WriteCrashArtifacts("game_error", message);
+    ShowRuntimeFatalPopup("Game error", message);
+    MarkFatalErrorReported();
     ExitForAuroraWindowClose();
 }
 

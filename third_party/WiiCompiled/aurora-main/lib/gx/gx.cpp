@@ -59,6 +59,7 @@ static GXState make_default_gx_state() {
 
 GXState g_gxState = make_default_gx_state();
 std::atomic<bool> g_perPixelLighting{false};
+std::atomic<bool> g_smoothIndirect{true};
 std::atomic<bool> g_enhancedMetal{false};
 DrawMetalOverride g_drawMetal{};
 std::atomic<bool> g_enhancedMaterials{false};
@@ -70,6 +71,11 @@ std::atomic<bool> g_linearBlend{false};
 std::atomic<bool> g_smoothLightmaps{false};
 std::atomic<bool> g_areaReflections{false};
 std::atomic<bool> g_softShadows{false};
+std::atomic<bool> g_textureRelief{false};
+std::atomic<bool> g_defaultLitMaterial{false};
+std::atomic<bool> g_gameMaterialMasks{false};
+std::atomic<bool> g_actorAllLights{false};
+std::atomic<float> g_worldRelight{0.0f};
 std::atomic<bool> g_engineLightsOption{false};
 std::atomic<bool> g_extraDynamicLights{false};
 std::atomic<bool> g_lightmapDither{false};

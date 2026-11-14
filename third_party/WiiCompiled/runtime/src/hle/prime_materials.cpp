@@ -250,6 +250,15 @@ constexpr Values WorldDefaults() {
     v[kCoat] = 0.25f; v[kCoatRoughness] = 0.35f;
     return v;
 }
+constexpr Values ObjectDefaults() {
+    // Modern lighting, level 2: every lit object the game gives no reflection map and that has no
+    // material of its own (enemies, doors, props). Kept mild and non-metallic, because creatures, cloth
+    // and painted metal all share it: a broad highlight that follows the lights (f0 = 0.04), a faint
+    // sheen at grazing angles and moderate relief from the texture.
+    Values v = Neutral(0.50f, 0.50f, 0.0f, 0.15f, 0.50f);
+    v[kSpecular] = 0.9f;
+    return v;
+}
 constexpr Values OperatorSuitDefaults() {
     // Rubber: no metal (no coloured reflection), a broad soft highlight that follows the body, a little
     // sheen at grazing angles and a thin satin layer. Seams catch some light.
@@ -285,7 +294,7 @@ struct Entry {
     Values defaults;
     Values values{};
 };
-std::array<Entry, 14> g_entries{{
+std::array<Entry, 15> g_entries{{
     {"samus", "Samus and reflective metal",
      "The game's reflection-mapped surfaces: Samus' suits and most machinery. Same surface values as "
      "F1 > Video > Enhanced metal.",
@@ -323,6 +332,10 @@ std::array<Entry, 14> g_entries{{
     {"operator_skin", "G.F.S. Olympus operators: face",
      "Faces, hoods and hair of the crew: matte like human skin, with a faint highlight only.", 12, kOperatorSkin,
      sizeof(kOperatorSkin) / sizeof(kOperatorSkin[0]), kGroupsBasic, OperatorSkinDefaults()},
+    {"objects", "Objects and creatures (default)",
+     "Every lit enemy, door and prop without a reflection of its own or a material in this list. Needs "
+     "F1 > Video > Modern lighting > Material on every lit object.",
+     14, nullptr, 0, kGroupsBasic | kGroupCoat, ObjectDefaults()},
 }};
 bool g_loaded = false;
 

@@ -441,6 +441,7 @@ fn ssr_uv(q: vec3<f32>) -> vec2<f32> {
   var prevT = 0.0;
   var hit = false;
   var hitUv = vec2<f32>(0.0);
+  var hitNear = 0.0;
   for (var i = 0; i < 32; i++) {
     let q = c + r * t;
     if (q.z <= 0.05) { break; }
@@ -459,6 +460,9 @@ fn ssr_uv(q: vec3<f32>) -> vec2<f32> {
       hitUv = ssr_uv(c + r * hi);
       t = hi;
       hit = true;
+      // Nothing closer than ~1.5 m is reflected: in first person that is Samus herself (her arms and
+      // suit lights in the gunship, 13/11/2026), whose glow slid across the cockpit metal.
+      hitNear = 1.0 - smoothstep(0.9, 1.6, ssr_pos(vec2<i32>(floor(hitUv * P.b.xy))).z);
       break;
     }
     prevT = t;
@@ -497,7 +501,7 @@ fn ssr_uv(q: vec3<f32>) -> vec2<f32> {
   let selfLit = 1.0 - smoothstep(0.50, 0.72, l0);
   let strength = select(P.a.z * floorness, P.e.x * wallness * away, isWall) * selfLit;
   let w = clamp(strength * mix(0.3, 1.0, fres) * smoothness * cavity * edge * distanceFade *
-                mix(1.0, 0.7, rough), 0.0, 1.0);
+                mix(1.0, 0.7, rough) * (1.0 - hitNear), 0.0, 1.0);
   return vec4<f32>(refl, w);
 }
 )";
@@ -722,9 +726,12 @@ fn cs_uv(q: vec3<f32>) -> vec2<f32> {
   if (dot(n, -c) < 0.0) { n = -n; }
   let ip = vec2<u32>(in.pos.xy) % vec2<u32>(4u);
   let jitter = fract(f32(ip.x * 4u + ip.y) * 0.3819660 + P.c.x);
-  let rayLen = P.a.w * (1.0 + c.z * 0.015);
-  let bias = 0.02 + c.z * 0.0015;
-  let thick = 0.25 + c.z * 0.02;
+  // The same shadow at any distance (14/11/2026: a beam's contact shadow changed shape and vanished as
+  // Samus walked away from it): the ray length is fixed in metres; only the bias and the thickness grow
+  // with the distance, by the depth precision there, not by a share of the distance.
+  let rayLen = P.a.w;
+  let bias = 0.02 + c.z * 0.001;
+  let thick = max(0.3, rayLen * 0.75) + c.z * 0.004;
   var wsum = P.b.w;
   var osum = 0.0;
   let count = i32(P.b.z);
@@ -770,7 +777,9 @@ fn cs_uv(q: vec3<f32>) -> vec2<f32> {
     osum += e * occ;
   }
   if (osum <= 0.0) { return vec4<f32>(1.0, c.z, 0.0, 1.0); }
-  let fade = 1.0 - smoothstep(30.0, 60.0, c.z);
+  // Faded out where a ray only spans a few depth texels (the result turns on and off there).
+  let pxLen = rayLen * P.d.w * 0.5 * P.b.y / c.z;
+  let fade = (1.0 - smoothstep(25.0, 40.0, c.z)) * smoothstep(3.0, 8.0, pxLen);
   return vec4<f32>(1.0 - clamp(P.a.z * osum / wsum, 0.0, 0.85) * fade, c.z, 0.0, 1.0);
 }
 )";
@@ -847,13 +856,43 @@ constexpr std::string_view kAdapt = R"(
 constexpr std::string_view kSceneLight = R"(
 @group(0) @binding(3) var contactTex: texture_2d<f32>;
 @group(0) @binding(4) var expTex: texture_2d<f32>;
+@group(0) @binding(5) var giTex: texture_2d<f32>;
+@group(0) @binding(6) var addTex: texture_2d<f32>;
 @fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
   let p = vec2<i32>(in.pos.xy);
   let texel = textureLoad(src, p, 0);
   var c = texel.rgb;
   if (P.a.x > 0.5) {
     let s = textureLoad(contactTex, p, 0);
+    // P.b.z = 2 (WII_COMPILED_POST_DEBUG_VIEW=contact): the contact shadows alone.
+    if (P.b.z > 1.5) { return vec4<f32>(vec3<f32>(select(1.0, s.r, s.g > 0.0)), texel.a); }
     if (s.g > 0.0) { c = c * s.r; }
+  }
+  // Bounce light (P.b.y, binding 5 at half resolution): added in linear space to the surface's hue (a
+  // dark surface still receives light), rolled off towards white instead of clipping. Glowing surfaces
+  // (the game's glow mask) are light sources, not receivers. P.b.z = 1 shows the bounce light alone.
+  if (P.b.y > 0.5) {
+    let gi = max(textureSampleLevel(giTex, samp, in.uv, 0.0).rgb, vec3<f32>(0.0));
+    if (P.b.z > 0.5 && P.b.z < 1.5) { return vec4<f32>(pow(gi, vec3<f32>(1.0 / 2.2)), texel.a); }
+    let lin0 = pow(max(c, vec3<f32>(0.0)), vec3<f32>(2.2));
+    let m = max(lin0.r, max(lin0.g, lin0.b));
+    let hue = select(vec3<f32>(1.0), lin0 / max(m, 1.0e-4), m > 1.0e-3);
+    // The receiver's albedo from its own picture: a dark surface reflects little of the light it gets.
+    // Before (13/11/2026) every surface counted as mid grey and the dark cockpit walls of the gunship
+    // showed smeared orange light from Samus' suit next to them.
+    let lum0 = dot(lin0, vec3<f32>(0.2126, 0.7152, 0.0722));
+    let alb = mix(vec3<f32>(0.5), hue, 0.6) * smoothstep(0.004, 0.08, lum0);
+    let add = alb * gi * (1.0 - smoothstep(0.6, 0.9, texel.a));
+    let lin1 = lin0 + add / (vec3<f32>(1.0) + add / max(vec3<f32>(1.0) - lin0, vec3<f32>(0.05)));
+    c = pow(clamp(lin1, vec3<f32>(0.0), vec3<f32>(1.0)), vec3<f32>(1.0 / 2.2));
+  }
+  // HDR bloom and volumetric fog (P.b.w, binding 6 at half resolution): light added in linear space,
+  // rolled off towards white.
+  if (P.b.w > 0.5) {
+    let add = max(textureSampleLevel(addTex, samp, in.uv, 0.0).rgb, vec3<f32>(0.0));
+    let l0 = pow(max(c, vec3<f32>(0.0)), vec3<f32>(2.2));
+    let l1 = l0 + add / (vec3<f32>(1.0) + add / max(vec3<f32>(1.0) - l0, vec3<f32>(0.05)));
+    c = pow(clamp(l1, vec3<f32>(0.0), vec3<f32>(1.0)), vec3<f32>(1.0 / 2.2));
   }
   if (P.a.y > 0.5) {
     let avg = textureLoad(expTex, vec2<i32>(0), 0).r;
@@ -872,12 +911,283 @@ constexpr std::string_view kSceneLight = R"(
 }
 )";
 
+// ------------------------------------------------------------------------------------------
+// Modern lighting, level 2: bounce light in screen space (docs/iluminacion_motor.md, 13/11/2026).
+// Half resolution, a handful of samples, temporal accumulation and a depth-aware blur; the result is
+// added to the same copy of the world snapshot as the contact shadows (kSceneLight).
+// ------------------------------------------------------------------------------------------
+
+// Sender radiance, downsampled 4x (and again 2x for far samples): linear colour times how much light
+// the surface sends. P.a.xy source texel; P.a.z bounce weight of ordinary surfaces, P.a.w weight of
+// glowing ones (the game's glow mask in alpha stands for the brightness 8 bits cannot hold);
+// P.b.x = 1 for the first level (the source is the snapshot), 0 for a plain 2x2 average.
+constexpr std::string_view kGiSource = R"(
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+  var sum = vec3<f32>(0.0);
+  for (var i = 0; i < 4; i++) {
+    let o = vec2<f32>(f32(i & 1) * 2.0 - 1.0, f32(i >> 1u) * 2.0 - 1.0) * P.a.xy;
+    let s = textureSampleLevel(src, samp, in.uv + o, 0.0);
+    if (P.b.x > 0.5) {
+      let lin = pow(max(s.rgb, vec3<f32>(0.0)), vec3<f32>(2.2));
+      sum += lin * (P.a.z + P.a.w * smoothstep(0.55, 0.9, s.a));
+    } else {
+      sum += s.rgb;
+    }
+  }
+  return vec4<f32>(sum * 0.25, 1.0);
+}
+)";
+
+// The gather. Binding 1 = radiance (1/4), binding 3 = accumulated 1 / distance, binding 4 = radiance
+// (1/8), binding 5 = exclusion mask. P.a.z radius (metres), P.a.w strength; P.b.xy depth dims, P.b.z
+// samples, P.b.w rotation of the pattern this frame; P.c.x = 1 with the mask; P.d.zw projection scales.
+// Each sample is a visible surface point: it lights the pixel by the cosine at the receiver and a
+// windowed distance falloff. A flat surface gets nothing from itself (cosine 0), so floors and walls
+// are only lit by what stands out of them or faces them. Output: rgb light, a = distance (-1 = none).
+constexpr std::string_view kGi = R"(
+@group(0) @binding(3) var depthTex: texture_2d<f32>;
+@group(0) @binding(4) var farTex: texture_2d<f32>;
+@group(0) @binding(5) var maskTex: texture_2d<f32>;
+fn gi_pos(t: vec2<i32>) -> vec3<f32> {
+  let dims = vec2<i32>(P.b.xy);
+  if (any(t < vec2<i32>(0)) || any(t >= dims)) { return vec3<f32>(0.0, 0.0, -1.0); }
+  let inv = textureLoad(depthTex, t, 0).r;
+  if (inv <= 0.0) { return vec3<f32>(0.0, 0.0, -1.0); }
+  let d = 1.0 / inv;
+  let suv = (vec2<f32>(t) + vec2<f32>(0.5)) / P.b.xy;
+  let ndc = vec2<f32>(suv.x * 2.0 - 1.0, 1.0 - suv.y * 2.0);
+  return vec3<f32>(ndc.x / P.d.z * d, ndc.y / P.d.w * d, d);
+}
+fn gi_delta(c: vec3<f32>, a: vec3<f32>, b: vec3<f32>) -> vec3<f32> {
+  let da = select(vec3<f32>(1.0e6), a - c, a.z > 0.0);
+  let db = select(vec3<f32>(1.0e6), c - b, b.z > 0.0);
+  return select(db, da, abs(da.z) < abs(db.z));
+}
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+  let none = vec4<f32>(0.0, 0.0, 0.0, -1.0);
+  let dims = vec2<i32>(P.b.xy);
+  let t0 = clamp(vec2<i32>(floor(in.uv * P.b.xy)), vec2<i32>(0), dims - vec2<i32>(1));
+  let c = gi_pos(t0);
+  if (c.z <= 0.0 || c.z > 400.0) { return none; }
+  // Within ~1.5 m of the camera is Samus herself in first person (arms and suit lights in the
+  // gunship): she neither receives nor gives bounce light (13/11/2026, her green lights tinted the
+  // cockpit metal).
+  if (c.z < 1.6) { return vec4<f32>(0.0, 0.0, 0.0, c.z); }
+  var keep = 1.0;
+  if (P.c.x > 0.5) {
+    // Excluded texels (Samus' face behind the visor glass) take no bounce light; under fog, explosions
+    // and particles it fades with their coverage, like the occlusion.
+    let md = vec2<f32>(textureDimensions(maskTex));
+    let m = textureLoad(maskTex, clamp(vec2<i32>(in.uv * md), vec2<i32>(0), vec2<i32>(md) - vec2<i32>(1)), 0).r;
+    if (m > 0.5) { return vec4<f32>(0.0, 0.0, 0.0, c.z); }
+    keep = 1.0 - clamp(m / 0.49, 0.0, 1.0);
+  }
+  let dx = gi_delta(c, gi_pos(t0 + vec2<i32>(1, 0)), gi_pos(t0 - vec2<i32>(1, 0)));
+  let dy = gi_delta(c, gi_pos(t0 + vec2<i32>(0, 1)), gi_pos(t0 - vec2<i32>(0, 1)));
+  var n = normalize(cross(dx, dy));
+  if (dot(n, -c) < 0.0) { n = -n; }
+  let radius = max(P.a.z, 0.25);
+  // The radius on screen (uv), between a few texels and a quarter of the picture.
+  let ruv = clamp(vec2<f32>(radius * P.d.z, radius * P.d.w) * 0.5 / c.z, vec2<f32>(6.0) / P.b.xy, vec2<f32>(0.25));
+  let ip = vec2<u32>(in.pos.xy) % vec2<u32>(4u);
+  let ang0 = (f32(ip.x + ip.y * 4u) * 0.0625 + P.b.w) * 6.2831853;
+  let count = i32(clamp(P.b.z, 4.0, 16.0));
+  let fcount = f32(count);
+  var sum = vec3<f32>(0.0);
+  for (var i = 0; i < count; i++) {
+    let fi = f32(i);
+    let r = sqrt((fi + 0.5) / fcount);
+    let a = ang0 + fi * 2.3999632;
+    let suv = in.uv + vec2<f32>(cos(a), sin(a)) * r * ruv;
+    if (any(suv < vec2<f32>(0.0)) || any(suv > vec2<f32>(1.0))) { continue; }
+    let s = gi_pos(vec2<i32>(floor(suv * P.b.xy)));
+    if (s.z < 1.6) { continue; }
+    let v = s - c;
+    let len = length(v);
+    if (len < 1.0e-3) { continue; }
+    let cr = dot(n, v / len);
+    if (cr <= 0.04) { continue; }
+    // Linear distance window: the samples already thin out with distance (disc area), a squared
+    // window left almost nothing (13/11/2026, debug view nearly black).
+    let f = 1.0 - clamp(len / radius, 0.0, 1.0);
+    if (f <= 0.0) { continue; }
+    // Near samples read the 1/4 radiance, far ones the 1/8 (a wider footprint, less noise).
+    var L = vec3<f32>(0.0);
+    if (r < 0.55) { L = textureSampleLevel(src, samp, suv, 0.0).rgb; }
+    else { L = textureSampleLevel(farTex, samp, suv, 0.0).rgb; }
+    sum += L * (cr * f);
+  }
+  let fade = 1.0 - smoothstep(60.0, 120.0, c.z);
+  return vec4<f32>(sum * (P.a.w * 2.0 / fcount) * keep * fade, c.z);
+}
+)";
+
+// Temporal accumulation of the bounce light: the previous result (binding 3) reprojected with the
+// camera, clamped to this frame's 3x3 neighbourhood, rejected where the distance does not match.
+// P.a.z history weight (0 = none); P.b.xy projection scales; P.c / P.d / P.e = rows of
+// (previous view * inverse(current view)).
+constexpr std::string_view kGiTemporal = R"(
+@group(0) @binding(3) var histTex: texture_2d<f32>;
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+  let p = vec2<i32>(in.pos.xy);
+  let cur = textureLoad(src, p, 0);
+  if (cur.a <= 0.0 || P.a.z <= 0.0) { return cur; }
+  let ndc = vec2<f32>(in.uv.x * 2.0 - 1.0, 1.0 - in.uv.y * 2.0);
+  let z = cur.a;
+  let v = vec4<f32>(ndc.x / P.b.x * z, ndc.y / P.b.y * z, -z, 1.0);
+  let q = vec3<f32>(dot(P.c, v), dot(P.d, v), dot(P.e, v));
+  let zq = -q.z;
+  if (zq <= 0.05) { return cur; }
+  let uvq = vec2<f32>(q.x * P.b.x / zq * 0.5 + 0.5, 0.5 - q.y * P.b.y / zq * 0.5);
+  if (any(uvq < vec2<f32>(0.0)) || any(uvq > vec2<f32>(1.0))) { return cur; }
+  let h = textureSampleLevel(histTex, samp, uvq, 0.0);
+  if (h.a <= 0.0 || abs(h.a - zq) > 0.05 * zq + 0.1) { return cur; }
+  let dims = vec2<i32>(textureDimensions(src));
+  var lo = cur.rgb;
+  var hi = cur.rgb;
+  for (var y = -1; y <= 1; y++) {
+    for (var x = -1; x <= 1; x++) {
+      let s = textureLoad(src, clamp(p + vec2<i32>(x, y), vec2<i32>(0), dims - vec2<i32>(1)), 0);
+      if (s.a > 0.0) { lo = min(lo, s.rgb); hi = max(hi, s.rgb); }
+    }
+  }
+  // The neighbourhood of a few noisy samples is narrow: widen it so the history can average them.
+  let span = (hi - lo) * 0.5 + vec3<f32>(0.01);
+  return vec4<f32>(mix(cur.rgb, clamp(h.rgb, lo - span, hi + span), P.a.z), cur.a);
+}
+)";
+
+// Depth-aware 3x3 blur of the bounce light; P.a.z = step in texels.
+constexpr std::string_view kGiBlur = R"(
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+  let p = vec2<i32>(in.pos.xy);
+  let c = textureLoad(src, p, 0);
+  if (c.a <= 0.0) { return c; }
+  let dims = vec2<i32>(textureDimensions(src));
+  let stepPx = i32(max(P.a.z, 1.0));
+  var sum = vec3<f32>(0.0);
+  var wsum = 0.0;
+  for (var y = -1; y <= 1; y++) {
+    for (var x = -1; x <= 1; x++) {
+      let s = textureLoad(src, clamp(p + vec2<i32>(x, y) * stepPx, vec2<i32>(0), dims - vec2<i32>(1)), 0);
+      let gw = select(1.0, 2.0, x == 0) * select(1.0, 2.0, y == 0);
+      let w = select(0.0, gw, s.a > 0.0 && abs(s.a - c.a) < c.a * 0.08 + 0.05);
+      sum += s.rgb * w;
+      wsum += w;
+    }
+  }
+  return vec4<f32>(sum / max(wsum, 1.0e-4), c.a);
+}
+)";
+
+// HDR bloom, prefilter: four bilinear taps of the world snapshot at half resolution, in linear light,
+// with the game's glow mask (alpha) rebuilding the brightness 8 bits cannot hold. P.a.xy source texel,
+// P.a.z threshold (linear luminance), P.a.w glow boost.
+constexpr std::string_view kBloomPre = R"(
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+  var sum = vec3<f32>(0.0);
+  for (var i = 0; i < 4; i++) {
+    let o = vec2<f32>(f32(i & 1) * 2.0 - 1.0, f32(i >> 1u) * 2.0 - 1.0) * P.a.xy * 0.5;
+    let s = textureSampleLevel(src, samp, in.uv + o, 0.0);
+    let hdr = pow(max(s.rgb, vec3<f32>(0.0)), vec3<f32>(2.2)) * (1.0 + P.a.w * smoothstep(0.55, 0.9, s.a));
+    let l = dot(hdr, vec3<f32>(0.2126, 0.7152, 0.0722));
+    sum += hdr * (max(l - P.a.z, 0.0) / max(l, 1.0e-4));
+  }
+  return vec4<f32>(sum * 0.25, 1.0);
+}
+)";
+// Bloom downsample: 2x2 bilinear taps (a 4x4 box of the source). P.a.xy source texel.
+constexpr std::string_view kBloomDown = R"(
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+  var sum = vec3<f32>(0.0);
+  for (var i = 0; i < 4; i++) {
+    let o = vec2<f32>(f32(i & 1) * 2.0 - 1.0, f32(i >> 1u) * 2.0 - 1.0) * P.a.xy;
+    sum += textureSampleLevel(src, samp, in.uv + o, 0.0).rgb;
+  }
+  return vec4<f32>(sum * 0.25, 1.0);
+}
+)";
+// Bloom upsample: this level (binding 3) plus a 3x3 tent of the smaller level (binding 1). P.a.xy texel
+// of the smaller level.
+constexpr std::string_view kBloomUp = R"(
+@group(0) @binding(3) var cur: texture_2d<f32>;
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+  let t = P.a.xy;
+  var sum = tap(in.uv) * 4.0;
+  sum += (tap(in.uv + vec2<f32>(t.x, 0.0)) + tap(in.uv - vec2<f32>(t.x, 0.0)) +
+          tap(in.uv + vec2<f32>(0.0, t.y)) + tap(in.uv - vec2<f32>(0.0, t.y))) * 2.0;
+  sum += tap(in.uv + t) + tap(in.uv - t) + tap(in.uv + vec2<f32>(t.x, -t.y)) + tap(in.uv + vec2<f32>(-t.x, t.y));
+  return vec4<f32>(textureSampleLevel(cur, samp, in.uv, 0.0).rgb + sum / 16.0, 1.0);
+}
+)";
+// Volumetric fog: light scattered towards the camera by the air around the engine's lights, marched
+// along the view ray up to the visible surface (no light through walls in front of it) at quarter
+// resolution. Binding 3 = accumulated 1 / distance, binding 4 = lights (RGBA32F 4 x 3: position in this
+// view (x right, y up, z = distance) + radius; luminance, directional; colour). P.a.z density, P.a.w
+// range (m); P.b.xy depth dims, P.b.z light count; P.d.zw projection scales.
+constexpr std::string_view kFog = R"(
+@group(0) @binding(3) var depthTex: texture_2d<f32>;
+@group(0) @binding(4) var lightTex: texture_2d<f32>;
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+  let dims = vec2<i32>(P.b.xy);
+  let t0 = clamp(vec2<i32>(floor(in.uv * P.b.xy)), vec2<i32>(0), dims - vec2<i32>(1));
+  let inv = textureLoad(depthTex, t0, 0).r;
+  let ndc = vec2<f32>(in.uv.x * 2.0 - 1.0, 1.0 - in.uv.y * 2.0);
+  let dir = vec3<f32>(ndc.x / P.d.z, ndc.y / P.d.w, 1.0);
+  let z = min(select(P.a.w, 1.0 / max(inv, 1.0e-6), inv > 0.0), P.a.w);
+  let p = dir * z;
+  let len = length(p);
+  let v = p / max(len, 1.0e-4);
+  let ip = vec2<u32>(in.pos.xy) % vec2<u32>(4u);
+  let jitter = f32(ip.x * 4u + ip.y) / 16.0;
+  let count = i32(P.b.z);
+  var acc = vec3<f32>(0.0);
+  for (var li = 0; li < 4; li++) {
+    if (li >= count) { break; }
+    let l0 = textureLoad(lightTex, vec2<i32>(li, 0), 0);
+    let l1 = textureLoad(lightTex, vec2<i32>(li, 1), 0);
+    if (l1.y > 0.5) { continue; }
+    let l2 = textureLoad(lightTex, vec2<i32>(li, 2), 0);
+    let r = max(l0.w, 0.1);
+    // Skip the march when the ray passes outside the light's reach.
+    let tc = clamp(dot(l0.xyz, v), 0.0, len);
+    if (length(v * tc - l0.xyz) >= r) { continue; }
+    var s = 0.0;
+    for (var k = 0; k < 10; k++) {
+      let q = v * (len * (f32(k) + jitter) / 10.0);
+      let dv = l0.xyz - q;
+      let d2 = dot(dv, dv);
+      let x = d2 / (r * r);
+      if (x >= 1.0) { continue; }
+      let att = (1.0 - x) * (1.0 - x) / (1.0 + d2 * 0.25);
+      // Henyey-Greenstein, g = 0.35: brighter looking towards the light.
+      let cosT = dot(-v, dv) / max(sqrt(d2), 1.0e-3);
+      let hg = (1.0 - 0.1225) / pow(1.0 + 0.1225 + 0.7 * cosT, 1.5);
+      s += att * hg;
+    }
+    acc += l2.rgb * l1.x * s * (len / 10.0);
+  }
+  return vec4<f32>(acc * P.a.z * 0.05, 1.0);
+}
+)";
+// The light added over the world (half resolution): bloom (binding 1, sum of six scales) and fog
+// (binding 3, quarter resolution). P.a.z bloom strength / scales, P.a.w = 1 with fog.
+constexpr std::string_view kAddCompose = R"(
+@group(0) @binding(3) var fogTex: texture_2d<f32>;
+@fragment fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+  var c = tap(in.uv) * P.a.z;
+  if (P.a.w > 0.5) { c += textureSampleLevel(fogTex, samp, in.uv, 0.0).rgb; }
+  return vec4<f32>(c, 1.0);
+}
+)";
+
 struct Params {
   float a[4]{}, b[4]{}, c[4]{}, d[4]{}, e[4]{}, f[4]{};
 };
 
 // Contact: binding 3 and 4 unfilterable (R32Float depth, RGBA32Float lights), binding 5 a float mask.
-enum class Layout { Basic, TwoTextures, Depth, DepthValue, ThreeTextures, FourTextures, FiveTextures, Contact };
+// Gi: binding 3 unfilterable (R32Float depth), bindings 4 and 5 float (far radiance, mask).
+enum class Layout { Basic, TwoTextures, Depth, DepthValue, ThreeTextures, FourTextures, FiveTextures, Contact, Gi };
 
 struct Pass {
   wgpu::RenderPipeline pipeline;
@@ -962,9 +1272,9 @@ float g_sealedLights[4][4] = {};
 uint32_t g_sealedLightCount = 0;
 // Modern lighting (same lock): the frame's engine lights {x, y, z (GX view), radius, luma, directional}
 // and the world view matrix, sealed with the camera; the previous sealed view feeds the reprojection.
-float g_curEngine[4][6] = {};
+float g_curEngine[4][9] = {};  // x, y, z, radius, luma, directional, r, g, b
 uint32_t g_curEngineCount = 0;
-float g_sealedEngine[4][6] = {};
+float g_sealedEngine[4][9] = {};
 uint32_t g_sealedEngineCount = 0;
 float g_curView[12] = {};
 bool g_curViewValid = false;
@@ -987,6 +1297,16 @@ webgpu::TextureWithSampler g_adaptTex[2];            // RGBA16Float 1 x 1: adapt
 uint32_t g_adaptIndex = 0;
 bool g_adaptValid = false;
 webgpu::TextureWithSampler g_litScene;               // the world snapshot with contact shadows / exposure
+// Level 2, bounce light: radiance at 1/4 and 1/8, the gather and its blur at 1/2, history ping-pong.
+Pass g_giSource, g_giDown, g_gi, g_giTemporal, g_giBlur1, g_giBlur2;
+webgpu::TextureWithSampler g_giRad4, g_giRad8, g_giA, g_giB, g_giHist[2];
+uint32_t g_giHistIndex = 0;
+bool g_giHistValid = false;
+uint32_t g_giFrame = 0;
+// Level 2: HDR bloom chain (1/2 .. 1/64) and quarter-resolution fog; one Pass per use (own uniforms).
+constexpr int kBloomLevels = 6;
+Pass g_bloomPre, g_bloomDownP[kBloomLevels - 1], g_bloomUpP[kBloomLevels - 1], g_fogPass, g_addCompose;
+webgpu::TextureWithSampler g_bloomTex[kBloomLevels], g_bloomUpTex[kBloomLevels - 1], g_fogTex, g_addTex, g_fogLights;
 
 wgpu::BindGroupLayout make_layout(Layout kind) {
   std::array<wgpu::BindGroupLayoutEntry, 7> entries{
@@ -1000,7 +1320,8 @@ wgpu::BindGroupLayout make_layout(Layout kind) {
                                  .buffer = {.type = wgpu::BufferBindingType::Uniform, .minBindingSize = sizeof(Params)}},
       wgpu::BindGroupLayoutEntry{.binding = 3, .visibility = wgpu::ShaderStage::Fragment,
                                  .texture = {.sampleType = kind == Layout::Depth        ? wgpu::TextureSampleType::Depth
-                                                           : kind == Layout::DepthValue || kind == Layout::Contact
+                                                           : kind == Layout::DepthValue || kind == Layout::Contact ||
+                                                                 kind == Layout::Gi
                                                                ? wgpu::TextureSampleType::UnfilterableFloat
                                                                : wgpu::TextureSampleType::Float,
                                              .viewDimension = wgpu::TextureViewDimension::e2D}},
@@ -1021,6 +1342,7 @@ wgpu::BindGroupLayout make_layout(Layout kind) {
                     : kind == Layout::FiveTextures  ? 7u
                     : kind == Layout::FourTextures  ? 6u
                     : kind == Layout::Contact       ? 6u
+                    : kind == Layout::Gi            ? 6u
                     : kind == Layout::ThreeTextures ? 5u
                                                     : 4u,
       .entries = entries.data(),
@@ -1101,6 +1423,19 @@ void ensure_pipelines(wgpu::TextureFormat format) {
              wgpu::TextureFormat::RGBA16Float);
   build_pass(g_lumMeasure, Layout::Basic, kLumMeasure, "Post exposure metering", wgpu::TextureFormat::RGBA16Float);
   build_pass(g_adapt, Layout::TwoTextures, kAdapt, "Post exposure adaptation", wgpu::TextureFormat::RGBA16Float);
+  build_pass(g_giSource, Layout::Basic, kGiSource, "Post bounce light radiance", wgpu::TextureFormat::RGBA16Float);
+  build_pass(g_giDown, Layout::Basic, kGiSource, "Post bounce light radiance far", wgpu::TextureFormat::RGBA16Float);
+  build_pass(g_gi, Layout::Gi, kGi, "Post bounce light", wgpu::TextureFormat::RGBA16Float);
+  build_pass(g_giTemporal, Layout::TwoTextures, kGiTemporal, "Post bounce light temporal", wgpu::TextureFormat::RGBA16Float);
+  build_pass(g_giBlur1, Layout::Basic, kGiBlur, "Post bounce light blur 1", wgpu::TextureFormat::RGBA16Float);
+  build_pass(g_giBlur2, Layout::Basic, kGiBlur, "Post bounce light blur 2", wgpu::TextureFormat::RGBA16Float);
+  build_pass(g_bloomPre, Layout::Basic, kBloomPre, "Post HDR bloom prefilter", wgpu::TextureFormat::RGBA16Float);
+  for (int i = 0; i < kBloomLevels - 1; ++i) {
+    build_pass(g_bloomDownP[i], Layout::Basic, kBloomDown, "Post HDR bloom down", wgpu::TextureFormat::RGBA16Float);
+    build_pass(g_bloomUpP[i], Layout::TwoTextures, kBloomUp, "Post HDR bloom up", wgpu::TextureFormat::RGBA16Float);
+  }
+  build_pass(g_fogPass, Layout::Contact, kFog, "Post volumetric fog", wgpu::TextureFormat::RGBA16Float);
+  build_pass(g_addCompose, Layout::TwoTextures, kAddCompose, "Post bloom and fog", wgpu::TextureFormat::RGBA16Float);
   Log.info("post-process pipelines built (format {})", static_cast<uint32_t>(format));
 }
 
@@ -1151,6 +1486,7 @@ wgpu::BindGroup bind(const Pass& pass, const wgpu::TextureView& source, const wg
                     : pass.kind == Layout::FiveTextures  ? 7u
                     : pass.kind == Layout::FourTextures  ? 6u
                     : pass.kind == Layout::Contact       ? 6u
+                    : pass.kind == Layout::Gi            ? 6u
                     : pass.kind == Layout::ThreeTextures ? 5u
                                                          : 4u,
       .entries = entries.data(),
@@ -1322,7 +1658,8 @@ Config config() {
 void set_modern(const Modern& modern) {
   std::lock_guard<std::mutex> lock(g_modernMutex);
   g_modern = modern;
-  g_modernActive.store(modern.contact || modern.exposure, std::memory_order_release);
+  g_modernActive.store(modern.contact || modern.exposure || modern.gi || modern.hdrBloom || modern.fog,
+                       std::memory_order_release);
 }
 
 Modern modern() {
@@ -1331,7 +1668,7 @@ Modern modern() {
 }
 
 void note_engine_lights(uint32_t count, const float (*positions)[3], const float* radius, const float* luma,
-                        const uint8_t* directional) {
+                        const uint8_t* directional, const float (*colors)[3]) {
   std::lock_guard<std::mutex> lock(g_projMutex);
   g_curEngineCount = positions != nullptr ? std::min<uint32_t>(count, 4) : 0;
   for (uint32_t i = 0; i < g_curEngineCount; ++i) {
@@ -1339,6 +1676,7 @@ void note_engine_lights(uint32_t count, const float (*positions)[3], const float
     g_curEngine[i][3] = radius[i];
     g_curEngine[i][4] = luma[i];
     g_curEngine[i][5] = directional[i] != 0 ? 1.0f : 0.0f;
+    for (int c = 0; c < 3; ++c) g_curEngine[i][6 + c] = colors != nullptr ? colors[i][c] : 1.0f;
   }
 }
 
@@ -1657,12 +1995,13 @@ const char* last_apply_skip() { return g_lastApplySkip; }
 static wgpu::TextureView modern_scene(const wgpu::CommandEncoder& encoder, const webgpu::TextureWithSampler& efb,
                                       float scaleX, float scaleY, bool firstInGameFrame, bool allowProbe) {
   const Modern m = modern();
-  if (!(m.contact || m.exposure)) {
+  if (!(m.contact || m.exposure || m.gi || m.hdrBloom || m.fog)) {
     g_contactHistValid = false;
     g_adaptValid = false;
+    g_giHistValid = false;
     return g_sceneColor.view;
   }
-  float engine[4][6] = {};
+  float engine[4][9] = {};
   uint32_t engineCount = 0;
   float shaftLights[4][4] = {};
   uint32_t shaftCount = 0;
@@ -1681,6 +2020,24 @@ static wgpu::TextureView modern_scene(const wgpu::CommandEncoder& encoder, const
   }
   if (!g_dummyTexture.texture) g_dummyTexture = make_target(1, 1, wgpu::TextureFormat::R16Float, "Post dummy source");
   const uint32_t w = efb.size.width, h = efb.size.height;
+  // previous view * inverse(current view), for the temporal passes; both are rigid 3x4 (rotation rows +
+  // translation).
+  float rel[12] = {};
+  const bool relOk = viewOk && prevOk;
+  if (relOk) {
+    float inv[12];
+    for (int r = 0; r < 3; ++r)
+      for (int c = 0; c < 3; ++c) inv[r * 4 + c] = view[c * 4 + r];
+    for (int r = 0; r < 3; ++r)
+      inv[r * 4 + 3] = -(inv[r * 4 + 0] * view[3] + inv[r * 4 + 1] * view[7] + inv[r * 4 + 2] * view[11]);
+    for (int r = 0; r < 3; ++r) {
+      for (int c = 0; c < 4; ++c) {
+        float sum = 0.0f;
+        for (int k = 0; k < 3; ++k) sum += prevView[r * 4 + k] * inv[k * 4 + c];
+        rel[r * 4 + c] = sum + (c == 3 ? prevView[r * 4 + 3] : 0.0f);
+      }
+    }
+  }
   wgpu::TextureView contactView;
   bool contactRan = false;
   if (m.contact && m.contactStrength > 0.0f) {
@@ -1731,7 +2088,9 @@ static wgpu::TextureView modern_scene(const wgpu::CommandEncoder& encoder, const
       p.b[1] = static_cast<float>(g_depthAccum.size.height);
       p.b[2] = static_cast<float>(n);
       p.b[3] = 0.3f;  // ambient weight: the share of a pixel's light no single light gives
-      p.c[0] = temporal ? static_cast<float>(g_contactFrame % 4u) * 0.25f : 0.0f;
+      // Fixed sampling pattern: rotating it every frame made the shadow edges shimmer wherever the
+      // temporal pass had no history (camera cuts, moving objects) (13/11/2026).
+      p.c[0] = 0.0f;
       p.d[2] = scaleX;
       p.d[3] = scaleY;
       const auto mc = config();
@@ -1747,21 +2106,7 @@ static wgpu::TextureView modern_scene(const wgpu::CommandEncoder& encoder, const
       blur.a[2] = std::max(1.0f, 0.75f * resScale);
       run(encoder, g_contactBlur2, blur, g_contactB.view, nullptr, g_contactA.view, "Post contact shadows blur 2");
       contactView = g_contactA.view;
-      if (temporal && allowProbe && viewOk && prevOk) {
-        // previous view * inverse(current view); both are rigid 3x4 (rotation rows + translation).
-        float inv[12];
-        for (int r = 0; r < 3; ++r)
-          for (int c = 0; c < 3; ++c) inv[r * 4 + c] = view[c * 4 + r];
-        for (int r = 0; r < 3; ++r)
-          inv[r * 4 + 3] = -(inv[r * 4 + 0] * view[3] + inv[r * 4 + 1] * view[7] + inv[r * 4 + 2] * view[11]);
-        float rel[12];
-        for (int r = 0; r < 3; ++r) {
-          for (int c = 0; c < 4; ++c) {
-            float s = 0.0f;
-            for (int k = 0; k < 3; ++k) s += prevView[r * 4 + k] * inv[k * 4 + c];
-            rel[r * 4 + c] = s + (c == 3 ? prevView[r * 4 + 3] : 0.0f);
-          }
-        }
+      if (temporal && allowProbe && relOk) {
         Params tp = texel_params(efb);
         tp.a[2] = g_contactHistValid ? 0.85f : 0.0f;
         tp.b[0] = scaleX;
@@ -1805,9 +2150,150 @@ static wgpu::TextureView modern_scene(const wgpu::CommandEncoder& encoder, const
   } else {
     g_adaptValid = false;
   }
-  if (!contactRan && !exposureRan) return g_sceneColor.view;
+  // Level 2: bounce light. Radiance at 1/4 and 1/8 of the snapshot, the gather at half resolution,
+  // temporal accumulation on native frames, two depth-aware blurs.
+  bool giRan = false;
+  if (m.gi && m.giStrength > 0.0f && g_depthAccum.view) {
+    const uint32_t hw = std::max<uint32_t>(w / 2, 1), hh = std::max<uint32_t>(h / 2, 1);
+    if (!g_giA.texture || g_giA.size.width != hw || g_giA.size.height != hh) {
+      const auto f16 = wgpu::TextureFormat::RGBA16Float;
+      g_giRad4 = make_target(std::max<uint32_t>(w / 4, 1), std::max<uint32_t>(h / 4, 1), f16, "Post bounce light radiance 1/4");
+      g_giRad8 = make_target(std::max<uint32_t>(w / 8, 1), std::max<uint32_t>(h / 8, 1), f16, "Post bounce light radiance 1/8");
+      g_giA = make_target(hw, hh, f16, "Post bounce light A");
+      g_giB = make_target(hw, hh, f16, "Post bounce light B");
+      g_giHist[0] = make_target(hw, hh, f16, "Post bounce light history A");
+      g_giHist[1] = make_target(hw, hh, f16, "Post bounce light history B");
+      g_giHistValid = false;
+    }
+    const bool temporal = m.temporal && !gx::frame_interpolation_active();
+    if (allowProbe && temporal) ++g_giFrame;
+    Params sp = texel_params(g_sceneColor);
+    sp.a[2] = std::clamp(m.giBounce, 0.0f, 1.0f);
+    // The glow mask stands for brightness the 8-bit picture cannot hold: glowing surfaces send several
+    // times the light of a white wall.
+    sp.a[3] = std::clamp(m.giEmissive, 0.0f, 2.0f) * 4.0f;
+    sp.b[0] = 1.0f;
+    run(encoder, g_giSource, sp, g_sceneColor.view, nullptr, g_giRad4.view, "Post bounce light radiance");
+    Params dp = texel_params(g_giRad4);
+    run(encoder, g_giDown, dp, g_giRad4.view, nullptr, g_giRad8.view, "Post bounce light radiance far");
+    const auto mc = config();
+    const bool masked = (mc.ssaoSkipMarked || mc.ssaoUnderEffects) && g_faceMaskDirty && g_faceMask.view;
+    Params gp{};
+    gp.a[2] = std::clamp(m.giRadius, 0.5f, 8.0f);
+    gp.a[3] = std::clamp(m.giStrength, 0.0f, 2.0f);
+    gp.b[0] = static_cast<float>(g_depthAccum.size.width);
+    gp.b[1] = static_cast<float>(g_depthAccum.size.height);
+    gp.b[2] = std::clamp(m.giSamples, 4.0f, 16.0f);
+    // A new rotation of the sample pattern every native frame (golden ratio sequence): the temporal
+    // pass averages them into many more samples than one frame takes.
+    // A fixed pattern: rotating it every frame and leaning on the temporal pass left a visible
+    // crawling swirl on smooth metal (gunship cockpit, F5 of 13/11/2026 22:56). The 4x4 interleave is
+    // flat after the two blurs.
+    gp.b[3] = 0.0f;
+    gp.c[0] = masked ? 1.0f : 0.0f;
+    gp.d[2] = scaleX;
+    gp.d[3] = scaleY;
+    run(encoder, g_gi, gp, g_giRad4.view, &g_depthAccum.view, g_giA.view, "Post bounce light", false, &g_giRad8.view,
+        masked ? &g_faceMask.view : &g_dummyTexture.view);
+    wgpu::TextureView gathered = g_giA.view;
+    if (temporal && allowProbe && relOk) {
+      Params tp{};
+      tp.a[2] = g_giHistValid ? 0.9f : 0.0f;
+      tp.b[0] = scaleX;
+      tp.b[1] = scaleY;
+      std::memcpy(tp.c, rel, 4 * sizeof(float));
+      std::memcpy(tp.d, rel + 4, 4 * sizeof(float));
+      std::memcpy(tp.e, rel + 8, 4 * sizeof(float));
+      const uint32_t from = g_giHistIndex, to = g_giHistIndex ^ 1u;
+      run(encoder, g_giTemporal, tp, g_giA.view, &g_giHist[from].view, g_giHist[to].view, "Post bounce light temporal");
+      g_giHistIndex = to;
+      g_giHistValid = true;
+      gathered = g_giHist[to].view;
+    } else if (allowProbe) {
+      g_giHistValid = false;
+    }
+    Params bp{};
+    bp.a[2] = 2.0f;
+    run(encoder, g_giBlur1, bp, gathered, nullptr, g_giB.view, "Post bounce light blur 1");
+    bp.a[2] = 1.0f;
+    run(encoder, g_giBlur2, bp, g_giB.view, nullptr, g_giA.view, "Post bounce light blur 2");
+    giRan = true;
+  } else {
+    g_giHistValid = false;
+  }
+  // Level 2: HDR bloom and volumetric fog, composed into one half-resolution light texture.
+  bool addRan = false;
+  {
+    const bool bloom = m.hdrBloom && m.bloomStrength > 0.0f;
+    bool fogRan = false;
+    const auto f16 = wgpu::TextureFormat::RGBA16Float;
+    const uint32_t hw = std::max<uint32_t>(w / 2, 1), hh = std::max<uint32_t>(h / 2, 1);
+    if ((bloom || m.fog) && (!g_addTex.texture || g_addTex.size.width != hw || g_addTex.size.height != hh)) {
+      g_addTex = make_target(hw, hh, f16, "Post bloom and fog");
+      for (int i = 0; i < kBloomLevels; ++i) {
+        const uint32_t lw = std::max<uint32_t>(w >> (i + 1), 1), lh = std::max<uint32_t>(h >> (i + 1), 1);
+        g_bloomTex[i] = make_target(lw, lh, f16, "Post HDR bloom level");
+        if (i < kBloomLevels - 1) g_bloomUpTex[i] = make_target(lw, lh, f16, "Post HDR bloom up level");
+      }
+      g_fogTex = make_target(std::max<uint32_t>(w / 4, 1), std::max<uint32_t>(h / 4, 1), f16, "Post volumetric fog");
+    }
+    if (bloom) {
+      Params pp = texel_params(g_sceneColor);
+      pp.a[2] = std::clamp(m.bloomThreshold, 0.05f, 4.0f);
+      pp.a[3] = std::clamp(m.bloomGlow, 0.0f, 8.0f);
+      run(encoder, g_bloomPre, pp, g_sceneColor.view, nullptr, g_bloomTex[0].view, "Post HDR bloom prefilter");
+      for (int i = 1; i < kBloomLevels; ++i) {
+        Params dp = texel_params(g_bloomTex[i - 1]);
+        run(encoder, g_bloomDownP[i - 1], dp, g_bloomTex[i - 1].view, nullptr, g_bloomTex[i].view, "Post HDR bloom down");
+      }
+      // Up: level i = level i + tent(up of level i + 1); the smallest level starts the chain.
+      const webgpu::TextureWithSampler* lower = &g_bloomTex[kBloomLevels - 1];
+      for (int i = kBloomLevels - 2; i >= 0; --i) {
+        Params up = texel_params(*lower);
+        run(encoder, g_bloomUpP[i], up, lower->view, &g_bloomTex[i].view, g_bloomUpTex[i].view, "Post HDR bloom up");
+        lower = &g_bloomUpTex[i];
+      }
+    }
+    if (m.fog && m.fogDensity > 0.0f && g_depthAccum.view && engineCount > 0) {
+      float rows[3][4][4] = {};
+      uint32_t n = 0;
+      for (uint32_t i = 0; i < engineCount && i < 4; ++i, ++n) {
+        rows[0][n][0] = engine[i][0]; rows[0][n][1] = engine[i][1]; rows[0][n][2] = -engine[i][2];
+        rows[0][n][3] = std::min(std::max(engine[i][3], 0.1f), 40.0f);
+        rows[1][n][0] = std::clamp(engine[i][4], 0.0f, 4.0f);
+        rows[1][n][1] = engine[i][5];
+        rows[2][n][0] = engine[i][6]; rows[2][n][1] = engine[i][7]; rows[2][n][2] = engine[i][8];
+      }
+      if (!g_fogLights.texture)
+        g_fogLights = make_target(4, 3, wgpu::TextureFormat::RGBA32Float, "Post fog lights", wgpu::TextureUsage::CopyDst);
+      const wgpu::TexelCopyTextureInfo dst{.texture = g_fogLights.texture};
+      const wgpu::TexelCopyBufferLayout layout{.bytesPerRow = 4 * 16, .rowsPerImage = 3};
+      const wgpu::Extent3D extent{4, 3, 1};
+      webgpu::g_queue.WriteTexture(&dst, rows, sizeof(rows), &layout, &extent);
+      Params fp{};
+      fp.a[2] = std::clamp(m.fogDensity, 0.0f, 2.0f);
+      fp.a[3] = std::clamp(m.fogRange, 10.0f, 80.0f);
+      fp.b[0] = static_cast<float>(g_depthAccum.size.width);
+      fp.b[1] = static_cast<float>(g_depthAccum.size.height);
+      fp.b[2] = static_cast<float>(n);
+      fp.d[2] = scaleX;
+      fp.d[3] = scaleY;
+      run(encoder, g_fogPass, fp, g_dummyTexture.view, &g_depthAccum.view, g_fogTex.view, "Post volumetric fog", false,
+          &g_fogLights.view, &g_dummyTexture.view);
+      fogRan = true;
+    }
+    if (bloom || fogRan) {
+      Params cp = texel_params(g_addTex);
+      cp.a[2] = bloom ? std::clamp(m.bloomStrength, 0.0f, 2.0f) / static_cast<float>(kBloomLevels) : 0.0f;
+      cp.a[3] = fogRan ? 1.0f : 0.0f;
+      run(encoder, g_addCompose, cp, bloom ? g_bloomUpTex[0].view : g_dummyTexture.view, fogRan ? &g_fogTex.view : &g_dummyTexture.view,
+          g_addTex.view, "Post bloom and fog");
+      addRan = true;
+    }
+  }
+  if (!contactRan && !exposureRan && !giRan && !addRan) return g_sceneColor.view;
   if (!g_sceneLight.pipeline || g_sceneLightFormat != g_sceneColor.format) {
-    build_pass(g_sceneLight, Layout::ThreeTextures, kSceneLight, "Post modern lighting (scene)", g_sceneColor.format);
+    build_pass(g_sceneLight, Layout::FiveTextures, kSceneLight, "Post modern lighting (scene)", g_sceneColor.format);
     g_sceneLightFormat = g_sceneColor.format;
   }
   if (!g_litScene.texture || g_litScene.size.width != g_sceneColor.size.width ||
@@ -1820,9 +2306,24 @@ static wgpu::TextureView modern_scene(const wgpu::CommandEncoder& encoder, const
   sp.a[2] = std::clamp(m.exposureRange, 0.0f, 2.0f);
   sp.a[3] = -3.3f;  // reference: log2 of a linear luminance of 0.1 (about 35 % grey), the usual room
   sp.b[0] = 0.5f;   // half of the difference is corrected, like the eye
+  sp.b[1] = giRan ? 1.0f : 0.0f;
+  // WII_COMPILED_POST_DEBUG_VIEW=gi (QA builds): the bounce light alone.
+  static const float sceneDebug = [] {
+#if !defined(MKW_PRIME_QA_TOOLS)
+    return 0.0f;
+#else
+    const char* v = std::getenv("WII_COMPILED_POST_DEBUG_VIEW");
+    if (v == nullptr) return 0.0f;
+    const std::string s(v);
+    return s == "gi" ? 1.0f : s == "contact" ? 2.0f : 0.0f;
+#endif
+  }();
+  sp.b[2] = sceneDebug;
   const wgpu::TextureView exposureView = exposureRan ? g_adaptTex[g_adaptIndex].view : g_dummyTexture.view;
+  sp.b[3] = addRan ? 1.0f : 0.0f;
   run(encoder, g_sceneLight, sp, g_sceneColor.view, contactRan ? &contactView : &g_dummyTexture.view, g_litScene.view,
-      "Post modern lighting (scene)", false, &exposureView);
+      "Post modern lighting (scene)", false, &exposureView, giRan ? &g_giA.view : &g_dummyTexture.view,
+      addRan ? &g_addTex.view : &g_dummyTexture.view);
   return g_litScene.view;
 }
 

@@ -100,6 +100,9 @@ def main() -> None:
         0x802EDC00: "80010008",  # lwz r0,8(r1): the flag
         0x804E57C4: "9421fff0",  # OSRestart prologue
         0x804E5850: "9421ffd0",  # OSReturnToMenu prologue
+        # The game's own error handler (OSSetErrorHandler target; also reached from
+        # rs_reallyfatal_printf with error 0xFF): its message goes to the fatal dialog.
+        0x803F6160: "9421f8c0",  # stwu r1,-0x740(r1)
         # Data-cache range ops (cmplwi r4,0 prologue): dcbf+sc, dcbst+sc, dcbf,
         # dcbz. Translated dcb* are no-ops; the overlay notifies the GX caches of
         # the range the CPU wrote. DCInvalidateRange (0x804DF8C8, dcbi) is not
@@ -126,7 +129,7 @@ def main() -> None:
         raw_relative_path = item["relativePath"]
         item["relativePath"] = "functions/" + raw_relative_path
         if address not in (0x803BBF38, 0x8054A6D8, 0x805013D4, 0x80259474, 0x80259978, 0x802598B0, 0x802599FC, 0x804EE4A8, 0x804EB174, 0x80353F70, 0x803540A8, 0x804F66B8, 0x804F6A2C, 0x804D9138, 0x804D9E20, 0x804E6BD4, 0x804E01C4, 0x804D2644, 0x8050D4A0, 0x804D9850, 0x804E6E14,
-                           0x802ED6C4, 0x804E57C4, 0x804E5850,
+                           0x802ED6C4, 0x804E57C4, 0x804E5850, 0x803F6160,
                            0x804DF8C8, 0x804DF8F4, 0x804DF924, 0x804DF954, 0x804DF980, 0x8017A4B4, 0x801799A8, 0x801522E0, 0x80151F64, 0x8036BC98, 0x8007F904,
                            0x8009CF90, 0x8007F2A4, 0x802B2668, 0x80316A1C, 0x802EBAF4, 0x803E9A34, 0x802F1378, 0x803CDB38,
                            0x801ACAB8, 0x8000C918, 0x800BE034, 0x800BF0C4, 0x803EB060, 0x803E91D4):
@@ -204,6 +207,15 @@ def main() -> None:
                 'extern "C" void OS_HLE_ServicePrimeIdle(CpuContext*, uint32_t, uint32_t);')
             source=replace_once(source,'loc_802EDC00:\n{',
                 'loc_802EDC00:\n{\n    OS_HLE_ServicePrimeIdle(ctx, r1, ctx->gpr[13]);')
+        elif address == 0x803F6160:
+            # On the console this handler blacks the screen, prints the context with
+            # OSReport and halts: the player sees a frozen game. prime_host_restart.cpp
+            # shows its message (rs_reallyfatal_printf's text for error 0xFF) and ends.
+            source=replace_once(source,'#include "guest_abi/guest_abi.h"',
+                '#include "guest_abi/guest_abi.h"\n'
+                'extern "C" bool PrimeHostGameError(CpuContext*);')
+            anchor=f'extern "C" void func_{address:08X}(CpuContext* MKW_RESTRICT ctx)\n{{'
+            source=replace_once(source,anchor,anchor+'\n    if (PrimeHostGameError(ctx)) return;')
         elif address in (0x804E57C4,0x804E5850):
             # The console reboots the disc (OSRestart) or goes back to the Wii
             # Menu (OSReturnToMenu); prime_host_restart.cpp relaunches or closes

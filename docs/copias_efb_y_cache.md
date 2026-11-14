@@ -46,3 +46,13 @@ El usuario lo vio el 2 de noviembre de 2026 en las vistas 3D: una marca de unos 
 - Cada dibujo de la captura tiene una línea `  tex` con la textura resuelta para ese dibujo: tamaño y formato GX, puntero de datos y textura del host enlazada. Si la textura del host tiene el tamaño de la copia escalada y `hf` = formato de la copia, es una copia del EFB; si mide lo mismo que la textura GX, se leyó de la RAM.
 - Las líneas `[dump-copy]` del `console.log` dan la dirección de destino de cada copia durante la captura.
 - Herramientas de análisis: `burst_analyze.py`, `bmp2png.py` y `bmpdiff.py` (sesión del 24 de octubre). Vale la pena moverlas a `recomp/tools` si se vuelven a usar.
+
+## Escrituras tardías de las sondas sobre memoria reutilizada (13/11/2026)
+
+Síntoma (usuario, Linux): dos cierres al salir de la cabina de la nave al control normal (`[prime-mouse-look]` pasa de `morph=3` a `morph=0` justo antes). El primero, `rs_reallyfatal_printf` con `Alloc failed ... Size: 134744072` (`0x08080808`); el segundo, `CTexture::Load` desde `fn_803506B0` con un puntero de textura `0x83008383` (acceso a `0x8300838D`). Ambos valores tienen forma de píxeles de sonda (Z8/A8), no de punteros ni de tamaños.
+
+Hipótesis (no reproducida en una grabación): las sondas que se leen de forma asíncrona (destello de lente, objetivo del visor de escaneo; `kAsyncReadbackMaxBytes`) se escriben en la RAM del invitado un fotograma después de su `GXCopyTex`. Si en ese fotograma el juego libera el búfer de destino (al salir de la cabina rehace el HUD y sus sondas) y otro objeto ocupa esa memoria, la escritura tardía lo corrompe.
+
+Cambio (`efb_ram_copy.cpp`, `harvest_mapped_slots`): cada ranura guarda los bytes que escribió la última vez (`AsyncSlot::lastWritten`). El juego solo lee estas sondas, así que si al llegar la siguiente lectura la memoria ya no contiene esos bytes, tiene otro dueño: no se escribe, se olvida el registro (una sonda viva se vuelve a escribir en el fotograma siguiente) y se anota `[efb-ram] stale async readback skipped dest=… size=… (count N)`. La primera escritura de cada ranura no se comprueba.
+
+Validación: repetición `hangar_1x_window` completa, 59,10 FPS, 0 escrituras descartadas (sin falsos positivos en Bryyo). Pendiente: prueba del usuario saliendo de la nave varias veces; si vuelve a caer, buscar esa línea en `console.log`.

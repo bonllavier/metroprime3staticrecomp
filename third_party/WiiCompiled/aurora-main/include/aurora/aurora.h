@@ -272,6 +272,10 @@ uint32_t aurora_get_msaa_samples(void);
 // pipelines of the other mode stay cached.
 void aurora_set_per_pixel_lighting(bool enabled);
 bool aurora_get_per_pixel_lighting(void);
+// Smooth indirect (distortion) offsets at high resolution: keep the sub-byte fraction of a filtered
+// indirect sample instead of stepping by whole native texels (live; default on).
+void aurora_set_smooth_indirect(bool enabled);
+bool aurora_get_smooth_indirect(void);
 // Enhanced metal on/off (new pipelines on the next build) and strength (live, 0..2).
 void aurora_set_enhanced_metal(bool enabled, float strength);
 // Enhanced metal material parameters, live, each 0..1: roughness, metallic, edge sheen, surface detail.

@@ -627,7 +627,7 @@ bool light_shafts_wanted() { return false; }
 bool area_colours(float*, float*) { return false; }
 void note_projection(const float*, bool) {}
 bool ssao_exclude_active() { return false; }
-void note_engine_lights(uint32_t, const float (*)[3], const float*, const float*, const uint8_t*) {}
+void note_engine_lights(uint32_t, const float (*)[3], const float*, const float*, const uint8_t*, const float (*)[3]) {}
 void note_world_view(const float*) {}
 } // namespace aurora::gfx::post
 namespace aurora::gx {
@@ -646,6 +646,11 @@ std::atomic<bool> g_linearBlend{false};
 std::atomic<bool> g_smoothLightmaps{false};
 std::atomic<bool> g_areaReflections{false};
 std::atomic<bool> g_softShadows{false};
+std::atomic<bool> g_textureRelief{false};
+std::atomic<bool> g_defaultLitMaterial{false};
+std::atomic<bool> g_gameMaterialMasks{false};
+std::atomic<bool> g_actorAllLights{false};
+std::atomic<float> g_worldRelight{0.0f};
 std::atomic<bool> g_engineLightsOption{false};
 std::atomic<bool> g_extraDynamicLights{false};
 std::atomic<bool> g_lightmapDither{false};

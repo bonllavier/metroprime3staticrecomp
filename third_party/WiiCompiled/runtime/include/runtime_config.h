@@ -60,12 +60,19 @@ struct RuntimeUserConfig {
     std::optional<uint32_t> msaa;                   // 1, 2, 4, 8 (restart)
     std::optional<uint32_t> anisotropicFiltering;   // 0 = as the game requests, 2, 4, 8, 16
     std::optional<bool> perPixelLighting;           // GX lighting per fragment (live)
+    std::optional<bool> smoothDistortion;           // sub-byte indirect offsets (live)
     std::optional<bool> enhancedMetal;              // metal reflections/highlights (needs per-pixel lighting)
     std::optional<bool> enhancedMaterials;          // per-texture material classes (ship hulls); per-pixel lighting
     // Modern lighting, level 1 (F1 > Video; docs/iluminacion_motor.md): a master switch and one per part.
     std::optional<bool> modernLighting, modernEngineLights, modernExtraDynamicLights, modernContactShadows,
         modernTemporal, modernActorLightFade, modernLightmapDither, modernAutoExposure;
     std::optional<float> modernContactStrength, modernContactLength, modernExposureRange, modernExposureSpeed;
+    // Modern lighting, level 2 (13/11/2026): materials from the game's own data. Same master switch.
+    std::optional<bool> modernTextureRelief, modernDefaultMaterial, modernMaterialMasks, modernBounceLight;
+    std::optional<float> modernBounceStrength, modernBounceEmissive, modernBounceSurfaces, modernBounceRadius,
+        modernBounceSamples;
+    std::optional<bool> modernActorLights, modernWorldRelight, modernHdrBloom, modernFog;
+    std::optional<float> modernWorldRelightStrength, modernBloomStrength, modernBloomThreshold, modernFogDensity;
     std::optional<float> enhancedMetalStrength;     // 0..2
     std::optional<float> enhancedMetalRoughness, enhancedMetalMetallic, enhancedMetalEdge, enhancedMetalDetail;
     std::optional<uint32_t> textureUpscale;         // 0 = off, 2, 4 (Super-xBR at load)
@@ -448,6 +455,9 @@ inline void EnsureConfigFile() {
               "# GX lighting evaluated per pixel instead of per vertex (smooth\n"
               "# dynamic lights and specular; same formula). Applies at once.\n"
               "per_pixel_lighting = false\n"
+              "# Distortion effects (charge beam, scan visor) without whole-texel\n"
+              "# steps at high resolution. Applies at once.\n"
+              "smooth_distortion = true\n"
               "# Load-time texture upscaling (Super-xBR, CPU, no files involved):\n"
               "# 0 = off, 2 or 4. Only textures up to texture_upscale_max_size\n"
               "# (128, 256, 512, 1024) on each side are processed.\n"
@@ -788,6 +798,7 @@ inline RuntimeUserConfig ParseConfigDocument(const toml::value& document) {
         config.anisotropicFiltering = *value;
     }
     config.perPixelLighting = FindConfigValue<bool>(document, "video", "per_pixel_lighting");
+    config.smoothDistortion = FindConfigValue<bool>(document, "video", "smooth_distortion");
     config.enhancedMetal = FindConfigValue<bool>(document, "video", "enhanced_metal");
     config.enhancedMaterials = FindConfigValue<bool>(document, "video", "enhanced_materials");
     config.modernLighting = FindConfigValue<bool>(document, "video", "modern_lighting");
@@ -802,6 +813,23 @@ inline RuntimeUserConfig ParseConfigDocument(const toml::value& document) {
     config.modernContactLength = FindConfigValue<float>(document, "video", "contact_shadows_length");
     config.modernExposureRange = FindConfigValue<float>(document, "video", "exposure_range");
     config.modernExposureSpeed = FindConfigValue<float>(document, "video", "exposure_speed");
+    config.modernTextureRelief = FindConfigValue<bool>(document, "video", "texture_relief");
+    config.modernDefaultMaterial = FindConfigValue<bool>(document, "video", "default_material");
+    config.modernMaterialMasks = FindConfigValue<bool>(document, "video", "material_masks");
+    config.modernBounceLight = FindConfigValue<bool>(document, "video", "bounce_light");
+    config.modernBounceStrength = FindConfigFloat(document, "video", "bounce_light_strength");
+    config.modernBounceEmissive = FindConfigFloat(document, "video", "bounce_light_emissive");
+    config.modernBounceSurfaces = FindConfigFloat(document, "video", "bounce_light_surfaces");
+    config.modernBounceRadius = FindConfigFloat(document, "video", "bounce_light_radius");
+    config.modernBounceSamples = FindConfigFloat(document, "video", "bounce_light_samples");
+    config.modernActorLights = FindConfigValue<bool>(document, "video", "actor_all_lights");
+    config.modernWorldRelight = FindConfigValue<bool>(document, "video", "world_relight");
+    config.modernWorldRelightStrength = FindConfigFloat(document, "video", "world_relight_strength");
+    config.modernHdrBloom = FindConfigValue<bool>(document, "video", "hdr_bloom");
+    config.modernBloomStrength = FindConfigFloat(document, "video", "hdr_bloom_strength");
+    config.modernBloomThreshold = FindConfigFloat(document, "video", "hdr_bloom_threshold");
+    config.modernFog = FindConfigValue<bool>(document, "video", "volumetric_fog");
+    config.modernFogDensity = FindConfigFloat(document, "video", "volumetric_fog_density");
     config.enhancedMetalStrength = FindConfigValue<float>(document, "video", "enhanced_metal_strength");
     config.enhancedMetalRoughness = FindConfigValue<float>(document, "video", "enhanced_metal_roughness");
     config.enhancedMetalMetallic = FindConfigValue<float>(document, "video", "enhanced_metal_metallic");
@@ -1139,6 +1167,11 @@ inline bool SetAnisotropicFiltering(uint32_t value) {
     if (!IsSupportedAnisotropicFiltering(value)) return false;
     Mutable().anisotropicFiltering = value;
     return WriteSetting("video", "anisotropic_filtering", std::to_string(value));
+}
+
+inline bool SetSmoothDistortion(bool value) {
+    Mutable().smoothDistortion = value;
+    return WriteSetting("video", "smooth_distortion", value ? "true" : "false");
 }
 
 inline bool SetPerPixelLighting(bool value) {
@@ -1508,6 +1541,10 @@ inline uint32_t Msaa(uint32_t fallback = 1) {
 
 inline uint32_t AnisotropicFiltering(uint32_t fallback = 0) {
     return Get().anisotropicFiltering.value_or(fallback);
+}
+
+inline bool SmoothDistortion(bool fallback = true) {
+    return Get().smoothDistortion.value_or(fallback);
 }
 
 inline bool PerPixelLighting(bool fallback = false) {

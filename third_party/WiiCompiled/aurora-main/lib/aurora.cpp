@@ -3101,6 +3101,20 @@ void aurora_set_per_pixel_lighting(bool enabled) {
 #endif
 }
 bool aurora_get_per_pixel_lighting(void) { return aurora::g_config.perPixelLighting; }
+void aurora_set_smooth_indirect(bool enabled) {
+#ifdef AURORA_ENABLE_GX
+  aurora::gx::g_smoothIndirect.store(enabled, std::memory_order_relaxed);
+#else
+  (void)enabled;
+#endif
+}
+bool aurora_get_smooth_indirect(void) {
+#ifdef AURORA_ENABLE_GX
+  return aurora::gx::g_smoothIndirect.load(std::memory_order_relaxed);
+#else
+  return false;
+#endif
+}
 void aurora_set_enhanced_metal_params(float roughness, float metallic, float edge, float detail) {
 #ifdef AURORA_ENABLE_GX
   const auto q = [](float v) { return static_cast<uint32_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255.0f)); };
@@ -3203,7 +3217,7 @@ void aurora_set_modern_lighting(const AuroraModernLighting* settings) {
   aurora::gx::g_engineLightsOption.store(settings->engineLights, std::memory_order_relaxed);
   aurora::gx::g_extraDynamicLights.store(settings->extraDynamicLights, std::memory_order_relaxed);
   aurora::gx::g_lightmapDither.store(settings->lightmapDither, std::memory_order_relaxed);
-  aurora::gfx::post::Modern modern{};
+  auto modern = aurora::gfx::post::modern();  // keeps the level 2 fields (aurora_set_modern_lighting2)
   modern.contact = settings->contactShadows;
   modern.contactStrength = settings->contactStrength;
   modern.contactLength = settings->contactLength;
@@ -3212,6 +3226,27 @@ void aurora_set_modern_lighting(const AuroraModernLighting* settings) {
   modern.exposureRange = settings->exposureRange;
   modern.exposureSpeed = settings->exposureSpeed;
   aurora::gfx::post::set_modern(modern);
+}
+void aurora_set_modern_lighting2(const AuroraModernLighting2* settings) {
+  if (settings == nullptr) return;
+  aurora::gx::g_textureRelief.store(settings->textureRelief, std::memory_order_relaxed);
+  aurora::gx::g_defaultLitMaterial.store(settings->defaultMaterial, std::memory_order_relaxed);
+  aurora::gx::g_gameMaterialMasks.store(settings->materialMasks, std::memory_order_relaxed);
+  auto modern = aurora::gfx::post::modern();
+  modern.gi = settings->bounceLight;
+  modern.giStrength = settings->bounceStrength;
+  modern.giEmissive = settings->bounceEmissive;
+  modern.giBounce = settings->bounceSurfaces;
+  modern.giRadius = settings->bounceRadius;
+  modern.giSamples = settings->bounceSamples;
+  modern.hdrBloom = settings->hdrBloom;
+  modern.bloomStrength = settings->bloomStrength;
+  modern.bloomThreshold = settings->bloomThreshold;
+  modern.fog = settings->fog;
+  modern.fogDensity = settings->fogDensity;
+  aurora::gfx::post::set_modern(modern);
+  aurora::gx::g_actorAllLights.store(settings->actorLights, std::memory_order_relaxed);
+  aurora::gx::g_worldRelight.store(settings->worldRelight, std::memory_order_relaxed);
 }
 void aurora_set_environment_lighting(bool material, bool borrowedLights) {
   aurora::gx::g_envMaterial.store(material, std::memory_order_relaxed);

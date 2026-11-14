@@ -1864,6 +1864,22 @@ static void render_impl(std::vector<RenderPass>& renderPasses, wgpu::CommandEnco
         for (uint8_t c = 0; c < rp.postCameraCount; ++c)
           if (rp.postCameras[c] == world) worldDraws += rp.postCameraDraws[c];
         if (worldDraws > 0 && rp.depthView.Get() == webgpu::g_depthBuffer.view.Get()) worldPass[k] = 1;
+        // A display copy ends a game frame (startsGameFrame marks the pass after it): a world block
+        // never continues across it. Counting on let the head of the next frame add its draws to the
+        // block of the one before: the title screen (about 17 world draws, a small block) crossed the
+        // threshold only when the batch was cut between its two parts, and got the scene effects
+        // (exposure) on those frames alone: the title and the movies flickered brighter.
+        if (rp.startsGameFrame) {
+          if (lastWorld != SIZE_MAX) {
+            sceneEnd[lastWorld] = blockDraws >= kMinWorldBlockDraws ? 1 : 2;
+            if (sceneEnd[lastWorld] == 2)
+              for (size_t m = blockFirst; m <= lastWorld; ++m) mergeDiscarded[m] = 1;
+            lastWorld = SIZE_MAX;
+          } else if (firstEfb && carriedDraws > 0) {
+            sceneStart = carriedDraws >= kMinWorldBlockDraws ? 1 : 2;
+          }
+          blockDraws = 0;
+        }
         if (worldDraws > 0) {
           if (lastWorld == SIZE_MAX) blockFirst = k;
           lastWorld = k;

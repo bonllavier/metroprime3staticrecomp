@@ -213,6 +213,28 @@ typedef struct AuroraModernLighting {
   float exposureRange;      // largest correction in EV (0..2)
   float exposureSpeed;      // seconds to adapt about two thirds of the way
 } AuroraModernLighting;
+// Modern lighting, level 2 (13/11/2026; docs: recomp/docs/iluminacion_motor.md). Everything comes from
+// what the game already draws: its own textures, material stages and frame. A new entry point; the
+// structures above keep their layout.
+typedef struct AuroraModernLighting2 {
+  bool textureRelief;    // the materials' relief comes from the surface texture, not from the lit colour
+  bool defaultMaterial;  // lit objects without a reflection map or a class get a soft default material (class 14)
+  bool materialMasks;    // the game's reflection masks and emissive maps steer the material per pixel
+  bool bounceLight;      // screen-space bounce light: what the frame shows lights what is next to it
+  float bounceStrength;  // 0..2
+  float bounceEmissive;  // 0..2 light from the surfaces the game marks as glowing
+  float bounceSurfaces;  // 0..1 light bounced by ordinary lit surfaces
+  float bounceRadius;    // metres (0.5..8)
+  float bounceSamples;   // 4..16 per pixel at half resolution
+  bool actorLights;      // characters and objects get every engine light around them (free GX slots)
+  float worldRelight;    // 0..2 diffuse light from the engine's lights on lightmapped walls and floors (0 = off)
+  bool hdrBloom;         // bloom over six scales from the world picture, glow mask as HDR brightness
+  float bloomStrength;   // 0..2
+  float bloomThreshold;  // linear luminance where it starts
+  bool fog;              // light scattered in the air around the engine's lights
+  float fogDensity;      // 0..2
+} AuroraModernLighting2;
+void aurora_set_modern_lighting2(const AuroraModernLighting2* settings);
 void aurora_set_modern_lighting(const AuroraModernLighting* settings);
 void aurora_set_material_class(uint8_t cls, float strength, float roughness, float metallic, float edge, float detail);
 // Extended parameters of a material class, read by the enhanced-metal shader of its draws. Slot 0 is

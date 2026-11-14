@@ -17,3 +17,15 @@
 3. Overlay de entrada en `OSReturnToMenu`: la consola volvería al menú Wii, así que el programa se cierra.
 
 Pendiente: el bloque de *fast reset* de `0x811FFF80` no se conserva entre procesos; el juego vuelve a leer las opciones de la partida guardada como en un arranque en frío. Falta además la QA en el juego: salir desde la pausa, confirmar que aparece la pantalla de título y que las opciones se mantienen.
+
+## Error fatal del propio juego (13/11/2026)
+
+Síntoma (usuario, Linux, `base_1794627283_pid51084`): el juego se congeló y se cerró. El log terminaba en `Unsupported /dev/stm/immediate ioctl=0x3002` y un acceso a MMIO bloqueado en `0xCD000004`.
+
+- Causa real, leída del volcado de MEM1: `rs_reallyfatal_printf` (0x803F6758) había formateado `Alloc failed - Heap: GPU+Audio Size: 134744072, Used: 41993856, Free: 87363776`. El tamaño pedido es `0x08080808`, un valor basura (había 87 MB libres). Pendiente de reproducir; el juego leía en ese momento `/tmp/7F7B52B0.pak` de la NAND, cuyas cabeceras están intactas.
+- El manejador de errores del juego (0x803F6160) pone la pantalla en negro, apaga dispositivos y en la consola se queda parado. Por el camino llama a STM 0x3002 (`STM_ReleaseEventHook`), que el runtime no atendía.
+- Cambios:
+  - `memory.cpp`: STM 0x3002 implementado como en Dolphin (el aviso pendiente vuelve con evento 0; sin aviso, -6).
+  - Overlay en 0x803F6160 (`prepare_prime_runtime_hooks.py`) → `PrimeHostGameError` (`prime_host_restart.cpp`): con error 0xFF muestra el texto de `rs_reallyfatal_printf` (puntero en 0x8067DF6C); con otro número, la excepción con SRR0/SRR1/DSISR/DAR. Escribe `crash_game_error.txt` y los volcados, y cierra.
+  - `main.cpp`: en Linux el diálogo de error fatal se muestra con `SDL_ShowSimpleMessageBox`; antes solo iba al log.
+- Validado: compila, el overlay llama a `PrimeHostGameError` (desensamblado de `func_803F6160`) y la repetición `hangar_1x_window` corre igual (59,90 FPS, sin errores). El camino del error no se ha provocado a propósito.

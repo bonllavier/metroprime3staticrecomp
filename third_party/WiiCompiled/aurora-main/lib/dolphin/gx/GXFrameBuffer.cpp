@@ -553,7 +553,19 @@ void GXCopyTex(void* dest, GXBool clear) {
     aurora::gx::fifo::drain();
   }
   const auto sourceRect = map_texture_copy_source(g_gxState.texCopySrc, g_gxState.texCopySrcRenderSpace);
-  const auto rect = sourceRect.clearRect;
+  auto rect = sourceRect.clearRect;
+  if (clear) {
+    // A clearing copy clears every render pixel the scissor of the same rectangle lets draws reach
+    // (scale_logical_scissor_rect rounds outward). Rounded to the nearest pixel, the clear missed a row
+    // that RM3E01's radar (a 64x64 viewport at 0,384, copied and cleared before the world) had drawn
+    // into, colour and depth: the world could not cover it and a thin white line stayed at the left
+    // edge of the screen (F7 14/11/2026 01:36, rows 742 and 743 at 1815x866).
+    const float l = sourceRect.sampleRect.x(), t = sourceRect.sampleRect.y();
+    const float r = l + sourceRect.sampleRect.z(), b = t + sourceRect.sampleRect.w();
+    const int32_t left = static_cast<int32_t>(std::floor(l)), top = static_cast<int32_t>(std::floor(t));
+    rect = {.x = left, .y = top, .width = static_cast<int32_t>(std::ceil(r)) - left,
+            .height = static_cast<int32_t>(std::ceil(b)) - top};
+  }
   // Keep guest dimensions for cache identity while preserving scaled GPU detail.
   const auto logicalDstWidth = std::max<u32>(g_gxState.texCopyDstWidth, 1);
   const auto logicalDstHeight = std::max<u32>(g_gxState.texCopyDstHeight, 1);

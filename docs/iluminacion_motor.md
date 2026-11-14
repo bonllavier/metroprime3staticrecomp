@@ -143,3 +143,71 @@ Las partes A, C y D dependen de direcciones de RM3E01 y solo existen en ese perf
 
   **Corregido el 8 de noviembre de 2026** (`efb_ram_copy.cpp`). Apareció también en replays a 120 reales con presentación de verdad (`hangar_i120`, con y sin la sincronización con el refresco, ver `fps_altos.md`), capturado con `capture_prime_hang.py`. Primero se sacaron `Unmap()` y el gancho de debajo de `g_asyncMutex`; el siguiente cuelgue mostró el callback parado dentro de `wgpuBufferUnmap` ya sin el cerrojo: con `AllowSpontaneous`, Dawn ejecuta el callback desde sus propias llamadas y con sus cerrojos tomados, y volver a llamar a Dawn desde ahí también se bloquea. Ahora el callback solo marca el slot como `Mapped`; el hilo del fotograma (`drain_async_events`, que ya corría en `encode_async_downloads` y `after_submit`) lee el búfer, escribe la RAM del invitado, avisa con `notify_guest_write` y hace `Unmap()` con el cerrojo suelto, con el slot en `Completing` para que nadie lo reutilice. `schedule()` también avisa del slot nuevo fuera del cerrojo.
 - **Pendiente del usuario:** QA visual en partidas reales (cada casilla de F1 > Video > «Modern lighting» en la misma escena), sobre todo exposición y sombras de contacto, y a 120 Hz reales.
+
+## Nivel 2: materiales con datos del juego y luz que rebota (13/11/2026)
+
+Petición del usuario: mejoras de iluminación por código, reutilizando solo lo que el juego ya trae, eficientes en hardware medio, cada una activable en F1. Todas cuelgan del interruptor general «Modern lighting» y están encendidas por defecto. Sin toggles de Dawn nuevos ni features del dispositivo.
+
+### Opciones (`[video]`, F1 > Video > «Modern lighting»)
+
+| Opción | Clave | Defecto | Qué hace |
+| --- | --- | --- | --- |
+| Relieve desde la textura | `texture_relief` | sí | El relieve del bloque de material sale de la muestra de la textura de color de la superficie (`material_diffuse_stage`), no del color ya iluminado. Las sombras horneadas y la caída de las luces dejan de leerse como relieve. Sin muestras extra. |
+| Material en todo objeto iluminado | `default_material` | sí | Los dibujos iluminados, opacos, de la vista del mundo, sin mapa de reflejo, sin clase y sin lightmap (enemigos, puertas, objetos) reciben el bloque de material con la clase 14 «Objects and creatures (default)» de F1 > Materials: dieléctrico suave (0,50 / 0,50 / 0 / 0,15 / 0,50, brillos 0,9). Usa la tabla `material_pipeline_state` y el respaldo por vértice mientras compila. |
+| Máscaras del juego | `material_masks` | sí | (a) Si el material carga una textura propia en un registro que luego multiplica el mapa de entorno (`material_reflection_mask_stage`), su luminancia escala el metal por píxel. (b) Lo que suma la etapa emisiva final (`material_emissive_stage`: `PREV + K × textura`) se guarda aparte (`mat_emis_add`), el bloque sombrea la superficie sin ello y se vuelve a sumar al final. |
+| Luz que rebota | `bounce_light` y `bounce_light_strength` (1,0), `_emissive` (1,0), `_surfaces` (0,6), `_radius` (3 m), `_samples` (8) | sí | Pase de pantalla, ver abajo. |
+
+Las tres primeras son bits de `lit_ext[1].w` (uniform): cambiarlas no recompila. El texto de las variantes de material sí cambió, así que Dawn las recompila una vez.
+
+### Luz que rebota (`post_process.cpp`)
+
+En `modern_scene()`, junto a las sombras de contacto y la exposición, sin tocar los pases del SSAO:
+
+1. `kGiSource`: radiancia a 1/4 de la instantánea, en lineal, por `superficies + 4 × emisivo × smoothstep(0,55, 0,9, alfa)`. El alfa del EFB es la máscara de brillo del juego y aquí representa el brillo que no cabe en 8 bits. Otra pasada la reduce a 1/8.
+2. `kGi` a media resolución: 4–16 muestras en disco (patrón girado cada fotograma nativo), posición desde la profundidad acumulada, peso `coseno en el receptor × ventana lineal de distancia`; las muestras cercanas leen 1/4 y las lejanas 1/8. Una superficie plana no se ilumina a sí misma. Respeta la máscara de la cara y se atenúa bajo efectos (#25 de `ssao_aurora.md`).
+3. `kGiTemporal`: reproyección con la misma matriz relativa que las sombras de contacto (ahora calculada una vez para ambas), peso 0,9, recorte 3×3 ensanchado. No avanza en imágenes intercaladas.
+4. Dos desenfoques 3×3 con rechazo por profundidad.
+5. `kSceneLight` (ahora `Layout::FourTextures`, enlace 5) suma en lineal `tono de la superficie × luz`, con caída suave hacia blanco y nunca sobre superficies que brillan.
+
+Vista de diagnóstico (builds QA): `WII_COMPILED_POST_DEBUG_VIEW=gi`.
+
+### Corrección de lo existente: el material de entorno no se aplicaba nunca
+
+`command_processor.cpp` exigía `blendMode == GX_BM_NONE` para el material de entorno y el de salas iluminadas. Prime dibuja todo el escenario sólido con la mezcla activada y factores One/Zero (`blend=1/1/0`, en todas las capturas F7 del 05 al 13/11). Ningún dibujo del mundo lo recibía, y con él tampoco funcionaban en las paredes los brillos de las luces del motor, el suavizado de lightmaps ni el tramado. Ahora `opaque_blend()` acepta las dos formas. En la repetición `hangar_1x_window`: 232–352 dibujos por fotograma con `env=1 cls=15`, antes 0. El aspecto de «World surfaces» se ve por primera vez: era suave por diseño y en Bryyo apenas se nota; sus valores se ajustan en F1 > Materials.
+
+La línea `mat` de F7 añade `env=` (variante de entorno) y `cls=` (clase de material; -1 ninguna, 14 por defecto, 15 mundo).
+
+### Herramientas de QA nuevas
+
+- `WII_COMPILED_QA_DUMP_EVERY=<n>` y `WII_COMPILED_QA_DUMP_DIR=<carpeta>`: volcado F7 en fotogramas exactos de la repetición (`frame_<n>`). El archivo `request` caía en fotogramas distintos en cada pasada.
+- `WII_COMPILED_QA_DUMP_AB=1`: en cada punto, `frame_<n>_on` con la configuración y, cuatro fotogramas después, `frame_<n>_off` con todo lo de este apartado y el material de entorno apagados; luego restaura. La cámara de una repetición se desvía entre pasadas; cuatro fotogramas después apenas se mueve.
+
+### Medidas (Linux, RTX 3050, i7-4790, `hangar_1x_window`, 1x)
+
+| Pasada | FPS medios | Ventanas < 57 | GPU media |
+| --- | --- | --- | --- |
+| Todo lo nuevo apagado | 58,43 | 10/80 | 33,5 % |
+| Todo encendido | 59,78 | 1/80 | 33,6 % |
+| Encendido con capturas A/B | 59,10 | 5/81 | 34,8 % |
+
+La variación entre pasadas es mayor que la diferencia: el coste no se distingue del ruido a 1x.
+
+### Resultado visual y límites
+
+- Comparación A/B dentro de la misma pasada (15 puntos): diferencia media de 0 a 29 niveles de 255 según la escena. Los cambios mayores están junto a disparos, explosiones y llamas (la luz que rebota) y en los objetos con el material por defecto.
+- En Bryyo a pleno día la luz que rebota es débil: en la vista de diagnóstico, mediana 4–7/255 y percentil 99 ≈ 52/255. Es correcto para una técnica de pantalla (solo ilumina desde lo que está cerca y en pantalla), pero no es un cambio de aspecto grande. La primera versión (ventana cuadrática, peso 0,35) era casi nula y se corrigió.
+- Pendiente del usuario: valorarlo en partidas reales y en salas con muchas superficies que brillan (Olympus, lava, interiores), y ajustar fuerza y alcance.
+- Pendientes de la lista del 13/11: personajes con todas las luces del motor (5) y niebla volumétrica (6).
+
+## Nivel 2, segunda parte: luces completas, reiluminación, HDR bloom y niebla (14/11/2026)
+
+Petición del usuario tras ver que el nivel 2 cambiaba poco: los dos puntos pendientes (personajes con todas las luces, niebla volumétrica) más reiluminar el escenario con las luces reales y un HDR con bloom de varias escalas. Todas activables en F1 > Video > «Modern lighting», encendidas por defecto.
+
+| Opción | Clave | Defecto | Qué hace |
+| --- | --- | --- | --- |
+| Personajes con todas las luces | `actor_all_lights` | sí | `engine_lights::inject_actor`: en los dibujos iluminados de la vista del mundo sin lightmap (y no a menos de 1,5 m de la cámara), cada ranura GX libre (en ninguna máscara de canal) recibe la siguiente luz del motor que alcanza el origen del modelo y no está cargada ya; las estáticas al 60 % porque el motor ya suma al ambiente las que no caben. Solo uniform. |
+| Reiluminar paredes | `world_relight`, `world_relight_strength` (0,6) | sí | En el material de entorno, las luces del motor dan además luz difusa (Lambert con la normal de relieve, mismo alcance y puerta de sombra del lightmap que los brillos) sobre la textura de la superficie. `lit_ext[2].w`, solo en dibujos con `usesEnvLights`. |
+| HDR bloom | `hdr_bloom`, `hdr_bloom_strength` (0,6), `hdr_bloom_threshold` (0,6) | sí | `kBloomPre` (1/2, lineal, alfa del EFB × 4 como brillo que no cabe en 8 bits, umbral), cinco reducciones hasta 1/64 y cinco ampliaciones con filtro tienda. Se suma en `kSceneLight` (enlace 6) con caída hacia blanco. Solo la imagen del mundo: el visor, el HUD y el cañón quedan fuera. |
+| Niebla volumétrica | `volumetric_fog`, `volumetric_fog_density` (0,5) | sí | `kFog` a 1/4: 10 pasos por el rayo de vista hasta la superficie visible (máx. 40 m) para las 4 luces del motor de las sombras de contacto (ahora con su color, `note_engine_lights(..., colors)`), atenuación por alcance y Henyey-Greenstein g = 0,35. Se compone con el bloom en `kAddCompose`. |
+
+Medidas (`hangar_1x_window` con parejas A/B, 1x, RTX 3050): 58,21 FPS de media, 8 de 81 ventanas por debajo de 57, GPU 35,1 % de media. Con todo encendido la imagen sube de media 7–21 niveles de 255 respecto a apagado (diferencia media 6–35 según la escena): paredes más iluminadas, halos amplios en disparos y llamas, y bruma iluminada en la cueva. Pendiente: valoración del usuario y ajuste de intensidades; la bruma junto al cañón en la cueva puede ser excesiva.

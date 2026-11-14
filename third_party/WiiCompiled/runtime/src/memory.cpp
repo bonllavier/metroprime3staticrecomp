@@ -398,6 +398,26 @@ bool SubmitPrimeIpcRequest(uint32_t request, bool& replyReady) {
                                   << std::dec << std::endl;
                 return true;
             }
+            if (ioctl == 0x3002u) {
+                // STM_ReleaseEventHook (Dolphin IOS/STM/STM.cpp, IOCTL_STM_RELEASE_EH): the pending
+                // event hook returns with event 0 and the release succeeds; without a hook, ENOENT
+                // (-6). The SDK calls it on the way to a shutdown, e.g. the game's own fatal error
+                // handler (0x803F6160). Unsupported, the guest fell into an MMIO write and a crash.
+                const uint32_t hook = PrimeIpcPendingEventHook().exchange(0, std::memory_order_acq_rel);
+                if (hook == 0) {
+                    Memory::Write32(request + 4u, static_cast<uint32_t>(-6));
+                    RT_LOG(RT_TAG_OS) << "IOS /dev/stm/immediate release event hook: none pending" << std::endl;
+                    return true;
+                }
+                const uint32_t hookOutput = Memory::Read32(hook + 24u);
+                if (hookOutput != 0 && Memory::Contains(hookOutput, 4u)) Memory::Write32(hookOutput, 0);
+                Memory::Write32(hook + 4u, 0);
+                QueuePrimeIpcReply(hook, 6u, 200);
+                Memory::Write32(request + 4u, 0);
+                RT_LOG(RT_TAG_OS) << "IOS /dev/stm/immediate release event hook request=0x" << std::hex << hook
+                                  << std::dec << std::endl;
+                return true;
+            }
             if (ioctl != 0x6002u) {
                 RT_LOG(RT_TAG_OS) << "Unsupported /dev/stm/immediate ioctl=0x"
                                   << std::hex << ioctl << std::dec << std::endl;

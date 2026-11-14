@@ -2313,6 +2313,20 @@ static const CachedPipelineState& soft_shadow_pipeline_state(const PipelineConfi
 
 // The 3D world's own view: perspective, a depth band of at least half the range (not the arm cannon,
 // sky layers or far backdrops) and nearly the full EFB width (not the radar or small inset views).
+// A model whose origin is within 1.5 m of the camera: in first person that is Samus herself (her
+// arms and suit in the gunship cockpit, F5 of 13/11/2026 22:56), which keeps the game's own look.
+static bool near_camera_model() noexcept {
+  const auto& m = g_gxState.pnMtx[std::min<u32>(g_gxState.currentPnMtx, MaxPnMtx - 1)].pos;
+  const float x = m.m0.w(), y = m.m1.w(), z = m.m2.w();
+  return x * x + y * y + z * z < 1.5f * 1.5f;
+}
+
+// Opaque as far as blending goes: no blending, or Prime's usual "blend One/Zero" for solid geometry.
+static bool opaque_blend() noexcept {
+  return g_gxState.blendMode == GX_BM_NONE ||
+         (g_gxState.blendMode == GX_BM_BLEND && g_gxState.blendFacSrc == GX_BL_ONE && g_gxState.blendFacDst == GX_BL_ZERO);
+}
+
 static bool env_world_view() noexcept {
   const auto& vp = g_gxState.logicalViewport;
   return g_gxState.projType == GX_PERSPECTIVE && vp.zfar - vp.znear >= 0.5f &&
@@ -2392,8 +2406,23 @@ struct ViewLight {
   float score = 0.f;
   uint32_t type = 0;
   bool dynamic = false;
+  float world[3]{};    // world position: identifies the light across frames
 };
 std::vector<ViewLight> g_view;
+// Contact-shadow lights of the previous frame (world position, weight). The four strongest lights were
+// picked anew every frame, and animated lights (pulsing pods, flickering lamps) swapped places: the
+// shadows jumped from one light to another and flickered (F5 of 13/11/2026 23:55). A light already in
+// use keeps its place against a slightly stronger newcomer, and a newcomer fades in.
+struct ContactPick {
+  float world[3];
+  float weight;
+  // Last view-space data, so a light that leaves the list fades out instead of vanishing.
+  float view[3];
+  float radius, luma, color[3];
+  uint8_t directional;
+};
+std::array<ContactPick, 4> g_contactPrev{};
+uint32_t g_contactPrevCount = 0;
 std::vector<uint32_t> g_dynamicOrder;  // g_view indices of the dynamic lights, in the engine's order
 uint32_t g_viewFrame = UINT32_MAX;
 bool g_viewValid = false;
@@ -2448,8 +2477,65 @@ Light to_gx(const AuroraEngineLight& l, const Mat3x4<float>& v) {
 
 float length3(const Vec4<float>& v) { return std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); }
 
-void frame(const Mat3x4<float>& view, uint32_t frame) {
+void frame(const Mat3x4<float>& takenView, uint32_t frame) {
   g_viewFrame = frame;
+  // The view comes from the frame's first static lightmapped draw, assumed to have the identity model
+  // matrix. Sometimes that draw is a moving piece instead (logged 14/11/2026: one frame's view 562 m away),
+  // and the engine lights jumped with it for a frame: the contact shadows flickered. A camera that moves
+  // more than 2 m in one frame is accepted only when the next frame confirms it (a real cut); meanwhile
+  // the last good view is used.
+  static Mat3x4<float> goodView{}, pendingView{};
+  static bool haveGood = false, havePending = false;
+  const auto camPos = [](const Mat3x4<float>& m) {
+    std::array<float, 3> p{};
+    for (int c = 0; c < 3; ++c) p[c] = -(m.m0[c] * m.m0[3] + m.m1[c] * m.m1[3] + m.m2[c] * m.m2[3]);
+    return p;
+  };
+  const auto movedFar = [&](const Mat3x4<float>& a, const Mat3x4<float>& b) {
+    const auto x = camPos(a), y = camPos(b);
+    return (x[0] - y[0]) * (x[0] - y[0]) + (x[1] - y[1]) * (x[1] - y[1]) + (x[2] - y[2]) * (x[2] - y[2]) > 4.f;
+  };
+  Mat3x4<float> view = takenView;
+  if (haveGood && movedFar(takenView, goodView)) {
+    if (havePending && !movedFar(takenView, pendingView)) {
+      goodView = takenView;  // two frames agree: a camera cut
+      havePending = false;
+    } else {
+      pendingView = takenView;
+      havePending = true;
+      view = goodView;
+    }
+  } else {
+    goodView = takenView;
+    haveGood = true;
+    havePending = false;
+  }
+  // Diagnostics: the view is taken from the frame's first static lightmapped draw, assumed to have an
+  // identity model matrix. A jump of the camera position by more than 2 m between consecutive frames
+  // that comes back the next frame means another matrix was taken (contact shadows would jump).
+  {
+    static Mat3x4<float> prev{}, prev2{};
+    static uint32_t prevFrame = UINT32_MAX, logged = 0;
+    const auto camPos = [](const Mat3x4<float>& m) {
+      // Camera position = -R^T t.
+      std::array<float, 3> p{};
+      for (int c = 0; c < 3; ++c) p[c] = -(m.m0[c] * m.m0[3] + m.m1[c] * m.m1[3] + m.m2[c] * m.m2[3]);
+      return p;
+    };
+    if (prevFrame + 1 == frame && logged < 40) {
+      const auto a = camPos(prev2), b = camPos(prev), c = camPos(takenView);
+      const auto dist = [](const std::array<float, 3>& x, const std::array<float, 3>& y) {
+        return std::sqrt((x[0] - y[0]) * (x[0] - y[0]) + (x[1] - y[1]) * (x[1] - y[1]) + (x[2] - y[2]) * (x[2] - y[2]));
+      };
+      if (dist(a, b) > 2.f && dist(b, c) > 2.f && dist(a, c) < 0.5f) {
+        ++logged;
+        Log.info("[engine-lights] world view glitch at frame {}: one frame's view {:.1f} m away", frame - 1, dist(a, b));
+      }
+    }
+    prev2 = prev;
+    prev = takenView;
+    prevFrame = frame;
+  }
   {
     float rows[12];
     for (int c = 0; c < 4; ++c) {
@@ -2475,6 +2561,7 @@ void frame(const Mat3x4<float>& view, uint32_t frame) {
     vl.gx = to_gx(l, view);
     vl.type = l.type;
     vl.dynamic = (l.flags & AURORA_ENGINE_LIGHT_DYNAMIC) != 0;
+    for (int c = 0; c < 3; ++c) vl.world[c] = l.pos[c];
     vl.radius = l.radius > 0.f && l.type != 2 ? std::min(l.radius, kUnbounded) : kUnbounded;
     const float maxChannel = std::max({vl.gx.color[0], vl.gx.color[1], vl.gx.color[2]});
     if (!(maxChannel > 0.01f)) continue;
@@ -2489,7 +2576,11 @@ void frame(const Mat3x4<float>& view, uint32_t frame) {
       if (d - vl.radius > 60.f || z < -vl.radius) {
         vl.score = 0.f;  // out of reach of anything near the camera, or entirely behind it
       } else {
-        vl.score = vl.luma * std::clamp(vl.radius / std::max(d, 0.5f), 0.f, 4.f) * (vl.dynamic ? 1.5f : 1.f);
+        // Distance to a point 6 m in front of the camera rather than to the camera itself: what is on
+        // screen matters, and the choice no longer swings as Samus walks up to an object (14/11/2026).
+        const float fx = vl.gx.pos[0], fy = vl.gx.pos[1], fz = vl.gx.pos[2] + 6.f;
+        const float df = std::sqrt(fx * fx + fy * fy + fz * fz);
+        vl.score = vl.luma * std::clamp(vl.radius / std::max(std::min(d, df), 1.0f), 0.f, 4.f) * (vl.dynamic ? 1.5f : 1.f);
       }
     }
     if (vl.dynamic) g_dynamicOrder.push_back(static_cast<uint32_t>(g_view.size()));
@@ -2522,26 +2613,76 @@ void frame(const Mat3x4<float>& view, uint32_t frame) {
   g_engineEnvLights.count = static_cast<uint32_t>(envCount);
   g_engineEnvLights.frame = frame;
   // Light shafts and contact shadows: the four strongest; shafts only for lights in front.
-  float positions[4][3] = {}, radius[4] = {}, luma[4] = {};
+  float positions[4][3] = {}, radius[4] = {}, luma[4] = {}, colors[4][3] = {};
   uint8_t directional[4] = {};
   float shaftPos[4][3] = {}, shaftLuma[4] = {};
   uint32_t count = 0, shafts = 0;
-  for (size_t k = 0; k < bestCount && (count < 4 || shafts < 4); ++k) {
-    const ViewLight& vl = g_view[best[k]];
-    if (count < 4) {
-      for (int c = 0; c < 3; ++c) positions[count][c] = vl.gx.pos[c];
-      radius[count] = vl.radius;
-      luma[count] = vl.luma;
-      directional[count] = vl.type == 2 ? 1 : 0;
-      ++count;
+  const auto prevWeight = [](const ViewLight& vl) -> float {
+    for (uint32_t p = 0; p < g_contactPrevCount; ++p) {
+      const auto& c = g_contactPrev[p];
+      const float dx = c.world[0] - vl.world[0], dy = c.world[1] - vl.world[1], dz = c.world[2] - vl.world[2];
+      if (dx * dx + dy * dy + dz * dz < 0.25f * 0.25f) return c.weight;
     }
+    return -1.f;
+  };
+  // Contact lights with hysteresis: the candidates (top 16) ranked by score, lights in use last frame
+  // counted 1.5 times as strong.
+  std::array<uint32_t, 16> contactOrder{};
+  for (size_t k = 0; k < bestCount; ++k) contactOrder[k] = best[k];
+  std::stable_sort(contactOrder.begin(), contactOrder.begin() + bestCount, [&](uint32_t a, uint32_t b) {
+    const float sa = g_view[a].score * (prevWeight(g_view[a]) >= 0.f ? 1.5f : 1.f);
+    const float sb = g_view[b].score * (prevWeight(g_view[b]) >= 0.f ? 1.5f : 1.f);
+    return sa > sb;
+  });
+  std::array<ContactPick, 4> picks{};
+  for (size_t k = 0; k < bestCount && count < 4; ++k) {
+    const ViewLight& vl = g_view[contactOrder[k]];
+    const float before = prevWeight(vl);
+    // About a sixth of a second to fade in.
+    const float weight = before >= 0.f ? std::min(before + 0.1f, 1.f) : 0.1f;
+    for (int c = 0; c < 3; ++c) positions[count][c] = vl.gx.pos[c];
+    radius[count] = vl.radius;
+    luma[count] = vl.luma * weight;
+    directional[count] = vl.type == 2 ? 1 : 0;
+    {
+      const float mx = std::max({vl.gx.color[0], vl.gx.color[1], vl.gx.color[2], 1.0e-4f});
+      for (int c = 0; c < 3; ++c) colors[count][c] = vl.gx.color[c] / mx;
+    }
+    picks[count] = ContactPick{{vl.world[0], vl.world[1], vl.world[2]}, weight,
+                               {vl.gx.pos[0], vl.gx.pos[1], vl.gx.pos[2]}, vl.radius, vl.luma,
+                               {colors[count][0], colors[count][1], colors[count][2]}, directional[count]};
+    ++count;
+  }
+  // Lights that dropped out of the list (out of reach, behind the camera, a shot that ended) fade out over
+  // a sixth of a second in a free slot, at their last position: before, their shadows vanished at once.
+  for (uint32_t p = 0; p < g_contactPrevCount && count < 4; ++p) {
+    const ContactPick& old = g_contactPrev[p];
+    bool kept = false;
+    for (uint32_t k = 0; k < count && !kept; ++k) {
+      const float dx = picks[k].world[0] - old.world[0], dy = picks[k].world[1] - old.world[1], dz = picks[k].world[2] - old.world[2];
+      kept = dx * dx + dy * dy + dz * dz < 0.25f * 0.25f;
+    }
+    if (kept || old.weight <= 0.1f) continue;
+    ContactPick fading = old;
+    fading.weight = old.weight - 0.1f;
+    for (int c = 0; c < 3; ++c) positions[count][c] = fading.view[c];
+    radius[count] = fading.radius;
+    luma[count] = fading.luma * fading.weight;
+    directional[count] = fading.directional;
+    for (int c = 0; c < 3; ++c) colors[count][c] = fading.color[c];
+    picks[count++] = fading;
+  }
+  g_contactPrev = picks;
+  g_contactPrevCount = count;
+  for (size_t k = 0; k < bestCount && shafts < 4; ++k) {
+    const ViewLight& vl = g_view[best[k]];
     if (shafts < 4 && vl.type != 2 && -vl.gx.pos[2] > 0.1f) {
       for (int c = 0; c < 3; ++c) shaftPos[shafts][c] = vl.gx.pos[c];
       shaftLuma[shafts] = std::min(vl.luma, 1.f);
       ++shafts;
     }
   }
-  gfx::post::note_engine_lights(count, positions, radius, luma, directional);
+  gfx::post::note_engine_lights(count, positions, radius, luma, directional, colors);
   if (gfx::post::light_shafts_wanted() && shafts > 0) gfx::post::note_lights(shafts, shaftPos, shaftLuma);
 }
 
@@ -2553,6 +2694,10 @@ struct InjectSave {
   bool active = false;
   std::array<Light, 4> lights{};
   std::array<std::bitset<GX::MaxLights>, 4> masks{};
+  // inject_actor: the slots it filled and their previous contents (slotCount 0 = inject_extra's layout).
+  std::array<uint32_t, GX::MaxLights> slots{};
+  std::array<Light, GX::MaxLights> saved{};
+  uint32_t slotCount = 0;
 };
 
 bool inject_extra(InjectSave& save, uint32_t frame) {
@@ -2610,9 +2755,82 @@ bool inject_extra(InjectSave& save, uint32_t frame) {
   return true;
 }
 
+// Modern lighting, level 2: characters and objects lit by every engine light around them. The engine
+// gives an actor at most four area lights and four dynamic ones and folds the rest into a flat ambient
+// colour (CActorLights, iluminacion_motor.md). Each free GX slot (in no channel's mask) gets the next
+// strongest engine light whose reach covers the model's origin and that is not loaded already. Static
+// lights are added at 60 %: part of their light already is in the ambient colour. Uniform only.
+bool inject_actor(InjectSave& save, uint32_t frame, const Vec4<float>* origin) {
+  if (!g_viewValid || g_viewFrame != frame || g_view.empty()) return false;
+  std::bitset<GX::MaxLights> usedSlots;
+  for (size_t ch = 0; ch < 4; ++ch) usedSlots |= g_gxState.colorChannelState[ch].lightMask;
+  const auto mask0 = g_gxState.colorChannelState[GX_COLOR0].lightMask;
+  if (mask0.none()) return false;
+  std::array<uint32_t, GX::MaxLights> freeSlots{};
+  uint32_t freeCount = 0;
+  for (uint32_t s = 0; s < GX::MaxLights; ++s)
+    if (!usedSlots.test(s)) freeSlots[freeCount++] = s;
+  if (freeCount == 0) return false;
+  const float ox = origin[0][3], oy = origin[1][3], oz = origin[2][3];
+  struct Candidate { uint32_t index; float score; };
+  std::array<Candidate, 8> best{};
+  uint32_t bestCount = 0;
+  for (uint32_t i = 0; i < g_view.size(); ++i) {
+    const ViewLight& vl = g_view[i];
+    if (vl.type == 2 || !(vl.luma > 0.f)) continue;
+    const float dx = vl.gx.pos[0] - ox, dy = vl.gx.pos[1] - oy, dz = vl.gx.pos[2] - oz;
+    const float d2 = dx * dx + dy * dy + dz * dz;
+    if (vl.radius < kUnbounded && d2 > vl.radius * vl.radius) continue;
+    bool loaded = false;
+    for (uint32_t s = 0; s < GX::MaxLights && !loaded; ++s) {
+      if (!usedSlots.test(s)) continue;
+      const Light& l = g_gxState.lights[s];
+      const float tolerance = 1.0e-3f * (1.f + length3(l.pos));
+      loaded = std::abs(l.pos[0] - vl.gx.pos[0]) < tolerance && std::abs(l.pos[1] - vl.gx.pos[1]) < tolerance &&
+               std::abs(l.pos[2] - vl.gx.pos[2]) < tolerance;
+    }
+    if (loaded) continue;
+    const float x = vl.radius < kUnbounded ? std::sqrt(d2) / vl.radius : 0.f;
+    const float score = vl.luma * (1.f - x * x) * (vl.dynamic ? 1.5f : 1.f);
+    if (!(score > 0.f)) continue;
+    uint32_t at = bestCount < best.size() ? bestCount++ : best.size();
+    if (at == best.size()) {
+      if (score <= best[best.size() - 1].score) continue;
+      at = best.size() - 1;
+    }
+    while (at > 0 && best[at - 1].score < score) { best[at] = best[at - 1]; --at; }
+    best[at] = Candidate{i, score};
+  }
+  const uint32_t add = std::min(freeCount, bestCount);
+  if (add == 0) return false;
+  save.active = true;
+  save.slots = {};
+  save.slotCount = 0;
+  for (size_t ch = 0; ch < 4; ++ch) save.masks[ch] = g_gxState.colorChannelState[ch].lightMask;
+  std::bitset<GX::MaxLights> added;
+  for (uint32_t k = 0; k < add; ++k) {
+    const uint32_t slot = freeSlots[k];
+    save.slots[save.slotCount] = slot;
+    save.saved[save.slotCount++] = g_gxState.lights[slot];
+    Light light = g_view[best[k].index].gx;
+    if (!g_view[best[k].index].dynamic)
+      for (int c = 0; c < 3; ++c) light.color[c] *= 0.6f;
+    g_gxState.lights[slot] = light;
+    added.set(slot);
+  }
+  for (size_t ch = 0; ch < 4; ++ch)
+    if (g_gxState.colorChannelState[ch].lightMask == mask0) g_gxState.colorChannelState[ch].lightMask |= added;
+  g_gxState.preparedLightsDirty = true;
+  return true;
+}
+
 void restore(InjectSave& save) {
   if (!save.active) return;
-  for (size_t i = 0; i < 4; ++i) g_gxState.lights[4 + i] = save.lights[i];
+  if (save.slotCount > 0) {
+    for (uint32_t i = 0; i < save.slotCount; ++i) g_gxState.lights[save.slots[i]] = save.saved[i];
+  } else {
+    for (size_t i = 0; i < 4; ++i) g_gxState.lights[4 + i] = save.lights[i];
+  }
   for (size_t ch = 0; ch < 4; ++ch) g_gxState.colorChannelState[ch].lightMask = save.masks[ch];
   g_gxState.preparedLightsDirty = true;
   save.active = false;
@@ -2911,7 +3129,10 @@ static void dump_draw_textures(std::FILE* f, const PipelineConfig* config) {
   if (config != nullptr) {
     // Material line: what decides which host material effects apply (lighting, texgen sources).
     const auto& sc = config->shaderConfig;
-    std::fprintf(f, "  mat ppl=%u metal=%u lit=%d/%d lights=0x%02x/0x%02x nrm=%u stages=%u texgen=", unsigned(sc.perPixelLighting),
+    // env: the environment material variant; cls: the material slot of the draw (-1 = none, 0 = the
+    // generic metal, 14 = default lit material, 15 = world surfaces).
+    std::fprintf(f, "  mat env=%u cls=%d ppl=%u metal=%u lit=%d/%d lights=0x%02x/0x%02x nrm=%u stages=%u texgen=",
+                 unsigned(sc.envMaterial), g_drawMetal.active ? int(g_drawMetal.extSlot) : -1, unsigned(sc.perPixelLighting),
                  unsigned(sc.enhancedMetal), int(sc.colorChannels[0].lightingEnabled),
                  int(sc.colorChannels[1].lightingEnabled), unsigned(s.colorChannelState[0].lightMask.to_ulong()),
                  unsigned(s.colorChannelState[1].lightMask.to_ulong()), unsigned(sc.attrs[GX_VA_NRM].attrType),
@@ -2933,12 +3154,39 @@ static void dump_draw_textures(std::FILE* f, const PipelineConfig* config) {
     if (bind.ref)
       std::fprintf(f, "/%ux%u/hf%u/m%u/r%d", bind.ref->size.width, bind.ref->size.height,
                    unsigned(bind.ref->gxFormat), unsigned(bind.ref->mipCount), int(bind.ref->isReplacement));
+    // GX filters the game asked for (GXTexFilter: 0 near, 1 linear, 2..5 mip modes).
+    std::fprintf(f, "/flt%u,%u", unsigned(obj.min_filter()), unsigned(obj.mag_filter()));
     if (gfx::draw_dump::g_saveTextures.load(std::memory_order_acquire) && obj.data != nullptr) {
       const std::filesystem::path dir = gfx::draw_dump::base_path() + ".textures";
       std::fprintf(f, "/n%s", gfx::texture_replacement::dump_texture_for_inspection(obj, dir).c_str());
     }
   }
   std::fputc('\n', f);
+  // Indirect texturing: per TEV stage that uses it (stage:indStage/format/bias/mtx/wrapS,wrapT/addPrev),
+  // then the indirect stages (texcoord, texmap, scaleS, scaleT) and the matrices (rows, scale exponent).
+  if (s.numIndStages > 0) {
+    std::fprintf(f, "  ind");
+    for (u32 i = 0; i < s.numTevStages; ++i) {
+      const auto& st = s.tevStages[i];
+      if (st.indTexMtxId == GX_ITM_OFF && st.indTexWrapS == GX_ITW_OFF && st.indTexWrapT == GX_ITW_OFF &&
+          !st.indTexAddPrev)
+        continue;
+      std::fprintf(f, " s%u=%u/f%u/b%u/m%u/w%u,%u/a%d", i, unsigned(st.indTexStage), unsigned(st.indTexFormat),
+                   unsigned(st.indTexBiasSel), unsigned(st.indTexMtxId), unsigned(st.indTexWrapS),
+                   unsigned(st.indTexWrapT), int(st.indTexAddPrev));
+    }
+    for (u32 i = 0; i < s.numIndStages; ++i) {
+      const auto& is = s.indStages[i];
+      std::fprintf(f, " i%u=tc%u/tm%u/sc%u,%u", i, unsigned(is.texCoordId), unsigned(is.texMapId),
+                   unsigned(is.scaleS), unsigned(is.scaleT));
+    }
+    for (u32 i = 0; i < s.indTexMtxs.size(); ++i) {
+      const auto& m = s.indTexMtxs[i].mtx;
+      std::fprintf(f, " M%u=%g,%g,%g|%g,%g,%g/e%d", i, m.m0.x, m.m1.x, m.m2.x, m.m0.y, m.m1.y, m.m2.y,
+                   int(s.indTexMtxs[i].scaleExp));
+    }
+    std::fputc('\n', f);
+  }
 }
 
 static void dump_draw(std::FILE* f, GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount, const gfx::Range& vertRange) {
@@ -3226,12 +3474,37 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
   if (!g_drawMetal.active && (drawTags & gfx::texture_replacement::TagNoMetal) != 0) {
     g_drawMetal.active = true;  // skin: no metal at all
   }
+  // Modern lighting, level 2: lit, opaque objects of the world view without a reflection map, a material
+  // class or a lightmap (enemies, doors, props: 18 % of the opaque world draws in 77 F7 dumps) get the
+  // material block with the default class, a soft dielectric. Same pipeline table and vertex-lit
+  // fallback as a class texture.
+  if (!g_drawMetal.active && g_defaultLitMaterial.load(std::memory_order_relaxed)) UNLIKELY {
+    const auto* config = resolvedState->config;
+    if (config != nullptr && config->shaderConfig.perPixelLighting != 0 && config->shaderConfig.enhancedMetal == 0 &&
+        resolvedState->shaderInfo.lightingEnabled && !resolvedState->shaderInfo.uber && opaque_blend() &&
+        g_gxState.depthUpdate && env_world_view() && config->shaderConfig.attrs[GX_VA_NRM].attrType != GX_NONE &&
+        env_lightmap_stage(config->shaderConfig) < 0 && !near_camera_model()) {
+      const uint64_t packed = g_materialClasses[DefaultLitMaterialClass].load(std::memory_order_relaxed);
+      if (packed != 0) {
+        resolvedState = &material_pipeline_state(*config);
+        const uint32_t strengthBits = static_cast<uint32_t>(packed >> 32);
+        std::memcpy(&g_drawMetal.strength, &strengthBits, sizeof(float));
+        g_drawMetal.params = static_cast<uint32_t>(packed);
+        g_drawMetal.extSlot = static_cast<int8_t>(DefaultLitMaterialClass);
+        g_drawMetal.active = true;
+      }
+    }
+  }
   // World surfaces (experimental levels 1-2): lightmapped, unlit, opaque draws of the world view get
   // the environment material; their class is the texture's own, or the generic world class.
   const bool envMaterialOn = g_envMaterial.load(std::memory_order_relaxed);
   const bool envLightsOn = g_envBorrowedLights.load(std::memory_order_relaxed);
   const bool shaftsOn = gfx::post::light_shafts_wanted();
   const bool litRoomsOn = g_litRoomMaterial.load(std::memory_order_relaxed);
+  // Opaque means "no blending or blend One/Zero" (opaque_blend): Prime draws all its solid world
+  // geometry with blending enabled and One/Zero factors (every F7 dump, 05-13/11/2026). Until
+  // 13/11/2026 these two tests asked for GX_BM_NONE, which no world draw has, so neither the
+  // environment material nor the lit-room material was ever applied in the game.
   if (envMaterialOn || envLightsOn || shaftsOn || litRoomsOn) UNLIKELY {
     const uint32_t frame = gfx::current_frame();
     borrowed_lights_frame(frame);
@@ -3243,7 +3516,7 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
     if (litRoomsOn && !g_drawMetal.active && config != nullptr && worldView &&
         resolvedState->shaderInfo.lightingEnabled && config->shaderConfig.perPixelLighting != 0 &&
         config->shaderConfig.enhancedMetal == 0 && !resolvedState->shaderInfo.uber &&
-        g_gxState.blendMode == GX_BM_NONE && g_gxState.depthUpdate &&
+        opaque_blend() && g_gxState.depthUpdate &&
         env_lightmap_stage(config->shaderConfig) >= 0) {
       const uint64_t packed = g_materialClasses[EnvMaterialClass].load(std::memory_order_relaxed);
       if (packed != 0) {
@@ -3257,7 +3530,7 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
     }
     if (envMaterialOn && !g_drawMetal.active && config != nullptr && worldView &&
         !resolvedState->shaderInfo.lightingEnabled && !resolvedState->shaderInfo.uber &&
-        g_gxState.blendMode == GX_BM_NONE && g_gxState.depthUpdate &&
+        opaque_blend() && g_gxState.depthUpdate &&
         config->shaderConfig.attrs[GX_VA_NRM].attrType != GX_NONE && env_lightmap_stage(config->shaderConfig) >= 0) {
       uint8_t cls = gfx::texture_replacement::material_class_of(drawTags);
       uint64_t packed = 0;
@@ -3348,6 +3621,15 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
     if (config != nullptr && config->shaderConfig.attrs[GX_VA_PNMTXIDX].attrType == GX_NONE && env_world_view() &&
         env_lightmap_stage(config->shaderConfig) >= 0)
       engine_lights::inject_extra(injected, gfx::current_frame());
+  }
+  // Level 2: characters and objects lit by every engine light around them.
+  if (!injected.active && g_actorAllLights.load(std::memory_order_relaxed) && info.lightingEnabled) UNLIKELY {
+    const auto* config = pipelineState.config;
+    if (config != nullptr && env_world_view() && env_lightmap_stage(config->shaderConfig) < 0 && !near_camera_model()) {
+      const auto& m = g_gxState.pnMtx[std::min<u32>(g_gxState.currentPnMtx, MaxPnMtx - 1)].pos;
+      const Vec4<float> rows[3] = {m.m0, m.m1, m.m2};
+      engine_lights::inject_actor(injected, gfx::current_frame(), rows);
+    }
   }
   const auto uniformRanges =
       build_uniform(info, vertRange.offset, ranges, drawIdentity, interpolationIdentityActive,

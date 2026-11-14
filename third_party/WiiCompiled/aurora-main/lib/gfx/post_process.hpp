@@ -75,13 +75,30 @@ struct Modern {
   bool exposure = false;         // automatic exposure with a highlight-preserving curve
   float exposureRange = 0.8f;    // EV
   float exposureSpeed = 1.5f;    // seconds
+  // Level 2 (13/11/2026): bounce light in screen space. What the frame shows lights what is next to it;
+  // surfaces the game marks as glowing (EFB alpha) count as light sources.
+  bool gi = false;
+  float giStrength = 1.0f;       // 0..2 overall amount
+  float giEmissive = 1.0f;       // 0..2 light from glowing surfaces (doors, lava, strips, shots)
+  float giBounce = 0.6f;         // 0..1 light bounced by ordinary lit surfaces
+  float giRadius = 3.0f;         // metres a surface's light reaches
+  float giSamples = 8.0f;        // 4..16 samples per pixel (half resolution)
+  // Level 2: HDR bloom from the world picture, its brightness rebuilt from the game's glow mask, blurred
+  // over six scales; and light scattered in the air around the engine's lights (volumetric fog).
+  bool hdrBloom = false;
+  float bloomStrength = 0.6f;    // 0..2
+  float bloomThreshold = 0.6f;   // linear luminance where bloom starts (0.1..2)
+  float bloomGlow = 4.0f;        // how many times brighter the glowing surfaces count (0..8)
+  bool fog = false;
+  float fogDensity = 0.5f;       // 0..2
+  float fogRange = 40.0f;        // metres of air considered (10..80)
 };
 void set_modern(const Modern& modern);
 Modern modern();
 // The frame's strongest engine lights (GX view space; a directional light is a point far against its
 // direction), their range in world units, luminance and directional flag. count 0 = none this frame.
 void note_engine_lights(uint32_t count, const float (*positions)[3], const float* radius, const float* luma,
-                        const uint8_t* directional);
+                        const uint8_t* directional, const float (*colors)[3] = nullptr);
 // The world's view matrix of the frame (3x4, rows), noted at its first static lightmapped draw.
 void note_world_view(const float* rows);
 

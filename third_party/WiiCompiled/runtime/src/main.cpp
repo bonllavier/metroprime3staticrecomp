@@ -70,6 +70,9 @@ extern "C" void InstallDxgiFrameLatencyLimit(unsigned frames);
 #include "gx_guest_write.h"
 #include "memory.h"
 #include "system_bridge.h"
+#if !defined(_WIN32)
+#include <SDL3/SDL_messagebox.h>
+#endif
 #include "ppc_runtime.h"
 #include "aurora_events.h"
 #include "wii_remote_input.h"
@@ -934,9 +937,10 @@ void ShowRuntimeFatalPopup(std::string_view category, std::string_view details) 
         ::MessageBoxA(nullptr, message.c_str(), title.c_str(),
                       MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TASKMODAL);
 #else
-        // The shipped product is Windows-first. Keep non-Windows builds safe
-        // and retain the console diagnostic when no native dialog is available.
+        // Linux: SDL's message box (X11, Wayland), as the disc selector does. Without it the
+        // window just froze and closed and the reason was only in the log (13/11/2026).
         RT_LOGF(RT_TAG_RUNTIME, "fatal dialog: %s\n", message.c_str());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title.c_str(), message.c_str(), nullptr);
 #endif
     } catch (...) {
         // Reporting a crash must never throw or mask the original failure.

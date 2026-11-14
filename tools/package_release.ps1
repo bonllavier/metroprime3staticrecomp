@@ -99,6 +99,7 @@ resolution_multiplier = 0
 msaa = 1
 anisotropic_filtering = 16
 per_pixel_lighting = true
+smooth_distortion = true
 enhanced_metal = true
 enhanced_metal_strength = 0.30
 enhanced_metal_roughness = 0.25
@@ -107,6 +108,13 @@ enhanced_metal_edge = 0.50
 enhanced_metal_detail = 1.00
 # Ship hulls and other identified surfaces get the same modern material (needs per-pixel lighting).
 enhanced_materials = true
+# Modern lighting (F1 > Video). Off in the published version (user decision, 14/11/2026): they change
+# the game's look too much (automatic exposure pumps the brightness).
+auto_exposure = false
+actor_all_lights = false
+world_relight = false
+hdr_bloom = false
+volumetric_fog = false
 texture_upscale = 0
 frame_interpolation_fps = 0
 # V-Sync: wait for the monitor refresh (no tearing, a little more latency). F1 > Video.

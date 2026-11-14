@@ -236,3 +236,13 @@ Petición del usuario: materiales nuevos para los operadores del Olympus, con el
 - **Fuera a propósito:** los mapas de luces del traje (`7aea837c`, `2a9bd4e3`), las máscaras de reflejo, los mapas de entorno de 32×32 compartidos por traje y cara, los ojos (`1c9f40b6`) y los dientes (`59d8604c`).
 - **Límites:** la capucha está en el mismo atlas que la cara, así que comparte el material mate de piel, y las manos de la mujer el de caucho del traje. Separarlas por saturación (como la pintura de la nave) no es fiable con estos colores.
 - **Ajuste:** F1 > Materials > «G.F.S. Olympus operators: suit / face». Pruebas gráficas completas en verde. Pendiente: QA visual del usuario en el Olympus.
+
+## Distorsiones sin escalones (`smooth_distortion`, 12/11/2026)
+
+- **Síntoma:** a 1815×866 (multiplicador 0, ventana de 1920), la esfera del disparo cargado y el fondo del visor de escaneo al llamar a la nave se veían pixelados. El cañón refractado mostraba escalones de unos 3×2 píxeles, el tamaño de un texel de la EFB nativa (640×448).
+- **Diagnóstico (captura F7 `capture_20261112_225023`):** el dibujo 957 (pasada 2) copia la zona del cañón, 164×218 texels GX (465×422 en el host, resolución completa), y la deforma con texturas indirectas (mapa RGBA8 de 64×64). El problema no está en la copia ni en el filtro del sampler. Aurora, como el hardware, redondea la muestra indirecta a bytes, y el desplazamiento avanza en saltos de texeles nativos enteros. A resolución nativa el salto es de un píxel; al reescalar se nota.
+- **Cambio:** con `[video] smooth_distortion = true` (por defecto; F1 > Video > «Smooth distortion effects»), el shader suma al desplazamiento entero la fracción por debajo del byte de la muestra filtrada, con la misma matriz, el mismo `>>3` y el mismo exponente. Solo afecta al formato ITF_8, con matrices estáticas y dinámicas S/T. Los bytes exactos (mapas muestreados con nearest) dan fracción cero y conservan el resultado del hardware.
+- **Implementación:** `t_IndTexRaw` en el shader específico y `ind_tf` en el ubershader (`gx/shader.cpp`). La opción llega en `ind_mtx[impar].w` (`gx/shader_info.cpp`, `g_smoothIndirect`), sin tocar la clave de pipeline: se cambia en caliente. API `aurora_set_smooth_indirect`.
+- **Coste:** el primer arranque tras el cambio recompiló 4.122 de 31.389 shaders (precarga de 96 s en Linux); después vienen de la caché.
+- **Validado:** compila, precarga sin errores de validación WGSL y 60 FPS en el menú.
+- **Pendiente:** confirmación visual en el juego (disparo cargado y llamada a la nave).

@@ -824,7 +824,8 @@ UniformRanges build_uniform(const ShaderInfo& info, u32 vtxStart, const BindGrou
       buf.append(Vec4<s32>{indirect_matrix_mantissa(mtx.mtx.m0.x), indirect_matrix_mantissa(mtx.mtx.m0.y),
                            indirect_matrix_mantissa(mtx.mtx.m1.x), indirect_matrix_mantissa(mtx.mtx.m1.y)});
       buf.append(Vec4<s32>{indirect_matrix_mantissa(mtx.mtx.m2.x), indirect_matrix_mantissa(mtx.mtx.m2.y),
-                           indirect_matrix_shift(mtx.scaleExp), 0});
+                           indirect_matrix_shift(mtx.scaleExp),
+                           g_smoothIndirect.load(std::memory_order_relaxed) ? 1 : 0});
     }
   }
   for (int i = 0; i < info.sampledTexCoords.size(); ++i) {
@@ -863,14 +864,19 @@ UniformRanges build_uniform(const ShaderInfo& info, u32 vtxStart, const BindGrou
     lit[0] = g_softHighlights.load(std::memory_order_relaxed) ? 1.0f : 0.0f;
     lit[1] = g_linearBlend.load(std::memory_order_relaxed) ? 1.0f : 0.0f;
     lit[3] = g_smoothLightmaps.load(std::memory_order_relaxed) ? 1.0f : 0.0f;
+    // [1].w: level 2 flags as a small integer (bit 0 texture relief, bit 1 game material masks).
+    lit[7] = (g_textureRelief.load(std::memory_order_relaxed) ? 1.0f : 0.0f) +
+             (g_gameMaterialMasks.load(std::memory_order_relaxed) ? 2.0f : 0.0f);
     if (g_areaReflections.load(std::memory_order_relaxed)) {
       float up[3], down[3];
       if (gfx::post::area_colours(up, down)) {
         lit[2] = 1.0f;
-        lit[4] = up[0]; lit[5] = up[1]; lit[6] = up[2]; lit[7] = 1.0f;
-        lit[8] = down[0]; lit[9] = down[1]; lit[10] = down[2]; lit[11] = 1.0f;
+        lit[4] = up[0]; lit[5] = up[1]; lit[6] = up[2];
+        lit[8] = down[0]; lit[9] = down[1]; lit[10] = down[2];
       }
     }
+    // [2].w: scene relighting strength, only for the environment material (lightmapped surfaces).
+    lit[11] = info.usesEnvLights ? g_worldRelight.load(std::memory_order_relaxed) : 0.0f;
     buf.append(lit.data(), sizeof(lit));
   }
   if (info.usesEnvLights) {

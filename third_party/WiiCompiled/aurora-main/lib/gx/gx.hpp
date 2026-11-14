@@ -54,6 +54,10 @@ namespace aurora::gx {
 // Runtime toggle (aurora_set_per_pixel_lighting): copied into ShaderConfig::perPixelLighting
 // when a pipeline config is built, so each mode has its own shader/pipeline cache rows.
 extern std::atomic<bool> g_perPixelLighting;
+// Smooth indirect offsets (aurora_set_smooth_indirect): keeps the sub-byte fraction of a filtered
+// indirect sample in the offset, so distortion effects do not step by whole native texels at high
+// resolution. Reaches the shader through ind_mtx[odd].w (no pipeline key change, live).
+extern std::atomic<bool> g_smoothIndirect;
 // "Enhanced metal" (aurora_set_enhanced_metal): per-pixel environment reflection, Fresnel and
 // specular highlights on lit, per-pixel-lit materials that use a normal-based texgen (Prime's metal).
 // The strength reaches the shader through the uniform header pad (no pipeline key change).
@@ -108,6 +112,22 @@ extern std::atomic<bool> g_softShadows;
 extern std::atomic<bool> g_engineLightsOption;
 extern std::atomic<bool> g_extraDynamicLights;
 extern std::atomic<bool> g_lightmapDither;
+// Modern lighting, level 2 (docs/iluminacion_motor.md, 13/11/2026), each on its own. All three reuse
+// the game's own data, nothing is authored or loaded:
+// textureRelief: the detail normal of the material block comes from the surface's own texture sample
+// instead of the shaded colour (baked shadows and light falloff no longer read as relief);
+// defaultLitMaterial: lit, opaque world objects without a reflection map or a material class get the
+// material block with a soft dielectric class (DefaultLitMaterialClass);
+// gameMaterialMasks: the game's reflection mask texture scales the metal per pixel, and the light the
+// material's emissive stage adds stays out of the block (it is neither dimmed nor shaded).
+extern std::atomic<bool> g_textureRelief;
+extern std::atomic<bool> g_defaultLitMaterial;
+extern std::atomic<bool> g_gameMaterialMasks;
+// Level 2: characters and objects get the engine lights around them in their free GX slots;
+// worldRelight: lightmapped walls and floors also take diffuse light from the engine's lights.
+extern std::atomic<bool> g_actorAllLights;
+extern std::atomic<float> g_worldRelight;
+constexpr uint8_t DefaultLitMaterialClass = 14;
 // Trailing lit_ext uniform of material shaders (after mat_ext): flags, area colour above, below.
 constexpr size_t LitExtFloats = 12;
 constexpr bool UseReversedZ = true;
@@ -869,6 +889,74 @@ inline int env_lightmap_stage(const ShaderConfig& config) noexcept {
     }
   }
   return -1;
+}
+
+// Modern lighting, level 2: stages of Prime's materials recognised by the TEV structure (77 F7 dumps,
+// 13/11/2026). Each returns -1 when the material has no such stage.
+//
+// The surface's own colour texture: sampled through a vertex UV, written to PREV, and neither the
+// lightmap, a register load (reflection mask) nor a term added to PREV (emissive, reflection).
+inline int material_diffuse_stage(const ShaderConfig& config) noexcept {
+  const int lightmap = env_lightmap_stage(config);
+  for (u32 i = 0; i < config.tevStageCount; ++i) {
+    if (static_cast<int>(i) == lightmap) continue;
+    const auto& stage = config.tevStages[i];
+    const auto dependency = tev_stage_texture_dependency(config, i);
+    if (!dependency.combinerUsesTexture || !dependency.canSampleTexture || dependency.texCoordId < 0 ||
+        static_cast<u32>(dependency.texCoordId) >= MaxTexCoord)
+      continue;
+    const auto src = config.tcgs[static_cast<u32>(dependency.texCoordId)].src;
+    if (src < GX_TG_TEX0 || src > GX_TG_TEX7) continue;
+    const auto& c = stage.colorPass;
+    if (c.a != GX_CC_TEXC && c.b != GX_CC_TEXC && c.c != GX_CC_TEXC && c.d != GX_CC_TEXC) continue;
+    if (stage.colorOp.outReg != GX_TEVPREV) continue;
+    if (i > 0 && c.d == GX_CC_CPREV) continue;
+    return static_cast<int>(i);
+  }
+  return -1;
+}
+// The reflection mask: a stage that only loads a texture into a colour register (0, 0, 0, TEXC), which
+// a later stage multiplies with the environment map (normal texgen) and adds to PREV.
+inline int material_reflection_mask_stage(const ShaderConfig& config) noexcept {
+  for (u32 i = 0; i < config.tevStageCount; ++i) {
+    const auto& stage = config.tevStages[i];
+    const auto& c = stage.colorPass;
+    if (c.a != GX_CC_ZERO || c.b != GX_CC_ZERO || c.c != GX_CC_ZERO || c.d != GX_CC_TEXC) continue;
+    if (stage.colorOp.outReg == GX_TEVPREV) continue;
+    const auto dependency = tev_stage_texture_dependency(config, i);
+    if (!dependency.combinerUsesTexture || !dependency.canSampleTexture) continue;
+    const GXTevColorArg reg = stage.colorOp.outReg == GX_TEVREG0   ? GX_CC_C0
+                              : stage.colorOp.outReg == GX_TEVREG1 ? GX_CC_C1
+                                                                   : GX_CC_C2;
+    for (u32 j = i + 1; j < config.tevStageCount; ++j) {
+      const auto& l = config.tevStages[j].colorPass;
+      if (l.d != GX_CC_CPREV) continue;
+      if (!((l.b == reg && l.c == GX_CC_TEXC) || (l.c == reg && l.b == GX_CC_TEXC))) continue;
+      const auto later = tev_stage_texture_dependency(config, j);
+      if (!later.canSampleTexture || later.texCoordId < 0 || static_cast<u32>(later.texCoordId) >= MaxTexCoord) continue;
+      if (config.tcgs[static_cast<u32>(later.texCoordId)].src == GX_TG_NRM) return static_cast<int>(i);
+    }
+  }
+  return -1;
+}
+// The emissive stage: the last stage, adding a vertex-UV texture times a constant to PREV
+// (PREV + K * texture). Only the last stage qualifies, so what it adds is exactly the difference of
+// PREV across it.
+inline int material_emissive_stage(const ShaderConfig& config) noexcept {
+  if (config.tevStageCount < 2) return -1;
+  const u32 i = config.tevStageCount - 1;
+  const auto& stage = config.tevStages[i];
+  const auto& c = stage.colorPass;
+  if (stage.colorOp.outReg != GX_TEVPREV || stage.colorOp.op != GX_TEV_ADD || c.d != GX_CC_CPREV || c.a != GX_CC_ZERO)
+    return -1;
+  const auto isConst = [](GXTevColorArg arg) { return arg == GX_CC_KONST || arg == GX_CC_ONE; };
+  if (!((isConst(c.b) && c.c == GX_CC_TEXC) || (isConst(c.c) && c.b == GX_CC_TEXC))) return -1;
+  const auto dependency = tev_stage_texture_dependency(config, i);
+  if (!dependency.combinerUsesTexture || !dependency.canSampleTexture || dependency.texCoordId < 0 ||
+      static_cast<u32>(dependency.texCoordId) >= MaxTexCoord)
+    return -1;
+  const auto src = config.tcgs[static_cast<u32>(dependency.texCoordId)].src;
+  return src >= GX_TG_TEX0 && src <= GX_TG_TEX7 ? static_cast<int>(i) : -1;
 }
 
 inline bool shader_uses_fixed_texcoord_state(const ShaderConfig& config) noexcept {

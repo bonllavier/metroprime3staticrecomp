@@ -97,10 +97,29 @@ void Apply() {
         m.contactLength = c.modernContactLength.value_or(0.6f);
         m.temporal = modern && c.modernTemporal.value_or(true);
         m.lightmapDither = modern && c.modernLightmapDither.value_or(true);
-        m.exposure = modern && c.modernAutoExposure.value_or(true);
+        m.exposure = modern && c.modernAutoExposure.value_or(false);  // off by default since 14/11/2026: brightness pumping
         m.exposureRange = c.modernExposureRange.value_or(0.6f);
         m.exposureSpeed = c.modernExposureSpeed.value_or(1.5f);
         aurora_set_modern_lighting(&m);
+        // Level 2 (13/11/2026): materials steered by the game's own textures and material stages.
+        AuroraModernLighting2 m2{};
+        m2.textureRelief = modern && c.modernTextureRelief.value_or(true);
+        m2.defaultMaterial = modern && c.modernDefaultMaterial.value_or(true);
+        m2.materialMasks = modern && c.modernMaterialMasks.value_or(true);
+        m2.bounceLight = modern && c.modernBounceLight.value_or(true);
+        m2.bounceStrength = c.modernBounceStrength.value_or(1.0f);
+        m2.bounceEmissive = c.modernBounceEmissive.value_or(1.0f);
+        m2.bounceSurfaces = c.modernBounceSurfaces.value_or(0.6f);
+        m2.bounceRadius = c.modernBounceRadius.value_or(3.0f);
+        m2.bounceSamples = c.modernBounceSamples.value_or(8.0f);
+        m2.actorLights = modern && c.modernActorLights.value_or(false);
+        m2.worldRelight = modern && c.modernWorldRelight.value_or(false) ? c.modernWorldRelightStrength.value_or(0.6f) : 0.0f;
+        m2.hdrBloom = modern && c.modernHdrBloom.value_or(false);
+        m2.bloomStrength = c.modernBloomStrength.value_or(0.6f);
+        m2.bloomThreshold = c.modernBloomThreshold.value_or(0.6f);
+        m2.fog = modern && c.modernFog.value_or(false);
+        m2.fogDensity = c.modernFogDensity.value_or(0.5f);
+        aurora_set_modern_lighting2(&m2);
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
         PrimeEngineLights::SetOptions(m.engineLights || m.extraDynamicLights,
                                       modern && c.modernActorLightFade.value_or(true));

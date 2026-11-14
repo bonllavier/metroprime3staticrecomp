@@ -2083,6 +2083,11 @@ void DrawPrimeVideoOptions() {
         ImGui::TextDisabled("In use now: %ux. Applies after restart.", activeMsaa);
     ImGui::TextDisabled("Each MSAA level has its own shaders: the first session with a new level");
     ImGui::TextDisabled("compiles them again (possible stutters) until the cache covers it.");
+    ImGui::TextDisabled("Smooths jagged edges. Off by default because ambient occlusion (SSAO) and");
+    ImGui::TextDisabled("screen-space reflections (SSR) only work at 1x: with MSAA on, both turn off.");
+    ImGui::TextDisabled("Vulkan (Linux) only supports 1x and 4x: 2x runs as 1x and 8x as 4x.");
+    ImGui::TextDisabled("To smooth edges and keep SSAO/SSR: raise the internal resolution or use");
+    ImGui::TextDisabled("FXAA (Effects tab).");
 
     // Anisotropic filtering: the game asks for 1x on nearly everything, so the
     // option forces the sampler value (live; Aurora caches samplers by descriptor).
@@ -2096,6 +2101,17 @@ void DrawPrimeVideoOptions() {
         aurora_set_texture_anisotropy(static_cast<uint16_t>(kAnisoValues[anisoIndex]));
     }
     ImGui::TextDisabled("Only affects textures with mipmaps and trilinear filtering; applies immediately.");
+    ImGui::TextDisabled("Keeps textures sharp at steep angles (floors); it does not smooth jagged edges.");
+
+    // Smooth distortion: indirect offsets keep the fraction of the filtered distortion map (live,
+    // through the indirect matrix uniform; no shader or cache change when toggled).
+    bool smoothDistortion = RuntimeConfigFile::SmoothDistortion(true);
+    if (ImGui::Checkbox("Smooth distortion effects", &smoothDistortion)) {
+        RuntimeConfigFile::SetSmoothDistortion(smoothDistortion);
+        aurora_set_smooth_indirect(smoothDistortion);
+    }
+    ImGui::TextDisabled("Charge beam sphere, scan visor and other refraction effects: removes the blocky");
+    ImGui::TextDisabled("steps they show above native resolution. Off = exact console offsets. Applies immediately.");
 
     // Per-pixel lighting: the XF lighting formula moves from the vertex to the
     // fragment stage (same 8-bit rounding). Each mode has its own pipelines.
@@ -2237,7 +2253,7 @@ void DrawPrimeVideoOptions() {
         option("Lightmap dithering", &RuntimeUserConfig::modernLightmapDither, "lightmap_dither", true,
                "Removes the bands of the baked light in dark gradients of walls and floors with an\n"
                "invisible fine noise. Needs the environment material (F1 > Effects). Cost: none.");
-        const bool exposure = option("Automatic exposure", &RuntimeUserConfig::modernAutoExposure, "auto_exposure", true,
+        const bool exposure = option("Automatic exposure", &RuntimeUserConfig::modernAutoExposure, "auto_exposure", false,
                                      "Like the eye or a camera: very dark rooms brighten a little and very bright places\n"
                                      "darken a little, over a second or two; bright areas roll off instead of clipping.\n"
                                      "The HUD and visor are not affected. Changes the overall look. Cost: very low.");
@@ -2247,6 +2263,68 @@ void DrawPrimeVideoOptions() {
             slider("Exposure speed", &RuntimeUserConfig::modernExposureSpeed, "exposure_speed", 1.5f, 0.2f, 5.0f, "%.1f s",
                    "How long the adaptation takes (seconds).");
         }
+        // Level 2 (13/11/2026): materials from the game's own data.
+        option("Relief from the textures", &RuntimeUserConfig::modernTextureRelief, "texture_relief", true,
+               "The fine relief of materials (seams, plates, scratches) is read from the surface's own\n"
+               "texture instead of from the lit picture, so baked shadows and the fall-off of lights no\n"
+               "longer count as relief. Needs enhanced metal / materials or the environment material.\n"
+               "Cost: none.");
+        option("Material on every lit object", &RuntimeUserConfig::modernDefaultMaterial, "default_material", true,
+               "Enemies, doors and props that the game lights but gives no reflection (and that have no\n"
+               "material of their own) get a soft, non-metallic material: highlights that follow the\n"
+               "lights and relief from their texture. Tune it in F1 > Materials > Objects and creatures.\n"
+               "Needs per-pixel lighting. Cost: low.");
+        option("Use the game's material masks", &RuntimeUserConfig::modernMaterialMasks, "material_masks", true,
+               "The game's own reflection masks decide, pixel by pixel, how metallic a surface is (dull\n"
+               "cloth, skin and rubber stay dull without listing them), and the lights painted into a\n"
+               "texture (screens, strips, windows) keep their full brightness instead of being shaded\n"
+               "like the surface around them. Cost: none.");
+        const bool bounce = option("Bounce light", &RuntimeUserConfig::modernBounceLight, "bounce_light", true,
+                                   "Light spreads: glowing doors, lava, light strips and shots light the floor and\n"
+                                   "walls next to them, and bright surfaces tint what stands close (screen-space:\n"
+                                   "only what is on screen gives light). Runs at half resolution. Needs antialiasing\n"
+                                   "(MSAA) off. Cost: low to medium.");
+        if (bounce) {
+            slider("Bounce light strength", &RuntimeUserConfig::modernBounceStrength, "bounce_light_strength", 1.0f, 0.0f,
+                   2.0f, "%.2f", "Overall amount of bounce light.");
+            slider("Light from glowing surfaces", &RuntimeUserConfig::modernBounceEmissive, "bounce_light_emissive", 1.0f,
+                   0.0f, 2.0f, "%.2f", "How much light the surfaces the game marks as glowing give off.");
+            slider("Light from lit surfaces", &RuntimeUserConfig::modernBounceSurfaces, "bounce_light_surfaces", 0.6f, 0.0f,
+                   1.0f, "%.2f", "How much light ordinary lit walls and floors bounce. The baked lighting\n"
+                                 "already contains some, so keep it low.");
+            slider("Bounce light reach", &RuntimeUserConfig::modernBounceRadius, "bounce_light_radius", 3.0f, 0.5f, 8.0f,
+                   "%.1f m", "How far a surface's light reaches (metres).");
+            slider("Bounce light quality", &RuntimeUserConfig::modernBounceSamples, "bounce_light_samples", 8.0f, 4.0f, 16.0f,
+                   "%.0f", "Samples per pixel. More = smoother and slower; 4-6 for modest graphics cards.");
+        }
+        option("Characters lit by every light", &RuntimeUserConfig::modernActorLights, "actor_all_lights", false,
+               "The game lights each character and object with at most eight lights and folds the rest into a\n"
+               "flat colour. Free light slots get the next strongest lights around it (static ones at 60 %).\n"
+               "Needs real engine lights. Cost: low.");
+        const bool relight = option("Light walls with the real lights", &RuntimeUserConfig::modernWorldRelight, "world_relight", false,
+                                    "Walls and floors with baked light also take light from the game's lights, following\n"
+                                    "their shape: more volume and contrast, brighter near lamps. Changes the look of\n"
+                                    "every room. Needs the environment material and real engine lights. Cost: low.");
+        if (relight)
+            slider("Wall light strength", &RuntimeUserConfig::modernWorldRelightStrength, "world_relight_strength", 0.6f,
+                   0.0f, 2.0f, "%.2f", "How much light the real lights add to walls and floors.");
+        const bool hdr = option("HDR bloom", &RuntimeUserConfig::modernHdrBloom, "hdr_bloom", false,
+                                "Light sources glow over six sizes, from a tight halo to a wide haze. Their brightness\n"
+                                "comes from the game's own glow mask, so lights, lava and screens shine more than white\n"
+                                "walls. On top of the game's own glow. Needs MSAA off. Cost: low.");
+        if (hdr) {
+            slider("Bloom strength", &RuntimeUserConfig::modernBloomStrength, "hdr_bloom_strength", 0.6f, 0.0f, 2.0f,
+                   "%.2f", "How strong the bloom is.");
+            slider("Bloom threshold", &RuntimeUserConfig::modernBloomThreshold, "hdr_bloom_threshold", 0.6f, 0.1f, 2.0f,
+                   "%.2f", "How bright something must be to bloom (lower = more of the picture glows).");
+        }
+        const bool fog = option("Volumetric fog", &RuntimeUserConfig::modernFog, "volumetric_fog", false,
+                                "Air lit around the game's lights: a coloured glow in the air near lamps and shots,\n"
+                                "stopping at walls in front of them. Quarter resolution. Needs real engine lights and\n"
+                                "MSAA off. Cost: low to medium.");
+        if (fog)
+            slider("Fog density", &RuntimeUserConfig::modernFogDensity, "volumetric_fog_density", 0.5f, 0.0f, 2.0f, "%.2f",
+                   "How thick the lit air is.");
         ImGui::Unindent();
         if (!modern) ImGui::EndDisabled();
         ImGui::TextDisabled("Applies immediately. Contact shadows and exposure need antialiasing (MSAA) off.");
@@ -3008,6 +3086,7 @@ void DrawPrimeEffectsOptions() {
     }
     if (flag("Antialiasing (FXAA)", &RuntimeUserConfig::effectsFxaa, "fxaa")) {
         ImGui::TextDisabled("Post-process edge smoothing; cheap, slightly softens text. MSAA (Video tab) is the sharper option.");
+        ImGui::TextDisabled("Unlike MSAA, it keeps ambient occlusion (SSAO) and reflections (SSR) working.");
     }
     if (flag("Colour grading", &RuntimeUserConfig::effectsColor, "color")) {
         knob("Brightness", &RuntimeUserConfig::effectsBrightness, "brightness", 0.0f, -0.5f, 0.5f);
@@ -3204,6 +3283,7 @@ void InitializeRuntimeSettings() noexcept {
     aurora_set_display_mode(static_cast<AuroraDisplayMode>(g_displayMode));
     g_displayMode = static_cast<int>(aurora_get_display_mode());
     aurora_set_disable_copy_filter(g_disableCopyFilter);
+    aurora_set_smooth_indirect(RuntimeConfigFile::SmoothDistortion(true));
     aurora_set_skip_unready_pipelines(g_skipUnreadyPipelines);
     aurora_set_ubershader(g_ubershader);
     g_strapInputAccepted.store(false, std::memory_order_relaxed);

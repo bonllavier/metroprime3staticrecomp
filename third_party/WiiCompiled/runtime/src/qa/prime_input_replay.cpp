@@ -7,6 +7,11 @@
 #include "memory.h"
 #include "hle/prime_mouse_look.h"
 
+#include <aurora/aurora.h>
+#include <aurora/gfx.h>
+#include "post_effects.h"
+#include "runtime_config.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -19,6 +24,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
 // RM3E01 object layout used by the anchors, verified live on 2026-10-26 (recomp/qa/README.md):
 // CPlayer transform origin at +0x48/+0x58/+0x68 (rows of the 3x4 transform at +0x3C) with a mirror at
@@ -241,6 +247,68 @@ void Apply(PrimeKeyboardMouse::Sample& input, float& lookDx, float& lookDy) {
         }
         g_state.player->Step(input, lookDx, lookDy);
         if ((g_state.player->Frame() % 3600) == 0) RT_LOG(RT_TAG_RUNTIME) << "[qa-replay] frame " << g_state.player->Frame() << std::endl;
+        // WII_COMPILED_QA_DUMP_EVERY=<frames> with WII_COMPILED_QA_DUMP_DIR=<dir>: an F7 draw dump at
+        // exact replay frames (<dir>/frame_<n>), so two runs of one recording can be compared image by
+        // image. The "request" file is polled twice a second and lands on different frames each run.
+        {
+            static const long every = [] { const char* v = std::getenv("WII_COMPILED_QA_DUMP_EVERY"); return v ? std::atol(v) : 0L; }();
+            static const std::string dir = [] { const char* v = std::getenv("WII_COMPILED_QA_DUMP_DIR"); return std::string(v ? v : ""); }();
+            const long frame = static_cast<long>(g_state.player->Frame());
+            // WII_COMPILED_QA_DUMP_AB=1: the same moment twice, as configured (frame_<n>_on) and four
+            // frames later with the lighting work of 13/11/2026 off (frame_<n>_off: environment and lit-room
+            // materials, level 2 materials and the bounce light), then the settings are restored. The camera
+            // drifts between two runs of a recording; four frames apart it barely moves.
+            static const bool ab = [] { const char* v = std::getenv("WII_COMPILED_QA_DUMP_AB"); return v && *v == '1'; }();
+            // WII_COMPILED_QA_BURST_AT=<f1>,<f2>,...: an F5-style burst (60 consecutive frames) at those replay
+            // frames into <dir>/burst_<f>, to look for flicker in the same place every run.
+            static const std::vector<long> bursts = [] {
+                std::vector<long> out;
+                if (const char* v = std::getenv("WII_COMPILED_QA_BURST_AT")) {
+                    std::string list(v);
+                    size_t at = 0;
+                    while (at < list.size()) {
+                        const size_t comma = list.find(',', at);
+                        out.push_back(std::atol(list.substr(at, comma - at).c_str()));
+                        if (comma == std::string::npos) break;
+                        at = comma + 1;
+                    }
+                }
+                return out;
+            }();
+            if (!dir.empty())
+                for (const long b : bursts)
+                    if (frame == b) {
+                        std::error_code error;
+                        std::filesystem::create_directories(dir, error);
+                        aurora_request_draw_dump_burst((dir + "/burst_" + std::to_string(frame)).c_str(), 60);
+                    }
+            if (every > 0 && !dir.empty() && frame > 0) {
+                const long phase = frame % every;
+                const long base = frame - phase;
+                std::error_code error;
+                if (phase == 0) {
+                    std::filesystem::create_directories(dir, error);
+                    aurora_request_draw_dump((dir + "/frame_" + std::to_string(frame) + (ab ? "_on" : "")).c_str());
+                } else if (ab && phase == 2) {
+                    const auto& c = RuntimeConfigFile::Get();
+                    aurora_set_environment_lighting(false, c.effectsEnvLights.value_or(true));
+                    AuroraLightingFeatures f{};
+                    f.litRooms = false;
+                    f.softHighlights = c.effectsSoftHighlights.value_or(true);
+                    f.linearBlend = c.effectsLinearLighting.value_or(false);
+                    f.smoothLightmaps = c.effectsSmoothLightmaps.value_or(true);
+                    f.areaReflections = c.effectsAreaReflections.value_or(false);
+                    f.softShadows = c.effectsSoftShadows.value_or(true);
+                    aurora_set_lighting_features(&f);
+                    AuroraModernLighting2 off{};
+                    aurora_set_modern_lighting2(&off);
+                } else if (ab && phase == 4) {
+                    aurora_request_draw_dump((dir + "/frame_" + std::to_string(base) + "_off").c_str());
+                } else if (ab && phase == 6) {
+                    PostEffects::Apply();
+                }
+            }
+        }
         if (g_state.player->Finished()) {
             g_state.replayFinished = true;
             RT_LOG(RT_TAG_RUNTIME) << "[qa-replay] finished at frame " << g_state.player->Frame() << std::endl;

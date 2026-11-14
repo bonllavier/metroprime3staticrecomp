@@ -1072,6 +1072,7 @@ static std::string uber_tev_body(const ShaderInfo& info, const ShaderConfig& con
     var t_TexCoord = vec2i(0);
     var sampled_z = vec4f(0.0);
     var ind_tc = array<vec3i, 4>(vec3i(0), vec3i(0), vec3i(0), vec3i(0));
+    var ind_tf = array<vec3f, 4>(vec3f(0.0), vec3f(0.0), vec3f(0.0), vec3f(0.0));
     for (var k = 0u; k < 4u; k = k + 1u) {
       if (((ubuf.uber_misc1.x >> k) & 1u) == 0u) { continue; }
       let ind = ubuf.uber_ind[k];
@@ -1082,7 +1083,8 @@ static std::string uber_tev_body(const ShaderInfo& info, const ShaderConfig& con
       let ind_fixed = ind_base >> vec2u(ind.z, ind.w);
       if (ind.y != 0u) {
         let ind_smp = uber_sample(ind.y - 1u, vec2f(ind_fixed) / (uber_tex_size(ind.y - 1u) * 128.0));
-        ind_tc[k] = tev_byte_vec3f(ind_smp.abg);
+        ind_tf[k] = ind_smp.abg * 255.0;
+        ind_tc[k] = vec3i(round(ind_tf[k]));
       }
     }
     let uber_stage_count = ubuf.uber_misc0.x;
@@ -1148,6 +1150,22 @@ static std::string uber_tev_body(const ShaderInfo& info, const ShaderConfig& con
                 ind_off = ind_off >> vec2u(u32(ind_shift));
               } else {
                 ind_off = ind_off << vec2u(u32(-ind_shift));
+              }
+              // Smooth indirect offsets (g_smoothIndirect, ITF_8 only): same as the specialised shader.
+              if (ifmt == 0u && ubuf.ind_mtx[mi * 2u + 1u].w != 0) {
+                let fr = ind_tf[ist] - vec3f(ind_tc[ist]);
+                var fd = vec2f(0.0);
+                if (mtx <= 3u) {
+                  let s0 = ubuf.ind_mtx[mi * 2u];
+                  let s1 = ubuf.ind_mtx[mi * 2u + 1u];
+                  fd = vec2f(f32(s0.x) * fr.x + f32(s0.z) * fr.y + f32(s1.x) * fr.z,
+                             f32(s0.y) * fr.x + f32(s0.w) * fr.y + f32(s1.y) * fr.z) / 8.0;
+                } else if (mtx <= 7u) {
+                  fd = vec2f(base_fixed) * fr.x / 256.0;
+                } else {
+                  fd = vec2f(base_fixed) * fr.y / 256.0;
+                }
+                ind_off = ind_off + vec2i(round(fd * exp2(-f32(ind_shift))));
               }
             }
           }
@@ -1403,6 +1421,12 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
   };
 
   static std::array regName{"prev"sv, "tevreg0"sv, "tevreg1"sv, "tevreg2"sv};
+  // Modern lighting, level 2 (game material masks): what the material's emissive stage adds to PREV is
+  // kept apart (mat_emis_add), so the material block further down shades the surface without it.
+  const bool materialBlockWanted =
+      uber == nullptr &&
+      ((config.enhancedMetal != 0 && config.perPixelLighting != 0 && info.lightingEnabled) || info.usesEnvLights);
+  const int matEmissiveStage = materialBlockWanted ? material_emissive_stage(config) : -1;
   if (uber == nullptr) for (u32 idx = 0; idx < config.tevStageCount; ++idx) {
     const auto& stage = config.tevStages[idx];
     std::string colorA = color_arg_reg(stage.colorPass.a, idx, config, stage);
@@ -1421,7 +1445,10 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
       std::string op = tev_color_op(
           stage.colorOp.op, stage.colorOp.bias, stage.colorOp.scale, stage.colorOp.clamp, colorA, colorB,
           color_arg_reg(stage.colorPass.c, idx, config, stage), color_arg_reg(stage.colorPass.d, idx, config, stage));
+      if (static_cast<int>(idx) == matEmissiveStage) fragmentFn += "\n    let mat_emis_before = prev.rgb;";
       fragmentFn += fmt::format("\n    {0} = vec4f({1}, {0}.a);", outReg, op);
+      if (static_cast<int>(idx) == matEmissiveStage)
+        fragmentFn += "\n    let mat_emis_add = max(prev.rgb - mat_emis_before, vec3f(0.0));";
     }
     {
       std::string_view outReg = regName[stage.alphaOp.outReg];
@@ -1797,8 +1824,9 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
     fragmentFnPre += fmt::format(
         "\n    // Indirect stage {0}"
         "\n    let ind{0}_sample_fixed = {5} >> vec2u({3}u, {4}u);"
-        "\n    let t_IndTexCoord{0} = tev_byte_vec3f(textureSampleBias(tex{2}, tex{2}_samp, "
-        "vec2f(ind{0}_sample_fixed) / (ubuf.tex{2}_size_bias.xy * 128.0), ubuf.tex{2}_size_bias.z).abg);",
+        "\n    let t_IndTexRaw{0} = textureSampleBias(tex{2}, tex{2}_samp, "
+        "vec2f(ind{0}_sample_fixed) / (ubuf.tex{2}_size_bias.xy * 128.0), ubuf.tex{2}_size_bias.z).abg * 255.0;"
+        "\n    let t_IndTexCoord{0} = vec3i(round(t_IndTexRaw{0}));",
         i, effectiveIndTexCoord, underlying(indStage.texMapId), ind_scale_shift(indStage.scaleS),
         ind_scale_shift(indStage.scaleT), indFixedUv);
   }
@@ -1878,6 +1906,21 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
               i, mtxIdx * 2 + 1);
           indirectOffsetFixed = fmt::format("ind{}_offset_fixed", i);
         };
+        // Smooth indirect offsets (ind_mtx[odd].w, see g_smoothIndirect): the integer path above is the
+        // hardware's 8-bit offset; this adds the sub-byte fraction of the filtered indirect sample with
+        // the same matrix and scale. Exact (point-sampled) bytes give a zero fraction, so such draws keep
+        // the hardware result; only the filtered in-between values move, which removes the whole-texel
+        // steps distortion effects show at high resolution. ITF_8 only: smaller formats pack fields.
+        const auto appendSmooth = [&](u32 mtxIdx, const std::string& fracDot) {
+          if (fmtShift != 0) return;
+          fragmentFnPre += fmt::format(
+              "\n    if (ubuf.ind_mtx[{1}].w != 0) {{"
+              "\n      let ind{0}_frac = t_IndTexRaw{2} - vec3f(t_IndTexCoord{2});"
+              "\n      let ind{0}_fd = {3} * exp2(-f32(ubuf.ind_mtx[{1}].z));"
+              "\n      ind{0}_offset_fixed = ind{0}_offset_fixed + vec2i(round(ind{0}_fd));"
+              "\n    }}",
+              i, mtxIdx * 2 + 1, underlying(stage.indTexStage), fmt::format(fmt::runtime(fracDot), i));
+        };
 
         if (stage.indTexMtxId >= GX_ITM_0 && stage.indTexMtxId <= GX_ITM_2) {
           // Static 2x3 matrix: integer dot products, then the hardware's fixed >>3 and exponent shift sequence.
@@ -1892,6 +1935,10 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
               "ind{0}_c1.y * ind{0}_coord.z) >> 3u);",
               i, mtxIdx * 2, mtxIdx * 2 + 1);
           appendScaleShift(mtxIdx);
+          appendSmooth(mtxIdx,
+                       "vec2f(f32(ind{0}_c0.x) * ind{0}_frac.x + f32(ind{0}_c0.z) * ind{0}_frac.y + "
+                       "f32(ind{0}_c1.x) * ind{0}_frac.z, f32(ind{0}_c0.y) * ind{0}_frac.x + "
+                       "f32(ind{0}_c0.w) * ind{0}_frac.y + f32(ind{0}_c1.y) * ind{0}_frac.z) / 8.0");
         } else if (stage.indTexMtxId >= GX_ITM_S0 && stage.indTexMtxId <= GX_ITM_S2 && hasBaseCoord) {
           // Dynamic S: (fixed UV * indirect S) >> 8, then exponent shift.
           u32 mtxIdx = stage.indTexMtxId - GX_ITM_S0;
@@ -1900,6 +1947,7 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
           fragmentFnPre += fmt::format(
               "\n    var ind{0}_offset_fixed = ({1} * vec2i(ind{0}_coord.x)) >> vec2u(8u);", i, fixedUv);
           appendScaleShift(mtxIdx);
+          appendSmooth(mtxIdx, "vec2f(" + fixedUv + ") * ind{0}_frac.x / 256.0");
         } else if (stage.indTexMtxId >= GX_ITM_T0 && stage.indTexMtxId <= GX_ITM_T2 && hasBaseCoord) {
           // Dynamic T: (fixed UV * indirect T) >> 8, then exponent shift.
           u32 mtxIdx = stage.indTexMtxId - GX_ITM_T0;
@@ -1908,6 +1956,7 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
           fragmentFnPre += fmt::format(
               "\n    var ind{0}_offset_fixed = ({1} * vec2i(ind{0}_coord.y)) >> vec2u(8u);", i, fixedUv);
           appendScaleShift(mtxIdx);
+          appendSmooth(mtxIdx, "vec2f(" + fixedUv + ") * ind{0}_frac.y / 256.0");
         }
       }
 
@@ -2238,6 +2287,21 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
       const bool fromVertexUv = (tcg.src >= GX_TG_TEX0 && tcg.src <= GX_TG_TEX7) || tcg.src == GX_MAX_TEXGENSRC;
       if (fromVertexUv && (tcg.type == GX_TG_MTX2x4 || tcg.type == GX_TG_MTX3x4)) sparkleUv = fmt::format("tex{}_uv", i);
     }
+    // Modern lighting, level 2 (lit_ext[1].w: bit 0 texture relief, bit 1 game material masks). The
+    // relief source is the surface's own texture sample; the reflection mask counts only when it is a
+    // texture of its own (the diffuse texture as mask already tints the reflectance through f0).
+    const int matDiffuseStage = material_diffuse_stage(config);
+    const int matMaskStage = metalActive ? material_reflection_mask_stage(config) : -1;
+    const bool matMaskOwnTexture =
+        matMaskStage >= 0 && (matDiffuseStage < 0 || config.tevStages[matMaskStage].texMapId !=
+                                                         config.tevStages[matDiffuseStage].texMapId);
+    const std::string reliefExpr =
+        matDiffuseStage >= 0 ? fmt::format("sampled{}.rgb", matDiffuseStage) : "metal_surf"s;
+    const std::string maskExpr2 =
+        matMaskOwnTexture
+            ? fmt::format("smoothstep(0.02, 0.30, dot(sampled{}.rgb, vec3f(0.299, 0.587, 0.114)))", matMaskStage)
+            : "1.0"s;
+    const std::string emisExpr = matEmissiveStage >= 0 ? "mat_emis_add"s : "vec3f(0.0)"s;
     if (litChannel >= 0 || envActive) {
       fragmentFn += fmt::format(R"""(
     // Enhanced metal (PBR-style): GGX specular with Schlick Fresnel from the GX lights of channel {0},
@@ -2256,12 +2320,17 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
       let lit_area = lit_e0.z > 0.5;
       let lit_up = ubuf.lit_ext[1].rgb;
       let lit_down = ubuf.lit_ext[2].rgb;
+      // Level 2 flags. metal_surf: the surface without the light its emissive stage added.
+      let lit_fl = u32(ubuf.lit_ext[1].w + 0.5);
+      let lit_masks = f32((lit_fl >> 1u) & 1u);
+      let metal_emis = {10} * lit_masks;
+      let metal_surf = max(prev.rgb - metal_emis, vec3f(0.0));
       var metal_paint = 1.0;
       if (mat_e7.y > 0.0) {{
         // Saturated colour = paint; grey or very dark texels = bare metal. Saturation does not depend
         // on how brightly the texel is lit.
-        let metal_cmax = max(prev.r, max(prev.g, prev.b));
-        let metal_sat = (metal_cmax - min(prev.r, min(prev.g, prev.b))) / max(metal_cmax, 1e-4);
+        let metal_cmax = max(metal_surf.r, max(metal_surf.g, metal_surf.b));
+        let metal_sat = (metal_cmax - min(metal_surf.r, min(metal_surf.g, metal_surf.b))) / max(metal_cmax, 1e-4);
         let metal_isPaint = smoothstep(0.22, 0.45, metal_sat) * smoothstep(0.02, 0.06, metal_cmax);
         metal_paint = mix(1.0, metal_isPaint, clamp(mat_e7.y, 0.0, 1.0));
         metal_rough = mix(max(mat_e7.w, 0.04), metal_rough, metal_paint);
@@ -2270,8 +2339,9 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
       let metal_detail = f32((metal_pk >> 24u) & 255u) / 255.0;
       // Detail normal: surface-gradient bump from the luminance of the shaded colour, treated as a
       // height of a few millimetres at most (Prime units are metres); larger scales turn texture noise
-      // into sparkles.
-      let metal_lum = dot(prev.rgb, vec3f(0.299, 0.587, 0.114));
+      // into sparkles. With texture relief (level 2) the height is the surface's own texture sample,
+      // so baked shadows and the falloff of the lights are not read as relief.
+      let metal_lum = dot(mix(metal_surf, {8}, f32(lit_fl & 1u)), vec3f(0.299, 0.587, 0.114));
       let metal_dpx = dpdx(in.mv_pos);
       let metal_dpy = dpdy(in.mv_pos);
       let metal_dlx = dpdx(metal_lum);
@@ -2293,13 +2363,17 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
       // as glitter); the environment reflection uses the full relief.
       let metal_ns = normalize(mix(ppl_nrm, metal_n, 0.5));
       let metal_ndv = max(dot(metal_n, metal_v), 1e-3);
-      let metal_albedo = clamp(prev.rgb * 1.25, vec3f(0.0), vec3f(1.0));
+      let metal_albedo = clamp(metal_surf * 1.25, vec3f(0.0), vec3f(1.0));
       let metal_f0 = mix(vec3f(0.04), metal_albedo, metal_metallic);
       let metal_a = metal_rough * metal_rough;
       let metal_a2 = metal_a * metal_a;
       let metal_kg = (metal_rough + 1.0) * (metal_rough + 1.0) / 8.0;
       var metal_spec = vec3f(0.0);
       var metal_lsum = vec3f(0.0);
+      // Level 2, scene relighting (lit_ext[2].w, only on lightmapped walls and floors): the engine's
+      // lights also give diffuse light, Lambert on the relief normal, with the same reach and baked
+      // shadow gate as the highlights.
+      var metal_rel = vec3f(0.0);
       for (var li = 0u; li < {1}u; li++) {{
         if (({4} & (1u << li)) == 0u) {{ continue; }}
         let metal_light = {3}[li];
@@ -2315,6 +2389,7 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
                       (metal_ndv / (metal_ndv * (1.0 - metal_kg) + metal_kg));
         let metal_F = metal_f0 + (vec3f(1.0) - metal_f0) * pow(1.0 - metal_vdh, 5.0);
         metal_spec += metal_D * metal_G * metal_F / (4.0 * metal_ndv + 1e-4) * metal_light.color.rgb * ({5});
+        metal_rel += metal_light.color.rgb * max(dot(metal_n, metal_ld), 0.0) * ({5});
       }}
       // Procedural environment: brighter above, dark below, tinted by the scene's lights; roughness
       // flattens it towards its average (a blurrier reflection).
@@ -2335,11 +2410,12 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
       let metal_fv = metal_f0 + (vec3f(1.0) - metal_f0) * pow(1.0 - metal_ndv, 5.0) * (1.0 - metal_rough);
       // No change on glowing surfaces (Prime writes the glow amount in alpha: visor glass, energy).
       let metal_glow = 1.0 - smoothstep(0.6, 0.9, prev.a);
-      let metal_w = metal_k * metal_glow;
+      // Game material masks (level 2): the game's own reflection mask scales the metal per pixel.
+      let metal_w = metal_k * metal_glow * mix(1.0, {9}, lit_masks);
       // Material parameters (AuroraMaterialExt): colour and highlight multipliers.
       let mat_e0 = ubuf.mat_ext[0];
       let mat_e1 = ubuf.mat_ext[1];
-      let metal_base = prev.rgb * (1.0 - metal_metallic * 0.45 * min(metal_w, 1.0));
+      let metal_base = metal_surf * (1.0 - metal_metallic * 0.45 * min(metal_w, 1.0));
       let metal_luma = dot(metal_base, vec3f(0.299, 0.587, 0.114));
       let metal_diffuse = max(mix(vec3f(metal_luma), metal_base, mat_e0.y), vec3f(0.0)) * mat_e0.x * mat_e1.xyz;
       let metal_refl = metal_env * metal_fv * metal_metallic * 0.8 * mat_e0.w;
@@ -2385,7 +2461,8 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
         metal_coatDim = 1.0 - cc_fv * metal_cc;
       }}
       let metal_base_out = metal_diffuse * metal_tint * metal_coatDim;
-      let metal_add = max((metal_spec * 0.35 * mat_e0.z + metal_refl) * metal_w + metal_coat + metal_spark, vec3f(0.0));
+      let metal_relit = clamp({8}, vec3f(0.0), vec3f(1.0)) * min(metal_rel, vec3f(2.0)) * ubuf.lit_ext[2].w;
+      let metal_add = max((metal_spec * 0.35 * mat_e0.z + metal_refl) * metal_w + metal_coat + metal_spark + metal_relit, vec3f(0.0));
       var metal_out = metal_base_out + metal_add;
       if (lit_e0.y > 0.5) {{
         // Linear blending: the added light is summed with the base in linear space.
@@ -2399,7 +2476,7 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
         // Soft highlights: the added light approaches white smoothly instead of clipping flat.
         metal_out = metal_base_out + metal_add / (vec3f(1.0) + metal_add / max(vec3f(1.0) - metal_base_out, vec3f(0.02)));
       }}
-      prev = vec4f(min(metal_out, vec3f(1.0)), prev.a);
+      prev = vec4f(min(metal_out + metal_emis, vec3f(1.0)), prev.a);
     }})""",
                                 litChannel, lightCount, sparkleUv.empty() ? std::string() : fmt::format(R"""(
       // Star dust (AuroraMaterialExt dust*/nebula*): two layers of tiny flakes fixed to the surface's
@@ -2485,7 +2562,7 @@ static std::string build_shader_source_impl(const ShaderConfig& config, const Ub
                          dust_shape * dust_e2.x * dust_gate * select(1.0, 0.7, sl == 1u);
         }}
       }})""", sparkleUv, maskExpr, lightCount, lightsExpr),
-                                lightsExpr, maskExpr, attMetal, lcExpr, attCoat);
+                                lightsExpr, maskExpr, attMetal, lcExpr, attCoat, reliefExpr, maskExpr2, emisExpr);
     }
   }
   std::string fragmentReturnType = "@location(0) vec4f";

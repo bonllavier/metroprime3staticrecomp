@@ -94,6 +94,8 @@ struct AsyncSlot {
   AsyncState state = AsyncState::Idle;
   wgpu::MapAsyncStatus mapStatus = wgpu::MapAsyncStatus::Success;
   uint64_t lastScheduled = 0;  // g_asyncScheduleClock value of the latest request
+  // The bytes this slot last wrote into guest RAM (frame thread only). See harvest_mapped_slots.
+  std::vector<uint8_t> lastWritten;
 };
 
 std::vector<PendingCopy> g_pending;
@@ -110,6 +112,7 @@ uint32_t g_asyncMapsInFlight = 0;
 uint64_t g_asyncGeneration = 1;
 uint64_t g_asyncScheduleClock = 0;
 uint64_t g_asyncRecycled = 0;
+uint64_t g_asyncStaleSkipped = 0;
 
 uint32_t align_to(uint32_t value, uint32_t alignment) noexcept { return (value + alignment - 1) & ~(alignment - 1); }
 
@@ -204,6 +207,7 @@ void harvest_mapped_slots() noexcept {
       copy.hostHeight = slot.hostHeight;
       copy.order = slot.order;
       copy.mapStatus = slot.mapStatus;
+      copy.lastWritten = slot.lastWritten;
       ready.push_back(std::move(copy));
     }
   }
@@ -215,6 +219,23 @@ void harvest_mapped_slots() noexcept {
       // Writes guest RAM while the guest may be reading it. The only consumer min/maxes depth for a
       // fade factor, so a torn tile just mixes two frames' depths.
       const size_t outputSize = encoded_size(copy.format, copy.width, copy.height);
+      // The readback lands a frame after its GXCopyTex. If the game freed the destination meanwhile
+      // (leaving the gunship cockpit rebuilds the HUD and its scan-visor probes) and handed the memory
+      // to something else, writing would corrupt that: RM3E01 crashed twice on 13/11/2026 at that
+      // moment, once on a model whose texture pointer read 0x83008383 and once allocating 0x08080808
+      // bytes, both probe pixel values. The game only reads these probes, so if the bytes there are
+      // no longer the ones this slot wrote last time, the memory has another owner: skip, and forget
+      // the record so a live probe is written again next time.
+      const auto* guest = static_cast<const uint8_t*>(copy.dest);
+      if (copy.lastWritten.size() == outputSize && std::memcmp(guest, copy.lastWritten.data(), outputSize) != 0) {
+        copy.lastWritten.clear();
+        copy.mapStatus = wgpu::MapAsyncStatus::Aborted;  // marks "skipped" for the bookkeeping below
+        if (++g_asyncStaleSkipped <= 20 || g_asyncStaleSkipped % 100 == 0)
+          Log.info("[efb-ram] stale async readback skipped dest={} size={} (count {})", copy.dest, outputSize,
+                   g_asyncStaleSkipped);
+        copy.buffer.Unmap();
+        continue;
+      }
       if (!encode(copy.dest, outputSize, copy.format, copy.width, copy.height, pixels, copy.hostWidth, copy.hostHeight,
                   copy.bytesPerRow, copy.order)) {
         Log.error("Failed to encode async EFB RAM copy format=0x{:x} size={}x{}", static_cast<unsigned>(copy.format),
@@ -223,15 +244,17 @@ void harvest_mapped_slots() noexcept {
       // Guest RAM written from outside the embedder, so nothing bumps its write generation and a
       // texture cached over this range would keep its digest.
       notify_guest_write(copy.dest, outputSize);
+      copy.lastWritten.assign(guest, guest + outputSize);
     }
     copy.buffer.Unmap();
   }
   std::lock_guard lock{g_asyncMutex};
-  for (const auto& copy : ready) {
+  for (auto& copy : ready) {
     const auto it = g_asyncSlots.find(copy.dest);
     if (it != g_asyncSlots.end() && it->second.state == AsyncState::Completing &&
         it->second.buffer.Get() == copy.buffer.Get()) {
       it->second.state = AsyncState::Idle;
+      it->second.lastWritten = std::move(copy.lastWritten);
     }
   }
 }

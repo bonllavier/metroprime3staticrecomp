@@ -263,7 +263,32 @@ Funciones de Windows que influyen en el rendimiento y su estado en Linux:
 - Wiimote por Bluetooth.
 - Ocultar MSAA 2x/8x en Vulkan.
 - Vigilante de parones F8.
-- Empaquetado: `tools/package_release_linux.sh` (16/11/2026, sin ejecutar todavía en Linux) genera dos `.tar.gz` de la misma versión, el principal y el complemento de Trilogy, como en Windows (ver "Dos archivos por versión" en [publicacion_github.md](publicacion_github.md)). Pasarlo primero con `--layout-test`, revisar las librerías copiadas (`ldd` sin "not found") y probar el complemento descomprimido encima. Falta el lanzador `.desktop` con el icono y la subida desde `publish_release.ps1`.
+- Empaquetado: ver "Paquete de Linux v0.1.7". Falta el lanzador `.desktop` con el icono, probar el complemento con un disco de Trilogy en Linux y la subida desde `publish_release.ps1`.
+
+## Paquete de Linux v0.1.7 (2026-11-16)
+
+Dos `.tar.gz` de la misma versión, como en Windows (ver "Dos archivos por versión" en [publicacion_github.md](publicacion_github.md)), copiados a `dist/` del árbol de Windows junto a los zips:
+
+| Archivo | Tamaño | SHA-256 |
+|---|---|---|
+| `Corruption_3-PC-v0.1.7-linux-x86_64.tar.gz` | 84 MB | `0f77ec261d6db9cec49daa97a93ac6939e418d7d603b3c32f5cad3c91ebf362c` |
+| `Corruption_3-PC-v0.1.7-Trilogy-addon-linux-x86_64.tar.gz` | 111 MB | `258ce86a1dd9ef26997fea2e8902e06dc3c51ba7cbbf67c0ce62191cf244848c` |
+
+Cómo se generó (a299bb13 + los cambios de este apartado):
+
+```bash
+source /mnt/mp3port/env.sh && cd $MP3PORT/src
+recomp/tools/build_prime_runtime.sh -j 6 --public --build-dir $MP3PORT/builds/RM3E01_00_runtime_linux_public   # ~1 h, 14.625 pasos
+cd recomp && MP3_BUILD_DIR=$MP3PORT/builds/RM3E01_00_runtime_linux_public python3 -B tools/trilogy/build_trilogy.py --public && cd ..
+recomp/tools/package_release_linux.sh --build-dir $MP3PORT/builds/RM3E01_00_runtime_linux_public --out $MP3PORT/dist \
+  --publish <copia de Windows>/publish
+```
+
+- **libpng y RUNPATH.** Los binarios llevaban RUNPATH absoluto al build (`.../_deps/png-build`): en otra máquina habrían usado la libpng del sistema o fallado. Ahora `PublicProducts.cmake` enlaza en Linux con RUNPATH `$ORIGIN` y copia `libpng16.so.16` junto al ejecutable (también en el build de pruebas, al reconfigurar). El script rechaza un RUNPATH distinto de `$ORIGIN` y cualquier librería resuelta desde el build; las únicas dependencias del sistema son glibc ≥ 2.35, libstdc++, libgcc_s, libm y zlib (Vulkan, audio, libcurl y libsecret van por `dlopen`).
+- Otras correcciones del script: incluye `cacert.pem` (el build lo deja junto al ejecutable para mbed TLS); opción `--publish` porque `publish/` solo está en la copia de Windows; `sort` con `LC_ALL=C` (con el idioma del sistema, `Menu` quedaba antes que `MP3` y fallaba la comprobación del complemento); permisos 644 para todo lo que no sea ejecutable o librería (lo copiado de NTFS llegaba con `x`).
+- `build_trilogy.py --public` falló la primera vez justo después del build de RM3E01: `RsoRuntimeTranslator` no encontraba `Translator.Core/obj/Release/net8.0/ref/Translator.Core.dll` (carpeta `ref/` vacía en el traductor compartido por enlace simbólico). Repetir el `dotnet build` lo resolvió; si vuelve a pasar, relanzar.
+- Los títulos de Trilogy (`titles/R3ME01_*/work/recomp/build`) quedan configurados sin QA. Para volver a los de prueba: `build_trilogy.py --configure-only` y `install_title_exes.py`.
+- Comprobado: `sha256sum -c`, contenido (principal sin Trilogy; complemento con sus 5 archivos), `ldd` de los tres binarios desde la carpeta del jugador (principal + complemento descomprimido encima) y arranque del paquete con `--iso` del RVZ USA: `Corruption_3 PC 0.1.7 linux` sin "(test build)", `[prime-iso-open] id=RM3E01 ... readonly=1`, 219 archivos indexados, semilla de 10.066 recetas, 51 iconos de teclado. Se cerró a los ~40 s, durante la generación de shaders. Sin probar: partida completa con el paquete y el complemento con un disco de Trilogy (no hay imagen R3ME01 en `/mnt/mp3port/iso`).
 - Revisar las 101 funciones en que difiere el traductor actual.
 - Hacer el pipeline autosuficiente (hoy necesita archivos del árbol de Windows).
 - El comentario de `[paths]` en la configuración por defecto muestra una ruta de Windows.

@@ -118,7 +118,7 @@ Reglas:
 Herramientas:
 
 - Windows: `package_release.ps1` genera los dos zips con su `.sha256` y comprueba que el complemento contenga exactamente sus cinco archivos y que los tres ejecutables cumplan las reglas públicas (sin QA ni diagnósticos, misma versión, sin símbolos de depuración). `make_release.ps1` compila Trilogy sin QA (`build_trilogy.py --public`), verifica los dos zips como los recibe un jugador (el principal sin Trilogy, el complemento descomprimido encima) y los analiza en VirusTotal. `publish_release.ps1` sube los dos zips y sus `.sha256`, y la nota de la release explica qué es cada uno.
-- Linux: `tools/package_release_linux.sh` hace lo mismo con `.tar.gz`, que conserva el permiso de ejecución. **Escrito en Windows el 16/11 y sin ejecutar todavía en Linux.** Antes de la primera release de Linux hay que pasarlo en `/mnt/mp3port` con `--layout-test` y comprobar las librerías que copia. Todavía no hay publicación de Linux en `publish_release.ps1`.
+- Linux: `tools/package_release_linux.sh` hace lo mismo con `.tar.gz`, que conserva el permiso de ejecución, y añade `README - Linux.txt` (requisitos, arranque, `--iso`). Primera ejecución real el 16/11/2026 con v0.1.7; ver "Paquete de Linux v0.1.7" en `linux_port.md`. Todavía no hay publicación de Linux en `publish_release.ps1`.
 - `-LayoutTest` (Windows) y `--layout-test` (Linux) empaquetan el build de pruebas solo para comprobar la estructura; esos archivos no son releases.
 - Prueba de punta a punta (Windows): `recomp/tools/trilogy/test_trilogy_addon.ps1 -Image "<Trilogy USA .rvz>"`. Monta una carpeta de jugador con los zips y comprueba: los dos zips, complemento ausente, complemento incompleto, complemento instalado (el menú arranca) y versión distinta e igual.
 

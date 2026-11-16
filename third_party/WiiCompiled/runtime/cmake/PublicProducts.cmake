@@ -326,6 +326,16 @@ function(mkw_configure_product target)
         # objects (empty string on glibc >= 2.34, where dl* is in libc).
         target_link_libraries(${target} PRIVATE mkw::libco ${CMAKE_DL_LIBS})
     endif()
+    if(MKW_PLATFORM_LINUX)
+        # The shared libpng that Aurora builds goes next to the executable, which finds it through $ORIGIN
+        # instead of an absolute path into the build tree, so the packaged folder works on its own
+        # (recomp/tools/package_release_linux.sh), as the DLLs do on Windows.
+        set_target_properties(${target} PROPERTIES BUILD_WITH_INSTALL_RPATH ON INSTALL_RPATH "$ORIGIN")
+        if(TARGET png_shared)
+            add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_SONAME_FILE:png_shared> $<TARGET_FILE_DIR:${target}> VERBATIM)
+        endif()
+    endif()
     if(MKW_PLATFORM_WINDOWS)
         foreach(runtime_dll libc++.dll libunwind.dll)
             execute_process(

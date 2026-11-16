@@ -7,22 +7,25 @@
 # Each with a .sha256. tar keeps the executable bit, which a zip would lose.
 #
 #   source /mnt/mp3port/env.sh
-#   recomp/tools/package_release_linux.sh [--build-dir DIR] [--out DIR] [--layout-test]
+#   recomp/tools/package_release_linux.sh [--build-dir DIR] [--out DIR] [--publish DIR] [--layout-test]
 #
 # The build must be public (build_prime_runtime.sh without --qa; Trilogy: build_trilogy.py --public, which
 # installs both binaries next to "Corruption_3 PC"). --layout-test packages the local test build only to
 # check the archives' layout: it skips the QA and diagnostics checks and its archives are not releases.
-# Written on Windows on 16/11/2026 and not run on Linux yet (see recomp/docs/linux_port.md).
+# --publish names the public repository folder (README, CHANGELOG, LICENSE...; default <root>/publish, which
+# only the Windows working copy has).
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 build_dir=${MP3_BUILD_DIR:-${MP3PORT:-/mnt/mp3port}/builds/RM3E01_00_runtime_linux}
 out=$root/dist
 layout_test=0
+publish=$root/publish
 while [[ $# -gt 0 ]]; do
     case $1 in
         --build-dir) build_dir=$2; shift 2 ;;
         --out) out=$2; shift 2 ;;
+        --publish) publish=$2; shift 2 ;;
         --layout-test) layout_test=1; shift ;;
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
@@ -32,7 +35,6 @@ die() { echo "package_release_linux: $*" >&2; exit 1; }
 header=$root/recomp/third_party/WiiCompiled/runtime/include/prime_port_version.h
 version=$(sed -n 's/^#define PRIME_PORT_VERSION "\([^"]*\)".*/\1/p' "$header")
 [[ -n $version ]] || die "PRIME_PORT_VERSION not found in $header"
-publish=$root/publish
 main_name=Corruption_3-PC-v$version-linux-x86_64
 addon_name=Corruption_3-PC-v$version-Trilogy-addon-linux-x86_64
 main_stage=$out/$main_name
@@ -72,7 +74,7 @@ copy_binary 'Corruption_3 Trilogy MP3' "$addon_stage"
 shopt -s nullglob
 for library in "$build_dir"/*.so "$build_dir"/*.so.*; do cp -fP "$library" "$main_stage/"; done
 shopt -u nullglob
-for asset in dsp_coef.bin initial_pipeline_cache.db Config.default.toml; do
+for asset in dsp_coef.bin cacert.pem initial_pipeline_cache.db Config.default.toml; do
     [[ -f $build_dir/$asset ]] || die "missing $build_dir/$asset"
     cp -f "$build_dir/$asset" "$main_stage/"
 done
@@ -85,9 +87,6 @@ mkdir -p "$main_stage/game"
 echo 'Put your Metroid Prime 3: Corruption (USA) or Metroid Prime Trilogy (USA) disc image (.iso or .rvz) here.' \
     > "$main_stage/game/PUT_YOUR_DISC_IMAGE_HERE.txt"
 
-# Every library the binary needs must come from the system or from the package itself.
-missing=$(cd "$main_stage" && LD_LIBRARY_PATH=. ldd './Corruption_3 PC' | grep 'not found' || true)
-[[ -z $missing ]] || die "unresolved libraries: $missing"
 
 for doc in README.md CHANGELOG.md LICENSE THIRD-PARTY-NOTICES.md; do
     [[ -f $publish/$doc ]] || die "missing $publish/$doc"
@@ -121,14 +120,60 @@ Project page and documentation: https://github.com/bonllavier/Corruption_3-PC
 EOF
 cp -f "$publish/LICENSE" "$publish/THIRD-PARTY-NOTICES.md" "$addon_stage/"
 
+# Every library the binaries need must come from the system or from the package itself ($ORIGIN), never from
+# the build tree. The Trilogy binaries are checked from the main folder, where the player extracts them.
+for binary in "$main_stage/Corruption_3 PC" "$addon_stage/Corruption_3 Trilogy Menu" "$addon_stage/Corruption_3 Trilogy MP3"; do
+    name=$(basename "$binary")
+    runpath=$(readelf -d "$binary" | sed -n 's/.*(RUNPATH).*\[\(.*\)\]/\1/p')
+    [[ -z $runpath || $runpath == '$ORIGIN' ]] || die "$name has RUNPATH '$runpath'; rebuild so it is \$ORIGIN"
+    cp -f "$binary" "$main_stage/.ldd-check"
+    resolved=$(cd "$main_stage" && env -u LD_LIBRARY_PATH ldd ./.ldd-check)
+    rm -f "$main_stage/.ldd-check"
+    if grep -q 'not found' <<<"$resolved"; then die "$name: unresolved libraries: $(grep 'not found' <<<"$resolved")"; fi
+    if grep -qF "$build_dir" <<<"$resolved"; then die "$name loads libraries from the build tree: $resolved"; fi
+done
+
+cat > "$main_stage/README - Linux.txt" <<EOF
+Corruption_3 PC v$version for Linux (x86_64)
+
+README.md describes the port and its options. It is written for Windows: read "Corruption_3 PC" where it
+says "Corruption_3 PC.exe". On Linux:
+
+- Requirements: a 64-bit distribution with glibc 2.35 or newer (for example Ubuntu 22.04, Debian 12 or
+  Fedora 36 and later), a GPU with a Vulkan driver, and PipeWire, PulseAudio or ALSA for sound. X11 and
+  Wayland both work.
+- Start: extract the archive, keep the folder together and run, from that folder:
+    ./"Corruption_3 PC"
+  libpng comes with the package; everything else is a system library.
+- Disc image: the first start asks for your Metroid Prime 3: Corruption (USA) or Metroid Prime Trilogy (USA)
+  disc image (.iso or .rvz). You can also put it in the game folder, or name it on the command line:
+    ./"Corruption_3 PC" --iso "/path/to/Metroid Prime 3 - Corruption (USA).rvz"
+- The first start compiles the shaders, which takes several minutes (a red notice counts them down). Later
+  starts reuse the cache and take about 15 seconds.
+- Saves, settings, the shader cache, logs and bug reports (F12, or F1 > Diagnostics > Create bug report if
+  your desktop takes F12) stay in UserData inside this folder. Extract a new version over this folder to
+  keep them.
+- RetroAchievements: the login is remembered through the desktop's secret service (GNOME Keyring, KWallet);
+  without one you sign in at every start. The update check needs libcurl.
+- Metroid Prime Trilogy (USA): extract the Trilogy add-on of the same version into this folder
+  (see "README - Trilogy add-on.txt" in that archive).
+
+No game data is included: the port reads your own disc image, which it never modifies.
+Project page and documentation: https://github.com/bonllavier/Corruption_3-PC
+EOF
+
 # Nothing of the game or of the player, no credentials (the same rules as package_release.ps1).
 bad=$(find "$main_stage" "$addon_stage" \( -name UserData -o -name save.bin -o -name banner.bin -o -name 'Config.toml' \
       -o -name retroachievements.dat -o -iname '*.iso' -o -iname '*.rvz' -o -iname '*.wbfs' -o -iname '*.dol' \
       -o -iname '*.rel' -o -iname '*.rso' -o -iname '*.pak' -o -name '*.log' \) -print)
 [[ -z $bad ]] || die "game, player or private data in the staged folders: $bad"
-addon_files=$(cd "$addon_stage" && find . -type f | sort | tr '\n' '|')
+addon_files=$(cd "$addon_stage" && find . -type f | LC_ALL=C sort | tr '\n' '|')
 [[ $addon_files == './Corruption_3 Trilogy MP3|./Corruption_3 Trilogy Menu|./LICENSE|./README - Trilogy add-on.txt|./THIRD-PARTY-NOTICES.md|' ]] \
     || die "unexpected add-on contents: $addon_files"
+
+# Files copied from NTFS (publish/) arrive executable: only the binaries and libraries keep the bit.
+find "$main_stage" "$addon_stage" -type d -exec chmod 755 {} +
+find "$main_stage" "$addon_stage" -type f ! -name 'Corruption_3 *' ! -name '*.so*' -exec chmod 644 {} +
 
 write_tar() {
     local name=$1

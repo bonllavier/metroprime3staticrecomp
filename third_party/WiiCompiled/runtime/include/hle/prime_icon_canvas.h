@@ -47,4 +47,7 @@ private:
     std::vector<float> rgba_;  // premultiplied, 0..1
 };
 
+// The bold sans TrueType font found on the system (Noto Sans, DejaVu Sans or Liberation Sans), also used for
+// the on-screen hints on Linux; empty when none is installed.
+const char* FontPath();
 }  // namespace PrimeIconCanvas

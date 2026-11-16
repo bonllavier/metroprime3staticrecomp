@@ -82,6 +82,8 @@ Dependencias externas al repo `recomp` que el pipeline lee por ruta relativa (co
 | Selector de imagen de disco | `IFileOpenDialog` / `MessageBoxW` | `SDL_ShowFileDialogWithProperties` (portal XDG / zenity) / `SDL_ShowMessageBox` | implementado |
 | Informe F12 | DXGI, `RtlGetVersion`, GDI+, `explorer.exe` | `/sys/class/drm`, `/etc/os-release`, `/proc/meminfo`, `__get_cpuid`, `SDL_SavePNG`, `SDL_OpenURL` (la carpeta se abre con una URL `file://` codificada: con espacios o acentos en la ruta no abría nada) | implementado; el 15/11 se añadieron al `system.txt` el estado del renderizador y de la caché de shaders (código común). Pendiente de QA del usuario en Linux. Si el escritorio captura F12 (Yakuake en KDE), usar F1 > Diagnostics > *Create bug report* |
 | Capturas | JPEG por GDI+ | PNG por `SDL_SavePNG` | implementado |
+| Fuente del HUD (aviso de vista con ratón y avisos de logros, 34 px) | Bahnschrift / Segoe UI / Arial negrita de `%WINDIR%\Fonts` | la sans negrita del sistema que usan los iconos (`PrimeIconCanvas::FontPath`: Noto, DejaVu o Liberation) | implementado 16/11/2026 (antes, en Linux, la fuente pequeña de ImGui) |
+| Idioma del aviso de vista con ratón | `GetUserDefaultUILanguage` (español o inglés) | `SDL_GetPreferredLocales` (primer idioma del escritorio) | implementado 16/11/2026 (antes, en Linux, siempre inglés) |
 | Nombre de tecla según distribución | `GetKeyNameTextW` | `SDL_GetKeyFromScancode` + `SDL_GetKeyName` | implementado |
 | Búsqueda de actualizaciones | WinHTTP | `HostHttps` (libcurl por `dlopen`, solo HTTPS, también en redirecciones) | implementado |
 | Borrado seguro de contraseña | `SecureZeroMemory` | `explicit_bzero` | implementado |
@@ -265,6 +267,10 @@ Funciones de Windows que influyen en el rendimiento y su estado en Linux:
 - Ocultar MSAA 2x/8x en Vulkan.
 - Vigilante de parones F8.
 - Empaquetado: ver "Paquete de Linux v0.1.7". Falta el lanzador `.desktop` con el icono, probar el complemento con un disco de Trilogy en Linux y la subida desde `publish_release.ps1`.
+
+## Auditoría Windows → Linux (2026-11-16)
+
+Revisión de los bloques `_WIN32` sin rama para Linux en `runtime/` y `aurora-main/` (43), de los cambios de plataforma desde la sincronización del 11/11 y del contenido de los dos paquetes v0.1.7. Corregido: medición del refresco (apartado siguiente), fuente del HUD e idioma del aviso de vista con ratón. Idénticos en los dos paquetes: pantallas de la correa, semilla de shaders (`3e1db0f4…`), `dsp_coef.bin` y `Config.default.toml` (salvo la sección `[reshade]`). Lo demás que sigue solo en Windows, a propósito o sin equivalente necesario: ReShade (decisión del usuario), la cola de presentación de DXGI (no aplica a Vulkan), Direct3D 12 / DXC, el diálogo y la consola de Windows, la memoria de invitado con marcadores de `VirtualAlloc2` (Linux tiene su propio mapeo), la lectura exacta de DXGI del QA (`WII_COMPILED_QA_DISPLAY_CADENCE`), RenderDoc/Tracy y el vigilante de parones del QA (pendiente). Diferencia conocida que se mantiene: el puntero en menús se lee de los eventos de SDL (hasta un fotograma más tarde que `GetCursorPos`); leerlo del servidor X en cada lectura del mando añadiría una ida y vuelta al hilo del juego.
 
 ## Medición del refresco en Linux (2026-11-16)
 

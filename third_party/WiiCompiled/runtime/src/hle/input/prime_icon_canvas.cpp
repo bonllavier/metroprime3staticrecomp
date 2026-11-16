@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iterator>
 #include <mutex>
+#include <string>
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_STATIC
@@ -62,6 +63,7 @@ bool InsidePolygon(float px, float py, const std::vector<Point>& points) {
 
 // --- font -------------------------------------------------------------------
 struct Font {
+    std::string path;
     std::vector<unsigned char> data;
     stbtt_fontinfo info{};
     bool ok = false;
@@ -93,6 +95,7 @@ const Font& LoadFont() {
             if (!font.data.empty() &&
                 stbtt_InitFont(&font.info, font.data.data(), stbtt_GetFontOffsetForIndex(font.data.data(), 0))) {
                 font.ok = true;
+                font.path = candidate;
                 RT_LOG(RT_TAG_RUNTIME) << "[prime-icons] font " << candidate << std::endl;
                 return;
             }
@@ -280,6 +283,8 @@ bool Canvas::SaveFlippedPng(const std::filesystem::path& path) const {
     SDL_DestroySurface(surface);
     return ok;
 }
+
+const char* FontPath() { return LoadFont().path.c_str(); }
 
 }  // namespace PrimeIconCanvas
 #endif

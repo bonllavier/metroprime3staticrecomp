@@ -1,5 +1,9 @@
 #include "hle_stubs.h"
 #include "settings_overlay.h"
+#if defined(__linux__)
+#include "hle/prime_icon_canvas.h"
+#include <SDL3/SDL_locale.h>
+#endif
 #include "audio_backend.h"
 #include "aurora_events.h"
 #include "controller_button_names.h"
@@ -3707,7 +3711,16 @@ bool SpanishUi() {
 #if defined(_WIN32)
     return PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_SPANISH;
 #else
-    return false;
+    // The desktop's first preferred language (LANGUAGE / LC_ALL / LC_MESSAGES / LANG through SDL).
+    static const bool spanish = [] {
+        int count = 0;
+        SDL_Locale** locales = SDL_GetPreferredLocales(&count);
+        const bool result = locales != nullptr && count > 0 && locales[0] != nullptr &&
+                            locales[0]->language != nullptr && SDL_strcmp(locales[0]->language, "es") == 0;
+        SDL_free(locales);
+        return result;
+    }();
+    return spanish;
 #endif
 }
 
@@ -3927,6 +3940,19 @@ void ImGuiInit(const AuroraWindowSize*) noexcept {
             RT_LOG(RT_TAG_RUNTIME) << "[mouse-look-hint] HUD font " << file << std::endl;
             break;
         }
+    }
+#elif defined(MKW_GAME_PROFILE_RM3E01_00) && defined(__linux__)
+    // The same 34 px bold sans for the mouse-look hint and the achievement pop-ups, from the system fonts
+    // the prompt icons use (without one they keep ImGui's small default font, as before).
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.Fonts->Fonts.empty()) io.Fonts->AddFontDefault();  // keep the panel's font as the default
+    const char* path = PrimeIconCanvas::FontPath();
+    if (path[0] != '\0') {
+        ImFontConfig config;
+        config.OversampleH = 2;
+        config.OversampleV = 2;
+        g_hudFont = io.Fonts->AddFontFromFileTTF(path, 34.0f, &config, io.Fonts->GetGlyphRangesDefault());
+        if (g_hudFont) RT_LOG(RT_TAG_RUNTIME) << "[mouse-look-hint] HUD font " << path << std::endl;
     }
 #endif
 }

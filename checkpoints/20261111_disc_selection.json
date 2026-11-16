@@ -1,8 +1,8 @@
 {
-    "tested_utc":  "2026-11-15T10:29:54.4125274Z",
+    "tested_utc":  "2026-11-16T15:12:34.7803326Z",
     "revision":  "RM3E01_00",
-    "passed":  false,
-    "executable_sha256":  "e87ce767692d575d4f8b0b3251536ac93ba325ca68d5db629167af34e3eb751c",
+    "passed":  true,
+    "executable_sha256":  "35e051451aa01699e892a56c6bcf978b2a683eb09b11f0c1261d044e3269e633",
     "cases":  [
                   {
                       "case":  "proton_shell_path",
@@ -78,10 +78,10 @@
                   },
                   {
                       "case":  "iso_wbfs_argument",
-                      "passed":  false,
-                      "exited":  false,
+                      "passed":  true,
+                      "exited":  true,
                       "problems":  [
-                                       "still running: expected a fatal stop"
+
                                    ]
                   },
                   {
@@ -126,6 +126,14 @@
                   },
                   {
                       "case":  "no_image",
+                      "passed":  true,
+                      "exited":  true,
+                      "problems":  [
+
+                                   ]
+                  },
+                  {
+                      "case":  "trilogy_usa_handoff",
                       "passed":  true,
                       "exited":  true,
                       "problems":  [

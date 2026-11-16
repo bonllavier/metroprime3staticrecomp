@@ -14,11 +14,13 @@
 // options from the save as on a cold boot.
 
 #include <cstdint>
+#include <filesystem>
 #include <cstdlib>
 #include <stdexcept>
 #include <string>
 
 #include "aurora_events.h"
+#include "hle/prime_trilogy_addon.h"
 #include "ppc_runtime.h"
 #include "runtime_config.h"
 #include "runtime_log.h"
@@ -190,10 +192,26 @@ extern "C" bool PrimeHostOsReturnToMenu(CpuContext*) {
 
 // The chosen disc is Metroid Prime Trilogy (R3ME01). Its DOLs use the same guest
 // addresses as this one, so they are separate executables next to this one
-// (recomp/docs/trilogy_r3me01.md). Starts the Trilogy menu and ends this process;
-// the executables share UserData, so they open the same image.
+// (recomp/docs/trilogy_r3me01.md), shipped as the Trilogy add-on archive
+// (hle/prime_trilogy_addon.h). Starts the Trilogy menu and ends this process;
+// the executables share UserData, so they open the same image. Both add-on
+// executables must be present; the menu is told this build's version and
+// refuses to run under another one. A missing add-on is a disc error: the
+// disc dialog shows what to download and lets the player pick another image.
+namespace {
+std::string MissingAddonParts(const std::filesystem::path& folder) {
+    std::string missing;
+    for (const char* name : {PrimeTrilogyAddon::kMenuExecutable, PrimeTrilogyAddon::kGameExecutable}) {
+        std::error_code ec;
+        if (std::filesystem::is_regular_file(folder / name, ec)) continue;
+        if (!missing.empty()) missing += ", ";
+        missing += name;
+    }
+    return missing;
+}
+}  // namespace
+
 void PrimeStartTrilogy() {
-    constexpr wchar_t kTrilogyMenu[] = L"Corruption_3 Trilogy Menu.exe";
 #if defined(_WIN32)
     std::wstring exe(MAX_PATH, L'\0');
     for (;;) {
@@ -202,40 +220,56 @@ void PrimeStartTrilogy() {
         if (length < exe.size()) { exe.resize(length); break; }
         exe.resize(exe.size() * 2);
     }
-    exe.resize(exe.find_last_of(L"\\/") + 1);
-    const std::wstring menu = exe + kTrilogyMenu;
+    const std::filesystem::path folder = std::filesystem::path(exe).parent_path();
+    if (const std::string missing = MissingAddonParts(folder); !missing.empty()) {
+        RT_LOG(RT_TAG_OS) << "[prime-trilogy] add-on missing: " << missing << std::endl;
+        throw std::runtime_error(PrimeTrilogyAddon::MissingText(missing));
+    }
+    const std::wstring menu = (folder / PrimeTrilogyAddon::kMenuExecutable).wstring();
     std::wstring commandLine = L"\"" + menu + L"\"";
     const std::string parent = std::to_string(GetCurrentProcessId());
     _putenv_s(kPrimeRestartParentVariable, parent.c_str());
+    _putenv_s(PrimeTrilogyAddon::kBaseVersionVariable, PRIME_PORT_VERSION);
     STARTUPINFOW startup{};
     startup.cb = sizeof(startup);
     PROCESS_INFORMATION process{};
     const BOOL ok = CreateProcessW(menu.c_str(), commandLine.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &startup, &process);
+    const DWORD error = ok ? 0 : GetLastError();
     _putenv_s(kPrimeRestartParentVariable, "");
+    _putenv_s(PrimeTrilogyAddon::kBaseVersionVariable, "");
     if (ok) {
         RT_LOG(RT_TAG_OS) << "[prime-trilogy] started the Trilogy menu pid=" << process.dwProcessId << std::endl;
         CloseHandle(process.hThread);
         CloseHandle(process.hProcess);
         ExitForAuroraWindowClose();
     }
-    throw std::runtime_error("This disc is Metroid Prime Trilogy, but its menu could not be started:\n  Corruption_3 Trilogy Menu.exe\n\n"
-                             "It must be next to this executable.");
+    RT_LOG(RT_TAG_OS) << "[prime-trilogy] cannot start the Trilogy menu error=" << error << std::endl;
+    throw std::runtime_error("This disc is Metroid Prime Trilogy, but its menu could not be started (error " +
+                             std::to_string(error) + "):\n  " + RuntimeConfigFile::PathToUtf8(menu) +
+                             "\n\nReinstall the Trilogy add-on (" + PrimeTrilogyAddon::ArchiveName() + ") into this folder.");
 #else
-    (void)kTrilogyMenu;
-    std::string exe = SelfExecutable();
-    if (!exe.empty()) {
-        const std::string menu = exe.substr(0, exe.find_last_of('/') + 1) + "Corruption_3 Trilogy Menu";
-        // The image came from --iso (still set: it passed the disc check), so the menu opens it too.
-        std::vector<std::string> args{menu};
-        if (!RuntimeConfigFile::PrimeIsoOverride().empty()) args.insert(args.end(), {"--iso", RuntimeConfigFile::PrimeIsoOverride()});
-        pid_t child = 0;
-        if (SpawnWithParentMarker(menu, std::move(args), child)) {
-            RT_LOG(RT_TAG_OS) << "[prime-trilogy] started the Trilogy menu pid=" << child << std::endl;
-            ExitForAuroraWindowClose();
-        }
+    const std::string exe = SelfExecutable();
+    if (exe.empty()) throw std::runtime_error("Cannot locate this executable.");
+    const std::filesystem::path folder = std::filesystem::path(exe).parent_path();
+    if (const std::string missing = MissingAddonParts(folder); !missing.empty()) {
+        RT_LOG(RT_TAG_OS) << "[prime-trilogy] add-on missing: " << missing << std::endl;
+        throw std::runtime_error(PrimeTrilogyAddon::MissingText(missing));
     }
-    throw std::runtime_error("This disc is Metroid Prime Trilogy, but its menu could not be started:\n  Corruption_3 Trilogy Menu\n\n"
-                             "It must be next to this executable.");
+    const std::string menu = (folder / PrimeTrilogyAddon::kMenuExecutable).string();
+    // The image came from --iso (still set: it passed the disc check), so the menu opens it too.
+    std::vector<std::string> args{menu};
+    if (!RuntimeConfigFile::PrimeIsoOverride().empty()) args.insert(args.end(), {"--iso", RuntimeConfigFile::PrimeIsoOverride()});
+    setenv(PrimeTrilogyAddon::kBaseVersionVariable, PRIME_PORT_VERSION, 1);
+    pid_t child = 0;
+    const bool started = SpawnWithParentMarker(menu, std::move(args), child);
+    unsetenv(PrimeTrilogyAddon::kBaseVersionVariable);
+    if (started) {
+        RT_LOG(RT_TAG_OS) << "[prime-trilogy] started the Trilogy menu pid=" << child << std::endl;
+        ExitForAuroraWindowClose();
+    }
+    throw std::runtime_error("This disc is Metroid Prime Trilogy, but its menu could not be started:\n  " + menu +
+                             "\n\nReinstall the Trilogy add-on (" + PrimeTrilogyAddon::ArchiveName() +
+                             ") into this folder and check that both files are executable (chmod +x).");
 #endif
 }
 

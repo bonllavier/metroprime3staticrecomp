@@ -1790,6 +1790,34 @@ int RuntimeMain(int argc, char** argv) {
                                                std::filesystem::copy_options::overwrite_existing, error);
                 if (std::filesystem::exists(target, error)) auroraConfig.allowTextureReplacements = true;
             }
+            // Metroid Prime Trilogy (R3ME01, fe/NoARAM.pak) has its own strap screens per language, with
+            // other hashes. The port's two pages are the same image in every language, so these are copied
+            // from the shipped ones at start-up instead of shipping more copies. Hashes from tools/prime_icons
+            // (recomp/docs/trilogy_r3me01.md).
+            struct StrapAlias { const char* trilogy; const char* shipped; };
+            static constexpr StrapAlias kTrilogyStrapScreens[] = {
+                {"fc7e927ec31f602c", "ad8eb16a5f40d2e2"}, // A169FREN
+                {"3b7f56efd43b2e0d", "f6c8146f6a1af236"}, // B169FREN
+                {"38e98d1efe9e42e4", "0dd8e2ea1b2d67da"}, // A169SPAN
+                {"33f6b552eaade8ea", "9a1135bd0715a8fe"}, // B169SPAN
+                {"42f8505dd5b3a2cb", "550dd77642afbb04"}, // A169GERM
+                {"74a8868a7e5ea753", "0a2f3408cab0cbcc"}, // B169GERM
+                {"fca50773873d7413", "550dd77642afbb04"}, // A169ITAL
+                {"bed9eed71eca041e", "0a2f3408cab0cbcc"}, // B169ITAL
+                {"b63d3922b062f374", "550dd77642afbb04"}, // A169DUTC
+                {"4a40d88f0e470807", "0a2f3408cab0cbcc"}, // B169DUTC
+            };
+            const auto strapDir = applicationDataDirectory / "texture_replacements" / "strap_screen";
+            for (const auto& alias : kTrilogyStrapScreens) {
+                const auto source = strapDir / ("tex1_832x456_" + std::string(alias.shipped) + "_14.png");
+                const auto target = strapDir / ("tex1_832x456_" + std::string(alias.trilogy) + "_14.png");
+                std::error_code error;
+                if (!std::filesystem::is_regular_file(source, error)) continue;
+                std::error_code sizeError;
+                const auto installed = std::filesystem::file_size(target, sizeError);
+                if (sizeError || installed != std::filesystem::file_size(source, error))
+                    std::filesystem::copy_file(source, target, std::filesystem::copy_options::overwrite_existing, error);
+            }
         }
         // Keyboard/mouse icons: rendered from the current bindings before Aurora
         // indexes texture_replacements (hle/prime_key_icons.h).

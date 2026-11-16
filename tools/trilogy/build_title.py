@@ -15,6 +15,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MODULE_IDS = {row["name"]: row for row in json.loads((ROOT / "config/RM3E01_00/rso_modules.json").read_text())["modules"]}
 STEPS = ("rso", "repairs", "hooks", "shards", "configure")
+# No RetroAchievements with the Trilogy disc (user's decision): rcheevos is left out of these builds on purpose.
+NO_ACHIEVEMENTS = "-DMKW_PRIME_RCHEEVOS_DIR=OFF"
 # ORIGINAL_REPAIRS of audit_prime_dol_switches.py, by their RM3E01 address.
 REVIEWED_REPAIRS = (0x800E01F0, 0x80420444, 0x8019804C, 0x8042B530, 0x80423190, 0x80423EF8, 0x8040D9D8,
                     0x8040F98C, 0x80414E20, 0x80415CB8, 0x804167CC, 0x80419848, 0x80425B10, 0x80427A34, 0x804280AC)
@@ -51,13 +53,13 @@ def configure_linux(title: str, work: Path, qa: bool) -> None:
                "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_C_COMPILER=clang", "-DCMAKE_CXX_COMPILER=clang++", "-DCMAKE_LINKER_TYPE=LLD",
                "-DMKW_GAME_PROFILE_RM3E01_00=ON", f"-DMKW_PRIME_NOD_SOURCE_DIR={nod}",
                f"-DMKW_PRIME_RSO_DIR={work / 'recomp/.tools/rso-runtime/rhbm'}",
-               f"-DMKW_PRIME_QA_TOOLS={'ON' if qa else 'OFF'}", "-DCMAKE_C_FLAGS_RELEASE=-O3 -DNDEBUG"]
+               f"-DMKW_PRIME_QA_TOOLS={'ON' if qa else 'OFF'}", NO_ACHIEVEMENTS, "-DCMAKE_C_FLAGS_RELEASE=-O3 -DNDEBUG"]
     for source in sorted((builds / "RM3E01_00_runtime_linux/_deps").glob("*-src")):
         command.append(f"-DFETCHCONTENT_SOURCE_DIR_{source.name[:-4].upper()}={source}")
     run(work, *command)
 
 
-def configure(title: str, work: Path) -> None:
+def configure(title: str, work: Path, qa: bool) -> None:
     """The RM3E01 build's configuration, reusing the sources its dependencies already fetched."""
     tools = ROOT / ".tools/portable-tools"
     mingw = tools / "llvm-mingw/bin"
@@ -74,7 +76,7 @@ def configure(title: str, work: Path) -> None:
                f"-DMKW_PRIME_NOD_SOURCE_DIR={ROOT / '.tools/nod-source'}",
                f"-DMKW_PRIME_RSO_DIR={work / 'recomp/.tools/rso-runtime/rhbm'}",
                f"-DMKW_CPPWINRT_INCLUDE_DIR={build / 'dependencies/cppwinrt'}",
-               "-DMKW_GAME_PROFILE_RM3E01_00=ON", "-DMKW_PRIME_QA_TOOLS=ON", "-DCMAKE_SUPPRESS_REGENERATION=ON",
+               "-DMKW_GAME_PROFILE_RM3E01_00=ON", f"-DMKW_PRIME_QA_TOOLS={'ON' if qa else 'OFF'}", NO_ACHIEVEMENTS, "-DCMAKE_SUPPRESS_REGENERATION=ON",
                "-DCMAKE_C_FLAGS_RELEASE=-O3 -DNDEBUG", "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG",
                "-DAURORA_DAWN_PROVIDER=package", "-DAURORA_DAWN_VERSION=v20260603.191052", "-DAURORA_DAWN_LINKAGE=shared",
                "-DAURORA_SDL3_PROVIDER=package", "-DAURORA_SDL3_LINKAGE=shared", "-DAURORA_SDL3_VERSION=3.4.4", "-DAURORA_SDL3_LIBUSB=OFF",
@@ -88,7 +90,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("title", choices=("R3ME01_MP3", "R3ME01_FE"))
     parser.add_argument("--from-step", default="rso", choices=STEPS)
-    parser.add_argument("--public", action="store_true", help="Linux: build without the QA tools (default: test build, as RM3E01)")
+    parser.add_argument("--public", action="store_true", help="build without the QA tools, for the public package (default: test build, as RM3E01)")
     args = parser.parse_args()
     title = args.title
     base = ROOT / "titles" / title
@@ -181,7 +183,7 @@ def main() -> None:
         print("shards done", flush=True)
     if start <= 4:
         if os.name == "nt":
-            configure(title, work)
+            configure(title, work, qa=not args.public)
         else:
             configure_linux(title, work, qa=not args.public)
         print("configured", flush=True)

@@ -107,9 +107,9 @@ inline std::string ProblemText(Problem problem) {
     case Problem::Missing: return "There is no file at this path. It may have been moved, renamed or be on a drive that is not connected.";
     case Problem::NotAFile: return "This path is a folder, not a disc image file.";
     case Problem::UnsupportedFormat:
-        return "This file format is not supported yet. Only .iso and .rvz disc images are accepted "
-               "(.wbfs, .gcz, .wia and .ciso are not). Dolphin converts a dump to RVZ or ISO: "
-               "right-click the game > Convert File.";
+        // Only the two accepted formats are named (user's decision of 15/11/2026).
+        return "This file format is not supported. Only .iso and .rvz disc images are accepted. "
+               "Dolphin can convert a dump to RVZ or ISO: right-click the game > Convert File.";
     }
     return {};
 }

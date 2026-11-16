@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -21,6 +22,7 @@
 #include <vector>
 
 #include "aurora_events.h"
+#include "hle/prime_trilogy_addon.h"
 #include "memory.h"
 #include "ppc_runtime.h"
 #include "runtime_config.h"
@@ -40,10 +42,10 @@ extern char** environ;
 
 namespace {
 constexpr uint32_t kStateMagic = 0x52334D45u;  // R3ME
+constexpr const char* kMenuExecutable = PrimeTrilogyAddon::kMenuExecutable;
+constexpr const char* kGameExecutable = PrimeTrilogyAddon::kGameExecutable;
 constexpr uint32_t kMaximumRegion = 0x00800000u;
 #if defined(_WIN32)
-constexpr const char* kMenuExecutable = "Corruption_3 Trilogy Menu.exe";
-constexpr const char* kGameExecutable = "Corruption_3 Trilogy MP3.exe";
 constexpr const char* kCurtainVariable = "WII_COMPILED_TRILOGY_CURTAIN";  // "<old window> <old pid>"
 constexpr const wchar_t kCurtainClass[] = L"Corruption3TrilogyCurtain";
 constexpr unsigned kCurtainFrames = 3;   // the presented frames that take it down; the first ones can still be queued
@@ -51,8 +53,6 @@ constexpr DWORD kCurtainWaitMs = 3000;   // the old process waits this long for 
 constexpr UINT kCurtainLifeMs = 30000;   // a new window that never presents must not stay covered
 #else
 // Linux has no curtain: the old window closes and the new one opens (docs/linux_port.md).
-constexpr const char* kMenuExecutable = "Corruption_3 Trilogy Menu";
-constexpr const char* kGameExecutable = "Corruption_3 Trilogy MP3";
 #endif
 
 std::filesystem::path StatePath() {
@@ -289,8 +289,30 @@ std::filesystem::path ExecutableDirectory() {
 #endif
 }  // namespace
 
+// The add-on must be the version of the Corruption_3 PC that started it (hle/prime_trilogy_addon.h):
+// both halves share UserData and settings. Started directly, there is no version to compare.
+static void CheckBaseVersion() {
+    const std::string base = PrimeTrilogyAddon::MismatchedBaseVersion();
+    if (base.empty()) return;
+    const std::string text = PrimeTrilogyAddon::VersionMismatchText(base);
+    // This runs before the log folder opens: the line goes to stderr too, for the add-on tests.
+    std::fprintf(stderr, "[trilogy-exec] version mismatch: add-on v%s, Corruption_3 PC v%s\n", PRIME_PORT_VERSION, base.c_str());
+    std::fflush(stderr);
+    RT_LOG(RT_TAG_OS) << "[trilogy-exec] version mismatch: add-on v" PRIME_PORT_VERSION ", Corruption_3 PC v" << base << std::endl;
+    const char* automatedProbe = std::getenv("WII_COMPILED_AUTOMATED_PROBE");
+    if (!(automatedProbe && std::strcmp(automatedProbe, "1") == 0)) {  // tests: no modal dialog
+#if defined(_WIN32)
+        MessageBoxA(nullptr, text.c_str(), "Metroid Prime Trilogy add-on", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Metroid Prime Trilogy add-on", text.c_str(), nullptr);
+#endif
+    }
+    std::exit(1);
+}
+
 // First thing in RuntimeMain, before waiting for the old process to exit.
 void PrimeTrilogyCurtainBegin() {
+    CheckBaseVersion();
 #if defined(_WIN32)
     // Both executables are one taskbar button, which a window change then does not move.
     using SetAppId = HRESULT(WINAPI*)(const wchar_t*);
@@ -358,6 +380,17 @@ extern "C" bool PrimeTrilogyExec(CpuContext* ctx, uint32_t regionVariable) {
     }
 #endif
     ExitForAuroraWindowClose();
+}
+
+// OSRestart in Metroid Prime 3 (PrimeHostOsRestart, as make_title_tree.py rewrites it for R3ME01_MP3):
+// on the console a restart boots the disc's main.dol, which is the Trilogy menu, with no saved region.
+// Returns false when the menu could not be started (the caller then ends the process anyway).
+extern "C" bool PrimeTrilogyRestartToMenu() {
+    std::error_code ec;
+    std::filesystem::remove(StatePath(), ec);
+    const std::filesystem::path target = ExecutableDirectory() / kMenuExecutable;
+    RT_LOG(RT_TAG_OS) << "[trilogy-exec] OSRestart: starting the Trilogy menu" << std::endl;
+    return StartExecutable(target);
 }
 
 // Overlay at the entry of OSGetSavedRegion's only caller, which has that leaf inlined:

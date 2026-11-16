@@ -80,6 +80,9 @@ for path in paks:
             if prompt is None or len(english) > 300:
                 continue
             for lang, index in LANGS.items():
+                # RM3E01's JAPN repeats English; Trilogy's is real Japanese, a language the port does not offer.
+                if lang == 'JAPN' and lang in table and table[lang][i] != english:
+                    continue
                 if lang in table:
                     rows[fnv1a64(table[lang][i])] = (prompt, index)
     f.close()

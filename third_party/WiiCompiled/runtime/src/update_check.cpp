@@ -171,7 +171,16 @@ void Worker() {
         status.state = State::Failed;
         status.message = body.find('[') != std::string::npos ? "no release published yet" : "unexpected reply from GitHub";
     } else {
-        const auto latest = ParseVersion(tag), current = ParseVersion(PRIME_PORT_VERSION);
+        std::string compared = PRIME_PORT_VERSION;
+#if defined(MKW_PRIME_QA_TOOLS)
+        // Test build only: compare as an older version, to see the update notice (and its Trilogy add-on line)
+        // against the releases already on GitHub. Never in the public build.
+        if (const char* pretend = std::getenv("WII_COMPILED_QA_PRETEND_VERSION"); pretend && *pretend) {
+            compared = pretend;
+            RT_LOG(RT_TAG_RUNTIME) << "[update-check] QA: comparing as v" << compared << std::endl;
+        }
+#endif
+        const auto latest = ParseVersion(tag), current = ParseVersion(compared);
         status.latestVersion = tag.front() == 'v' ? tag.substr(1) : tag;
         status.state = latest > current ? State::UpdateAvailable : State::UpToDate;
         status.message = latest > current ? "A newer build is available" : "This is the latest build";

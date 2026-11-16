@@ -125,6 +125,23 @@ Si la ventana vieja no está en primer plano no hay cortina, porque la copia rec
 
 Las dos pantallas de la correa del Wiimote de Trilogy tienen texturas propias (`tex1_832x456_ad15d2f8f67a24d8_14`, "Allow adequate room…", y `tex1_832x456_daf65c9d00a79c85_14`, la del conector), vistas en dos capturas F7. Se sustituyen con las mismas dos imágenes de RM3E01, copiadas con esos nombres en `runtime/assets/texture_replacements/strap_screen/` (01/02 y 02/02, por orden de aparición) y añadidas a `package_release.ps1`. Los ejecutables de Trilogy comparten carpeta y `UserData` con `Corruption_3 PC.exe`, así que no hace falta recompilar. Los hashes de RM3E01 no cambian.
 
+**Otros idiomas (16/11/2026).** El usuario vio las pantallas originales de la correa en Trilogy porque juega en español. Trilogy no reutiliza los recursos de RM3E01: `fe/NoARAM.pak` trae `TXTR_StrapScreenA169`/`B169` en inglés, francés, español, alemán, italiano, neerlandés y japonés, cada una con un hash propio (RM3E01 solo trae inglés, francés y español). Hashes calculados con `tools/prime_icons` (lectura de TXTR, XXH64 del nivel base, formato 14) sobre el pak leído del RVZ con `disc_file_tool.exe file`, que reproducen los dos ya conocidos:
+
+| Recurso | Hash Trilogy (página 01 / 02) |
+| --- | --- |
+| A169 / B169 (inglés) | `ad15d2f8f67a24d8` / `daf65c9d00a79c85` (copias en el repositorio) |
+| A169FREN / B169FREN | `fc7e927ec31f602c` / `3b7f56efd43b2e0d` |
+| A169SPAN / B169SPAN | `38e98d1efe9e42e4` / `33f6b552eaade8ea` |
+| A169GERM / B169GERM | `42f8505dd5b3a2cb` / `74a8868a7e5ea753` |
+| A169ITAL / B169ITAL | `fca50773873d7413` / `bed9eed71eca041e` |
+| A169DUTC / B169DUTC | `b63d3922b062f374` / `4a40d88f0e470807` |
+
+Las pantallas del port son dos imágenes (01/02) iguales para todos los idiomas: los ocho PNG del repositorio son dos contenidos repetidos (comprobado con md5).
+
+Para no meter 17 MB de PNG repetidos en el zip, `main.cpp` crea esas copias en `UserData/texture_replacements/strap_screen` al arrancar, a partir de las imágenes que ya se distribuyen (tabla `kTrilogyStrapScreens`). Comprobado el 16/11 arrancando el build local 15 s: `strap_screen` pasa de 8 a 18 archivos. El japonés no se sustituye: el port no ofrece ese idioma.
+
+**Iconos de teclado y mando (16/11/2026).** De las 120 texturas de botones de `config/RM3E01_00/keyboard_icon_textures.json`, 119 están en los paks de Trilogy (`MP3/` y `fe/`) con el mismo identificador y el mismo nombre de reemplazo; la que falta (`6a74653492612ba7`, GuiNAND) no la usa el port. Los iconos valen igual en Trilogy sin cambios.
+
 ## Trilogy Europa (R3MP01), análisis del 06/11/2026
 
 El usuario pidió saber si el RVZ europeo (`D:\Metroid Prime Trilogy (Europe) (En,Fr,De,Es,It).rvz`) puede ejecutarse con los mismos ejecutables que Trilogy USA y que, en la medida de lo posible, no haya que generar otro exe. Solo se ha leído el disco con `nod` (`disc_file_tool.exe`); no se ha modificado ni ejecutado nada en el port.
@@ -158,6 +175,8 @@ Caminos para un solo exe, sin decidir:
 
 **Linux (13/11/2026):** la misma cadena funciona en Linux; ver la sección de Trilogy en [linux_port.md](linux_port.md). Al montarla se vio que el `address_map.json` de Windows es anterior a la corrección del puntero en ultrawide (12/11): sin `make_address_map.py`, `kGuiCursorOrthoReturn` (0x800CB4F8) queda con la dirección de RM3E01 en los ejecutables de Trilogy y esa corrección no se aplica allí. En Windows hay que volver a pasar `make_address_map.py` por cada título antes de la próxima compilación.
 
+**Desde el 16/11/2026 la cadena entera es un solo comando:** `python -B tools/trilogy/build_trilogy.py` (build de pruebas, con QA) o `--public` (sin QA, el que usa `make_release.ps1`). Hace `make_address_map`, `make_title_tree`, `audit_native_collisions`, `build_title`, la compilación y la instalación de los dos títulos, y comprueba la versión y la marca de QA. `--configure-only` solo cambia QA y recompila. Ese día los ejecutables de Trilogy llevaban sin regenerarse desde el 12/11: les faltaban el aviso de compilación de shaders, el periodo VI de 59,94 Hz con el paso de lógica escalado (la dirección `lbl_8068258C` se traslada a `0x806746A4` en MP3 y `0x80623A2C` en el menú; en los tres DOL vale 1/60), la revisión de textos del 14/11 y lo demás de esos días. El anclaje del hook de presentación en `vi.cpp` se ajustó a la nueva forma del código (el bloque de QA que mide la presentación).
+
 Los ejecutables de Trilogy no reciben por sí solos lo que se cambie en las fuentes de RM3E01: `make_title_tree.py` copia el runtime a `titles/`. Si no cambian los hooks, las herramientas ni el traductor, basta con `make_title_tree.py` y `audit_native_collisions.py` de cada título, `ninja WiiCompiled` en `titles/<título>/work/recomp/build/<título>_runtime` e `install_title_exes.py`, con el juego cerrado. Tardó unos 6 minutos el 05/11/2026 (FPS por encima de 60, ver `fps_altos.md`).
 
 Si cambian los hooks, hay que pasar por la cadena completa (`make_address_map.py`, `make_title_tree.py`, `audit_native_collisions.py`, `build_title.py`, ninja e `install_title_exes.py`). El 11/11/2026, al añadir los hooks de ultrawide, se vio que el hook del idioma (`0x802F13A4`, `lbz r0,-0x22C0(r13)`) nunca había llegado a Trilogy: su desplazamiento sobre r13 es el de RM3E01. Ahora `make_title_tree.py` lo lee de la instrucción equivalente de cada DOL, igual que el `lfs` del relleno, y se detiene si esa instrucción deja de ser `lbz r0,d(r13)`. La cadena completa pasó para MP3 y para el menú. La opción de idioma en Trilogy sigue sin probar en pantalla.
@@ -170,6 +189,35 @@ Si cambian los hooks, hay que pasar por la cadena completa (`make_address_map.py
 4. Probar `Corruption_3 PC.exe` sin el ejecutable del menú al lado (error esperado en el selector) y con el perfil real del usuario.
 5. Textos de gestos con la tecla o el botón asignado (ver `entrada_teclado_raton.md`).
    - El hook se traslada solo y su ancla está comprobada.
-   - Falta añadir a la tabla las cadenas de `MP3/RS5.PAK` que no coincidan con RM3E01 (hay que leer la imagen de Trilogy, que está en Windows).
+   - Hecho el 16/11/2026: se leyeron las tablas STRG de todos los paks de `MP3/` (uno a uno desde el RVZ, sin dejar copia). Trilogy redacta distinto 24 cadenas en alemán, francés, español e italiano (por ejemplo "Gira el mando hacia la derecha."), ya añadidas a `prime_motion_text_hashes.inc` (75 → 99). Su japonés es texto real, no el inglés repetido de RM3E01, y se deja fuera (`motion_text_hashes.py` también lo omite).
    - Comprobar en juego con un build de QA (`unknown prompt`).
-6. Decidir el empaquetado público y los textos. `[update-check]` también corre en los ejecutables de Trilogy.
+6. Empaquetado público (16/11/2026): `package_release.ps1` incluye y comprueba `Corruption_3 Trilogy Menu.exe` y `Corruption_3 Trilogy MP3.exe` con las mismas reglas que `Corruption_3 PC.exe` (sin herramientas de QA ni diagnósticos, versión, sin símbolos de depuración). `make_release.ps1` los compila sin QA con `tools/trilogy/build_trilogy.py --public`, los verifica en el zip y después los devuelve al build de QA (`--configure-only`). `publish_release.ps1` y VirusTotal analizan también los dos ejecutables. `[update-check]` también corre en ellos.
+
+## Auditoría RM3E01 → Trilogy (16/11/2026)
+
+Petición del usuario: dejar el MP3 de Trilogy equiparado con RM3E01 (textos, reloj de 59,94 Hz, menús, juego, iluminación), con las adaptaciones que Trilogy necesite. Herramientas nuevas, de solo lectura:
+
+- `tools/trilogy/audit_pair_fields.py <título> --port`: compara el código traducido de cada función que usa el port con su pareja de Trilogy (desplazamientos de memoria movidos y cambios de código). `--census` hace lo mismo con todas las funciones emparejadas (`titles/<título>/field_census.txt`).
+- `tools/trilogy/audit_small_data.py <título> --port`: compara por valor las constantes de small-data (`r2`) que leen esas funciones, porque `audit_pair_fields.py` normaliza esos desplazamientos y no vería un umbral cambiado.
+
+Referencia independiente: las direcciones de PrimeHack (`AddressDBInit.cpp`, solo consultado) para Corruption suelto y dentro de Trilogy, NTSC-U. Coinciden con el mapa del port en todo lo que usa: gestor de estado `0x805C6C68`, `CTweakGun` `0x8066F87C`, cursor `0x8066FD08`, `0x8066FCFC`, los seis puntos de FOV (`0x8007F3DC`, `0x800DBF50`, `0x800DB584`, `0x80179860`, culling `0x8031490C`, cambio de cámara `0x802B1CE4`), el lazo `0x80171AD8` y los campos de `CPlayer` (`+0x35A8`, `+0x784` movidos; `+0x174`, `+0x358`, `+0x370` iguales).
+
+### Corregido
+
+1. **OSRestart y OSReturnToMenu estaban mal emparejados** (similitud 0,525 y 0,507). El reinicio de CMain llama en RM3E01 a `0x804E57C4` y `0x804E5850`. En el mismo punto, Trilogy MP3 llama a `0x804E5E20` y `0x804E5FF4`, y el menú a `0x80493DCC` y `0x80493FA0`. Los ganchos `PrimeHostOsRestart`/`PrimeHostOsReturnToMenu` estaban en `__OSReturnToMenu` y en otra función que acaba en OSPanic. `make_address_map.py` ahora revisa por llamadas alineadas (de cuerpos emparejados con fiabilidad) toda pareja de similitud inferior a 0,9, y la cambia cuando las llamadas nombran otra función. Además de esas dos, cambió 10 parejas en MP3 y 5 en el menú que el port no usa (y deshizo 5 y 3 parejas débiles que ocupaban la función correcta); el mapa de direcciones del port solo cambió en esos dos ganchos.
+2. **OSRestart en Trilogy MP3 abre el menú de Trilogy** (`PrimeTrilogyRestartToMenu` en `prime_trilogy_exec.cpp`; `make_title_tree.py` lo pone en `prime_host_restart.cpp` solo para MP3). En la consola, un reinicio arranca el `main.dol` del disco, que es el menú. En el menú, relanzarse a sí mismo ya es lo correcto.
+3. **RetroAchievements fuera de Trilogy de forma explícita** (`-DMKW_PRIME_RCHEEVOS_DIR=OFF` en `build_title.py`). Antes quedaba fuera solo porque la carpeta de rcheevos no existe en el árbol de Trilogy. `package_release.ps1` exige `rc_client` solo en `Corruption_3 PC.exe`.
+4. Pantallas de la correa en otros idiomas y 24 avisos de gestos de Trilogy (ver arriba).
+
+### Comprobado sin cambios
+
+- **Reloj (59,94 Hz y paso de lógica):** la función que carga el paso (`fn_802EA018` en RM3E01, `0x802E8964` en MP3, `0x8029F3C4` en el menú) elige entre NTSC y PAL igual en los tres DOL. La dirección trasladada es la NTSC (`0x806746A4`, `0x80623A2C`) y vale 1/60.
+- **Textos:** regenerada la tabla de correcciones con RM3E01 y Trilogy (paks de `MP3/` y `fe/` leídos del RVZ a una carpeta temporal, ya borrada). Sale idéntica a la del repositorio, así que la revisión del español del 14/11 ya cubre Trilogy. La tabla de gestos fusionada coincide con `motion_text_hashes.py` sobre los dos discos (99 cadenas).
+- **Iluminación moderna:** `0x801ACAB8` cambió (Trilogy movió la prueba de área cargada a `0x8009582C`), pero lee los mismos campos (`+0x98 == 0x11`, `+0xB4`). `CActorLights::ActivateLights`, `BuildAreaLightList` y `0x8037A580` son iguales salvo direcciones globales.
+- **Vista con ratón:** los campos movidos ya estaban en `MOVED_FIELDS`. Los demás que lee (`+0x30C`, `+0x358`, `+0x370`, tweaks `+0x1D0`, `+0x1D4`, `+0x3BC`, `+0x2864`, superficies `+0xDC`/`+0xFC`/`+0x11C`) aparecen igual en las funciones de Trilogy, y sus constantes (`0x8017A4B4` y la cadena de giro) valen lo mismo.
+- **Gestos:** las constantes de las 12 funciones del analizador de movimiento son idénticas.
+- **Entrada:** los lectores con gancho, KPAD (`0x804D93DC`, muestras de 132 bytes) y WPAD crudo (`0x804DA188`, emparejado con similitud 0,52), tienen el mismo contrato y llamadores equivalentes. Solo cambia la zancada interna por canal (1316 → 1336), que el port no usa.
+- **Ultrawide:** el gancho multiplica el aspecto que calcula el juego. Trilogy usa otras constantes para su 16:9 (1,1786 y 1,3333 frente a 0,9333 y 1,4685), pero eso no afecta al gancho. Las direcciones de retorno de las cámaras y del cursor caen en funciones idénticas.
+- **Modo foto:** el contador del vigilante `0x8066FD1C` tiene 5 de 5 referencias emparejadas. Los ganchos del bucle principal pasan la comprobación de instrucciones; en el menú, `0x802A3220` llama a la actualización `0x802A0EB4` seguida de `cmpwi r3,0`.
+- **Clases de material, piel e iconos:** de 10.608 texturas de RM3E01, 10.333 son idénticas en Trilogy. De las 275 que cambian o faltan, solo tres están en listas del port: dos iconos (uno idéntico en `fe/`, el otro sin uso) y una del casco de la nave, que tiene el mismo nivel base (`9748bedf52b0d2b4`).
+- **Literales sin traducir de archivos genéricos** (`vi.cpp`, `dvd.cpp`, `os_*.cpp`, …): son restos de Mario Kart que caen en código traducido, igual en RM3E01 que en Trilogy.

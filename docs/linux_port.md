@@ -263,7 +263,7 @@ Funciones de Windows que influyen en el rendimiento y su estado en Linux:
 - Wiimote por Bluetooth.
 - Ocultar MSAA 2x/8x en Vulkan.
 - Vigilante de parones F8.
-- Empaquetado (AppImage o tar con `libpng16`, más un lanzador `.desktop` con el icono).
+- Empaquetado: `tools/package_release_linux.sh` (16/11/2026, sin ejecutar todavía en Linux) genera dos `.tar.gz` de la misma versión, el principal y el complemento de Trilogy, como en Windows (ver "Dos archivos por versión" en [publicacion_github.md](publicacion_github.md)). Pasarlo primero con `--layout-test`, revisar las librerías copiadas (`ldd` sin "not found") y probar el complemento descomprimido encima. Falta el lanzador `.desktop` con el icono y la subida desde `publish_release.ps1`.
 - Revisar las 101 funciones en que difiere el traductor actual.
 - Hacer el pipeline autosuficiente (hoy necesita archivos del árbol de Windows).
 - El comentario de `[paths]` en la configuración por defecto muestra una ruta de Windows.

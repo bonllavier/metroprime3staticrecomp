@@ -20,6 +20,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include "hle/prime_trilogy_addon.h"
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -467,7 +468,14 @@ void Worker(std::string trigger) {
         summary << PRIME_PORT_NAME << " " << PRIME_PORT_VERSION << " (created by " << PRIME_PORT_AUTHOR << ")\n";
         summary << "report trigger: " << trigger << "\n";
         summary << "report time: " << stamp << "\n";
-        if (const auto exe = RuntimeConfigFile::ExecutableDirectory()) summary << "executable directory: " << Utf8(*exe) << "\n";
+        if (const auto exe = RuntimeConfigFile::ExecutableDirectory()) {
+            summary << "executable directory: " << Utf8(*exe) << "\n";
+            // The Metroid Prime Trilogy add-on (hle/prime_trilogy_addon.h): both, one or none of its executables.
+            std::error_code ec;
+            const bool menu = std::filesystem::is_regular_file(*exe / PrimeTrilogyAddon::kMenuExecutable, ec);
+            const bool game = std::filesystem::is_regular_file(*exe / PrimeTrilogyAddon::kGameExecutable, ec);
+            summary << "trilogy add-on: " << (menu && game ? "installed" : menu || game ? "incomplete" : "not installed") << "\n";
+        }
         summary << "run log directory: " << Utf8(runDirectory) << "\n";
 #if defined(_WIN32)
         summary << "os: " << WindowsVersion() << "\n";

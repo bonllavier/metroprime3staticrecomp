@@ -221,6 +221,20 @@ class Title:
                 "}\n\n") + anchor)
         return text
 
+    def restart_to_menu(self, text: str, relative: str) -> str:
+        """In Metroid Prime 3, OSRestart boots the disc's main.dol, the Trilogy menu (prime_trilogy_exec.cpp)."""
+        if self.title != "R3ME01_MP3" or relative != "src/hle/os/prime_host_restart.cpp":
+            return text
+        old = ("    // Whether or not the relaunch started, this process ends: rebooting is the\n"
+               "    // only thing the guest expects after OSRestart.\n"
+               "    PrimeRelaunchSelf();\n")
+        new = ("    // Trilogy: the disc reboots into its menu (rs5fe_p.dol), not into this game.\n"
+               "    PrimeTrilogyRestartToMenu();\n")
+        text = replace_exact(text, old, new)
+        return replace_exact(text, "extern \"C\" bool PrimeHostOsRestart(CpuContext* ctx) {\n",
+                             "extern \"C\" bool PrimeTrilogyRestartToMenu();  // hle/os/prime_trilogy_exec.cpp\n"
+                             "extern \"C\" bool PrimeHostOsRestart(CpuContext* ctx) {\n")
+
     def copy_runtime(self) -> None:
         source = ROOT / "third_party/WiiCompiled/runtime"
         destination = self.work / "recomp/third_party/WiiCompiled/runtime"
@@ -236,6 +250,7 @@ class Title:
                 text = self.neutralize_overrides(text)
                 text = apply_runtime_identity(text, relative)
                 text = self.moved_fields(text, relative)
+                text = self.restart_to_menu(text, relative)
                 data = text.encode("utf-8", errors="surrogateescape")
             target.parent.mkdir(parents=True, exist_ok=True)
             if not target.exists() or target.read_bytes() != data:
@@ -403,8 +418,6 @@ def apply_runtime_identity(text: str, relative: str) -> str:
         text = text.replace('std::memcmp(header.game_id, "RM3E01", 6)', 'std::memcmp(header.game_id, "R3ME01", 6)')
         text = replace_exact(text, 'constexpr const char kExpectedDiscId[] = "RM3E01";',
                              'constexpr const char kExpectedDiscId[] = "R3ME01";')
-        text = text.replace("Metroid Prime 3: Corruption (USA), game ID RM3E01", "Metroid Prime Trilogy (USA), game ID R3ME01")
-        text = text.replace("(USA, RM3E01:", "(USA, R3ME01:")
         text = text.replace("id=RM3E01", "id=R3ME01")
         text = text.replace("#if !defined(PRIME_TRILOGY_TITLE)", "#if 0")  # These are the Trilogy executables.
     if relative.endswith("system_bridge.cpp"):
@@ -417,8 +430,9 @@ def apply_runtime_identity(text: str, relative: str) -> str:
         text = replace_exact(text, "    PrimeWaitForRestartedParent();\n",
                              "    PrimeTrilogyCurtainBegin();\n    PrimeWaitForRestartedParent();\n")
     if relative == "src/hle/vi.cpp":
-        text = replace_exact(text, "        aurora_end_frame();\n        if (beginBeforePacing) finishPresent();\n",
-                             "        aurora_end_frame();\n        PrimeTrilogyFramePresented();\n        if (beginBeforePacing) finishPresent();\n")
+        # Right after the present (QA builds time it between this call and finishPresent).
+        text = replace_exact(text, "        aurora_end_frame();\n",
+                             "        aurora_end_frame();\n        PrimeTrilogyFramePresented();\n")
         text = text.replace("#include", 'extern "C" void PrimeTrilogyFramePresented();\n#include', 1)
     return text
 

@@ -9,8 +9,8 @@
    make_release.ps1 -KeepQaBuild       # leave the local build without the QA tools
    make_release.ps1 -AllowFlags        # do not stop when VirusTotal flags a file
 
- Steps: version, changelog check, close the game, build without the QA tools, package, VirusTotal,
- verify the zip, restore the QA build. Each one prints OK or FAIL; a failure stops the rest.
+ Steps: version, changelog check, close the game, build without the QA tools (Corruption_3 PC.exe and
+ the two Metroid Prime Trilogy executables), package, verify the zip, restore the QA build, VirusTotal. Each one prints OK or FAIL; a failure stops the rest.
  The VirusTotal key is read from VIRUSTOTAL_API_KEY (this window or the one stored with setx).
 #>
 param(
@@ -141,16 +141,45 @@ Step 'Build (QA tools off)' {
     "v$fileVersion, no QA marker, {0:N0} MB" -f ((Get-Item -LiteralPath $exe).Length / 1MB)
 }
 
+# ---------------------------------------------------------------- 4b. Metroid Prime Trilogy USA (R3ME01): menu and MP3 executables
+# Regenerated from the same sources (tools/trilogy/build_trilogy.py), so every RM3E01 change reaches them.
+function BuildTrilogy([switch]$Public) {
+    $arguments = @('-B', (Join-Path $PSScriptRoot 'trilogy\build_trilogy.py'))
+    if ($Public) { $arguments += '--public' }
+    $r = Native { python @arguments }
+    if ($r.Code -ne 0) {
+        throw ('Trilogy build failed: ' + (($r.Output -split "`r?`n" | Where-Object { $_ } | Select-Object -Last 3) -join ' | '))
+    }
+}
+Step 'Trilogy executables (QA tools off)' {
+    BuildTrilogy -Public
+    $names = 'Corruption_3 Trilogy Menu.exe', 'Corruption_3 Trilogy MP3.exe'
+    foreach ($name in $names) {
+        $exe = Join-Path $buildDir $name
+        $fileVersion = (Get-Item -LiteralPath $exe).VersionInfo.FileVersion
+        if ($fileVersion -ne $releaseVersion) { throw "$name reports $fileVersion, expected $releaseVersion" }
+        if (([IO.File]::ReadAllText($exe, [Text.Encoding]::GetEncoding(28591))).Contains('MKW_PRIME_QA_TOOLS_ENABLED_BUILD')) {
+            throw "$name still carries the QA tools"
+        }
+    }
+    "v$releaseVersion, no QA marker: " + ($names -join ', ')
+}
+
 # ---------------------------------------------------------------- 5. package
 Step 'Package' {
     $r = Native { powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'package_release.ps1') }
-    if ($r.Code -ne 0 -or $r.Output -notmatch 'sha256:\s+([0-9a-f]{64})') {
+    if ($r.Code -ne 0 -or $r.Output -notmatch '(?m)^sha256:\s+([0-9a-f]{64})') {
         throw ("packaging failed: " + (($r.Output -split "`r?`n" | Where-Object { $_ } | Select-Object -Last 2) -join ' | '))
     }
     $script:zipHash = $Matches[1]
+    if ($r.Output -notmatch '(?m)^addon sha256:\s+([0-9a-f]{64})') { throw 'packaging produced no Trilogy add-on zip' }
+    $script:addonHash = $Matches[1]
     $script:zipPath = Join-Path $root "dist\Corruption_3-PC-v$releaseVersion-win64.zip"
     $script:stagePath = Join-Path $root "dist\Corruption_3-PC-v$releaseVersion-win64"
-    "{0} ({1:N0} MB)" -f (Split-Path $zipPath -Leaf), ((Get-Item -LiteralPath $zipPath).Length / 1MB)
+    $script:addonZipPath = Join-Path $root "dist\Corruption_3-PC-v$releaseVersion-Trilogy-addon-win64.zip"
+    $script:addonStagePath = Join-Path $root "dist\Corruption_3-PC-v$releaseVersion-Trilogy-addon-win64"
+    "{0} ({1:N0} MB) + {2} ({3:N0} MB)" -f (Split-Path $zipPath -Leaf), ((Get-Item -LiteralPath $zipPath).Length / 1MB),
+        (Split-Path $addonZipPath -Leaf), ((Get-Item -LiteralPath $addonZipPath).Length / 1MB)
 }
 
 # ---------------------------------------------------------------- 6. verify what a player gets
@@ -158,10 +187,22 @@ Step 'Verify the package' {
     $extract = Join-Path $env:TEMP "c3release_$releaseVersion"
     if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }
     Expand-Archive -LiteralPath $zipPath -DestinationPath $extract
-    $exe = Join-Path $extract 'Corruption_3 PC.exe'
     $problems = @()
-    if (-not (Test-Path $exe)) { $problems += 'no executable' }
-    elseif ((Get-Item $exe).VersionInfo.FileVersion -ne $releaseVersion) { $problems += 'wrong version in the zip' }
+    # Main zip: Corruption_3 PC only; the Trilogy executables are in the add-on zip.
+    $exe = Join-Path $extract 'Corruption_3 PC.exe'
+    if (-not (Test-Path $exe)) { $problems += 'no Corruption_3 PC.exe' }
+    elseif ((Get-Item $exe).VersionInfo.FileVersion -ne $releaseVersion) { $problems += 'wrong version of Corruption_3 PC.exe in the zip' }
+    foreach ($name in 'Corruption_3 Trilogy Menu.exe', 'Corruption_3 Trilogy MP3.exe') {
+        if (Test-Path (Join-Path $extract $name)) { $problems += "$name is in the main zip (it belongs to the add-on)" }
+    }
+    # The add-on, unzipped over the main folder as a player does: both executables of the same version.
+    Expand-Archive -LiteralPath $addonZipPath -DestinationPath $extract -Force
+    foreach ($name in 'Corruption_3 Trilogy Menu.exe', 'Corruption_3 Trilogy MP3.exe') {
+        $trilogyExe = Join-Path $extract $name
+        if (-not (Test-Path $trilogyExe)) { $problems += "no $name in the add-on" }
+        elseif ((Get-Item $trilogyExe).VersionInfo.FileVersion -ne $releaseVersion) { $problems += "wrong version of $name in the add-on" }
+    }
+    if ((Get-FileHash -LiteralPath $addonZipPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $addonHash) { $problems += 'add-on sha256 mismatch' }
     if (Test-Path (Join-Path $extract 'UserData')) { $problems += 'UserData leaked into the zip' }
     foreach ($needed in 'Config.default.toml', 'README.md', 'CHANGELOG.md', 'LICENSE', 'THIRD-PARTY-NOTICES.md', 'initial_pipeline_cache.db', 'webgpu_dawn.dll') {
         if (-not (Test-Path (Join-Path $extract $needed))) { $problems += "missing $needed" }
@@ -181,7 +222,9 @@ if ($KeepQaBuild) {
     Step 'Restore QA build' {
         Configure 'ON'
         BuildGame
-        'local build has the QA tools again (recording and replay)'
+        $r = Native { python -B (Join-Path $PSScriptRoot 'trilogy\build_trilogy.py') --configure-only }
+        if ($r.Code -ne 0) { throw 'Trilogy executables: QA rebuild failed (run tools\trilogy\build_trilogy.py --configure-only)' }
+        'local build and Trilogy executables have the QA tools again (recording and replay)'
     }
 }
 
@@ -192,7 +235,7 @@ if ($SkipScan) {
 } else {
     Step 'VirusTotal' {
         $report = "$zipPath.virustotal.md"
-        & (Join-Path $PSScriptRoot 'scan_release_virustotal.ps1') -Path @($zipPath, (Join-Path $stagePath 'Corruption_3 PC.exe')) -ReportPath $report | Out-Null
+        & (Join-Path $PSScriptRoot 'scan_release_virustotal.ps1') -Path @($zipPath, $addonZipPath, (Join-Path $stagePath 'Corruption_3 PC.exe'), (Join-Path $addonStagePath 'Corruption_3 Trilogy Menu.exe'), (Join-Path $addonStagePath 'Corruption_3 Trilogy MP3.exe')) -ReportPath $report | Out-Null
         if (-not (Test-Path $report)) { throw 'no report produced' }
         $script:scanReport = $report
         $counts = @(Get-Content $report | Select-String '(\d+) of (\d+) engines flagged it' | ForEach-Object { [int]$_.Matches[0].Groups[1].Value })
@@ -210,5 +253,7 @@ Summary
 Write-Host "`nPackage ready, nothing uploaded." -ForegroundColor Green
 Write-Host "  zip     $zipPath"
 Write-Host "  sha256  $zipHash"
+Write-Host "  add-on  $addonZipPath"
+Write-Host "  sha256  $addonHash"
 if ($scanReport) { Write-Host "  scan    $scanReport"; Write-Host "`n--- antivirus report ---"; Get-Content $scanReport | Write-Host }
 Write-Host "`nTo publish (separate step): powershell -NoProfile -ExecutionPolicy Bypass -File recomp\tools\publish_release.ps1 -Draft -SkipPackage"

@@ -97,3 +97,57 @@ Origen: discusión #2 de GitHub (3johnrw, v0.1.6, portátil con RTX 5080, imagen
   - `[pipeline-failed]` cuando un pipeline o su módulo no se crea.
   - `[prime-iso-open]` añade `format=` y `size_bytes=`.
 - **Pendiente.** Reproducir la escena oscura con la caché vacía entrando a la partida durante la generación, ahora con estos contadores. Aparte, al cerrar tras un error fatal muy temprano el proceso se queda colgado en ~1 de cada 5-10 arranques (`std::exit` espera el cerrojo del cargador mientras otros hilos cargan DLL); visto con `WII_COMPILED_AUTOMATED_PROBE=1`, sin corregir.
+
+## Dos archivos por versión: principal y complemento de Trilogy (16/11/2026)
+
+**Decisión del usuario, para Windows y Linux:** cada versión pública sale en dos archivos de la misma versión, para que la descarga habitual no crezca.
+
+| Archivo | Contenido | Tamaño aproximado |
+| --- | --- | --- |
+| `Corruption_3-PC-vX.Y.Z-win64.zip` (`-linux-x86_64.tar.gz` en Linux) | todo para *Metroid Prime 3: Corruption* (USA): `Corruption_3 PC`, DLL o librerías, semilla de shaders, `wii_bootstrap`, pantallas de la correa, configuración por defecto y documentación | ~89 MB |
+| `Corruption_3-PC-vX.Y.Z-Trilogy-addon-win64.zip` (`-linux-x86_64.tar.gz`) | solo `Corruption_3 Trilogy Menu` y `Corruption_3 Trilogy MP3`, más `README - Trilogy add-on.txt`, `LICENSE` y `THIRD-PARTY-NOTICES.md` | ~90 MB |
+
+Reglas:
+
+- **El complemento se descomprime en la carpeta principal.** No trae nada más porque usa lo de esa carpeta: DLL o librerías, semilla, `UserData` (partidas, ajustes, teclas, cachés) y la ruta del disco. `Corruption_3 PC` sigue siendo la única entrada: con un disco de Trilogy abre el menú de Trilogy.
+- **Los dos archivos tienen siempre la misma versión.** Se compilan del mismo código y comparten configuración. Al arrancar el menú, `Corruption_3 PC` pasa su versión en `CORRUPTION3_BASE_VERSION`; los ejecutables de Trilogy se niegan a arrancar con otra (`[trilogy-exec] version mismatch`) y muestran qué archivo descargar. Si se abren directamente, no hay versión que comparar.
+- **Complemento ausente o incompleto:** al elegir un disco de Trilogy sin los dos ejecutables, el diálogo del disco dice cuál falta, qué archivo descargar (con la página de la versión) y permite elegir otra imagen. Queda en el log como `[prime-trilogy] add-on missing`.
+- **Actualizar:** el aviso de versión nueva (esquina inferior y F1 > Info) recuerda descargar también el complemento cuando está instalado. F1 > Info muestra si está instalado, y el `system.txt` de F12 lleva `trilogy add-on: installed / incomplete / not installed`.
+- Toda la lógica común está en `runtime/include/hle/prime_trilogy_addon.h` (nombres de ejecutables y archivos por plataforma, textos, variable de versión).
+
+Herramientas:
+
+- Windows: `package_release.ps1` genera los dos zips con su `.sha256` y comprueba que el complemento contenga exactamente sus cinco archivos y que los tres ejecutables cumplan las reglas públicas (sin QA ni diagnósticos, misma versión, sin símbolos de depuración). `make_release.ps1` compila Trilogy sin QA (`build_trilogy.py --public`), verifica los dos zips como los recibe un jugador (el principal sin Trilogy, el complemento descomprimido encima) y los analiza en VirusTotal. `publish_release.ps1` sube los dos zips y sus `.sha256`, y la nota de la release explica qué es cada uno.
+- Linux: `tools/package_release_linux.sh` hace lo mismo con `.tar.gz`, que conserva el permiso de ejecución. **Escrito en Windows el 16/11 y sin ejecutar todavía en Linux.** Antes de la primera release de Linux hay que pasarlo en `/mnt/mp3port` con `--layout-test` y comprobar las librerías que copia. Todavía no hay publicación de Linux en `publish_release.ps1`.
+- `-LayoutTest` (Windows) y `--layout-test` (Linux) empaquetan el build de pruebas solo para comprobar la estructura; esos archivos no son releases.
+- Prueba de punta a punta (Windows): `recomp/tools/trilogy/test_trilogy_addon.ps1 -Image "<Trilogy USA .rvz>"`. Monta una carpeta de jugador con los zips y comprueba: los dos zips, complemento ausente, complemento incompleto, complemento instalado (el menú arranca) y versión distinta e igual.
+
+Instrucciones para jugadores: en el README público (sección del complemento), en `README - Trilogy add-on.txt` dentro del zip y en la nota de cada release.
+
+Validación del 16/11/2026 (Windows, build de pruebas 08:38-08:40, RVZ de Trilogy USA): `test_trilogy_addon.ps1` pasó dos veces seguidas los seis casos.
+
+| Caso | Resultado |
+| --- | --- |
+| Zips | 107 entradas en el principal, sin ejecutables de Trilogy; el complemento con sus 5 archivos; 98,9 + 93,3 MB con el build de pruebas, algo menos en el público sin símbolos |
+| Sin complemento | `[prime-trilogy] add-on missing` con los dos ejecutables y el nombre del zip |
+| Complemento incompleto | el mensaje nombra solo `Corruption_3 Trilogy MP3.exe` |
+| Complemento instalado | el menú de Trilogy arranca |
+| Otra versión | el menú sale con código 1 y `version mismatch` |
+| Misma versión | el menú sigue en marcha |
+
+Fallos que encontró la prueba y ya están corregidos:
+
+- En `package_release.ps1`, el bucle de ejecutables pisaba la variable del nombre del paquete: el zip principal salía como `Corruption_3 Trilogy MP3.exe.zip`.
+- En la propia prueba: el menú se arrancaba sin imagen, como nunca lo arranca el juego, que la hereda en `CORRUPTION3_ISO`. Además, el código de salida se perdía en PowerShell 5.1.
+
+Limitación conocida: al lanzar el menú, `Corruption_3 PC` termina con `ExitProcess` sin vaciar el log (a propósito, en todos los cierres), así que a veces falta su última línea, `started the Trilogy menu`. El log del menú (`[trilogy-exec] saved region`) sí confirma el arranque.
+
+### Mensajes del disco y cierre tras un error (16/11/2026, antes de la 0.1.7)
+
+El usuario recordaba un mensaje con más formatos de los permitidos. Eran las versiones 0.1.5 y 0.1.6, que todavía aceptaban `.iso, .rvz, .wbfs, .gcz, .wia o .ciso` en tres textos: el diálogo, la imagen no válida y la imagen no encontrada. Se comprobó leyendo las cadenas de los ejecutables publicados. La 0.1.7 ya no los tenía, pero la revisión corrigió:
+
+- **Formato no admitido:** solo nombra `.iso` y `.rvz` y la conversión con Dolphin. Ya no menciona otros formatos de copia, y `prime_disc_path_tests` lo comprueba.
+- **Sin imagen:** nombra los dos discos válidos, Corruption USA (RM3E01) y Trilogy USA (R3ME01).
+- **Disco equivocado:** el encabezado es "This disc image is not one the port runs" y debajo va el texto de `WrongDiscText` (lo que encontró y los dos válidos). Los reemplazos de esos textos en `make_title_tree.py` se quitaron porque ya no hacen falta.
+- **Documentación pública:** README (sin el "not accepted yet"), troubleshooting y CHANGELOG 0.1.7.
+- **`FailDvd` termina con `std::_Exit(1)`** en vez de `std::exit`. Con los destructores globales y otros hilos vivos, a veces el proceso no terminaba tras el mensaje: 1 de 5 arranques con un `.wbfs`, y 3 casos de `test_prime_disc_selection.ps1` en dos pasadas. Después del cambio, 18 de 18 casos en dos pasadas seguidas y 25 de 25 arranques con `.wbfs` terminan, con código 1, en 0,1 a 1,2 s. Otras rutas fatales que siguen con `std::exit` (`abi_bridge.cpp`, `os_init.cpp`) no se tocaron.

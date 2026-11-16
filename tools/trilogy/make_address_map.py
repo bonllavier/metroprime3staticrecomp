@@ -210,6 +210,48 @@ def pair_by_calls(a, b, mapper, pairs, a_funcs, b_funcs) -> None:
             break
 
 
+def recheck_similar_by_calls(a, b, mapper, pairs, a_funcs, b_funcs, below: float = 0.9) -> list[str]:
+    """A pair made by similarity alone is replaced when the aligned calls of the paired bodies name another
+    function. Found on 16/11/2026: OSRestart (0x804E57C4, similarity 0.525) had been paired with
+    __OSReturnToMenu, while CMain's reset calls 0x804E5E20 at the same place in rs5mp3_p.dol."""
+    a_entries = {f[0] for f in a_funcs}
+    b_entries = {f[0] for f in b_funcs}
+    votes: dict[int, collections.Counter] = collections.defaultdict(collections.Counter)
+    for start, (_, how, _) in list(pairs.items()):
+        if how == "similar":
+            continue  # only trusted bodies vote
+        for pc_a, pc_b in mapper.align(start).items():
+            word_a, word_b = a.words(pc_a, 4)[0], b.words(pc_b, 4)[0]
+            target_a, target_b = branch_target(pc_a, word_a), branch_target(pc_b, word_b)
+            if target_a in a_entries and target_b in b_entries:
+                votes[target_a][target_b] += 1
+    taken = {value[0]: key for key, value in pairs.items()}
+    changes = []
+    for target_a, counter in sorted(votes.items()):
+        current = pairs.get(target_a)
+        if current is None or current[1] != "similar" or current[2] >= below:
+            continue
+        target_b, count = counter.most_common(1)[0]
+        total = sum(counter.values())
+        if target_b == current[0] or count * 2 <= total:
+            continue
+        owner = taken.get(target_b)
+        if owner is not None and owner != target_a:
+            # The owner keeps it when its own pair is trusted, or when calls also name it for the owner.
+            owner_votes = votes.get(owner)
+            owner_backed = owner_votes is not None and owner_votes.most_common(1)[0][0] == target_b
+            if pairs[owner][1] != "similar" or pairs[owner][2] >= below or owner_backed:
+                changes.append(f"  {target_a:08X}: calls name {target_b:08X} ({count}/{total}) but it is paired with {owner:08X}; kept {current[0]:08X}")
+                continue
+            del pairs[owner]
+            changes.append(f"  {owner:08X}: unpaired (its {target_b:08X} belongs to {target_a:08X} by calls)")
+        del taken[current[0]]
+        pairs[target_a] = (target_b, "calls", count / total)
+        taken[target_b] = target_a
+        changes.append(f"  {target_a:08X}: {current[0]:08X} (similar {current[2]:.3f}) -> {target_b:08X} by calls {count}/{total}")
+    return changes
+
+
 def absolute_references(dol: Dol):
     """Yields (pc, target) for lis+addi/ori/load-store and for SDA accesses."""
     for i, start, length, offset in dol.sections:
@@ -252,6 +294,10 @@ def main() -> None:
     pairs, a_norm, b_norm = pair_functions(a, b, a_funcs, b_funcs)
     mapper = Mapper(a, b, a_funcs, b_funcs, pairs, a_norm, b_norm)
     pair_by_calls(a, b, mapper, pairs, a_funcs, b_funcs)
+    changes = recheck_similar_by_calls(a, b, mapper, pairs, a_funcs, b_funcs)
+    if changes:
+        print(f"{args.title}: {len(changes)} similarity pairs rechecked by calls")
+        print("\n".join(changes))
     methods = collections.Counter(value[1] for value in pairs.values())
     print(args.title, "functions paired", len(pairs), "of", len(a_funcs), dict(methods))
 

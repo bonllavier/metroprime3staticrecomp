@@ -1,9 +1,17 @@
 <#
- Packages the public release zip of Corruption_3 PC.
-   package_release.ps1 [-PublishDirectory publish] [-OutputDirectory dist]
+ Packages the public release of Corruption_3 PC: two zips of the same version (decision of 16/11/2026).
+   package_release.ps1 [-PublishDirectory publish] [-OutputDirectory dist] [-LayoutTest]
 
- Produces dist\Corruption_3-PC-vX.Y.Z-win64\ (the staged folder), the zip and its .sha256. The version
- comes from prime_port_version.h, the only place it is written.
+ Produces, with their staged folders and .sha256 files:
+   dist\Corruption_3-PC-vX.Y.Z-win64.zip                everything for Metroid Prime 3: Corruption (USA)
+   dist\Corruption_3-PC-vX.Y.Z-Trilogy-addon-win64.zip  only the two Metroid Prime Trilogy (USA) executables,
+                                                         unzipped by the player into the main folder
+ The add-on shares the main folder's DLLs, shader seed and UserData, so both are always the same version
+ (runtime check: hle/prime_trilogy_addon.h). The version comes from prime_port_version.h, the only place
+ it is written.
+
+ -LayoutTest: only to check the archives' layout with the local test build (QA tools, no changelog section).
+ It skips the executable checks below and is never used by make_release.ps1; its zips are not releases.
 
  What a player unzips: the executable, the runtime DLLs, the bundled Wii bootstrap and DSP data, the
  shader seed, Config.default.toml (copied to UserData/Config.toml on first run) and the documentation.
@@ -20,7 +28,8 @@
 #>
 param(
     [string]$PublishDirectory = 'publish',
-    [string]$OutputDirectory = 'dist'
+    [string]$OutputDirectory = 'dist',
+    [switch]$LayoutTest
 )
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -35,41 +44,58 @@ $out = Join-Path $root $OutputDirectory
 $stage = Join-Path $out $name
 if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $stage, (Join-Path $stage 'docs') | Out-Null
+$addonName = "Corruption_3-PC-v$version-Trilogy-addon-win64"
+$addonStage = Join-Path $out $addonName
+if (Test-Path -LiteralPath $addonStage) { Remove-Item -LiteralPath $addonStage -Recurse -Force }
+New-Item -ItemType Directory -Force -Path $addonStage | Out-Null
 
-# Executable and runtime files produced by the build.
-$exe = Join-Path $build 'Corruption_3 PC.exe'
-if (-not (Test-Path -LiteralPath $exe)) { throw "Executable missing: $exe (build the WiiCompiled target first)" }
-# A test build carries the private QA tools (input record/replay); they never ship.
-$exeText = [IO.File]::ReadAllText($exe, [Text.Encoding]::GetEncoding(28591))
-if ($exeText.Contains('MKW_PRIME_QA_TOOLS_ENABLED_BUILD')) { throw 'This executable was built with MKW_PRIME_QA_TOOLS; rebuild with -DMKW_PRIME_QA_TOOLS=OFF before packaging.' }
-# Monitoring, latency, performance and debug tools stay in the test build (user's rule, 01/11/2026).
-$diagnostics = @('[host-stall]', 'others_over_ms', '[gpu-time]', '[post-ssao]', '[post-scene-dump]', '[glow-soften]',
-    '[prime-defer-verify]', '[prime-gpu-thread] bursts=', '[prime-texture-invalidation]', '[dump-dl-draw]', 'Game performance [F9]', 'WII_COMPILED_PRIME_PERFORMANCE_TRACE',
-    'WII_COMPILED_GPU_TIMING', 'WII_COMPILED_STACK_PROFILE_AT', 'capture_%Y%m%d',
-    '[prime-uw-trace]', 'WII_COMPILED_PRIME_PROJECTION_TRACE', 'WII_COMPILED_PRIME_UW_FLUSH') | Where-Object { $exeText.Contains($_) }
-if ($diagnostics) { throw ('The public executable still carries diagnostics: ' + ($diagnostics -join ', ')) }
-# The player-facing tools must still be there.
-$required = @('Performance', 'Effects', 'Materials', 'Diagnostics', 'Create bug report (F12)', 'Show FPS', 'rc_client') | Where-Object { -not $exeText.Contains($_) }
-if ($required) { throw ('The public executable lost player features: ' + ($required -join ', ')) }
-$exeText = $null
-$fileVersion = (Get-Item -LiteralPath $exe).VersionInfo.FileVersion
-if ($fileVersion -and $fileVersion -ne $version) {
-    throw "The executable reports version $fileVersion but the header says $version; rebuild after bumping the version."
-}
-Copy-Item -LiteralPath $exe -Destination $stage
-# Public executable: no debug sections (2.5 MB of DWARF that players do not need), and none of the
-# diagnostic thread APIs (suspend, read context or memory, enumerate threads). Antivirus
-# machine-learning engines associate that combination with malware (VirusTotal Trapmine flag on
-# 0.1.2-0.1.4); the diagnostic build keeps them for the F8 profiler and the F9 thread list.
+# Executables produced by the build: Corruption_3 PC.exe (RM3E01, and the entry point for every disc) in the
+# main zip and, for Metroid Prime Trilogy USA (R3ME01), its menu and its Metroid Prime 3, each translated from
+# its own DOL (tools/trilogy/build_trilogy.py --public; recomp/docs/trilogy_r3me01.md), in the add-on zip.
+# Corruption_3 PC.exe starts them when they are next to it.
 $llvmBin = Join-Path $root 'recomp\.tools\portable-tools\llvm-mingw\bin'
-$stagedExe = Join-Path $stage 'Corruption_3 PC.exe'
-& (Join-Path $llvmBin 'llvm-strip.exe') --strip-debug $stagedExe
-if ($LASTEXITCODE -ne 0) { throw 'llvm-strip failed on the staged executable' }
-$imports = & (Join-Path $llvmBin 'llvm-objdump.exe') -p $stagedExe | Out-String
-# (CreateToolhelp32Snapshot and Module32FirstW stay: Rust's std inside libnod imports them for backtraces.)
-$forbiddenImports = @('SuspendThread', 'GetThreadContext', 'ReadProcessMemory', 'Thread32First', 'Thread32Next') |
-    Where-Object { $imports -match "\b$_\b" }
-if ($forbiddenImports) { throw ('The public executable still imports diagnostic thread APIs: ' + ($forbiddenImports -join ', ')) }
+foreach ($exeName in 'Corruption_3 PC.exe', 'Corruption_3 Trilogy Menu.exe', 'Corruption_3 Trilogy MP3.exe') {
+    $exe = Join-Path $build $exeName
+    if (-not (Test-Path -LiteralPath $exe)) {
+        if ($exeName -eq 'Corruption_3 PC.exe') { throw "Executable missing: $exe (build the WiiCompiled target first)" }
+        throw "Executable missing: $exe (run recomp\tools\trilogy\build_trilogy.py --public first)"
+    }
+    $destination = if ($exeName -eq 'Corruption_3 PC.exe') { $stage } else { $addonStage }
+    $fileVersion = (Get-Item -LiteralPath $exe).VersionInfo.FileVersion
+    if ($fileVersion -and $fileVersion -ne $version) {
+        throw "$exeName reports version $fileVersion but the header says $version; rebuild after bumping the version."
+    }
+    if ($LayoutTest) { Copy-Item -LiteralPath $exe -Destination $destination; continue }
+    # A test build carries the private QA tools (input record/replay); they never ship.
+    $exeText = [IO.File]::ReadAllText($exe, [Text.Encoding]::GetEncoding(28591))
+    if ($exeText.Contains('MKW_PRIME_QA_TOOLS_ENABLED_BUILD')) { throw "$exeName was built with MKW_PRIME_QA_TOOLS; rebuild with -DMKW_PRIME_QA_TOOLS=OFF before packaging." }
+    # Monitoring, latency, performance and debug tools stay in the test build (user's rule, 01/11/2026).
+    $diagnostics = @('[host-stall]', 'others_over_ms', '[gpu-time]', '[post-ssao]', '[post-scene-dump]', '[glow-soften]',
+        '[prime-defer-verify]', '[prime-gpu-thread] bursts=', '[prime-texture-invalidation]', '[dump-dl-draw]', 'Game performance [F9]', 'WII_COMPILED_PRIME_PERFORMANCE_TRACE',
+        'WII_COMPILED_GPU_TIMING', 'WII_COMPILED_STACK_PROFILE_AT', 'capture_%Y%m%d',
+        '[prime-uw-trace]', 'WII_COMPILED_PRIME_PROJECTION_TRACE', 'WII_COMPILED_PRIME_UW_FLUSH') | Where-Object { $exeText.Contains($_) }
+    if ($diagnostics) { throw ("$exeName still carries diagnostics: " + ($diagnostics -join ', ')) }
+    # The player-facing tools must still be there.
+    # RetroAchievements only in Corruption_3 PC.exe: the Trilogy executables are built without rcheevos (user's decision).
+    $features = @('Performance', 'Effects', 'Materials', 'Diagnostics', 'Create bug report (F12)', 'Show FPS')
+    if ($exeName -eq 'Corruption_3 PC.exe') { $features += 'rc_client' }
+    $required = $features | Where-Object { -not $exeText.Contains($_) }
+    if ($required) { throw ("$exeName lost player features: " + ($required -join ', ')) }
+    $exeText = $null
+    Copy-Item -LiteralPath $exe -Destination $destination
+    # Public executable: no debug sections (2.5 MB of DWARF that players do not need), and none of the
+    # diagnostic thread APIs (suspend, read context or memory, enumerate threads). Antivirus
+    # machine-learning engines associate that combination with malware (VirusTotal Trapmine flag on
+    # 0.1.2-0.1.4); the diagnostic build keeps them for the F8 profiler and the F9 thread list.
+    $stagedExe = Join-Path $destination $exeName
+    & (Join-Path $llvmBin 'llvm-strip.exe') --strip-debug $stagedExe
+    if ($LASTEXITCODE -ne 0) { throw "llvm-strip failed on the staged $exeName" }
+    $imports = & (Join-Path $llvmBin 'llvm-objdump.exe') -p $stagedExe | Out-String
+    # (CreateToolhelp32Snapshot and Module32FirstW stay: Rust's std inside libnod imports them for backtraces.)
+    $forbiddenImports = @('SuspendThread', 'GetThreadContext', 'ReadProcessMemory', 'Thread32First', 'Thread32Next') |
+        Where-Object { $imports -match "\b$_\b" }
+    if ($forbiddenImports) { throw ("$exeName still imports diagnostic thread APIs: " + ($forbiddenImports -join ', ')) }
+}
 foreach ($dll in 'SDL3.dll', 'dxcompiler.dll', 'dxil.dll', 'libc++.dll', 'libpng16.dll', 'libunwind.dll', 'libz.dll', 'webgpu_dawn.dll') {
     $path = Join-Path $build $dll
     if (-not (Test-Path -LiteralPath $path)) { throw "Runtime DLL missing: $path" }
@@ -262,6 +288,8 @@ if ([version]`$latest -gt [version]`$local) {
 # TXTR_StrapScreenA169FREN/SPAN, B169FREN/SPAN), drawn when [prime] language picks them;
 # German and Italian use the English ones. The same two images cover them:
 # ad8eb16a / 0dd8e2ea (01/02, FR/ES), f6c8146f / 9a1135bd (02/02, FR/ES).
+# Trilogy's French, Spanish, German, Italian and Dutch strap textures have their own hashes; the
+# executable copies these images under them at start-up (kTrilogyStrapScreens in main.cpp).
 $strapSource = Join-Path $root 'recomp\third_party\WiiCompiled\runtime\assets\texture_replacements\strap_screen'
 $strapTarget = Join-Path $stage 'texture_replacements\strap_screen'
 New-Item -ItemType Directory -Force -Path $strapTarget | Out-Null
@@ -292,32 +320,70 @@ foreach ($doc in 'controls.md', 'development.md', 'troubleshooting.md') {
     if (-not (Test-Path -LiteralPath $path)) { throw "Missing document: $path" }
     Copy-Item -LiteralPath $path -Destination (Join-Path $stage 'docs')
 }
-if (-not (Select-String -Path (Join-Path $stage 'CHANGELOG.md') -Pattern "^## v$([regex]::Escape($version))\b" -Quiet)) {
+if (-not $LayoutTest -and -not (Select-String -Path (Join-Path $stage 'CHANGELOG.md') -Pattern "^## v$([regex]::Escape($version))\b" -Quiet)) {
     throw "CHANGELOG.md has no '## v$version' section; add one before packaging."
 }
 
+# The add-on's own instructions (it holds nothing else besides the two executables).
+$addonReadme = @"
+Corruption_3 PC v$version - Metroid Prime Trilogy add-on (Windows)
+
+This archive adds Metroid Prime Trilogy (USA, game ID R3ME01) to Corruption_3 PC. Only the Metroid Prime 3
+of that disc runs; Metroid Prime and Metroid Prime 2 are not part of the port.
+
+1. Install Corruption_3 PC v$version first (Corruption_3-PC-v$version-win64.zip).
+2. Unzip this archive into that same folder, next to "Corruption_3 PC.exe". It contains:
+     Corruption_3 Trilogy Menu.exe
+     Corruption_3 Trilogy MP3.exe
+3. Start "Corruption_3 PC.exe" and choose your Metroid Prime Trilogy (USA) disc image (.iso or .rvz),
+   or change it in F1 > Diagnostics. The Trilogy menu opens, where saves are handled, and it starts
+   Metroid Prime 3.
+
+Both archives must be the same version: when you update Corruption_3 PC, download the add-on of the new
+version too and unzip it over the folder after the main archive. A mismatch is reported at start-up.
+F1 > Info shows whether the add-on is installed. RetroAchievements are not available with the Trilogy disc.
+
+No game data is included: the port reads your own disc image, which it never modifies.
+Project page and documentation: https://github.com/bonllavier/Corruption_3-PC
+"@
+Set-Content -LiteralPath (Join-Path $addonStage 'README - Trilogy add-on.txt') -Value $addonReadme -Encoding UTF8
+foreach ($doc in 'LICENSE', 'THIRD-PARTY-NOTICES.md') {
+    Copy-Item -LiteralPath (Join-Path $publish $doc) -Destination $addonStage
+}
+
 # Nothing derived from the game, and nothing of the player's, may ship.
-$forbidden = Get-ChildItem -LiteralPath $stage -Recurse -Force | Where-Object {
+$forbidden = Get-ChildItem -LiteralPath $stage, $addonStage -Recurse -Force | Where-Object {
     $_.Name -eq 'UserData' -or $_.Name -eq 'game' -or $_.Name -eq 'save.bin' -or $_.Name -eq 'banner.bin' -or
     $_.Extension -in '.iso', '.rvz', '.wbfs', '.nfs', '.gcm', '.dol', '.rel', '.rso', '.pak'
 }
 if ($forbidden) { throw "Refusing to package: game or player data in the staged folder: $($forbidden.FullName -join ', ')" }
-$suspicious = Get-ChildItem -LiteralPath $stage -Recurse -File -Force | Where-Object { $_.Length -gt 200MB }
+$suspicious = Get-ChildItem -LiteralPath $stage, $addonStage -Recurse -File -Force | Where-Object { $_.Length -gt 200MB }
 if ($suspicious) { throw "Refusing to package an unexpectedly large file: $($suspicious.FullName -join ', ')" }
 # The developer's credentials never ship (user's instruction, 31/10/2026): RetroAchievements session and
 # user name, GitHub and VirusTotal keys, Config.toml, logs, reports. In-process call: -File would split
 # the path list. Checked again on the zip below.
 $checkCredentials = Join-Path $PSScriptRoot 'check_no_credentials.ps1'
-& $checkCredentials -Path @($stage)
-if ($LASTEXITCODE -ne 0) { throw 'Refusing to package: credentials or private files in the staged folder (see above).' }
+& $checkCredentials -Path @($stage, $addonStage)
+if ($LASTEXITCODE -ne 0) { throw 'Refusing to package: credentials or private files in the staged folders (see above).' }
+# The add-on is exactly the two executables plus its readme and notices: nothing of the main folder.
+$addonFiles = @(Get-ChildItem -LiteralPath $addonStage -Recurse -File | ForEach-Object Name | Sort-Object)
+$addonExpected = @('Corruption_3 Trilogy MP3.exe', 'Corruption_3 Trilogy Menu.exe', 'LICENSE', 'README - Trilogy add-on.txt', 'THIRD-PARTY-NOTICES.md')
+if (Compare-Object $addonFiles $addonExpected) { throw ('Unexpected add-on contents: ' + ($addonFiles -join ', ')) }
 
-$zip = Join-Path $out "$name.zip"
-if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
-Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
-& $checkCredentials -Path @($zip)
-if ($LASTEXITCODE -ne 0) { Remove-Item -LiteralPath $zip -Force; throw 'Refusing to package: credentials or private files in the zip (see above); the zip was deleted.' }
-$hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-$size = [Math]::Round((Get-Item -LiteralPath $zip).Length / 1MB, 1)
-Set-Content -LiteralPath "$zip.sha256" -Value "$hash  $name.zip" -Encoding ASCII
-Write-Output "release: $zip ($size MB)"
-Write-Output "sha256:  $hash"
+function Write-Zip([string]$Folder, [string]$Name) {
+    $zip = Join-Path $out "$Name.zip"
+    if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
+    Compress-Archive -Path (Join-Path $Folder '*') -DestinationPath $zip -CompressionLevel Optimal
+    & $checkCredentials -Path @($zip)
+    if ($LASTEXITCODE -ne 0) { Remove-Item -LiteralPath $zip -Force; throw "Refusing to package: credentials or private files in $Name.zip (see above); the zip was deleted." }
+    $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+    Set-Content -LiteralPath "$zip.sha256" -Value "$hash  $Name.zip" -Encoding ASCII
+    return [pscustomobject]@{ Path = $zip; Hash = $hash; Size = [Math]::Round((Get-Item -LiteralPath $zip).Length / 1MB, 1) }
+}
+$main = Write-Zip $stage $name
+$addon = Write-Zip $addonStage $addonName
+Write-Output "release: $($main.Path) ($($main.Size) MB)"
+Write-Output "sha256:  $($main.Hash)"
+Write-Output "addon:   $($addon.Path) ($($addon.Size) MB)"
+Write-Output "addon sha256: $($addon.Hash)"
+if ($LayoutTest) { Write-Output 'LAYOUT TEST ONLY: built from the local test build; these zips are not releases.' }

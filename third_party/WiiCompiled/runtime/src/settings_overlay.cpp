@@ -47,6 +47,7 @@
 #include "host_performance.h"
 #include "stack_profiler.h"
 #endif
+#include "hle/prime_trilogy_addon.h"
 #include "hle/prime_key_bindings.h"
 #include "hle/prime_remote_debug.h"
 #include "hle/prime_mouse_look.h"
@@ -1619,6 +1620,19 @@ void DrawRemoteMotionPanel() {
 }
 #endif
 
+// Whether the Metroid Prime Trilogy add-on sits in this folder (hle/prime_trilogy_addon.h): an update then
+// needs both archives of the new version. Checked once.
+bool TrilogyAddonInstalled() {
+    static const bool installed = [] {
+        const auto folder = RuntimeConfigFile::ExecutableDirectory();
+        if (!folder) return false;
+        std::error_code ec;
+        return std::filesystem::is_regular_file(*folder / PrimeTrilogyAddon::kMenuExecutable, ec) &&
+               std::filesystem::is_regular_file(*folder / PrimeTrilogyAddon::kGameExecutable, ec);
+    }();
+    return installed;
+}
+
 // Bottom-right notice for 30 s after a newer release is detected; F1 > Info keeps it.
 void DrawUpdateNotice() {
     const UpdateCheck::Status status = UpdateCheck::Get();
@@ -1633,6 +1647,8 @@ void DrawUpdateNotice() {
     if (ImGui::Begin("##update_notice", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
                      ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs)) {
         ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "%s v%s is available (you have v%s)", PRIME_PORT_NAME, status.latestVersion.c_str(), PRIME_PORT_VERSION);
+        if (TrilogyAddonInstalled())
+            ImGui::TextUnformatted("Download the Trilogy add-on of that version too.");
         ImGui::TextDisabled("F1 > Info > Open download page");
     }
     ImGui::End();
@@ -3384,9 +3400,12 @@ void DrawPrimeOptionsPanel() {
                     case UpdateCheck::State::UpdateAvailable: label = "NEW VERSION AVAILABLE"; break;
                     case UpdateCheck::State::Failed: label = "Update check failed"; break;
                     }
-                    if (status.state == UpdateCheck::State::UpdateAvailable)
+                    if (status.state == UpdateCheck::State::UpdateAvailable) {
                         ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "%s: v%s (you have v%s)", label, status.latestVersion.c_str(), PRIME_PORT_VERSION);
-                    else
+                        if (TrilogyAddonInstalled())
+                            ImGui::TextWrapped("The Metroid Prime Trilogy add-on is installed: download %s too and unzip it over this folder after the main archive.",
+                                               PrimeTrilogyAddon::ArchiveName(status.latestVersion).c_str());
+                    } else
                         ImGui::Text("%s%s%s", label, status.message.empty() ? "" : ": ", status.message.c_str());
                     if (ImGui::Button("Check now")) UpdateCheck::CheckNow();
                     if (status.state == UpdateCheck::State::UpdateAvailable) { ImGui::SameLine(); if (ImGui::Button("Open download page")) UpdateCheck::OpenDownloadPage(); }
@@ -3396,6 +3415,7 @@ void DrawPrimeOptionsPanel() {
                 }
                 ImGui::Separator();
                 if (const auto exe = RuntimeConfigFile::ExecutableDirectory()) ImGui::TextWrapped("Folder: %s", RuntimeConfigFile::PathToUtf8(*exe).c_str());
+                ImGui::TextWrapped("Metroid Prime Trilogy add-on: %s", TrilogyAddonInstalled() ? "installed (v" PRIME_PORT_VERSION ")" : "not installed");
                 ImGui::TextWrapped("Settings: %s", RuntimeConfigFile::PathToUtf8(RuntimeConfigFile::ResolveConfigPath()).c_str());
                 ImGui::TextWrapped("Disc image: %s", RuntimeConfigFile::PathToUtf8(RuntimeConfigFile::ResolvedPrimeIsoPath()).c_str());
                 ImGui::TextWrapped("Reports: %s", BugReport::Directory().c_str());

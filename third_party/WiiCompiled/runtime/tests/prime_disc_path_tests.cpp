@@ -60,7 +60,9 @@ int main() {
     { std::ofstream(wbfs) << "x"; }
     require(Check(wbfs, wbfs.string()) == Problem::UnsupportedFormat);
     require(Check(scratch / "gone.wbfs", (scratch / "gone.wbfs").string()) == Problem::Missing);
-    require(Contains(ProblemText(Problem::UnsupportedFormat), ".iso") && Contains(ProblemText(Problem::UnsupportedFormat), ".wbfs"));
+    // Names the two accepted formats only, never other backup formats (user's decision of 15/11/2026).
+    require(Contains(ProblemText(Problem::UnsupportedFormat), ".iso") && Contains(ProblemText(Problem::UnsupportedFormat), ".rvz"));
+    for (const char* other : {"wbfs", "gcz", "wia", "ciso"}) require(!Contains(ProblemText(Problem::UnsupportedFormat), other));
     require(Check(fs::path(protonValue), protonValue) == Problem::ShellLocation);
     require(!ProblemText(Problem::ShellLocation).empty() && Contains(ProblemText(Problem::ShellLocation), "Z:"));
     require(ProblemText(Problem::None).empty());

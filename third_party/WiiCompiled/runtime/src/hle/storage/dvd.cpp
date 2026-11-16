@@ -59,9 +59,9 @@ struct DiscError : std::runtime_error {
 constexpr const char kExpectedDiscId[] = "RM3E01";
 
 std::string NoImageText() {
-    return "No Metroid Prime 3: Corruption disc image was found.\n\n"
-           "Copy your own dump of the game (USA, RM3E01: .iso or .rvz) into the "
-           "'game' folder next to the executable:\n  " +
+    return "No disc image was found.\n\n"
+           "Copy your own dump of Metroid Prime 3: Corruption (USA, RM3E01) or Metroid Prime Trilogy "
+           "(USA, R3ME01), as .iso or .rvz, into the 'game' folder next to the executable:\n  " +
            RuntimeConfigFile::PathToUtf8(RuntimeConfigFile::PrimeGameImageDirectory()) +
            "\n\nor set [paths] iso_path in UserData/Config.toml to its location, or start the game with "
            "--iso \"<path>\" (or the CORRUPTION3_ISO environment variable).";
@@ -97,7 +97,7 @@ void OpenAndCheck(const std::filesystem::path& path, NodHandle*& disc, bool* tri
 #endif
     if (std::memcmp(header.game_id, "RM3E01", 6) || header.disc_num || header.disc_version) {
         const std::string found(reinterpret_cast<const char*>(header.game_id), 6);
-        throw DiscError(Failure::WrongDisc, "The disc image is not Metroid Prime 3: Corruption (USA), game ID RM3E01, disc 1, revision 0:\n  " + utf8 +
+        throw DiscError(Failure::WrongDisc, "This disc image is not one the port runs:\n  " + utf8 +
                                                 "\n\n" + PrimeDiscPath::WrongDiscText(found, header.disc_num, header.disc_version, kExpectedDiscId));
     }
 }
@@ -327,7 +327,12 @@ static bool IsDvdDataRoot(const fs::path& path) {
     SetRuntimeExitCode(EXIT_FAILURE);
     ShowRuntimeFatalPopup(category, details);
     MarkFatalErrorReported();
-    std::exit(EXIT_FAILURE);
+    // Not std::exit: its static destructors and atexit handlers ran while other host threads were alive and,
+    // now and then, never finished (16/11/2026: a refused .wbfs left the process running after its message,
+    // 1 run in 5 of one batch and 3 cases of the disc selection test in two runs). The message and the crash
+    // files are already written; end the process as a window close does (aurora_events.h), with code 1.
+    std::fflush(nullptr);
+    std::_Exit(EXIT_FAILURE);
 }
 
 [[noreturn]] static void FailDvdRoot(const char* source, const fs::path& path = {}) {

@@ -126,7 +126,7 @@ typedef struct {
   float unevenPerSecond;
 } AuroraDisplayCadence;
 void aurora_get_display_cadence(AuroraDisplayCadence* cadence);
-// The game's frame clock locked to the monitor ([video] refresh_lock, on by default; Windows only). The
+// The game's frame clock locked to the monitor ([video] refresh_lock, on by default; Windows, and Linux under X11). The
 // runtime asks for each frame period with aurora_next_frame_period; while a whole number of the monitor's
 // refreshes is within 0.15 % of the console's frame, the frame lasts exactly those refreshes and ends a
 // fixed time before one, so every image gets its own refresh with nothing held back. See

@@ -78,6 +78,7 @@ Dependencias externas al repo `recomp` que el pipeline lee por ruta relativa (co
 | Vista con ratón | `SetCursorPos`/`ClipCursor`/`GetCursorPos` en cada lectura KPAD | modo relativo de SDL3 (XInput2 en X11; relative-pointer + pointer-constraints en Wayland); `xrel/yrel` → `AddMotion` | implementado, pendiente de QA en juego |
 | Salir/reiniciar (`OSRestart`) | `CreateProcessW` + `WaitForSingleObject` | `posix_spawn` + `pidfd_open`/`poll` (sondeo con `kill` en kernels antiguos) | implementado |
 | Menú Trilogy | `Corruption_3 Trilogy Menu.exe` | `Corruption_3 Trilogy Menu` | implementado |
+| Medición del refresco (seguir al monitor, sincronizar imágenes, "Seen / uneven") | DXGI `WaitForVBlank` | X11 Present con UST (Mesa, XWayland, Steam Deck) o `GLX_SGI_video_sync` (NVIDIA, un monitor); nada en Wayland nativo | implementado; probado con NVIDIA; ver "Medición del refresco en Linux" |
 | Selector de imagen de disco | `IFileOpenDialog` / `MessageBoxW` | `SDL_ShowFileDialogWithProperties` (portal XDG / zenity) / `SDL_ShowMessageBox` | implementado |
 | Informe F12 | DXGI, `RtlGetVersion`, GDI+, `explorer.exe` | `/sys/class/drm`, `/etc/os-release`, `/proc/meminfo`, `__get_cpuid`, `SDL_SavePNG`, `SDL_OpenURL` (la carpeta se abre con una URL `file://` codificada: con espacios o acentos en la ruta no abría nada) | implementado; el 15/11 se añadieron al `system.txt` el estado del renderizador y de la caché de shaders (código común). Pendiente de QA del usuario en Linux. Si el escritorio captura F12 (Yakuake en KDE), usar F1 > Diagnostics > *Create bug report* |
 | Capturas | JPEG por GDI+ | PNG por `SDL_SavePNG` | implementado |
@@ -264,6 +265,36 @@ Funciones de Windows que influyen en el rendimiento y su estado en Linux:
 - Ocultar MSAA 2x/8x en Vulkan.
 - Vigilante de parones F8.
 - Empaquetado: ver "Paquete de Linux v0.1.7". Falta el lanzador `.desktop` con el icono, probar el complemento con un disco de Trilogy en Linux y la subida desde `publish_release.ps1`.
+
+## Medición del refresco en Linux (2026-11-16)
+
+En Linux no se medía el refresco del monitor (`display_refresh.cpp` era solo de Windows), así que no funcionaban "Follow the monitor's refresh" ni "Sync the 60 images to the monitor's refresh", ni la línea "Seen / uneven" del contador del build de prueba, aunque F1 los mostraba. La velocidad del juego no cambia: sin medición va a 59,94 Hz con su reloj, como la consola. Lo que se pierde es solo la fluidez extra (imágenes repetidas o saltadas cuando el monitor no va a 59,94).
+
+Ahora el observador tiene en Linux dos fuentes, cargadas por `dlopen` (sin dependencias nuevas para arrancar), elegidas en este orden:
+
+1. **X11 Present** (`libxcb-present.so.0`): `PresentNotifyMSC` sobre la ventana del juego termina en el vblank siguiente del monitor donde está, y el evento trae la hora del vblank (UST, µs de `CLOCK_MONOTONIC`). Es la fuente de los drivers Mesa (AMD, Intel, nouveau) en X11 y XWayland, y por tanto la de **Steam Deck** (gamescope ejecuta los juegos en XWayland). Solo se aceptan vblanks con UST.
+2. **`GLX_SGI_video_sync`** (driver propietario de NVIDIA) en una ventana oculta propia (1×1, sin mapear): precisa (6-25 µs). Solo con un monitor, porque **siempre sigue al primer dispositivo de NVIDIA** (`__GL_SYNC_DISPLAY_DEVICE` no la cambia; solo cambia los intercambios de buffers).
+
+Mediciones en el PC del usuario (RTX 3050, driver 580, X11, HDMI-0 a 120 Hz + DVI-D-0 a 59,95 Hz, KWin sin composición):
+
+| Fuente | Resultado |
+|---|---|
+| X11 Present | UST = 0; avisos repartidos por todo el periodo (±4 ms a 120 Hz) y 11 de 600 perdidos: NVIDIA no da vblanks reales por Present. Se rechaza |
+| DRM `drmWaitVBlank` | "Operation not supported" (nvidia-drm sin modeset) |
+| `glXWaitVideoSyncSGI` | 59,953 Hz, 20-25 µs rms, en cualquier posición de la ventana y con cualquier `__GL_SYNC_DISPLAY_DEVICE`: siempre el DVI |
+| Intercambios GLX con V-Sync en ventana sin mapear + `__GL_SYNC_DISPLAY_DEVICE` | Sigue al monitor pedido (120,00 Hz), pero la variable se lee una vez por proceso, `glFinish` gasta un núcleo entero y con `__GL_YIELD=USLEEP` (5 % de CPU) la medición se vuelve irregular (95-386 µs rms, picos de 2,4 ms). Descartado |
+
+En el juego (build de prueba, `WII_COMPILED_QA_REFRESH_GLX=1` fuerza la fuente GLX con varios monitores):
+
+- Ventana en el HDMI a 120 Hz: GLX se engancha a "119,914 Hz": es el DVI (2 × 59,955) tomado como medio periodo de 120, dentro de la tolerancia del 1 %. **Comparar la frecuencia no protege del monitor equivocado**; por eso GLX solo con un monitor.
+- Ventana en el DVI: `presents aligned ... 59.954 Hz, jitter 6 us`, `[refresh-lock] ... 1 refresh(es) of 59.954 Hz per frame (+0.023 % against the console's 59.940)` y `[display-cadence-est] presents=600 never_seen=0 held_refreshes=0`: el contador muestra "Seen: 60 uneven: 0".
+- Configuración normal (dos monitores): Present sin UST → GLX no permitido → `no precise source ... presents stay on the game's schedule at the console's speed`.
+
+Por tanto, en el PC del usuario con los dos monitores no hay medición (igual que antes). Con un solo monitor encendido, o con la ventana en el primer dispositivo de NVIDIA, funciona como en Windows. Sin probar: Mesa/AMD/Intel, Steam Deck y XWayland (no hay hardware aquí).
+
+Pendiente: **Wayland nativo** (sesiones GNOME/KDE en Wayland, donde SDL3 usa Wayland). La fuente correcta es `wp_presentation` (hora exacta de cada imagen mostrada y periodo del monitor), sobre la superficie de SDL con una cola de eventos propia; hace falta generar el protocolo con `wayland-scanner`.
+
+`window.cpp` guarda en el hilo principal la ventana X11, el monitor de la ventana, su periodo (numerador/denominador de SDL) y el número de monitores, para que el observador los lea sin llamar a SDL desde otro hilo.
 
 ## Paquete de Linux v0.1.7 (2026-11-16)
 

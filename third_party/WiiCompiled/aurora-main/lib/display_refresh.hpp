@@ -1,6 +1,8 @@
 #pragma once
 // The monitor's refresh timeline, measured from its vertical blanks, for aligning presents to it
-// (policy::align_to_refresh, F1 > Video "Sync images to the monitor's refresh"). Windows only; elsewhere
+// (policy::align_to_refresh, F1 > Video "Sync images to the monitor's refresh"). Windows: DXGI's
+// WaitForVBlank. Linux: X11 Present with blank times (Mesa, XWayland), or NVIDIA's GLX_SGI_video_sync with a
+// single monitor. Elsewhere (native Wayland, NVIDIA with several monitors)
 // nothing is measured and presents stay on the game's schedule.
 #include "gx/render_policy.hpp"
 

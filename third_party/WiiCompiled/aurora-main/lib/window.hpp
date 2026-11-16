@@ -45,6 +45,13 @@ bool native_resize_pending() noexcept;
 bool native_window_size_matches(uint32_t width, uint32_t height) noexcept;
 // The window's native handle (HWND on Windows), nullptr when unknown. Safe from any thread.
 void* native_window_handle() noexcept;
+// The X11 window id (0 elsewhere, and under Wayland), the window's monitor and that monitor's refresh period
+// in nanoseconds (0 while unknown). Kept up to date on the main thread; safe from any thread.
+uint64_t x11_window() noexcept;
+uint32_t display_id() noexcept;
+int64_t display_period_nanos() noexcept;
+// Monitors connected (0 while unknown).
+int display_count() noexcept;
 void set_surface_ready(bool ready) noexcept;
 void set_title(const char* title);
 void set_fullscreen(bool fullscreen);

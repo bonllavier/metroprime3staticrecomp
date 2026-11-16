@@ -66,6 +66,12 @@ std::atomic_bool g_surfaceReady = true;
 #endif
 bool g_lastPaused = false;
 bool g_gotFocus = false;
+// The X11 window and its monitor, for display_refresh's vertical-blank observer (written on the main thread,
+// read by the observer). 0 while unknown, and the window stays 0 under Wayland.
+std::atomic<uint64_t> g_x11Window{0};
+std::atomic<uint32_t> g_displayId{0};
+std::atomic<int64_t> g_displayPeriodNanos{0};
+std::atomic<int> g_displayCount{0};
 #if defined(_WIN32)
 WNDPROC g_prevWindowProc = nullptr;
 // Native window handle captured once when the hook is installed. The presenter checks the native
@@ -257,12 +263,41 @@ bool is_alt_enter_event(const SDL_Event& event) noexcept {
   return event.key.key == SDLK_RETURN && (event.key.mod & altMask) != 0;
 }
 
+// Caches the window's monitor and its refresh for display_refresh (main thread only, as SDL asks).
+void update_display_info() noexcept {
+  int displays = 0;
+  SDL_free(SDL_GetDisplays(&displays));
+  g_displayCount.store(displays, std::memory_order_release);
+  if (g_window == nullptr) {
+    g_displayId.store(0, std::memory_order_release);
+    g_displayPeriodNanos.store(0, std::memory_order_release);
+    return;
+  }
+  const SDL_DisplayID display = SDL_GetDisplayForWindow(g_window);
+  const SDL_DisplayMode* mode = display != 0 ? SDL_GetCurrentDisplayMode(display) : nullptr;
+  int64_t period = 0;
+  if (mode != nullptr && mode->refresh_rate_numerator > 0 && mode->refresh_rate_denominator > 0) {
+    period = std::llround(1.0e9 * static_cast<double>(mode->refresh_rate_denominator) /
+                          static_cast<double>(mode->refresh_rate_numerator));
+  } else if (mode != nullptr && mode->refresh_rate > 1.f) {
+    period = std::llround(1.0e9 / static_cast<double>(mode->refresh_rate));
+  }
+  g_displayId.store(display, std::memory_order_release);
+  g_displayPeriodNanos.store(period, std::memory_order_release);
+}
+
 void process_event(SDL_Event& event) {
 #ifdef AURORA_ENABLE_GX
   imgui::process_event(event);
 #endif
 
   switch (event.type) {
+  case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+  case SDL_EVENT_DISPLAY_CURRENT_MODE_CHANGED:
+  case SDL_EVENT_DISPLAY_ADDED:
+  case SDL_EVENT_DISPLAY_REMOVED:
+    update_display_info();
+    break;
   case SDL_EVENT_KEY_DOWN:
     if (is_alt_enter_event(event)) {
       set_display_mode(get_fullscreen() ? AURORA_DISPLAY_MODE_WINDOWED : AURORA_DISPLAY_MODE_BORDERLESS);
@@ -270,6 +305,7 @@ void process_event(SDL_Event& event) {
     }
     break;
   case SDL_EVENT_WINDOW_MOVED: {
+    update_display_info();
     g_events.push_back(AuroraEvent{
         .type = AURORA_WINDOW_MOVED,
         .windowPos = {.x = event.window.data1, .y = event.window.data2},
@@ -440,6 +476,15 @@ bool create_window(AuroraBackend backend) {
 #if defined(_WIN32)
   install_window_proc_hook();
 #endif
+  {
+    const char* driver = SDL_GetCurrentVideoDriver();
+    const auto x11Window = driver != nullptr && SDL_strcmp(driver, "x11") == 0
+                               ? SDL_GetNumberProperty(SDL_GetWindowProperties(g_window),
+                                                       SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0)
+                               : 0;
+    g_x11Window.store(static_cast<uint64_t>(x11Window), std::memory_order_release);
+  }
+  update_display_info();
   set_window_icon();
   return true;
 }
@@ -471,9 +516,11 @@ void destroy_window() {
     g_renderer = nullptr;
   }
   if (g_window != nullptr) {
+    g_x11Window.store(0, std::memory_order_release);
     SDL_DestroyWindow(g_window);
     g_window = nullptr;
   }
+  update_display_info();
 }
 
 void show_window() {
@@ -896,6 +943,14 @@ bool get_present_aspect_ratio(float& aspect) noexcept {
 }
 
 void set_background_input(bool value) { SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, value ? "1" : "0"); }
+
+uint64_t x11_window() noexcept { return g_x11Window.load(std::memory_order_acquire); }
+
+uint32_t display_id() noexcept { return g_displayId.load(std::memory_order_acquire); }
+
+int64_t display_period_nanos() noexcept { return g_displayPeriodNanos.load(std::memory_order_acquire); }
+
+int display_count() noexcept { return g_displayCount.load(std::memory_order_acquire); }
 
 void* native_window_handle() noexcept {
 #if defined(_WIN32)

@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 // Host-side image effects applied to the presented frame (the "snapshot" image
 // at output resolution, after the game's own image is composed and before the
@@ -156,6 +157,7 @@ void capture_scene_color(const wgpu::CommandEncoder& encoder);
 bool apply_ssao_in_frame(const wgpu::CommandEncoder& encoder, bool firstInGameFrame = true, bool allowProbe = true);
 // Why the last apply_ssao_in_frame returned false (diagnostics; "" after a successful one).
 const char* last_apply_skip();
+std::string contact_lights_debug();
 // WII_COMPILED_POST_DEBUG_DEPTH (depth inset and post-process logs): test builds only.
 inline bool debug_depth_requested() {
 #if defined(MKW_PRIME_QA_TOOLS)

@@ -666,6 +666,8 @@ void set_fullscreen(bool fullscreen) {
 
 bool get_fullscreen() { return (SDL_GetWindowFlags(g_window) & SDL_WINDOW_FULLSCREEN) != 0u; }
 
+std::atomic<uint32_t> g_gameFrameRateFactor{1};
+
 void set_display_mode(AuroraDisplayMode mode) {
   if (g_window == nullptr) {
     return;
@@ -701,7 +703,11 @@ void set_display_mode(AuroraDisplayMode mode) {
     const SDL_DisplayID display = SDL_GetDisplayForWindow(g_window);
     const SDL_DisplayMode* desktop = display != 0 ? SDL_GetDesktopDisplayMode(display) : nullptr;
     const uint32_t interpolationFps = aurora_get_frame_interpolation_fps();
-    const float targetHz = interpolationFps > 60 ? static_cast<float>(interpolationFps) : 60.0f;
+    // The console's frame rate is 60000/1001 (59.94): ask for that family (59.94, 119.88...), so a monitor
+    // that offers it shows every frame at the game's original speed. One that does not gives its 60 / 120.
+    const float gameHz = 60.0f * static_cast<float>(g_gameFrameRateFactor.load(std::memory_order_acquire));
+    const float targetHz =
+        (interpolationFps > gameHz ? static_cast<float>(interpolationFps) : gameHz) * 1000.0f / 1001.0f;
     SDL_DisplayMode closest{};
     if (desktop == nullptr ||
         !SDL_GetClosestFullscreenDisplayMode(display, desktop->w, desktop->h, targetHz, true, &closest)) {
@@ -847,6 +853,15 @@ float display_refresh_rate() noexcept {
   }
   const SDL_DisplayID display = SDL_GetDisplayForWindow(g_window);
   const SDL_DisplayMode* mode = display != 0 ? SDL_GetCurrentDisplayMode(display) : nullptr;
+  return mode != nullptr ? mode->refresh_rate : 0.f;
+}
+
+float desktop_refresh_rate() noexcept {
+  if (g_window == nullptr) {
+    return 0.f;
+  }
+  const SDL_DisplayID display = SDL_GetDisplayForWindow(g_window);
+  const SDL_DisplayMode* mode = display != 0 ? SDL_GetDesktopDisplayMode(display) : nullptr;
   return mode != nullptr ? mode->refresh_rate : 0.f;
 }
 

@@ -60,7 +60,7 @@ constexpr const char kExpectedDiscId[] = "RM3E01";
 
 std::string NoImageText() {
     return "No Metroid Prime 3: Corruption disc image was found.\n\n"
-           "Copy your own dump of the game (USA, RM3E01: .iso, .rvz, .wbfs, .gcz, .wia or .ciso) into the "
+           "Copy your own dump of the game (USA, RM3E01: .iso or .rvz) into the "
            "'game' folder next to the executable:\n  " +
            RuntimeConfigFile::PathToUtf8(RuntimeConfigFile::PrimeGameImageDirectory()) +
            "\n\nor set [paths] iso_path in UserData/Config.toml to its location, or start the game with "
@@ -83,7 +83,7 @@ void OpenAndCheck(const std::filesystem::path& path, NodHandle*& disc, bool* tri
     if (nod_disc_open(utf8.c_str(), &discOptions, &disc) != NOD_RESULT_OK) {
         disc = nullptr;
         throw DiscError(Failure::Unreadable, "The file exists but could not be read as a Wii disc image (read-only):\n  " + utf8 +
-                                                 "\n\nIt must be a complete, unmodified dump in .iso, .rvz, .wbfs, .gcz, .wia or .ciso format.");
+                                                 "\n\nIt must be a complete, unmodified dump in .iso or .rvz format.");
     }
     NodDiscHeader header{};
     if (nod_disc_header(disc, &header) != NOD_RESULT_OK) {
@@ -131,9 +131,13 @@ struct Reader {
         options.validate_hashes = validate && std::strcmp(validate, "1") == 0;
         if (nod_disc_open_partition_kind(disc, NOD_PARTITION_KIND_DATA, &options, &partition) != NOD_RESULT_OK)
             throw DiscError(Failure::Other, "Cannot open Prime ISO data partition");
+        std::error_code sizeEc;
+        const auto imageBytes = std::filesystem::file_size(path, sizeEc);
         RT_LOG(RT_TAG_DVD) << "[prime-iso-open] id=RM3E01 disc=0 revision=0 readonly=1 validate_hashes="
                            << options.validate_hashes << " image=" << utf8 << " source="
-                           << (g_pendingPick.empty() ? RuntimeConfigFile::PrimeIsoSourceName(source) : "dialog") << std::endl;
+                           << (g_pendingPick.empty() ? RuntimeConfigFile::PrimeIsoSourceName(source) : "dialog")
+                           << " format=" << RuntimeConfigFile::PathToUtf8(path.extension())
+                           << " size_bytes=" << (sizeEc ? 0 : imageBytes) << std::endl;
     }
     // The data partition's original fst.bin, decoded by nod from the image.
     // This is what the extracted research folder used to provide as sys/fst.bin.

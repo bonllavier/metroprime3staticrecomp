@@ -34,17 +34,29 @@ std::mutex g_gridMutex;
 gx::policy::RefreshGrid g_grid;
 double g_lockedRate = 0.0;
 
-bool wanted() noexcept {
+// With frame interpolation off, images go out at the game's own rate ([video] display_sync).
+std::atomic<bool> g_nativeEnabled{false};
+std::atomic<bool> g_observeAlways{false};
+std::atomic<bool> g_frameLock{true};
+
+// Whether presents are to be aligned in the current mode.
+bool sync_wanted() noexcept {
 #if defined(MKW_PRIME_QA_TOOLS)
   // Private QA: the unaligned presentation, for A/B runs.
   static const bool qaOff = AURORA_DIAGNOSTIC_ENV("WII_COMPILED_QA_NO_DISPLAY_SYNC") != nullptr;
   if (qaOff) return false;
 #endif
 #ifdef AURORA_ENABLE_GX
-  return g_enabled.load(std::memory_order_acquire) && gx::frame_interpolation_fps() != 0;
+  return gx::frame_interpolation_fps() != 0 ? g_enabled.load(std::memory_order_acquire)
+                                            : g_nativeEnabled.load(std::memory_order_acquire);
 #else
   return false;
 #endif
+}
+
+// Whether the refresh is to be measured at all.
+bool wanted() noexcept {
+  return sync_wanted() || g_observeAlways.load(std::memory_order_acquire) || g_frameLock.load(std::memory_order_acquire);
 }
 
 void publish(const gx::policy::RefreshGrid& grid, double rate) noexcept {
@@ -244,24 +256,39 @@ void stop() noexcept {
   }
 }
 
-void set_enabled(bool enabled) noexcept {
-  g_enabled.store(enabled, std::memory_order_release);
-  if (!enabled) {
-    publish({}, 0.0);
-  }
-}
+// The observer drops the timeline by itself within 200 ms once nothing wants it; grid() stops handing
+// it out at once.
+void set_enabled(bool enabled) noexcept { g_enabled.store(enabled, std::memory_order_release); }
 
 bool enabled() noexcept { return g_enabled.load(std::memory_order_acquire); }
 
+void set_native_enabled(bool enabled) noexcept { g_nativeEnabled.store(enabled, std::memory_order_release); }
+
+bool native_enabled() noexcept { return g_nativeEnabled.load(std::memory_order_acquire); }
+
+void set_observe_always(bool enabled) noexcept { g_observeAlways.store(enabled, std::memory_order_release); }
+
+void set_frame_lock_enabled(bool enabled) noexcept { g_frameLock.store(enabled, std::memory_order_release); }
+
+bool frame_lock_enabled() noexcept { return g_frameLock.load(std::memory_order_acquire); }
+
 gx::policy::RefreshGrid grid() noexcept {
-  if (!g_enabled.load(std::memory_order_acquire)) {
+  if (!sync_wanted()) {
     return {};
   }
   std::lock_guard lock(g_gridMutex);
   return g_grid;
 }
 
+gx::policy::RefreshGrid observed_grid() noexcept {
+  std::lock_guard lock(g_gridMutex);
+  return g_grid;
+}
+
 double locked_rate() noexcept {
+  if (!sync_wanted()) {
+    return 0.0;
+  }
   std::lock_guard lock(g_gridMutex);
   return g_lockedRate;
 }

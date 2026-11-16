@@ -211,3 +211,31 @@ Petición del usuario tras ver que el nivel 2 cambiaba poco: los dos puntos pend
 | Niebla volumétrica | `volumetric_fog`, `volumetric_fog_density` (0,5) | sí | `kFog` a 1/4: 10 pasos por el rayo de vista hasta la superficie visible (máx. 40 m) para las 4 luces del motor de las sombras de contacto (ahora con su color, `note_engine_lights(..., colors)`), atenuación por alcance y Henyey-Greenstein g = 0,35. Se compone con el bloom en `kAddCompose`. |
 
 Medidas (`hangar_1x_window` con parejas A/B, 1x, RTX 3050): 58,21 FPS de media, 8 de 81 ventanas por debajo de 57, GPU 35,1 % de media. Con todo encendido la imagen sube de media 7–21 niveles de 255 respecto a apagado (diferencia media 6–35 según la escena): paredes más iluminadas, halos amplios en disparos y llamas, y bruma iluminada en la cueva. Pendiente: valoración del usuario y ajuste de intensidades; la bruma junto al cañón en la cueva puede ser excesiva.
+
+## Parpadeo con «Modern lighting» y capturas F5 rotas (15/11/2026)
+
+Informe del usuario: con la iluminación moderna, las sombras parpadean en las naves de la flota (cuando hay explosiones) y en la nave de Samus al volar, a 60 FPS y también a 120 interpolados. Durante las ráfagas F5 Samus quedó negra.
+
+### Comprobado
+
+- **Las cinco ráfagas F5 de ese día no sirven para ver el parpadeo.** `console.log` de la sesión `base_1794785672_pid20216`: 182 líneas `[prime-pi-fifo-reset] frame_aborted=1`, casi todas dentro de las ráfagas y ninguna entre ellas. El final de escena del juego (`0x803E9F78`) espera al draw-done del fotograma anterior y, pasados 250 ms (`li r21,250` en `0x803E9FE4`), llama a `GXAbortFrame` (`0x804D23D0`) y a `GXInit`. La ráfaga hacía tardar un tercio de segundo a cada fotograma, así que el juego abortaba y Aurora descartaba todos los dibujos: `[post-scene-dump] ... efb:` vacío y `applications=0` en 174 de 300 fotogramas, con la imagen guardada vieja o negra.
+- **Samus negra:** sus dibujos tienen las texturas cargadas (512×512) y el TEV multiplica textura por color rasterizado; el ambiente es 0,039. Lo que falta es la luz de las luces de actor. El volcado no guardaba el color de las luces, así que la causa exacta no quedó probada. Apareció después de los abortos.
+
+### Cambios
+
+- **Overlay en `0x803E9F78`** (`prepare_prime_runtime_hooks.py`): la espera pasa de 250 ms a 30 s. El hilo GX del port siempre termina; un fotograma lento se muestra tarde en lugar de tirarse. Vale también para el build público (un parón del host de más de 250 ms abortaba el fotograma). Solo RM3E01; el árbol de Trilogy no se ha tocado.
+- **F5:** las líneas de consola por dibujo (`[dump-dl-draw]`, `[dump-raw-draw]`, `[dump-copy]`; 3,6 millones en esas ráfagas) solo se escriben en volcados de un fotograma (F7). `aurora_draw_dump_active()` devuelve falso en ráfaga.
+- **Volcados:** la línea `mat` añade `lightcol=<ranura>:<color>@<posición de vista>;` con las luces del canal 0, y `[post-scene-dump]` añade `contact_lights=<n>:<fuerza>[d]@<distancia>`.
+- **Luz suave en personajes** (`prime_engine_lights.cpp`), tres defectos encontrados leyendo el código:
+  1. El paso del fundido salía de una rejilla global de 16,667 ms. Con el juego siguiendo un monitor de 120 Hz (un fotograma cada 16,666 ms) el borde del fotograma queda minutos junto al borde de una celda y cada fotograma daba 0, 1 o 2 pasos al azar; en los de 0 pasos una luz recién elegida se veía un fotograma a pleno brillo y luego empezaba desde cero. Ahora cada actor cuenta los fotogramas desde su propio último paso, redondeados, y la lista se compara en cada llamada.
+  2. Una luz que se mueve (identificada por posición con 1 mm de margen) pasaba por nueva en cada fotograma y no subía del 10 %. Ahora la luz del mismo tipo más cercana, a menos de 6 m por fotograma, conserva su peso.
+  3. Con las cuatro ranuras ocupadas no hay sitio para la luz que sale: la nueva subía desde cero con la vieja ya quitada (bajón de brillo en cada cambio de lista). En ese caso se cambia de golpe, como hace el motor.
+  Además, dos luces en el mismo punto ya no comparten entrada, y un bloque ya reescrito por el hook (llamada anidada) no se vuelve a comparar.
+- **Sombras de contacto** (`command_processor.cpp`): el peso de cada luz se seguía por posición (0,25 m). Una luz que se mueve más que eso por fotograma volvía a 0,1 y dejaba una copia apagándose. Ahora también vale como la misma luz una del mismo tipo, con fuerza y alcance a menos del 30 %, a menos de 4 m.
+
+### Validación y pendiente
+
+- Repetición `hangar_modern_on` con cinco ráfagas (`WII_COMPILED_QA_BURST_AT`): 0 abortos, 0 fotogramas vacíos de 300, `lightcol` y `contact_lights` presentes. La ráfaga sigue yendo a unos 2 FPS (escritura de `draws.txt` y lectura de la imagen), así que durante una ráfaga el fundido de luces, que va por reloj, no se comporta como en juego normal.
+- **No comprobado:** que estos cambios quiten el parpadeo que vio el usuario. No hay captura del parpadeo real ni grabación de esas cinemáticas; hace falta su prueba en pantalla. Si sigue, pedir F5 en el sitio (ya válida) y mirar `lightcol` y `contact_lights` entre fotogramas.
+- Rendimiento, repetición `hangar` sin ráfagas y con la caché de shaders lista (`20261115_*_lightfix_clean2`): 59,85 FPS de media, mínimo 55,6, 6 ventanas de 80 por debajo de 59, 0 abortos, 0 errores. Las repeticiones del mismo día antes del cambio dieron 59,25 y 59,84. La primera repetición tras compilar bajó a 45–51 FPS durante 5 minutos por la regeneración de shaders (`shaders_queued=15015`), una sola vez.
+- `test_graphics.ps1`: 283 de 286 en `gx_fifo_tests`, el resto en verde. Fallan `ShaderGolden.GeneratorOutputIsStableForEveryShippedRecipe` (21 shaders), `UberShader.GoldenHashesOfEveryUberKey` (1590) y `GXFifoTest.CopyTexClearDoesNotOverlapFractionalLeftEdge` (rectángulo 492,300,224,114 en lugar de 493,300,223,114). Ninguno toca archivos de este cambio; la última pasada en verde es del 11/11 y el generador de shaders y las copias cambiaron en el commit `b526af29` del 14/11. Pendiente de decidir: regrabar los golden (invalida la caché de shaders de esos pipelines) y revisar el rectángulo de la copia.

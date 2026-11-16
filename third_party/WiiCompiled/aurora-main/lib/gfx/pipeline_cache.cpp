@@ -1024,6 +1024,10 @@ static void pipeline_cache_writer() {
 static std::atomic_bool g_prewarmActive{false};
 static std::chrono::steady_clock::time_point g_prewarmStart{};
 static uint32_t g_prewarmCount = 0;
+static std::atomic_bool g_prewarmFinished{false};
+static std::atomic<float> g_prewarmSeconds{0.0f};
+// Pipelines whose creation returned nothing (a shader the backend rejected): their draws never appear.
+static std::atomic<uint64_t> g_failedPipelines{0};
 
 static void note_pipeline_queue_drained() {
   if (!g_prewarmActive.exchange(false, std::memory_order_acq_rel)) {
@@ -1036,6 +1040,8 @@ static void note_pipeline_queue_drained() {
   const auto elapsed =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - g_prewarmStart);
   const auto stats = webgpu::blob_cache_stats();
+  g_prewarmSeconds.store(elapsed.count() / 1000.0f, std::memory_order_relaxed);
+  g_prewarmFinished.store(true, std::memory_order_release);
   Log.info("Pipeline prewarm finished: {} pipelines in {:.1f} s (Dawn blob cache: {}/{} hits, {} stores, {:.1f} MiB "
            "loaded)",
            g_prewarmCount, elapsed.count() / 1000.0, stats.hits, stats.lookups, stats.stores,
@@ -1047,6 +1053,15 @@ static void note_pipeline_queue_drained() {
 
 static void compile_pending_pipeline(PendingPipeline pending) {
   auto result = pending.create();
+  if (!result) {
+    // Nothing ever logged this: the draws of such a pipeline are skipped (or stay on their fallback or
+    // ubershader) for the whole session.
+    const uint64_t n = g_failedPipelines.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (n <= 32 || n % 1000 == 0) {
+      Log.warn("[pipeline-failed] pipeline {:016X} was not created (failed so far: {}, prewarm {})", pending.hash, n,
+               g_prewarmActive.load(std::memory_order_relaxed) ? "active" : "done");
+    }
+  }
   {
     std::lock_guard lock{g_pipelineMutex};
     const auto [_, inserted] = g_pipelines.try_emplace(pending.hash, CachedPipeline{
@@ -1679,6 +1694,106 @@ void set_skip_unready_pipelines(bool enabled) noexcept {
 bool skip_unready_pipelines() noexcept { return g_skipUnreadyGxPipelines.load(std::memory_order_relaxed); }
 bool pipeline_prewarm_active() noexcept { return g_prewarmActive.load(std::memory_order_acquire); }
 
+namespace {
+std::atomic<uint64_t> g_frameBudgetSkips{0};
+std::atomic<uint64_t> g_persistentSkips{0};
+std::atomic<uint64_t> g_fallbackDraws{0};
+thread_local uint32_t t_passWidth = 0;
+thread_local uint32_t t_passHeight = 0;
+
+float prewarm_seconds() noexcept {
+  if (g_prewarmFinished.load(std::memory_order_acquire)) return g_prewarmSeconds.load(std::memory_order_relaxed);
+  if (!g_prewarmActive.load(std::memory_order_acquire)) return 0.0f;
+  return std::chrono::duration<float>(std::chrono::steady_clock::now() - g_prewarmStart).count();
+}
+
+const char* prewarm_state_name() noexcept {
+  if (g_prewarmActive.load(std::memory_order_acquire)) return "active";
+  return g_prewarmFinished.load(std::memory_order_acquire) ? "done" : "none";
+}
+
+// At most one line every 10 s, and only from a counter that just moved: a session where every
+// pipeline is ready logs nothing.
+void draw_summary_if_due() noexcept {
+  static std::atomic<int64_t> nextReport{0};
+  static std::atomic<uint64_t> lastFrame{0}, lastPersistent{0}, lastFallback{0}, lastUber{0};
+  const int64_t now =
+      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+  int64_t due = nextReport.load(std::memory_order_relaxed);
+  if (now < due || !nextReport.compare_exchange_strong(due, now + 10)) return;
+  const uint64_t frame = g_frameBudgetSkips.load(std::memory_order_relaxed);
+  const uint64_t persistent = g_persistentSkips.load(std::memory_order_relaxed);
+  const uint64_t fallback = g_fallbackDraws.load(std::memory_order_relaxed);
+  const uint64_t uber = gx::uber_draws_total();
+  Log.info("[draw-pipeline-summary] since last line: skipped_frame_budget={} skipped_copy_pass={} fallback={} uber={} "
+           "| totals: skipped_frame_budget={} skipped_copy_pass={} fallback={} uber={} | queued={} prewarm={} "
+           "failed_pipelines={}",
+           frame - lastFrame.exchange(frame), persistent - lastPersistent.exchange(persistent),
+           fallback - lastFallback.exchange(fallback), uber - lastUber.exchange(uber), frame, persistent, fallback,
+           uber, queued_pipeline_count(), prewarm_state_name(), g_failedPipelines.load(std::memory_order_relaxed));
+}
+} // namespace
+
+static float prewarm_seconds_for_api() noexcept { return prewarm_seconds(); }
+
+void note_encoding_pass(uint32_t width, uint32_t height) noexcept {
+  t_passWidth = width;
+  t_passHeight = height;
+}
+
+void note_draw_skipped(PipelineRef ref, bool persistentPass) noexcept {
+  if (persistentPass) {
+    // These are the ones that can stay wrong: name the pipeline and the pass of the first cases.
+    const uint64_t n = g_persistentSkips.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (n <= 24 || n % 1000 == 0) {
+      Log.info("[persistent-pass-skip] draw {} skipped in a copy/offscreen pass while its pipeline compiled: "
+               "pipeline={:016X} pass_target={}x{} frame={} queued={} prewarm={}",
+               n, ref, t_passWidth, t_passHeight, current_frame(), queued_pipeline_count(), prewarm_state_name());
+    }
+  } else {
+    g_frameBudgetSkips.fetch_add(1, std::memory_order_relaxed);
+  }
+  draw_summary_if_due();
+}
+
+void note_fallback_draw() noexcept {
+  g_fallbackDraws.fetch_add(1, std::memory_order_relaxed);
+  draw_summary_if_due();
+}
+
+std::string describe_render_state() {
+  const auto cache = webgpu::blob_cache_state();
+  const auto blobs = webgpu::blob_cache_stats();
+  std::string text;
+  text += fmt::format("graphics adapter in use: {}\n", webgpu::adapter_summary());
+  if (cache.opened) {
+    text += fmt::format("shader cache: {} at start ({} compiled blobs), launch {} on this cache file, build '{}' "
+                        "(stored '{}'){}\n",
+                        cache.rowsAtOpen == 0 ? "COLD" : "warm", cache.rowsAtOpen, cache.launches,
+                        cache.generation.empty() ? "none" : cache.generation,
+                        cache.storedGeneration.empty() ? "none" : cache.storedGeneration,
+                        cache.recreated ? ", file recreated" : cache.generationChanged ? ", first launch of this build" : "");
+  } else {
+    text += "shader cache: not opened\n";
+  }
+  text += fmt::format("shader generation at boot: {} ({} pipelines, {:.1f} s{}); blob cache {}/{} hits, {} stores\n",
+                      prewarm_state_name(), g_prewarmCount, prewarm_seconds(),
+                      g_prewarmActive.load(std::memory_order_acquire) ? " so far" : "", blobs.hits, blobs.lookups,
+                      blobs.stores);
+  text += fmt::format("pipelines: {} created, {} still queued, {} failed\n",
+                      static_cast<uint32_t>(createdPipelines.load()), queued_pipeline_count(),
+                      g_failedPipelines.load(std::memory_order_relaxed));
+  text += fmt::format("draws not drawn while their shader compiled: {} in ordinary passes, {} in copy/offscreen "
+                      "passes (these can stay wrong)\n",
+                      g_frameBudgetSkips.load(std::memory_order_relaxed),
+                      g_persistentSkips.load(std::memory_order_relaxed));
+  text += fmt::format("draws with a stand-in shader: {} vertex-lit fallback, {} ubershader\n",
+                      g_fallbackDraws.load(std::memory_order_relaxed), gx::uber_draws_total());
+  text += fmt::format("options: skip_unready_pipelines={} ubershader={}\n", skip_unready_pipelines(),
+                      gx::uber_hybrid_enabled());
+  return text;
+}
+
 uint32_t queued_pipeline_count() noexcept {
 #if defined(__cpp_lib_atomic_ref)
   return queuedPipelines.load(std::memory_order_relaxed);
@@ -1777,3 +1892,21 @@ void aurora_set_skip_unready_pipelines(const bool enabled) { aurora::gfx::set_sk
 bool aurora_get_skip_unready_pipelines() { return aurora::gfx::skip_unready_pipelines(); }
 
 uint32_t aurora_get_queued_pipeline_count() { return aurora::gfx::queued_pipeline_count(); }
+
+void aurora_get_shader_prewarm(AuroraShaderPrewarm* out) {
+  if (out == nullptr) return;
+  out->active = aurora::gfx::pipeline_prewarm_active();
+  out->finished = aurora::gfx::g_prewarmFinished.load(std::memory_order_acquire);
+  out->total = aurora::gfx::g_prewarmCount;
+  out->remaining = out->active ? aurora::gfx::queued_pipeline_count() : 0;
+  out->seconds = aurora::gfx::prewarm_seconds_for_api();
+}
+
+size_t aurora_describe_render_state(char* buffer, size_t capacity) {
+  if (buffer == nullptr || capacity == 0) return 0;
+  const std::string text = aurora::gfx::describe_render_state();
+  const size_t length = std::min(text.size(), capacity - 1);
+  std::memcpy(buffer, text.data(), length);
+  buffer[length] = '\0';
+  return length;
+}

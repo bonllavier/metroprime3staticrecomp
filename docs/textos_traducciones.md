@@ -42,7 +42,11 @@ errores; no se copia su texto ni el runtime los lee.
   variable, como los textos de gestos) y el juego construye su cadena desde ahí.
 - **Límite.** Se leen hasta 8 KiB por cadena; la más larga de los discos USA tiene 5,6 KB.
 - **Gestos.** Los textos de gestos siguen funcionando igual en el modo teclado/ratón y de mando. Las
-  dos tablas no se solapan.
+  dos tablas sí se solapan: desde la revisión del español (14/11), reglas como «en sentido
+  antirreloj» también tocan avisos de gestos («Gira el mando en sentido antirreloj.»). Por eso el hook
+  busca primero el aviso de gesto (por el hash del original) y solo aplica las correcciones si no lo es
+  o si alguna acción del aviso no tiene tecla asignada. Los reemplazos en español de
+  `prime_motion_text.cpp` ya usan la redacción revisada («en el sentido de las agujas del reloj»).
 
 ## Regenerar las tablas
 

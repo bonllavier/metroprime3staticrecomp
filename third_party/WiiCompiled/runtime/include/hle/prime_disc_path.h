@@ -31,7 +31,19 @@ enum class Problem {
     ShellLocation,  // "::{CLSID}\..." or "shell:..." - a display name, not a file
     Missing,        // nothing at that path
     NotAFile,       // a folder or a device
+    UnsupportedFormat, // a file whose container this port does not accept yet
 };
+
+// Containers the port accepts: plain .iso and .rvz, the two that are tested.
+// The reader library also opens .wbfs, .gcz, .wia and .ciso, but none of them has
+// been verified in play, so they are refused everywhere a disc image can be
+// named: the file dialogs, the game folder, Config.toml, F1 and --iso /
+// CORRUPTION3_ISO (user's decision, 2026-11-15).
+inline bool IsSupportedExtension(const std::filesystem::path& path) {
+    std::string text = path.extension().string();
+    for (char& c : text) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return text == ".iso" || text == ".rvz";
+}
 
 // Trims spaces, tabs and line breaks, then one pair of surrounding quotes, as
 // Explorer's "Copy as path" adds them.
@@ -80,6 +92,7 @@ inline Problem Check(const std::filesystem::path& path, std::string_view origina
     const auto status = std::filesystem::status(path, ec);
     if (ec || status.type() == std::filesystem::file_type::not_found) return Problem::Missing;
     if (status.type() != std::filesystem::file_type::regular) return Problem::NotAFile;
+    if (!IsSupportedExtension(path)) return Problem::UnsupportedFormat;
     return Problem::None;
 }
 
@@ -93,6 +106,10 @@ inline std::string ProblemText(Problem problem) {
                "Z: is the Linux root) and pick the file there.";
     case Problem::Missing: return "There is no file at this path. It may have been moved, renamed or be on a drive that is not connected.";
     case Problem::NotAFile: return "This path is a folder, not a disc image file.";
+    case Problem::UnsupportedFormat:
+        return "This file format is not supported yet. Only .iso and .rvz disc images are accepted "
+               "(.wbfs, .gcz, .wia and .ciso are not). Dolphin converts a dump to RVZ or ISO: "
+               "right-click the game > Convert File.";
     }
     return {};
 }

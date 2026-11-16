@@ -175,7 +175,16 @@ wgpu::RenderPipeline create_pipeline(const PipelineConfig& config) {
   const auto start = Clock::now();
   const auto shader = is_uber_pipeline(config) ? cached_uber_shader_module(config) : cached_shader_module(config.shaderConfig);
   const bool newModule = tLastModuleWasNew;
-  if (!shader) return {};  // an ubershader the compiler rejected: the draw keeps waiting for the specialised pipeline
+  if (!shader) {
+    // An ubershader the compiler rejected: the draw keeps waiting for the specialised pipeline. A
+    // specialised shader should never get here; either way the report must show it.
+    static std::atomic<uint32_t> rejected{0};
+    if (rejected.fetch_add(1, std::memory_order_relaxed) < 32) {
+      Log.warn("[pipeline-failed] no shader module for pipeline {:016X} (uber={})",
+               xxh3_hash(config, static_cast<HashType>(gfx::ShaderType::GX)), is_uber_pipeline(config));
+    }
+    return {};
+  }
   const auto moduleDone = Clock::now();
   auto pipeline = build_pipeline(config, {}, shader, "GX Pipeline");
   const auto done = Clock::now();
@@ -226,6 +235,7 @@ void render(const DrawData& data, const wgpu::RenderPassEncoder& pass, DrawEncod
   }
   bool bound = false;
   bool usingUber = false;
+  bool usingFallback = false;
   // WII_COMPILED_UBER_STATS=1: every 5 s, why draws whose specialised pipeline was not ready did or did not
   // get the ubershader. Costs a pipeline-map lookup per draw, so it is diagnostic only.
   static const bool uberStats = std::getenv("WII_COMPILED_UBER_STATS") != nullptr;
@@ -279,18 +289,23 @@ void render(const DrawData& data, const wgpu::RenderPassEncoder& pass, DrawEncod
     pipelines.fallbackReady = !pipelines.primaryReady && gfx::try_pipeline(data.fallbackPipeline, probe);
     if (policy::first_bind(pipelines) == policy::FirstBind::Fallback) {
       bound = gfx::bind_pipeline(data.fallbackPipeline, pass, state.currentPipeline, requireReadyPipeline);
+      usingFallback = bound;
     }
   }
   if (!bound) bound = gfx::bind_pipeline(data.pipeline, pass, state.currentPipeline, requireReadyPipeline);
   if (!bound && data.fallbackPipeline != 0) {
     // Per-pixel variant still compiling: draw with the per-vertex pipeline this frame.
     bound = gfx::bind_pipeline(data.fallbackPipeline, pass, state.currentPipeline, requireReadyPipeline);
+    usingFallback = bound;
   }
+  // Counted for the F12 report and the [draw-pipeline-summary] line.
+  if (usingFallback) UNLIKELY gfx::note_fallback_draw();
   static unsigned primeRenderTrace = 0;
   if (CachedWiiCompiledTracePrimeGx() && primeRenderTrace++ < 128)
     Log.info("[prime-gx-render-encoded] indices={} instances={} pipeline_bound={} required={} uniform={}/{}",
              data.indexCount,data.instanceCount,bound,requireReadyPipeline,data.uniformRange.offset,data.uniformRange.size);
   if (!bound) {
+    gfx::note_draw_skipped(data.pipeline, requireReadyPipeline);
     static unsigned skippedTrace = 0;
     if (CachedWiiCompiledTracePrimeGx() && skippedTrace++ < 16)
       Log.warn("[prime-gx-draw-skipped-pipeline] indices={} required={}",data.indexCount,requireReadyPipeline);

@@ -81,6 +81,10 @@ def main() -> None:
         # End-of-scene filler (called by 0x803E9F78 right before the display copy): 96 identical triangles.
         0x803E9B28: "38a00120",  # li r5,288: the vertex count
         0x803E9B48: "c002cc84",  # lfs f0,1.0: the coordinates the overlay turns to zero
+        # End of scene (CGraphics, 0x803E9F78): waits for the previous frame's draw-done and gives up after
+        # 250 ms (GXAbortFrame + GXInit). The overlay lengthens that wait.
+        0x803E9F78: "9421fed0",  # end-of-scene prologue
+        0x803E9FE4: "3aa000fa",  # li r21,250: the draw-done timeout in milliseconds
 
         0x804E6CD0: "4bff9475",  # SelectThread: bl OSSaveContext
         0x804E6CD4: "2c030000",  # Restored SRR0: cmpwi r3,0
@@ -119,6 +123,16 @@ def main() -> None:
     for address, encoded in expected.items():
         if read_dol(dol, address, 4).hex() != encoded:
             raise ValueError(f"Unexpected original instruction at {address:08X}")
+    # Private QA rate probe (hle/prime_rate_probe.cpp; empty outside the test build): an entry call in each
+    # listed function, which is not hooked for anything else. Temporary, for the native 120 work.
+    probe_path = ROOT / "recomp/config/RM3E01_00/qa_rate_probe.json"
+    probe_list = sorted(int(key, 16) for key in json.loads(probe_path.read_text(encoding="utf-8"))) if probe_path.exists() else []
+    # Functions retranslated later (switch repairs) keep their own overlay.
+    audited_repairs = {int(f, 16) for f in json.loads((ROOT / "recomp/config/RM3E01_00/dol_jump_tables.json").read_text())["repair_functions"]}
+    audited_repairs |= {0x800E01F0, 0x80420444, 0x8019804C, 0x8042B530, 0x80423190, 0x80423EF8, 0x8040D9D8, 0x8040F98C,
+                        0x80414E20, 0x80415CB8, 0x804167CC, 0x80419848, 0x80425B10, 0x80427A34, 0x804280AC}
+    probe_index = {address: index for index, address in
+                   enumerate(a for a in probe_list if a not in expected and a not in audited_repairs)}
     metadata = json.loads((BASE / "base_translation_output.json").read_text(encoding="utf-8"))
     metadata["sourceBundlePath"] = None
     out = BASE / "runtime_hooks"
@@ -128,11 +142,33 @@ def main() -> None:
         address = item["entryPoint"]
         raw_relative_path = item["relativePath"]
         item["relativePath"] = "functions/" + raw_relative_path
+        if address in probe_index:
+            original = (BASE / "functions" / raw_relative_path).read_bytes()
+            if digest(original) != item["sha256"]:
+                raise ValueError(f"Raw translation hash mismatch at {address:08X}")
+            source = original.decode("utf-8").replace("\r\n", "\n")
+            anchor = f'extern "C" void func_{address:08X}(CpuContext* MKW_RESTRICT ctx)\n{{'
+            if source.count(anchor) != 1 or source.count('#include "guest_abi/guest_abi.h"') != 1:
+                continue  # left as translated
+            source = source.replace('#include "guest_abi/guest_abi.h"',
+                '#include "guest_abi/guest_abi.h"\nextern "C" void PrimeRateProbe(CpuContext*, uint32_t, uint32_t);', 1)
+            source = source.replace(anchor, anchor + f'\n    PrimeRateProbe(ctx, {probe_index[address]}u, 0x{address:08X}u);', 1)
+            data = source.encode("utf-8")
+            filename = f"func_{address:08X}.cpp"
+            target = out / "functions" / filename
+            if not target.exists() or target.read_bytes() != data:
+                target.write_bytes(data)
+            changes.append({"address": f"0x{address:08X}", "raw_sha256": digest(original),
+                            "overlay_sha256": digest(data), "kind": "QA rate probe"})
+            item["relativePath"] = f"runtime_hooks/functions/{filename}"
+            item["sha256"] = digest(data)
+            item["size"] = len(data)
+            continue
         if address not in (0x803BBF38, 0x8054A6D8, 0x805013D4, 0x80259474, 0x80259978, 0x802598B0, 0x802599FC, 0x804EE4A8, 0x804EB174, 0x80353F70, 0x803540A8, 0x804F66B8, 0x804F6A2C, 0x804D9138, 0x804D9E20, 0x804E6BD4, 0x804E01C4, 0x804D2644, 0x8050D4A0, 0x804D9850, 0x804E6E14,
                            0x802ED6C4, 0x804E57C4, 0x804E5850, 0x803F6160,
                            0x804DF8C8, 0x804DF8F4, 0x804DF924, 0x804DF954, 0x804DF980, 0x8017A4B4, 0x801799A8, 0x801522E0, 0x80151F64, 0x8036BC98, 0x8007F904,
                            0x8009CF90, 0x8007F2A4, 0x802B2668, 0x80316A1C, 0x802EBAF4, 0x803E9A34, 0x802F1378, 0x803CDB38,
-                           0x801ACAB8, 0x8000C918, 0x800BE034, 0x800BF0C4, 0x803EB060, 0x803E91D4):
+                           0x801ACAB8, 0x8000C918, 0x800BE034, 0x800BF0C4, 0x803EB060, 0x803E91D4, 0x803E9F78):
             continue
         original = (BASE / "functions" / raw_relative_path).read_bytes()
         if digest(original) != item["sha256"]:
@@ -409,6 +445,16 @@ def main() -> None:
                 'extern "C" bool PrimePhotoModeSkipUpdate();')
             anchor='extern "C" void func_802EBAF4(CpuContext* MKW_RESTRICT ctx)\n{'
             source=replace_once(source,anchor,anchor+'\n    if (PrimePhotoModeSkipUpdate()) { ctx->gpr[3] = 1; return; }')
+        elif address == 0x803E9F78:
+            # End of scene: the game waits for the GPU to finish the previous frame and, after 250 ms,
+            # takes it for hung: it aborts the frame (PI FIFO reset) and runs GXInit. On the console the
+            # GPU never takes that long. Here a host stall does (a pipeline compile storm, a busy disk,
+            # the test build's F5 burst): the port then dropped the whole frame (an image without the
+            # game's draws; 15/11/2026, console.log of the F5 bursts: 182 aborts, all but a few inside
+            # a burst). The port's GPU thread always finishes, so the wait is lengthened to 30 s: a
+            # slow frame is shown late instead of being thrown away.
+            assert digest(original) == "046196fab8441789f4052b8d0c44d3042792481b35ff575fefb1225bc19e6e10"
+            source=replace_once(source,'    r21 = 250;\n','    r21 = 30000;\n')
         elif address == 0x803E9A34:
             # End-of-scene filler: 96 triangles of half an EFB pixel at the screen centre, with
             # whatever TEV state the last draw left. Above 1x they rasterize into a dark dot

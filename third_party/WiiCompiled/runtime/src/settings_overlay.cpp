@@ -1,3 +1,4 @@
+#include "hle_stubs.h"
 #include "settings_overlay.h"
 #include "audio_backend.h"
 #include "aurora_events.h"
@@ -226,9 +227,20 @@ bool IgnoreDisplayLimitsForQa() {
 
 // True when the monitor cannot show anything above the game's own 60 images per second. Its images
 // would all be discarded, and trying costs the game real frames (58.8/s against 59.9 on such a PC).
+// What the monitor can show. Exclusive fullscreen runs its own mode, chosen from the interpolation
+// target: judging by that mode (60 Hz while interpolation is off) kept the target at 0 and the mode at
+// 60 forever on a 120 Hz monitor (user report, 14 Nov 2026). The desktop mode is the monitor's own rate.
+float MonitorRefreshForInterpolation() {
+    if (aurora_get_display_mode() == AURORA_DISPLAY_MODE_EXCLUSIVE) {
+        const float desktop = aurora_get_desktop_refresh_rate();
+        if (desktop > 0.f) return desktop;
+    }
+    return aurora_get_display_refresh_rate();
+}
+
 bool MonitorStopsAt60() {
     if (IgnoreDisplayLimitsForQa()) return false;
-    const float hz = aurora_get_display_refresh_rate();
+    const float hz = MonitorRefreshForInterpolation();
     return hz > 0.f && hz < static_cast<float>(AURORA_FRAME_INTERPOLATION_MIN_FPS) + 2.f;
 }
 
@@ -248,14 +260,15 @@ bool DriverStopsAt60() {
 // What Aurora should aim for under the current F1 choice.
 uint32_t FrameInterpolationTarget() {
     const uint32_t choice = RuntimeConfigFile::kFrameInterpolationChoices[static_cast<size_t>(g_frameInterpolationMode)];
-    if (choice == 0 || MonitorStopsAt60() || DriverStopsAt60()) {
+    // Native 120 draws real frames already: no inserted images on top of them.
+    if (choice == 0 || MonitorStopsAt60() || DriverStopsAt60() || VI_HLE_NativeRateFactor() != 1) {
         return 0;
     }
     uint32_t target = choice;
     if (choice == RuntimeConfigFile::kFrameInterpolationUncapped) {
         target = AURORA_FRAME_INTERPOLATION_UNCAPPED;
     } else if (choice == RuntimeConfigFile::kFrameInterpolationMatchMonitor) {
-        const uint32_t hz = static_cast<uint32_t>(std::lround(aurora_get_display_refresh_rate()));
+        const uint32_t hz = static_cast<uint32_t>(std::lround(MonitorRefreshForInterpolation()));
         target = hz > AURORA_FRAME_INTERPOLATION_MIN_FPS ? std::min(hz, AURORA_FRAME_INTERPOLATION_MAX_FPS) : 0u;
     }
     // Images past the driver's cap are never shown; aiming above it only feeds the rate controller misses.
@@ -283,6 +296,10 @@ void FollowMonitorForFrameInterpolation() {
 #endif
     if (target != aurora_get_frame_interpolation_fps()) {
         aurora_set_frame_interpolation_fps(target);
+        if (aurora_get_display_mode() == AURORA_DISPLAY_MODE_EXCLUSIVE) {
+            // The exclusive mode's refresh follows the target.
+            aurora_set_display_mode(AURORA_DISPLAY_MODE_EXCLUSIVE);
+        }
     }
 }
 
@@ -1673,6 +1690,20 @@ void DrawFpsOverlay() {
                 ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.25f, 1.0f), "Motion: %.1f",
                                    presentTiming.effectiveFramesPerSecond);
             }
+#if defined(MKW_PRIME_QA_TOOLS)
+            // The counter above counts images handed to the screen. This is how many of them a refresh
+            // of the monitor showed, and how many refreshes held an image longer or shorter than its share
+            // (estimated from the measured refresh; test build only).
+            AuroraDisplayCadence cadence{};
+            aurora_get_display_cadence(&cadence);
+            if (cadence.valid) {
+                const bool even = cadence.presentedPerSecond - cadence.seenPerSecond < 0.75f &&
+                                  cadence.unevenPerSecond < 0.75f;
+                ImGui::TextColored(even ? ImVec4(0.6f, 0.6f, 0.6f, 1.0f) : ImVec4(1.0f, 0.75f, 0.25f, 1.0f),
+                                   "Seen: %.0f  uneven: %.0f  (%.0f Hz)", cadence.seenPerSecond,
+                                   cadence.unevenPerSecond, cadence.refreshHz);
+            }
+#endif
         }
     }
     ImGui::End();
@@ -1702,6 +1733,110 @@ void DrawShaderCompilationStatus() {
     }
     ImGui::End();
     ImGui::PopStyleVar();
+}
+
+// Red blinking alert while the boot shader generation runs (discussion #2: a tester started playing
+// on a cold shader cache, with ten minutes of compilation still to go, and the scene stayed dark for
+// the whole session). Drawn on the foreground list, so it stays above the start-up screen, the game
+// and the F1 panel. Shown in every build: it is a warning to the player, not a diagnostic.
+void DrawShaderGenerationAlert() {
+    AuroraShaderPrewarm prewarm{};
+    aurora_get_shader_prewarm(&prewarm);
+    static bool worthShowing = false;
+    if (!prewarm.active) {
+        worthShowing = false;
+        return;
+    }
+    // A handful of leftovers is over before anyone could read the alert.
+    worthShowing |= prewarm.remaining > kBootShaderNoticeThreshold;
+    if (!worthShowing) return;
+
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImDrawList* draw = ImGui::GetForegroundDrawList();
+    ImFont* font = ImGui::GetFont();
+    const float scale = std::clamp(viewport->Size.y / 720.0f, 0.95f, 2.5f);
+    const float titleSize = ImGui::GetFontSize() * 1.35f * scale;
+    const float bodySize = ImGui::GetFontSize() * 1.0f * scale;
+
+    char title[96];
+    std::snprintf(title, sizeof(title), "GENERATING SHADERS - %u LEFT", prewarm.remaining);
+    const char* body = "Wait before starting a game. Do not change settings.";
+    const ImVec2 titleExtent = font->CalcTextSizeA(titleSize, FLT_MAX, 0.0f, title);
+    const ImVec2 bodyExtent = font->CalcTextSizeA(bodySize, FLT_MAX, 0.0f, body);
+
+    // Two rhythms: the whole box breathes (about once a second) and the warning signs blink on and off.
+    const double seconds = ImGui::GetTime();
+    const float breath = 0.5f + 0.5f * static_cast<float>(std::sin(seconds * 6.2831853 * 0.9));
+    const bool blinkOn = std::fmod(seconds, 0.9) < 0.55;
+
+    const float pad = 12.0f * scale;
+    const float sign = titleSize * 1.15f;  // warning triangle, one on each side
+    const float gap = 10.0f * scale;
+    const float contentWidth = std::max(titleExtent.x + 2.0f * (sign + gap), bodyExtent.x);
+    const ImVec2 boxSize(contentWidth + 2.0f * pad, titleExtent.y + bodyExtent.y + 2.0f * pad + 4.0f * scale);
+    const float top = viewport->Pos.y + (g_topBarVisible ? ImGui::GetFrameHeight() : 0.0f) + 14.0f * scale;
+    const ImVec2 boxMin(viewport->Pos.x + (viewport->Size.x - boxSize.x) * 0.5f, top);
+    const ImVec2 boxMax(boxMin.x + boxSize.x, boxMin.y + boxSize.y);
+    const float rounding = 6.0f * scale;
+
+    auto red = [](float r, float g, float b, float a) {
+        return IM_COL32(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a));
+    };
+    // Glow: a few expanding outlines whose strength follows the breath.
+    for (int ring = 4; ring >= 1; --ring) {
+        const float grow = ring * 3.0f * scale;
+        draw->AddRect(ImVec2(boxMin.x - grow, boxMin.y - grow), ImVec2(boxMax.x + grow, boxMax.y + grow),
+                      red(255, 40, 40, (20.0f + 60.0f * breath) / ring), rounding + grow, 0, 2.0f * scale);
+    }
+    draw->AddRectFilled(boxMin, boxMax, red(70.0f + 60.0f * breath, 0, 0, 225), rounding);
+    draw->AddRect(boxMin, boxMax, red(255, 60.0f + 120.0f * breath, 60.0f + 120.0f * breath, 255), rounding, 0,
+                  2.5f * scale);
+
+    const float titleX = boxMin.x + (boxSize.x - titleExtent.x) * 0.5f;
+    const float titleY = boxMin.y + pad;
+    draw->AddText(font, titleSize, ImVec2(titleX, titleY), red(255, 235, 235, 255), title);
+    if (blinkOn) {
+        // Warning triangles with an exclamation mark, left and right of the title.
+        for (const float centreX : {titleX - gap - sign * 0.5f, titleX + titleExtent.x + gap + sign * 0.5f}) {
+            const float centreY = titleY + titleExtent.y * 0.5f;
+            const float half = sign * 0.5f;
+            draw->AddTriangleFilled(ImVec2(centreX, centreY - half), ImVec2(centreX - half, centreY + half * 0.85f),
+                                    ImVec2(centreX + half, centreY + half * 0.85f), red(255, 215, 0, 255));
+            const float bar = std::max(1.5f, sign * 0.10f);
+            draw->AddRectFilled(ImVec2(centreX - bar * 0.5f, centreY - half * 0.45f),
+                                ImVec2(centreX + bar * 0.5f, centreY + half * 0.30f), red(60, 0, 0, 255));
+            draw->AddRectFilled(ImVec2(centreX - bar * 0.5f, centreY + half * 0.45f),
+                                ImVec2(centreX + bar * 0.5f, centreY + half * 0.45f + bar), red(60, 0, 0, 255));
+        }
+    }
+    draw->AddText(font, bodySize, ImVec2(boxMin.x + (boxSize.x - bodyExtent.x) * 0.5f, titleY + titleExtent.y + 4.0f * scale),
+                  red(255, 200, 200, 255), body);
+}
+
+// A clock line every 10 s: console.log has no timestamps, and working out when something happened
+// from the retrace counter was the slowest part of reading a tester's report.
+void LogSessionClock() {
+    static const Clock::time_point start = Clock::now();
+    static Clock::time_point next = start;
+    const auto now = Clock::now();
+    if (now < next) return;
+    next = now + std::chrono::seconds(10);
+    const std::time_t wall = std::time(nullptr);
+    std::tm local{};
+#if defined(_WIN32)
+    localtime_s(&local, &wall);
+#else
+    localtime_r(&wall, &local);
+#endif
+    char text[32];
+    std::strftime(text, sizeof(text), "%Y-%m-%d %H:%M:%S", &local);
+    AuroraShaderPrewarm prewarm{};
+    aurora_get_shader_prewarm(&prewarm);
+    RT_LOG(RT_TAG_RUNTIME) << "[clock] t=" << std::chrono::duration_cast<std::chrono::seconds>(now - start).count()
+                           << "s local=" << text << " presents=" << aurora_get_present_count()
+                           << " shaders_queued=" << aurora_get_queued_pipeline_count()
+                           << " shader_generation=" << (prewarm.active ? "active" : prewarm.finished ? "done" : "none")
+                           << std::endl;
 }
 
 void DrawStartupScreen() {
@@ -1934,7 +2069,7 @@ void DiscImageSection() {
     }
     RestartNote();
     ImGui::SetNextItemWidth(-160.0f);
-    const bool entered = ImGui::InputTextWithHint("##disc_path", "or paste the path to the .iso/.rvz/.wbfs file",
+    const bool entered = ImGui::InputTextWithHint("##disc_path", "or paste the path to the .iso or .rvz file",
                                                   g_discImageTyped.data(), g_discImageTyped.size(),
                                                   ImGuiInputTextFlags_EnterReturnsTrue);
     ImGui::SameLine();
@@ -2418,6 +2553,82 @@ void DrawPrimeVideoOptions() {
         ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.3f, 1.0f),
                            "This driver has no Mailbox mode: with V-Sync the interpolated rate falls back to 60.\n"
                            "For more than 60, turn V-Sync off.");
+    // Frame clock locked to the monitor (aurora_set_refresh_lock).
+    bool refreshLock = aurora_get_refresh_lock();
+    if (ImGui::Checkbox("Follow the monitor's refresh", &refreshLock)) {
+        aurora_set_refresh_lock(refreshLock);
+        RuntimeConfigFile::SetRefreshLock(refreshLock);
+    }
+    ImGui::TextDisabled("The game starts each frame in step with the monitor, so every image gets its own");
+    ImGui::TextDisabled("refresh: none repeated, none skipped, nothing held back. The console runs at 59.94");
+    ImGui::TextDisabled("frames per second; the game takes the monitor's rate when it is within 0.15 %% of it.");
+    {
+        const float lockRate = aurora_get_refresh_lock_rate();
+        if (lockRate > 0.0f) {
+            // The game's logic step shrinks with the frame (vi.cpp, ApplyPrimeLogicStep), so its speed stays
+            // the console's whatever the monitor's rate.
+            const float frames = (lockRate / (60000.0f / 1001.0f) - 1.0f) * 100.0f;
+            const float speed = (VI_HLE_GameSpeed() - 1.0f) * 100.0f;
+            if (frames > -0.01f && frames < 0.01f)
+                ImGui::TextDisabled("Following the monitor: %.3f frames per second, as the console.", lockRate);
+            else
+                ImGui::TextDisabled("Following the monitor: %.3f frames per second (the console shows 59.940);\n"
+                                    "each game step is %.2f %% shorter to match.", lockRate, frames);
+            ImGui::TextDisabled("Game speed against the console: %+.3f %%.", speed);
+        } else if (refreshLock) {
+            ImGui::TextDisabled("Not following: 59.94 frames per second on the game's own clock (the monitor's rate\n"
+                                "is not a multiple of it, is variable, or is not measured yet).");
+        } else {
+            ImGui::TextDisabled("Off: 59.94 frames per second on the game's own clock.");
+        }
+    }
+    ImGui::Separator();
+
+    // Display sync at the game's own rate (aurora_set_display_sync): only acts with interpolation off.
+    bool displaySync60 = aurora_get_display_sync();
+    if (ImGui::Checkbox("Sync the 60 images to the monitor's refresh", &displaySync60)) {
+        aurora_set_display_sync(displaySync60);
+        RuntimeConfigFile::SetDisplaySync(displaySync60);
+    }
+    ImGui::TextDisabled("Each image waits for its own refresh, so none is shown twice or skipped while the");
+    ImGui::TextDisabled("counter still reads 60. Costs about half a frame of latency. Used while the");
+    ImGui::TextDisabled("interpolated frame rate below is off.");
+    if (displaySync60 && g_frameInterpolationMode == 0) {
+        const float syncRate = aurora_get_display_sync_rate();
+        if (aurora_get_refresh_lock_rate() > 0.0f)
+            ImGui::TextDisabled("Not needed now: the game already follows the monitor's refresh.");
+        else if (aurora_get_vsync())
+            ImGui::TextDisabled("V-Sync already waits for the refresh; this adds nothing to it.");
+        else if (syncRate > 0.0f && aurora_get_display_sync_paused())
+            ImGui::TextDisabled("Synced to %.2f Hz; paused while images arrive late (heavy scene).", syncRate);
+        else if (syncRate > 0.0f)
+            ImGui::TextDisabled("Synced to %.2f Hz.", syncRate);
+        else
+            ImGui::TextDisabled("Not synced yet (needs a steady refresh; off with G-Sync/FreeSync).");
+    }
+    ImGui::Separator();
+
+    // Native 120 (vi.cpp NativeRateFactor), applied at the next start.
+    {
+        const bool running = VI_HLE_NativeRateFactor() == 2;
+        bool native120 = RuntimeConfigFile::Native120(false);
+        if (ImGui::Checkbox("Native 120 frames per second (experimental, applies at restart)", &native120))
+            RuntimeConfigFile::SetNative120(native120);
+        ImGui::TextDisabled("The game itself runs and draws 120 frames per second, at the console's speed: real motion");
+        ImGui::TextDisabled("and quicker response at 120. Needs a 120 Hz monitor and a PC that holds about 120 frames;");
+        ImGui::TextDisabled("when it cannot, the game keeps its speed with uneven motion. RetroAchievements and the");
+        ImGui::TextDisabled("interpolated frame rate below are off while it runs. V-Sync is not needed (the frames");
+        ImGui::TextDisabled("follow the monitor) and only adds latency. Known: some menu and helmet animations run faster.");
+        if (native120 != running)
+            ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.3f, 1.0f), "Restart the game to %s native 120.",
+                               native120 ? "start" : "leave");
+        else if (running && MonitorStopsAt60())
+            ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.3f, 1.0f),
+                               "This monitor runs at %.0f Hz: only every other frame can be shown.",
+                               MonitorRefreshForInterpolation());
+        ImGui::TextDisabled("Which to use: native 120 on a PC that holds 120 frames; otherwise the interpolated rate");
+        ImGui::TextDisabled("below (logic stays at 59.94, achievements available, a little more latency).");
+    }
     ImGui::Separator();
 
     // Aurora frame interpolation: the game keeps its 60 Hz logic and VI timing;
@@ -2455,7 +2666,7 @@ void DrawPrimeVideoOptions() {
     ImGui::TextDisabled("keep up. With 6x/8x the resolution drops to 4x.");
     if (g_frameInterpolationMode != 0 && MonitorStopsAt60()) {
         ImGui::TextDisabled("This monitor runs at %.0f Hz, so this stays off until the window is on a faster one.",
-                            aurora_get_display_refresh_rate());
+                            MonitorRefreshForInterpolation());
     } else if (g_frameInterpolationMode != 0 && DriverFrameCap() != 0) {
         const uint32_t cap = DriverFrameCap();
         ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.3f, 1.0f),
@@ -3278,6 +3489,8 @@ void InitializeRuntimeSettings() noexcept {
     LimitResolutionForFrameRate();
     aurora_set_frame_interpolation_low_latency(RuntimeConfigFile::FrameInterpolationLowLatency(false));
     aurora_set_frame_interpolation_display_sync(RuntimeConfigFile::FrameInterpolationDisplaySync(true));
+    aurora_set_display_sync(RuntimeConfigFile::DisplaySync(false));
+    aurora_set_refresh_lock(RuntimeConfigFile::RefreshLock(true));
     aurora_set_frame_interpolation_fps(FrameInterpolationTarget());
     aurora_set_vsync(RuntimeConfigFile::Vsync(false));
     aurora_set_display_mode(static_cast<AuroraDisplayMode>(g_displayMode));
@@ -3758,6 +3971,7 @@ void Draw() noexcept {
     PersistDisplayModeIfChanged();
     UpdateCursorAutoHide();
     UpdateBootShaderState();
+    LogSessionClock();
     if (!StartupScreenVisible()) {
         DrawShaderCompilationStatus();
     }
@@ -3811,6 +4025,7 @@ void Draw() noexcept {
     controller_mapping_wizard::Draw();
     ApplyInputBlockState();
     DrawStartupScreen();
+    DrawShaderGenerationAlert();
 }
 
 bool StartupScreenVisible() noexcept {

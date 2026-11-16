@@ -4,7 +4,7 @@
 # shader caches shared with your profile through a junction), so your own save is never touched.
 # -PrivateCache leaves the real shader caches out: for settings whose pipelines must not reach the shipped
 # seed (prime_pipeline_seed.py merge reads the real cache and does not filter by MSAA level).
-param([Parameter(Mandatory = $true)][string]$Name, [string]$Label = 'run', [string]$Env = '', [int]$ShotEvery = 30, [int]$TimeoutMinutes = 30, [switch]$PrivateCache)
+param([Parameter(Mandatory = $true)][string]$Name, [string]$Label = 'run', [string]$Env = '', [int]$ShotEvery = 30, [int]$TimeoutMinutes = 30, [switch]$PrivateCache, [string]$Video = '')
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $build = Join-Path $root 'recomp\build\RM3E01_00_runtime_link_probe'
@@ -28,6 +28,14 @@ $realIso = Get-Content (Join-Path $userData 'Config.toml') -ErrorAction Silently
 if ($realIso) {
     $cfg = Join-Path $profile 'Config.toml'
     $lines = @(Get-Content $cfg | ForEach-Object { if ($_ -match '^\s*iso_path\s*=') { $realIso } else { $_ } })
+    Set-Content -LiteralPath $cfg -Value $lines -Encoding UTF8
+}
+# -Video "display_mode=exclusive;vsync=false": [video] settings of this run only, over the recording's.
+foreach ($pair in ($Video -split ';' | Where-Object { $_ })) {
+    $k, $v = $pair -split '=', 2; $cfg = Join-Path $profile 'Config.toml'; $done = $false
+    if ($v -notmatch '^(true|false|-?[\d.]+)$') { $v = '"' + $v + '"' }
+    $lines = @(Get-Content $cfg | ForEach-Object { if ($_ -match "^\s*$k\s*=") { $done = $true; "$k = $v" } elseif (-not $done -and $_ -match '^\[video\]') { $_ } else { $_ } })
+    if (-not $done) { $lines = @($lines | ForEach-Object { $_; if ($_ -match '^\[video\]') { "$k = $v" } }) }
     Set-Content -LiteralPath $cfg -Value $lines -Encoding UTF8
 }
 if (-not $PrivateCache) { New-Item -ItemType Junction -Path (Join-Path $profile 'Cache') -Target (Join-Path $userData 'Cache') | Out-Null }

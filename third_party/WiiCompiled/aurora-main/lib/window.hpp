@@ -67,5 +67,7 @@ void lock_present_aspect_ratio(int width, int height);
 void unlock_present_aspect_ratio();
 bool get_present_aspect_ratio(float& aspect) noexcept;
 float display_refresh_rate() noexcept;
+// Refresh rate of the monitor's desktop mode: what it runs outside exclusive fullscreen.
+float desktop_refresh_rate() noexcept;
 void set_background_input(bool value);
 }; // namespace aurora::window

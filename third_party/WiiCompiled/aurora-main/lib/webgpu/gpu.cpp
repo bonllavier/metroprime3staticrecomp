@@ -1,3 +1,4 @@
+#include <fmt/format.h>
 #include "gpu.hpp"
 
 #include <array>
@@ -65,6 +66,7 @@ static wgpu::TextureFormat g_presentSourceOverrideFormat = wgpu::TextureFormat::
 static wgpu::Adapter g_adapter;
 wgpu::Instance g_instance;
 static wgpu::AdapterInfo g_adapterInfo;
+static std::string g_adapterSummary;
 static wgpu::SurfaceCapabilities g_surfaceCapabilities;
 bool g_bcTexturesSupported;
 // Written by Dawn's device-loss callback and consumed at ordered frame boundaries. Keep the
@@ -629,6 +631,8 @@ bool initialize(AuroraBackend auroraBackend) {
   }
   Log.info("Graphics adapter information\n  API: {}\n  Device: {} ({})\n  Driver: {}", backendName, adapterName,
            magic_enum::enum_name(g_adapterInfo.adapterType), description);
+  g_adapterSummary = fmt::format("{} / {} ({}) / {}", backendName, adapterName,
+                                 magic_enum::enum_name(g_adapterInfo.adapterType), description);
 
   uint32_t maxTextureDimension2D = 0;
   {
@@ -1091,4 +1095,6 @@ void resize_swapchain(uint32_t width, uint32_t height, uint32_t native_width, ui
   g_depthBuffer = create_depth_texture(render_width, render_height);
   g_CopyBindGroup = create_copy_bind_group(present_source());
 }
+std::string adapter_summary() { return g_adapterSummary; }
+
 } // namespace aurora::webgpu

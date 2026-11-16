@@ -107,6 +107,22 @@ Invoke-Case 'config_path' "[paths]`niso_path = `"$isoToml`"`n" @() @{} @('source
 Invoke-Case 'iso_missing_file' $null @('--iso', (Join-Path $work 'moved.rvz')) @{} @('There is no file at this path', 'kind=1') @('[prime-iso-open]') $false $null
 Invoke-Case 'iso_folder' $null @('--iso', $work) @{} @('is a folder', 'kind=1') @('[prime-iso-open]') $false $null
 Invoke-Case 'iso_not_a_disc' $null @('--iso', $notDisc) @{} @('could not be read as a Wii disc image', 'kind=2') @('[prime-iso-open]') $false $null
+# Only .iso and .rvz are accepted (2026-11-15): every other container is refused by name before the
+# reader sees it, from --iso, CORRUPTION3_ISO and Config.toml alike. The .wbfs here is the valid image
+# under another name when a hard link can be made (the reader goes by content, so before this rule it
+# booted), else a placeholder file.
+$wbfs = Join-Path $work 'Metroid Prime 3 - Corruption (USA).wbfs'
+try { New-Item -ItemType HardLink -Path $wbfs -Target $iso -ErrorAction Stop | Out-Null }
+catch { [IO.File]::WriteAllBytes($wbfs, [byte[]](1..4096 | ForEach-Object { 0x41 })) }
+$wbfsToml = $wbfs.Replace('\', '\\')
+Invoke-Case 'iso_wbfs_argument' $null @('--iso', $wbfs) @{} @('format is not supported yet', 'Only .iso and .rvz', 'kind=1') @('[prime-iso-open]') $false $null
+Invoke-Case 'iso_wbfs_environment' $null @() @{ CORRUPTION3_ISO = $wbfs } @('format is not supported yet', 'kind=1') @('[prime-iso-open]') $false $null
+Invoke-Case 'iso_wbfs_config' "[paths]`niso_path = `"$wbfsToml`"`n" @() @{} @('format is not supported yet', 'kind=1') @('[prime-iso-open]') $false $null
+foreach ($extension in '.gcz', '.wia', '.ciso') {
+    $other = Join-Path $work ('dump' + $extension)
+    [IO.File]::WriteAllBytes($other, [byte[]](1..4096 | ForEach-Object { 0x41 }))
+    Invoke-Case ('iso_refused' + $extension.Replace('.', '_')) $null @('--iso', $other) @{} @('format is not supported yet', 'kind=1') @('[prime-iso-open]') $false $null
+}
 Invoke-Case 'no_image' $null @() @{} @('No Metroid Prime 3: Corruption disc image was found', 'kind=0', '--iso') @('[prime-iso-open]') $false $null
 if ($CorruptionPal) {
     Invoke-Case 'corruption_pal' $null @('--iso', (Resolve-Path -LiteralPath $CorruptionPal).Path) @{} @('Found RM3P01 - Metroid Prime 3: Corruption (Europe)', 'Other regions', 'kind=3') @('[prime-iso-open]') $false $null

@@ -52,6 +52,15 @@ int main() {
     require(Check(saved, saved.string()) == Problem::None);
     require(Check(scratch / "moved.rvz", (scratch / "moved.rvz").string()) == Problem::Missing);
     require(Check(scratch / "game", (scratch / "game").string()) == Problem::NotAFile);
+    // Only .iso and .rvz are accepted, in any letter case; every other container is refused by name.
+    require(IsSupportedExtension("D:/a.iso") && IsSupportedExtension("D:/a.RVZ") && IsSupportedExtension("/x/y.Iso"));
+    for (const char* refused : {"a.wbfs", "a.WBFS", "a.gcz", "a.wia", "a.ciso", "a.nkit.gcz", "a", "a.iso.bak"})
+        require(!IsSupportedExtension(scratch / refused));
+    const fs::path wbfs = scratch / "dump.wbfs";
+    { std::ofstream(wbfs) << "x"; }
+    require(Check(wbfs, wbfs.string()) == Problem::UnsupportedFormat);
+    require(Check(scratch / "gone.wbfs", (scratch / "gone.wbfs").string()) == Problem::Missing);
+    require(Contains(ProblemText(Problem::UnsupportedFormat), ".iso") && Contains(ProblemText(Problem::UnsupportedFormat), ".wbfs"));
     require(Check(fs::path(protonValue), protonValue) == Problem::ShellLocation);
     require(!ProblemText(Problem::ShellLocation).empty() && Contains(ProblemText(Problem::ShellLocation), "Z:"));
     require(ProblemText(Problem::None).empty());
@@ -72,6 +81,11 @@ int main() {
     // ...and so does a moved file.
     choice = Choose({}, scratch / "moved.rvz", (scratch / "moved.rvz").string(), gameFolder);
     require(choice.source == Source::GameFolder && choice.path == gameA);
+    // A saved .wbfs is not used either: the game folder dump wins, and without one the error names the .wbfs.
+    choice = Choose({}, wbfs, wbfs.string(), gameFolder);
+    require(choice.source == Source::GameFolder && choice.path == gameA);
+    choice = Choose({}, wbfs, wbfs.string(), emptyGameFolder);
+    require(choice.source == Source::Config && choice.path == wbfs);
     // With nothing in the game folder the bad saved value stays, so the error names it.
     choice = Choose({}, fs::path(protonValue), protonValue, emptyGameFolder);
     require(choice.source == Source::Config && choice.path == fs::path(protonValue));

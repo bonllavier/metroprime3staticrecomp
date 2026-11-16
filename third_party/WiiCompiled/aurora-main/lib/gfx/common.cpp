@@ -2326,7 +2326,8 @@ static void render_impl(std::vector<RenderPass>& renderPasses, wgpu::CommandEnco
       line += sceneEnd[k] == 1 ? "*" : sceneEnd[k] == 2 ? "-" : sceneEnd[k] == 3 ? "+" : "";
     }
     line += " applications=" + std::to_string(ssaoApplications) + " applied=" + std::to_string(ssaoApplied) +
-            " carry_out=" + std::to_string(post::carried_world_draws()) + " last=" + post::last_apply_skip();
+            " carry_out=" + std::to_string(post::carried_world_draws()) + " last=" + post::last_apply_skip() +
+            " contact_lights=" + post::contact_lights_debug();
     std::fprintf(stderr, "%s\n", line.c_str());
   }
   if (accumulateDepth && encodeTextureBakes) {
@@ -2485,6 +2486,7 @@ static void render_pass_impl(const wgpu::RenderPassEncoder& pass, const std::vec
   // Per-invocation, not per-process: two encoders can be recording at once.
   gx::DrawEncodeState encodeState{};
   encodeState.boundTextureBindGroup = gx::g_emptyTextureBindGroup.Get();
+  note_encoding_pass(renderPasses[idx].targetSize.width, renderPasses[idx].targetSize.height);
   Viewport diagnosticViewport{0,0,float(renderPasses[idx].targetSize.width),float(renderPasses[idx].targetSize.height),0,1};
   ClipRect diagnosticScissor{0,0,int32_t(renderPasses[idx].targetSize.width),int32_t(renderPasses[idx].targetSize.height)};
 #ifdef AURORA_GFX_DEBUG_GROUPS
@@ -2634,13 +2636,9 @@ bool bind_pipeline(PipelineRef ref, const wgpu::RenderPassEncoder& pass, Pipelin
       persistentDeadline = std::chrono::steady_clock::now() +
                            std::chrono::milliseconds(gx::policy::pipeline_wait_budget_ms(waitPolicy));
     }
+    // A draw given up here is counted and logged by its caller (note_draw_skipped): a failed bind of
+    // the primary pipeline is often followed by its fallback, which is not a skipped draw.
     pipelineReady = wait_pipeline_until(ref, pipeline, persistentDeadline);
-    if (!pipelineReady) {
-      static std::atomic<uint32_t> skipped{0};
-      const uint32_t n = skipped.fetch_add(1, std::memory_order_relaxed) + 1;
-      if (n <= 8 || n % 1000 == 0)
-        Log.info("[persistent-pass-skip] draws skipped in copy/offscreen passes while their pipeline compiled: {}", n);
-    }
   } else {
     // Each encoded frame may wait up to 4 ms in total for new pipelines; draws
     // whose pipeline is still compiling after that are skipped for this frame.

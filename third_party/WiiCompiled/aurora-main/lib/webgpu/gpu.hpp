@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 #include <aurora/aurora.h>
 #include <aurora/math.hpp>
@@ -110,6 +111,19 @@ struct BlobCacheStats {
   uint64_t hitBytes;
 };
 BlobCacheStats blob_cache_stats() noexcept;
+// What the shader cache looked like when this launch opened it (bug reports).
+struct BlobCacheState {
+  bool opened = false;
+  bool recreated = false;          // schema mismatch: the file was deleted and started again
+  bool generationChanged = false;  // first launch of this build on this cache
+  uint64_t rowsAtOpen = 0;         // compiled shader blobs already stored: 0 = cold cache
+  uint64_t launches = 0;           // launches that used this cache file, this one included
+  std::string storedGeneration;
+  std::string generation;
+};
+BlobCacheState blob_cache_state();
+// "API / device / driver" of the adapter in use.
+std::string adapter_summary();
 // Call once the boot prewarm has finished. On the first launch of a new cache generation
 // it deletes the blobs this launch never loaded or stored (they belong to the previous
 // build) and schedules a compaction for shutdown. No-op otherwise.

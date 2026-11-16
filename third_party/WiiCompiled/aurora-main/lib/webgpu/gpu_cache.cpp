@@ -164,6 +164,51 @@ static uint64_t size_cap_mib() {
   return capMiB;
 }
 
+static BlobCacheState g_cacheState;
+static std::mutex g_cacheStateMutex;
+
+// Rows present before this launch stores anything, and a launch counter kept in cache_meta: together
+// they tell a report whether the session ran on a cold cache (discussion #2: dark scenes on the first
+// two launches, fine on the third).
+static void load_launch_meta(bool recreated) {
+  BlobCacheState state;
+  state.opened = true;
+  state.recreated = recreated;
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM cache", -1, &stmt, nullptr) == SQLITE_OK &&
+      sqlite3_step(stmt) == SQLITE_ROW) {
+    state.rowsAtOpen = static_cast<uint64_t>(sqlite3_column_int64(stmt, 0));
+  }
+  sqlite3_finalize(stmt);
+  stmt = nullptr;
+  blob_policy::ensure_meta(db);
+  if (sqlite3_prepare_v2(db, "SELECT value FROM cache_meta WHERE key = 'launches'", -1, &stmt, nullptr) == SQLITE_OK &&
+      sqlite3_step(stmt) == SQLITE_ROW) {
+    if (const auto* text = sqlite3_column_text(stmt, 0)) {
+      state.launches = std::strtoull(reinterpret_cast<const char*>(text), nullptr, 10);
+    }
+  }
+  sqlite3_finalize(stmt);
+  stmt = nullptr;
+  ++state.launches;
+  if (sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO cache_meta(key, value) VALUES('launches', ?)", -1, &stmt,
+                         nullptr) == SQLITE_OK) {
+    const std::string value = std::to_string(state.launches);
+    sqlite3_bind_text(stmt, 1, value.c_str(), static_cast<int>(value.size()), SQLITE_TRANSIENT);
+    sqlite3_step(stmt);
+  }
+  sqlite3_finalize(stmt);
+  state.storedGeneration = g_storedGeneration;
+  state.generation = current_generation();
+  state.generationChanged = g_generationChanged;
+  Log.info("[shader-cache] launch {} on this cache file: {} blobs at open ({}), build '{}' (stored '{}'){}",
+           state.launches, state.rowsAtOpen, state.rowsAtOpen == 0 ? "cold: every shader compiles now" : "warm",
+           state.generation.empty() ? "none" : state.generation,
+           state.storedGeneration.empty() ? "none" : state.storedGeneration, recreated ? ", file recreated" : "");
+  std::lock_guard lock{g_cacheStateMutex};
+  g_cacheState = std::move(state);
+}
+
 static void load_generation_meta() {
   g_storedGeneration = blob_policy::load_generation(db);
   const auto current = current_generation();
@@ -193,6 +238,7 @@ static bool cache_init_core() {
     return false;
   }
 
+  bool recreated = false;
   switch (check_schema()) {
   case SchemaState::Match:
     prune_stale_rows();
@@ -203,6 +249,7 @@ static bool cache_init_core() {
     // Dropping the table would leave the freed pages inside the file, so a schema
     // change deletes the database outright; pre-schema-3 files had grown unbounded.
     Log.info("Dawn cache schema changed; recreating '{}'", file);
+    recreated = true;
     sqlite3_close(db);
     db = nullptr;
     std::error_code ec;
@@ -232,6 +279,7 @@ static bool cache_init_core() {
     return false;
   }
   load_generation_meta();
+  load_launch_meta(recreated);
 
   ret = sqlite3_prepare_v3(db, "SELECT value, size, compressed, last_used FROM cache WHERE key = ?", -1,
                            SQLITE_PREPARE_PERSISTENT, &load_stmt, nullptr);
@@ -525,6 +573,11 @@ void cache_shutdown() {
   }
   check(sqlite3_close(db));
   db = nullptr;
+}
+
+BlobCacheState blob_cache_state() {
+  std::lock_guard lock{g_cacheStateMutex};
+  return g_cacheState;
 }
 
 BlobCacheStats blob_cache_stats() noexcept {

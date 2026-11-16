@@ -56,7 +56,7 @@ constexpr Texts kPrompts[] = {
     // 0 twist clockwise
     {"Press {twist_right} to twist clockwise.", "{twist_right} drücken, um im Uhrzeigersinn zu drehen.",
      "Appuyez sur {twist_right} pour tourner dans le sens des aiguilles d'une montre.",
-     "Pulsa {twist_right} para girar en sentido reloj.", "Premi {twist_right} per girare in senso orario."},
+     "Pulsa {twist_right} para girar en el sentido de las agujas del reloj.", "Premi {twist_right} per girare in senso orario."},
     // 1 push toward the screen
     {"Press {push} to push forward.", "{push} drücken, um nach vorn zu stoßen.",
      "Appuyez sur {push} pour pousser vers l'avant.", "Pulsa {push} para empujar hacia delante.",
@@ -64,7 +64,7 @@ constexpr Texts kPrompts[] = {
     // 2 twist counterclockwise
     {"Press {twist_left} to twist counterclockwise.", "{twist_left} drücken, um gegen den Uhrzeigersinn zu drehen.",
      "Appuyez sur {twist_left} pour tourner dans le sens contraire des aiguilles d'une montre.",
-     "Pulsa {twist_left} para girar en sentido antirreloj.", "Premi {twist_left} per girare in senso antiorario."},
+     "Pulsa {twist_left} para girar en sentido contrario a las agujas del reloj.", "Premi {twist_left} per girare in senso antiorario."},
     // 3 pull away from the screen
     {"Press {pull} to pull back.", "{pull} drücken, um zurückzuziehen.", "Appuyez sur {pull} pour tirer vers vous.",
      "Pulsa {pull} para tirar hacia ti.", "Premi {pull} per tirare indietro."},
@@ -260,6 +260,46 @@ extern "C" uint32_t PrimeMotionTextOverride(uint32_t guestText) {
     if (!ReadGuestText(guestText, original)) return guestText;
     const uint64_t hash = Fnv1a64(original);
 
+    // Motion prompts first: their replacements are already written in the reviewed wording, and
+    // a Spanish fix of the original (e.g. "en sentido antirreloj") must not hide the bound key.
+    if (motionPrompts) {
+        const KnownPrompt* known = nullptr;
+        for (const auto& entry : kKnown)
+            if (entry.hash == hash) { known = &entry; break; }
+        if (known) {
+            const bool pad = PrimeGamepadRuntime::CurrentDevice() == PrimeGamepad::Device::Gamepad;
+            std::string body;
+            // No binding for a placeholder: fall back to the (fixed) original below.
+            if (Expand(kPrompts[known->prompt][known->language], known->language, pad, body)) {
+                constexpr std::string_view kCenter = "&just=center;";
+                std::string text;
+                if (original.rfind(kCenter, 0) == 0 && body.rfind(kCenter, 0) != 0) text = kCenter;
+                text += body;
+                if (!original.empty() && original.back() == '\n') text.push_back('\n');
+                if (text.size() + 1 <= kMaxGuestText) {
+                    if (const uint32_t address = WriteScratch(text)) {
+#if defined(MKW_PRIME_QA_TOOLS)
+                        RT_LOG(RT_TAG_RUNTIME) << "[prime-motion-text] prompt=" << unsigned(known->prompt)
+                                               << " language=" << unsigned(known->language)
+                                               << " device=" << (pad ? "pad" : "keyboard") << " text=" << text
+                                               << std::endl;
+#endif
+                        return address;
+                    }
+                }
+            }
+        }
+#if defined(MKW_PRIME_QA_TOOLS)
+        else if (LooksLikeMotionPrompt(original)) {
+            static std::unordered_set<uint64_t> logged;
+            std::lock_guard lock(g_mutex);
+            if (logged.insert(hash).second)
+                RT_LOG(RT_TAG_RUNTIME) << "[prime-motion-text] unknown prompt fnv=" << std::hex << hash << std::dec
+                                       << " text=" << original << std::endl;
+        }
+#endif
+    }
+
     if (textFixes) {
         std::string fixed = original;
         if (PrimeTextFixes::Apply(hash, fixed) && fixed.size() + 1 <= kMaxGuestText) {
@@ -272,38 +312,5 @@ extern "C" uint32_t PrimeMotionTextOverride(uint32_t guestText) {
             }
         }
     }
-    if (!motionPrompts) return guestText;
-
-    const KnownPrompt* known = nullptr;
-    for (const auto& entry : kKnown)
-        if (entry.hash == hash) { known = &entry; break; }
-    if (!known) {
-#if defined(MKW_PRIME_QA_TOOLS)
-        if (LooksLikeMotionPrompt(original)) {
-            static std::unordered_set<uint64_t> logged;
-            std::lock_guard lock(g_mutex);
-            if (logged.insert(hash).second)
-                RT_LOG(RT_TAG_RUNTIME) << "[prime-motion-text] unknown prompt fnv=" << std::hex << hash << std::dec
-                                       << " text=" << original << std::endl;
-        }
-#endif
-        return guestText;
-    }
-    const bool pad = PrimeGamepadRuntime::CurrentDevice() == PrimeGamepad::Device::Gamepad;
-    std::string body;
-    if (!Expand(kPrompts[known->prompt][known->language], known->language, pad, body)) return guestText;
-    constexpr std::string_view kCenter = "&just=center;";
-    std::string text;
-    if (original.rfind(kCenter, 0) == 0 && body.rfind(kCenter, 0) != 0) text = kCenter;
-    text += body;
-    if (!original.empty() && original.back() == '\n') text.push_back('\n');
-    if (text.size() + 1 > kMaxGuestText) return guestText;
-    const uint32_t address = WriteScratch(text);
-    if (address == 0) return guestText;
-#if defined(MKW_PRIME_QA_TOOLS)
-    RT_LOG(RT_TAG_RUNTIME) << "[prime-motion-text] prompt=" << unsigned(known->prompt) << " language="
-                           << unsigned(known->language) << " device=" << (pad ? "pad" : "keyboard") << " text=" << text
-                           << std::endl;
-#endif
-    return address;
+    return guestText;
 }

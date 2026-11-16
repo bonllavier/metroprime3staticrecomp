@@ -3,6 +3,7 @@
 #include "hle/prime_achievements_ui.h"
 
 #include "hle/prime_achievements.h"
+#include "hle_stubs.h"
 
 #include <aurora/imgui.h>
 #include <imgui.h>
@@ -458,6 +459,10 @@ void DrawPanel(bool* open) {
     if (ImGui::Begin("RetroAchievements [F2]", open, ImGuiWindowFlags_NoSavedSettings)) {
         if (!PrimeAchievements::Available()) {
             ImGui::TextWrapped("%s", "This build does not include the RetroAchievements client.");
+        } else if (VI_HLE_NativeRateFactor() != 1) {
+            // User's rule (2026-11-14): achievements only with the game logic at the console's rate.
+            ImGui::TextWrapped("%s", "RetroAchievements are off while the game runs at native 120 frames per second. "
+                                     "Turn native 120 off in F1 > Video and restart to use them.");
         } else {
             bool enabled = PrimeAchievements::Enabled();
             if (ImGui::Checkbox("Enable RetroAchievements (casual mode)", &enabled))

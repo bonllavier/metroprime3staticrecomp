@@ -524,6 +524,16 @@ void InitializeProcessTranscript(int argc, char** argv) {
         std::lock_guard<std::mutex> lock(state.fileMutex);
         state.file << "[runtime] WiiCompiled "
                    << (setupVersion.empty() ? "version unknown" : setupVersion) << "\n";
+        state.file << "[runtime] " << PRIME_PORT_NAME << " " << PRIME_PORT_VERSION
+#if defined(MKW_PRIME_QA_TOOLS)
+                   << " (test build)"
+#endif
+#if defined(_WIN32)
+                   << " windows"
+#elif defined(__linux__)
+                   << " linux"
+#endif
+                   << "\n";
         state.file << "[runtime] process transcript started\n";
         state.file << "[runtime] pid=" << pid << "\n";
         state.file << "[runtime] argv=";

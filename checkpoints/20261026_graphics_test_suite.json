@@ -1,7 +1,7 @@
 {
-    "tested_utc":  "2026-11-11T08:38:48.8267775Z",
+    "tested_utc":  "2026-11-16T00:49:12.8141847Z",
     "revision":  "RM3E01_00",
-    "passed":  true,
+    "passed":  false,
     "steps":  [
                   {
                       "name":  "build aurora tests",
@@ -15,8 +15,8 @@
                   },
                   {
                       "name":  "aurora/gx_fifo_tests",
-                      "exit_code":  0,
-                      "summary":  "[  PASSED  ] 286 tests."
+                      "exit_code":  1,
+                      "summary":  "[  FAILED  ] ShaderGolden.GeneratorOutputIsStableForEveryShippedRecipe (3168 ms) | [  FAILED  ] UberShader.GoldenHashesOfEveryUberKey (455 ms) | [  FAILED  ] GXFifoTest.CopyTexClearDoesNotOverlapFractionalLeftEdge (0 ms) | [  PASSED  ] 283 tests."
                   },
                   {
                       "name":  "aurora/blob_cache_policy_tests",

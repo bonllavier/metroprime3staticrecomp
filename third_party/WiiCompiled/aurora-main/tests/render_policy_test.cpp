@@ -626,6 +626,24 @@ TEST(RenderPolicyRefreshAlignment, IrregularRefreshNeverLocksAndRepeatedLossesSt
   EXPECT_EQ(locks, static_cast<int>(pol::kRefreshMaximumTrips) + 1) << "the fourth loss ends alignment";
 }
 
+TEST(RenderPolicyRefreshAlignment, DisplayModeChangesAndPausesAreNotCountedAsIrregularRefresh) {
+  pol::RefreshEstimator estimator;
+  int64_t at = 1'000'000'000;
+  // Exclusive fullscreen moving between 59.94 and 119.88 Hz as the frame rate option changes, many times.
+  for (int change = 0; change < 12; ++change) {
+    const int64_t period = change % 2 == 0 ? 16'683'333 : 8'341'667;
+    bool usable = false;
+    for (int i = 0; i < 400; ++i) {
+      at += period;
+      pol::observe_refresh(estimator, at, period);
+      usable = pol::refresh_usable(estimator, at);
+    }
+    EXPECT_TRUE(usable) << "mode change " << change;
+    at += 3'000'000'000;  // and a pause without observations while the mode switches
+  }
+  EXPECT_EQ(estimator.trips, 0u);
+}
+
 TEST(RenderPolicyRefreshAlignment, JitteredImagesEachGetTheirOwnRefresh) {
   // Low latency mode: images go out when encoding ends, +-2 ms around the 120 Hz cadence.
   constexpr int kImages = 12'000;  // 100 s
@@ -758,4 +776,264 @@ TEST(RenderPolicyRefreshAlignment, AlignmentWaitsForHeadroomAndBacksOffWhenItIsL
   waited = 0;
   while (!pol::step_align_gate(gate, true)) ++waited;
   EXPECT_EQ(waited, 3) << "after a long calm stretch a loss starts the backoff over";
+}
+
+// The game's own 60 images/s on a 60 Hz mode, frame interpolation off (user report 2026-11-14: "the counter
+// says 60 but at times fewer images seem to pass"). The VI clock measured 60.004 Hz against the monitor's
+// 60.000: the two drift through each other every ~250 s, and while the presents sit near a refresh the
+// ~2 ms of jitter of when each frame is ready shows one image twice and never shows the next.
+TEST(RenderPolicyRefreshAlignment, SixtyImagesOnASixtyHzMonitorWithoutInterpolation) {
+  constexpr int64_t kViFrame = 16'665'556;   // 60.004 Hz
+  constexpr int64_t kSixtyHz = 16'666'667;
+  constexpr int kImages = 36'000;            // 10 minutes
+  const int64_t firstRefresh = 1'000'000'000 + 4'000'000;
+  const pol::RefreshGrid grid{firstRefresh + 150'000, kSixtyHz};
+  const auto tuning = pol::native_rate_align_tuning(kSixtyHz);
+  EXPECT_NEAR(tuning.phase, 0.58, 0.01);
+  EXPECT_DOUBLE_EQ(pol::native_rate_align_tuning(8'333'333).phase, pol::kAlignPhase) << "120 Hz keeps the usual phase";
+  EXPECT_DOUBLE_EQ(pol::native_rate_align_tuning(0).phase, pol::kAlignPhase);
+  uint64_t random = 2026;
+  std::vector<int64_t> unaligned, aligned;
+  pol::RefreshAlignment alignment;
+  double held = 0.0;
+  for (int i = 0; i < kImages; ++i) {
+    // Ready 3 ms after its VI boundary, +-2 ms with the scene.
+    const int64_t boundary = 1'000'000'000 + int64_t{i} * kViFrame;
+    const int64_t ready = boundary + 3'000'000 + static_cast<int64_t>((uniform(random) * 2.0 - 1.0) * 2'000'000);
+    const int64_t steady = boundary + 5'000'000;  // the offset follows the late side
+    unaligned.push_back(ready);
+    aligned.push_back((std::max)(ready, pol::align_to_refresh(alignment, grid, steady, tuning)));
+    held += static_cast<double>(aligned.back() - ready);
+  }
+  const auto before = show_on_fixed_refresh(unaligned, firstRefresh, kSixtyHz, 1'500'000, 10);
+  const auto after = show_on_fixed_refresh(aligned, firstRefresh, kSixtyHz, 1'500'000, 10);
+  std::printf("60 on 60 Hz, 10 min: unaligned repeats %d dropped %d, aligned repeats %d dropped %d, mean hold %.2f ms\n",
+              before.repeats, before.dropped, after.repeats, after.dropped, held / kImages / 1e6);
+  // 60.004 against 60.000 for 600 s: 2.4 images have no refresh of their own, whatever is done.
+  EXPECT_LE(after.dropped, 4);
+  EXPECT_LE(after.repeats, 4);
+  EXPECT_GE(before.repeats + before.dropped, 100) << "the stretches the player notices";
+  EXPECT_LE(held / kImages, 0.75 * static_cast<double>(kSixtyHz)) << "held well under a frame on average";
+}
+
+TEST(RenderPolicyFrameLock, FramesFollowTheMonitorAndEveryImageGetsItsRefresh) {
+  constexpr int64_t kConsoleFrame = 16'683'333;  // 1001/60000 s
+  struct Case { int64_t refresh; int64_t refreshes; };
+  for (const Case c : {Case{16'666'667, 1}, Case{16'683'350, 1}, Case{8'333'200, 2}, Case{4'166'700, 4}}) {
+    const int64_t firstRefresh = 5'000'000'000 + 1'234'567;
+    uint64_t random = 77;
+    pol::FrameLock lock;
+    int64_t boundary = 5'000'000'000;
+    std::vector<int64_t> presents;
+    constexpr int64_t kLead = 10'000'000;  // image ready 3 ms after the boundary, 7 ms before the refresh
+    int64_t lastPeriod = 0;
+    double worstSpeed = 0.0;
+    for (int i = 0; i < 36'000; ++i) {
+      // The measured timeline: the latest refresh, known within 30 us.
+      const int64_t latest = firstRefresh + ((boundary - firstRefresh) / c.refresh) * c.refresh;
+      const pol::RefreshGrid grid{latest + static_cast<int64_t>(uniform(random) * 30'000), c.refresh};
+      lastPeriod = pol::next_frame_period(lock, grid, boundary, kConsoleFrame, kLead);
+      ASSERT_TRUE(lock.locked);
+      EXPECT_EQ(lock.refreshesPerFrame, c.refreshes);
+      worstSpeed = (std::max)(worstSpeed, std::abs(static_cast<double>(lastPeriod) / static_cast<double>(kConsoleFrame) - 1.0));
+      boundary += lastPeriod;
+      presents.push_back(boundary + 3'000'000 + static_cast<int64_t>((uniform(random) * 2.0 - 1.0) * 2'000'000));
+    }
+    EXPECT_LE(worstSpeed, pol::kFrameLockTolerance + pol::kFrameLockSlew + 1e-6);
+    EXPECT_NEAR(static_cast<double>(lastPeriod), static_cast<double>(c.refreshes * c.refresh), 40'000.0);
+    // After the first seconds, while the boundary moves into place: every image shown, for the same time.
+    std::vector<int64_t> settled(presents.begin() + 600, presents.end());
+    const auto shown = show_on_fixed_refresh(settled, firstRefresh, c.refresh, 1'500'000, 10);
+    std::printf("frame lock, refresh %.3f Hz x%d: dropped %d, repeats %d of %d shown\n", 1e9 / static_cast<double>(c.refresh),
+                static_cast<int>(c.refreshes), shown.dropped, shown.repeats, shown.shown);
+    EXPECT_EQ(shown.dropped, 0);
+    EXPECT_NEAR(static_cast<double>(shown.repeats), static_cast<double>(shown.shown) * static_cast<double>(c.refreshes - 1),
+                2.0);
+  }
+}
+
+// A busy scene: frames ready about 2.5 ms after the boundary, and one in fifteen 6 to 10 ms later. The lead
+// covers them: nearly every image is presented by its refresh, on a 60 and on a 120 Hz monitor, and the
+// ones that are ready sooner wait for their own refresh.
+TEST(RenderPolicyFrameLock, TheLeadCoversTheFramesThatTakeLonger) {
+  constexpr int64_t kConsoleFrame = 16'683'333;
+  for (const int64_t refresh : {int64_t{8'333'200}, int64_t{16'666'667}}) {
+    const int64_t firstRefresh = 5'000'000'000 + 1'234'567;
+    uint64_t random = 91;
+    pol::FrameLock lock;
+    pol::ReadyEstimate ready;
+    double usual = 3'000'000.0;
+    int64_t boundary = 5'000'000'000;
+    std::vector<int64_t> presents;
+    int slow = 0;
+    for (int i = 0; i < 36'000; ++i) {
+      const int64_t latest = firstRefresh + ((boundary - firstRefresh) / refresh) * refresh;
+      const pol::RefreshGrid grid{latest + static_cast<int64_t>(uniform(random) * 30'000), refresh};
+      const int64_t lead = static_cast<int64_t>(usual) + pol::frame_lock_margin(refresh);
+      const int64_t period = pol::next_frame_period(lock, grid, boundary, kConsoleFrame, lead);
+      ASSERT_TRUE(lock.locked);
+      boundary += period;
+      const bool isSlow = i % 15 == 7;
+      const double sample = 2'500'000.0 + (uniform(random) * 2.0 - 1.0) * 600'000.0 +
+                            (isSlow ? 6'000'000.0 + uniform(random) * 4'000'000.0 : 0.0);
+      usual = pol::note_frame_ready(ready, sample, static_cast<double>(period));
+      if (i >= 1'200) {
+        slow += isSlow ? 1 : 0;
+        const int64_t readyAt = boundary + static_cast<int64_t>(sample);
+        const int64_t gridNow = firstRefresh + ((readyAt - firstRefresh) / refresh) * refresh;
+        const int64_t notBefore = pol::frame_lock_not_before({gridNow, refresh}, boundary, lead, readyAt);
+        presents.push_back(notBefore != 0 ? notBefore : readyAt);
+      }
+    }
+    EXPECT_GT(usual, 10'500'000.0) << refresh;
+    EXPECT_LT(usual, 13'200'000.0) << refresh;
+    pol::CadenceEstimate cadence;
+    const int64_t expected = std::llround(static_cast<double>(kConsoleFrame) / static_cast<double>(refresh));
+    for (const int64_t at : presents) {
+      const int64_t latest = firstRefresh + ((at - firstRefresh) / refresh) * refresh;
+      pol::note_presented_image(cadence, {latest, refresh}, at, expected);
+    }
+    std::printf("slow frames, refresh %.3f Hz: %d slow of %d, held %d early %d unseen %d, lead ready %.2f ms\n",
+                1e9 / static_cast<double>(refresh), slow, static_cast<int>(presents.size()),
+                static_cast<int>(cadence.held), static_cast<int>(cadence.early), static_cast<int>(cadence.unseen),
+                usual / 1e6);
+    EXPECT_EQ(cadence.held + cadence.early + cadence.unseen, 0u) << refresh;
+  }
+}
+
+// The estimate: the time nearly all of the last frames were ready by. It rises with the first late frame,
+// comes back down when the busy scene is left behind, and a pause is not a frame.
+TEST(RenderPolicyFrameLock, TheReadyEstimateFollowsTheLateSideOfRecentFrames) {
+  constexpr double kFrame = 16'683'333.0;
+  pol::ReadyEstimate e;
+  uint64_t random = 3;
+  double value = 0.0;
+  for (int i = 0; i < 600; ++i) {
+    value = pol::note_frame_ready(e, 2'000'000.0 + uniform(random) * 500'000.0, kFrame);
+  }
+  EXPECT_GT(value, 2'300'000.0);
+  EXPECT_LE(value, 2'500'000.0);
+  EXPECT_EQ(pol::note_frame_ready(e, 900'000'000.0, kFrame), value);  // a load
+  // A busy scene: a tenth of the frames at 9 ms. Counted from the first few.
+  for (int i = 0; i < 60; ++i) {
+    value = pol::note_frame_ready(e, i % 10 == 0 ? 9'000'000.0 : 2'200'000.0, kFrame);
+  }
+  EXPECT_DOUBLE_EQ(value, 9'000'000.0);
+  // A PC at its limit: a tenth of the frames a whole frame late. Not followed further than half a frame
+  // beyond where most frames are.
+  for (int i = 0; i < 60; ++i) {
+    value = pol::note_frame_ready(e, i % 10 == 0 ? 16'000'000.0 : 2'200'000.0, kFrame);
+  }
+  EXPECT_NEAR(value, 2'200'000.0 + 0.5 * kFrame, 400'000.0);
+  // The lead itself: that plus the margin, and never more than a frame.
+  EXPECT_EQ(pol::frame_lock_lead(3'000'000, 7'000'000, 16'683'333), 10'000'000);
+  EXPECT_EQ(pol::frame_lock_lead(12'000'000, 7'000'000, 16'683'333), 16'683'333);
+  EXPECT_EQ(pol::frame_lock_lead(3'000'000, 7'000'000, 8'341'666), 8'341'666);
+  // Never beyond a frame.
+  pol::ReadyEstimate slow;
+  for (int i = 0; i < 600; ++i) {
+    value = pol::note_frame_ready(slow, 14'000'000.0 + (i % 3) * 3'000'000.0, kFrame);
+  }
+  EXPECT_DOUBLE_EQ(value, kFrame);
+  // Back in a light scene: down again once the busy frames leave the window.
+  for (int i = 0; i < static_cast<int>(pol::kReadyWindow) + 16; ++i) {
+    value = pol::note_frame_ready(e, 2'000'000.0 + uniform(random) * 500'000.0, kFrame);
+  }
+  EXPECT_LE(value, 2'500'000.0);
+}
+
+// Frames ready at very different times (1 to 6 ms after the boundary, as in a busy scene with the decoder
+// thread), none of them late: on a 60, a 120 and a 240 Hz monitor every image takes its own refresh.
+TEST(RenderPolicyFrameLock, FramesReadyEarlyWaitForTheirOwnRefresh) {
+  constexpr int64_t kConsoleFrame = 16'683'333;
+  for (const int64_t refresh : {int64_t{16'666'667}, int64_t{8'333'200}, int64_t{4'166'700}}) {
+    const int64_t firstRefresh = 5'000'000'000 + 1'234'567;
+    uint64_t random = 5;
+    pol::FrameLock lock;
+    pol::ReadyEstimate ready;
+    double usual = 3'000'000.0;
+    int64_t boundary = 5'000'000'000;
+    pol::CadenceEstimate cadence;
+    const int64_t expected = std::llround(static_cast<double>(kConsoleFrame) / static_cast<double>(refresh));
+    int held = 0;
+    double worstWait = 0.0;
+    for (int i = 0; i < 36'000; ++i) {
+      const int64_t latest = firstRefresh + ((boundary - firstRefresh) / refresh) * refresh;
+      const int64_t lead = static_cast<int64_t>(usual) + pol::frame_lock_margin(refresh);
+      boundary += pol::next_frame_period(lock, {latest + static_cast<int64_t>(uniform(random) * 30'000), refresh},
+                                         boundary, kConsoleFrame, lead);
+      const double sample = 1'000'000.0 + uniform(random) * 5'000'000.0;
+      usual = pol::note_frame_ready(ready, sample, static_cast<double>(kConsoleFrame));
+      if (i < 600) {
+        continue;
+      }
+      const int64_t readyAt = boundary + static_cast<int64_t>(sample);
+      const int64_t gridNow = firstRefresh + ((readyAt - firstRefresh) / refresh) * refresh;
+      const int64_t notBefore = pol::frame_lock_not_before({gridNow, refresh}, boundary, lead, readyAt);
+      held += notBefore != 0 ? 1 : 0;
+      worstWait = (std::max)(worstWait, notBefore != 0 ? static_cast<double>(notBefore - readyAt) : 0.0);
+      const int64_t at = notBefore != 0 ? notBefore : readyAt;
+      pol::note_presented_image(cadence, {firstRefresh + ((at - firstRefresh) / refresh) * refresh, refresh}, at, expected);
+    }
+    std::printf("early frames, refresh %.3f Hz: held %d of 35400 (longest %.2f ms), out of place %d\n",
+                1e9 / static_cast<double>(refresh), held, worstWait / 1e6,
+                static_cast<int>(cadence.held + cadence.early + cadence.unseen));
+    EXPECT_EQ(cadence.held + cadence.early + cadence.unseen, 0u) << refresh;
+    EXPECT_LT(worstWait, 16'000'000.0) << refresh;
+  }
+}
+
+TEST(RenderPolicyFrameLock, MonitorsThatAreNotAMultipleKeepTheConsolePeriod) {
+  constexpr int64_t kConsoleFrame = 16'683'333;
+  pol::FrameLock lock;
+  for (const int64_t refresh : {int64_t{13'333'333}, int64_t{6'944'444}, int64_t{6'060'606}, int64_t{20'000'000},
+                                int64_t{33'333'333}, int64_t{16'400'000}}) {
+    EXPECT_EQ(pol::next_frame_period(lock, {1'000'000'000, refresh}, 2'000'000'000, kConsoleFrame, 10'000'000),
+              kConsoleFrame) << refresh;
+    EXPECT_FALSE(lock.locked);
+  }
+  EXPECT_EQ(pol::next_frame_period(lock, {}, 2'000'000'000, kConsoleFrame, 10'000'000), kConsoleFrame);
+  EXPECT_FALSE(lock.locked);
+  // PAL: 50 frames on a 50 or 100 Hz monitor lock too.
+  EXPECT_EQ(pol::next_frame_period(lock, {1'000'000'000, 10'000'000}, 1'990'000'000, 20'000'000, 10'000'000), 20'000'000);
+  EXPECT_TRUE(lock.locked);
+  EXPECT_EQ(lock.refreshesPerFrame, 2);
+}
+
+TEST(RenderPolicyRefreshAlignment, CadenceEstimateCountsUnseenAndHeldImages) {
+  const pol::RefreshGrid grid{1'000'000'000, 10'000'000};
+  pol::CadenceEstimate estimate;
+  // One image per refresh, mid interval.
+  for (int i = 0; i < 10; ++i) pol::note_presented_image(estimate, grid, grid.vblank + i * grid.period + 5'000'000, 1);
+  EXPECT_EQ(estimate.presents, 10u);
+  EXPECT_EQ(estimate.unseen, 0u);
+  EXPECT_EQ(estimate.held, 0u);
+  EXPECT_EQ(estimate.nearEdge, 0u);
+  // The next one slips past a refresh (its predecessor is seen twice), and the one after shares its interval.
+  pol::note_presented_image(estimate, grid, grid.vblank + 11 * grid.period + 300'000, 1);
+  pol::note_presented_image(estimate, grid, grid.vblank + 11 * grid.period + 9'700'000, 1);
+  EXPECT_EQ(estimate.held, 1u);
+  EXPECT_EQ(estimate.unseen, 1u);
+  EXPECT_EQ(estimate.nearEdge, 2u);
+  // 60 images on a 120 Hz monitor: two refreshes each is clean; one and three is uneven.
+  pol::CadenceEstimate half;
+  for (int i = 0; i < 4; ++i) pol::note_presented_image(half, grid, grid.vblank + 2 * i * grid.period + 5'000'000, 2);
+  EXPECT_EQ(half.held + half.early + half.unseen, 0u);
+  pol::note_presented_image(half, grid, grid.vblank + 9 * grid.period + 1'000'000, 2);
+  pol::note_presented_image(half, grid, grid.vblank + 10 * grid.period + 9'500'000, 2);
+  EXPECT_EQ(half.held, 1u);
+  EXPECT_EQ(half.early, 1u);
+  // The measured timeline moves on with every refresh: the count must not depend on which refresh it names.
+  pol::CadenceEstimate moving;
+  for (int i = 0; i < 240; ++i) {
+    const pol::RefreshGrid latest{grid.vblank + i * grid.period, grid.period};  // the refresh just before the present
+    pol::note_presented_image(moving, latest, latest.vblank + 4'000'000, 1);
+  }
+  EXPECT_EQ(moving.presents, 240u);
+  EXPECT_EQ(moving.unseen + moving.held + moving.early, 0u);
+  // A load is not cadence, and no grid resets the chain.
+  pol::note_presented_image(half, grid, grid.vblank + 500 * grid.period, 2);
+  EXPECT_EQ(half.held, 1u);
+  pol::note_presented_image(half, {}, 0, 2);
+  EXPECT_FALSE(half.valid);
 }

@@ -14,6 +14,7 @@
 #include "hle/prime_achievements.h"
 #include "hle/gx_gpu_thread.h"
 #include "hle/prime_input_latency.h"
+#include "runtime_config.h"
 
 #include <dolphin/vi.h>
 
@@ -93,6 +94,9 @@ extern "C" int32_t OS__RestoreInterrupts_801a65d4(int32_t level);
 std::atomic_bool g_auroraFrameActive{false};
 std::atomic_bool g_auroraFrameHadWork{false};
 
+// Private QA rate probe (hle/prime_rate_probe.cpp).
+void PrimeRateProbeRetrace(float logicStep, int nativeFactor, double presentsPerSecond);
+
 namespace {
 
 using namespace std::chrono_literals;
@@ -149,7 +153,11 @@ struct ViState {
     uint32_t xfbHeight = 480;
     bool fieldOdd = false;
     Clock::time_point lastRetrace = Clock::now();
-    std::chrono::microseconds retraceInterval{16666us}; // ~60 Hz
+    // How long after its boundary the last retrace was delivered (the game was still busy with its frame).
+    std::chrono::nanoseconds lastRetraceDeliveredLate{0};
+    // The period to the next retrace: the console's (IntervalForFormat) or, while the frame clock follows
+    // the monitor, the one aurora_next_frame_period gave at the last retrace.
+    std::chrono::nanoseconds retraceInterval{16683333ns};
     bool hasValidXfb = false; // True once we've received at least one GXCopyDisp
     uint32_t readyXfb = 0;    // XFB address from the most recent GXCopyDisp
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
@@ -175,7 +183,7 @@ struct ViState {
     uint32_t pendingViYOrigin = 0;
     uint32_t pendingXfbWidth = 640;
     uint32_t pendingXfbHeight = 480;
-    std::chrono::microseconds pendingRetraceInterval{16666us};
+    std::chrono::nanoseconds pendingRetraceInterval{16683333ns};
     
     // Set by VIFlush(); cleared after commit in AdvanceRetrace
     bool flushArmed = false;
@@ -203,9 +211,34 @@ constexpr uint32_t kViRetraceQueueAddr      = 0x80386bc0; // Thread queue for VI
 // EGG::BaseSystem::sSystem pointer - must be non-null before post-retrace callback is valid
 constexpr uint32_t kEggSSystemAddr = 0x80386F60;
 
-std::chrono::microseconds IntervalForFormat(uint32_t tvFormat) {
-    // NTSC-ish defaults to 60 Hz; PAL uses 50 Hz.
-    return tvFormat == 1 ? 20000us : 16666us;
+// Native 120 (F1 > Video, [video] native_120fps, experimental): the game runs two logic steps and draws two
+// frames per console frame, 119.88 real frames per second with a step of 1/120 s, at the console's speed.
+// Read once at start. Known gap: parts of the menus and the helmet advance per drawn frame and run faster
+// (recomp/docs/fps_altos.md). WII_COMPILED_QA_NATIVE_120=1 forces it in the test build.
+int NativeRateFactor() {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    static const int factor = [] {
+#if defined(MKW_PRIME_QA_TOOLS)
+        if (const char* value = std::getenv("WII_COMPILED_QA_NATIVE_120"); value && value[0] == '1') return 2;
+#endif
+        return RuntimeConfigFile::Native120(false) ? 2 : 1;
+    }();
+    return factor;
+#else
+    return 1;
+#endif
+}
+
+std::chrono::nanoseconds ConsoleIntervalForFormat(uint32_t tvFormat);
+std::chrono::nanoseconds IntervalForFormat(uint32_t tvFormat) {
+    return ConsoleIntervalForFormat(tvFormat) / NativeRateFactor();
+}
+
+std::chrono::nanoseconds ConsoleIntervalForFormat(uint32_t tvFormat) {
+    // The console's field rate: NTSC, MPAL and EURGB60 run at 60000/1001 Hz (59.94), PAL at 50. The game
+    // runs one logic step per retrace, so this is its speed (16666 us, used until 2026-11-14, ran it 0.1 %
+    // faster than the console).
+    return tvFormat == 1 ? std::chrono::nanoseconds{20000000} : std::chrono::nanoseconds{16683333};
 }
 
 // Shared busy-wait budget for deadline-precise sleeps (matches Aurora's
@@ -311,6 +344,38 @@ uint32_t ExtractTvFormat(uint32_t tvMode) {
     return (tvMode >> 2) & 0x7;
 }
 
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+// The game's speed while its frames follow the monitor ([video] refresh_lock). RM3E01 runs one logic step
+// per retrace and hands every update the step's length, which fn_802EA018 loads on each pass of the main
+// loop from lbl_8068258C (1/60 s; the PAL build uses 0.02 s through the same variable, lbl_806795F8). On
+// the console a frame lasts 1001/60000 s, so a second of game time takes 1.001 s. With the frame following
+// a 60.000 Hz monitor the step is shortened by the same share the frame is: 60 steps of 0.01665 s, the
+// console's speed again, in any window mode and on any monitor the lock holds on. Code that counts frames
+// instead of using the step (a few timers, RetroAchievements' frame counters) follows the frame rate.
+// Only this function reads the constant; nothing is written unless the value there is the game's own.
+std::atomic<float> g_primeGameSpeed{1.0f};
+void ApplyPrimeLogicStep(std::chrono::nanoseconds period, std::chrono::nanoseconds consolePeriod) {
+    constexpr uint32_t kStepConstant = 0x8068258Cu;  // lbl_8068258C
+    constexpr float kConsoleStep = 1.0f / 60.0f;
+    const int factor = NativeRateFactor();
+    if (consolePeriod.count() != 16683333 / factor || !Memory::Contains(kStepConstant, 4)) return;  // NTSC only
+    const uint32_t bits = Memory::Read32(kStepConstant);
+    float current = 0.0f;
+    std::memcpy(&current, &bits, sizeof(current));
+    if (!(current > kConsoleStep / static_cast<float>(factor) * 0.99f && current < kConsoleStep * 1.01f)) return;  // not loaded, or not ours
+    const double share = static_cast<double>(period.count()) / static_cast<double>(consolePeriod.count());
+    // Within the lock's reach (0.15 % of rate plus the 0.2 % it may move per frame); else the console's step.
+    const float step = share > 0.995 && share < 1.005 ? static_cast<float>(share / (60.0 * factor))
+                                                      : kConsoleStep / static_cast<float>(factor);
+    uint32_t wanted = 0;
+    std::memcpy(&wanted, &step, sizeof(wanted));
+    if (wanted != bits) Memory::Write32(kStepConstant, wanted);
+    g_primeGameSpeed.store(static_cast<float>(static_cast<double>(step) * 1.0e9 / static_cast<double>(period.count()) /
+                                              (static_cast<double>(kConsoleStep) * 1.0e9 / 16683333.0)),
+                           std::memory_order_relaxed);
+}
+#endif
+
 // Re-entry guard to prevent AdvanceRetrace calling itself via OSWakeupThread -> SelectThread
 static std::atomic<bool> s_inAdvanceRetrace{false};
 
@@ -330,7 +395,9 @@ void AdvanceRetrace(CpuContext* ctx, Clock::time_point retraceStamp, bool servic
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
     // RetroAchievements: rc_client evaluates its conditions once per frame
     // (hle/prime_achievements.h); first, so the FOV option sees its block.
-    PrimeAchievements::Frame();
+    // User's rule (2026-11-14): RetroAchievements only while the game logic runs at the console's rate
+    // (59.94 steps per second, with or without interpolated images). Never at native 120.
+    if (NativeRateFactor() == 1) PrimeAchievements::Frame();
     // First-person FOV option: once per retrace on the game thread, as PrimeHack
     // rewrites it every frame (hle/prime_fov.h).
     PrimeFov::Frame();
@@ -415,6 +482,28 @@ void AdvanceRetrace(CpuContext* ctx, Clock::time_point retraceStamp, bool servic
         g_vi.currentFrameBuffer = g_vi.nextFrameBuffer;
         currentFb = g_vi.currentFrameBuffer;
         g_vi.lastRetrace = retraceStamp;
+        g_vi.lastRetraceDeliveredLate = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - retraceStamp);
+        // The next period: the console's, or the monitor's refreshes nearest to it while the frame clock is
+        // locked to the monitor ([video] refresh_lock).
+        {
+            const auto nominal = IntervalForFormat(g_vi.tvFormat);
+            g_vi.retraceInterval = std::chrono::nanoseconds{aurora_next_frame_period(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(retraceStamp.time_since_epoch()).count(),
+                nominal.count())};
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+            ApplyPrimeLogicStep(g_vi.retraceInterval, nominal);
+#if defined(MKW_PRIME_QA_TOOLS)
+            {
+                float step = 0.0f;
+                const uint32_t bits = Memory::Read32(0x8068258Cu);
+                std::memcpy(&step, &bits, sizeof(step));
+                AuroraPresentTiming present{};
+                aurora_get_present_timing(&present);
+                PrimeRateProbeRetrace(step, NativeRateFactor(), present.framesPerSecond);
+            }
+#endif
+#endif
+        }
         retraceValue = g_vi.retraceCount;
         preCb = g_vi.preRetraceCallback;
         postCb = g_vi.postRetraceCallback;
@@ -906,6 +995,25 @@ void PaceToRetraceBoundary(Clock::time_point deadline) {
 
 } // namespace
 
+// 2 while the game runs at native 120 (fixed at start), else 1.
+int VI_HLE_NativeRateFactor() {
+    static const bool told = [] {
+        aurora_set_game_frame_rate_factor(static_cast<uint32_t>(NativeRateFactor()));
+        return true;
+    }();
+    (void)told;
+    return NativeRateFactor();
+}
+
+// Game time per real time against the console (1 = the console's speed), for F1.
+float VI_HLE_GameSpeed() {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    return g_primeGameSpeed.load(std::memory_order_relaxed);
+#else
+    return 1.0f;
+#endif
+}
+
 // Single owner of the Aurora frame presentation sequence: seals the active frame, optionally paces the
 // producer to the VI retrace boundary, and pre-warms the next frame. Paced from GXCopyDisp; unpaced for
 // the retrace-context black/boot present path in AdvanceRetrace.
@@ -974,6 +1082,23 @@ void VI_HLE_PresentFrame(bool presentedXfb, bool paceToRetrace) {
         s_lastPresentAnchorNanos = 0;
         aurora_set_present_schedule(0, 0);
     }
+    // Frames presented without a schedule (Prime at 60, from its retrace) still belong to a VI period:
+    // Aurora uses it as the steady time to align the image to the monitor's refresh ([video] display_sync).
+    if (!paceToRetrace && aurora_get_frame_interpolation_fps() == 0) {
+        std::lock_guard<std::mutex> lock(g_viMutex);
+        EnsureInitializedLocked();
+        // On time: this retrace was delivered at its boundary. When the game finishes a frame after its
+        // boundary the retrace is delivered late, as soon as the game waits for it, and the frame goes out
+        // then: such a frame does not tell the frame clock where frames usually are.
+        aurora_set_present_frame_clock(
+            static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                      g_vi.lastRetrace.time_since_epoch()).count()),
+            static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                      g_vi.retraceInterval).count()),
+            g_vi.lastRetraceDeliveredLate < 1500us);
+    } else {
+        aurora_set_present_frame_clock(0, 0, true);
+    }
 
     const auto finishPresent = [presentedXfb] {
         settings_overlay::AdvancePresentedFrame();
@@ -998,11 +1123,42 @@ void VI_HLE_PresentFrame(bool presentedXfb, bool paceToRetrace) {
     // worker's SEALED phase, which needs this begin, so releasing the lock
     // between end and begin could deadlock both threads.
     const bool beginBeforePacing = GxGpuThread::Enabled();
+#if defined(MKW_PRIME_QA_TOOLS)
+    // Private QA: where the time goes in a frame that reaches Aurora long after its retrace.
+    const auto qaEntered = Clock::now();
+    Clock::time_point qaLocked{}, qaEnded{};
+#endif
     {
         GxGpuThread::Lock gpuLock;
+#if defined(MKW_PRIME_QA_TOOLS)
+        qaLocked = Clock::now();
+#endif
         aurora_end_frame();
+#if defined(MKW_PRIME_QA_TOOLS)
+        qaEnded = Clock::now();
+#endif
         if (beginBeforePacing) finishPresent();
     }
+#if defined(MKW_PRIME_QA_TOOLS)
+    if (!paceToRetrace) {
+        Clock::time_point base;
+        std::chrono::nanoseconds late{};
+        {
+            std::lock_guard<std::mutex> lock(g_viMutex);
+            base = g_vi.lastRetrace;
+            late = g_vi.lastRetraceDeliveredLate;
+        }
+        const auto ms = [](auto d) { return std::chrono::duration<double, std::milli>(d).count(); };
+        static int logged = 0;
+        if (ms(qaEnded - base) > 8.0 && logged < 400) {
+            ++logged;
+            RT_LOG(RT_TAG_VI) << "[prime-present-slow] delivered_late_ms=" << ms(late)
+                << " present_entered_ms=" << ms(qaEntered - base) << " gx_lock_ms=" << ms(qaLocked - qaEntered)
+                << " end_frame_ms=" << ms(qaEnded - qaLocked) << " begin_next_ms=" << ms(Clock::now() - qaEnded)
+                << std::endl;
+        }
+    }
+#endif
     if (paceThisFrame) {
         PaceToRetraceBoundary(paceDeadline);
         std::lock_guard<std::mutex> lock(g_viMutex);
@@ -1332,7 +1488,7 @@ PPC_NATIVE_OVERRIDE_VOID(801BABAC, VIGetNextField_HLE_801babac, (CpuContext* ctx
 extern "C" void VIGetCurrentLine_HLE_801bac48(CpuContext* ctx)
 {
     uint32_t height = 480;
-    std::chrono::microseconds interval{16666us};
+    std::chrono::nanoseconds interval{16683333ns};
     Clock::time_point last;
     {
         std::lock_guard<std::mutex> lock(g_viMutex);
@@ -1342,7 +1498,7 @@ extern "C" void VIGetCurrentLine_HLE_801bac48(CpuContext* ctx)
         last = g_vi.lastRetrace;
     }
     const auto now = Clock::now();
-    const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - last);
+    const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(now - last);
     uint32_t line = 0;
     if (interval.count() > 0 && height > 0) {
         const uint64_t scaled = static_cast<uint64_t>(elapsed.count()) * height;
@@ -1380,7 +1536,7 @@ extern "C" void VIWaitForRetrace_HLE_801b99ec(CpuContext* ctx)
 
         OS__RestoreInterrupts_801a65d4(irqState);
     } else {
-        std::chrono::microseconds interval{16666us};
+        std::chrono::nanoseconds interval{16683333ns};
         Clock::time_point target;
         {
             std::lock_guard<std::mutex> lock(g_viMutex);

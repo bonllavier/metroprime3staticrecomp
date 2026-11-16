@@ -629,6 +629,7 @@ void note_projection(const float*, bool) {}
 bool ssao_exclude_active() { return false; }
 void note_engine_lights(uint32_t, const float (*)[3], const float*, const float*, const uint8_t*, const float (*)[3]) {}
 void note_world_view(const float*) {}
+bool ssao_effects_active() { return false; }
 } // namespace aurora::gfx::post
 namespace aurora::gx {
 std::atomic<uint32_t> g_enhancedMetalParams{0};
@@ -654,6 +655,7 @@ std::atomic<float> g_worldRelight{0.0f};
 std::atomic<bool> g_engineLightsOption{false};
 std::atomic<bool> g_extraDynamicLights{false};
 std::atomic<bool> g_lightmapDither{false};
+std::atomic<bool> g_smoothIndirect{true};
 EngineEnvLights g_engineEnvLights{};
 // Engine light input (gx.cpp in the game): tests feed it through set_engine_lights.
 namespace {

@@ -79,7 +79,7 @@ Dependencias externas al repo `recomp` que el pipeline lee por ruta relativa (co
 | Salir/reiniciar (`OSRestart`) | `CreateProcessW` + `WaitForSingleObject` | `posix_spawn` + `pidfd_open`/`poll` (sondeo con `kill` en kernels antiguos) | implementado |
 | Menú Trilogy | `Corruption_3 Trilogy Menu.exe` | `Corruption_3 Trilogy Menu` | implementado |
 | Selector de imagen de disco | `IFileOpenDialog` / `MessageBoxW` | `SDL_ShowFileDialogWithProperties` (portal XDG / zenity) / `SDL_ShowMessageBox` | implementado |
-| Informe F12 | DXGI, `RtlGetVersion`, GDI+, `explorer.exe` | `/sys/class/drm`, `/etc/os-release`, `/proc/meminfo`, `__get_cpuid`, `SDL_SavePNG`, `SDL_OpenURL` | implementado |
+| Informe F12 | DXGI, `RtlGetVersion`, GDI+, `explorer.exe` | `/sys/class/drm`, `/etc/os-release`, `/proc/meminfo`, `__get_cpuid`, `SDL_SavePNG`, `SDL_OpenURL` (la carpeta se abre con una URL `file://` codificada: con espacios o acentos en la ruta no abría nada) | implementado; el 15/11 se añadieron al `system.txt` el estado del renderizador y de la caché de shaders (código común). Pendiente de QA del usuario en Linux. Si el escritorio captura F12 (Yakuake en KDE), usar F1 > Diagnostics > *Create bug report* |
 | Capturas | JPEG por GDI+ | PNG por `SDL_SavePNG` | implementado |
 | Nombre de tecla según distribución | `GetKeyNameTextW` | `SDL_GetKeyFromScancode` + `SDL_GetKeyName` | implementado |
 | Búsqueda de actualizaciones | WinHTTP | `HostHttps` (libcurl por `dlopen`, solo HTTPS, también en redirecciones) | implementado |
@@ -257,6 +257,7 @@ Funciones de Windows que influyen en el rendimiento y su estado en Linux:
 ## Pendiente
 
 - QA del usuario: mando (iconos Xbox/PlayStation), ratón, F1/F9/F12, logros, Wayland.
+- Cambios comunes del 15/11/2026 sin compilar ni probar todavía en Linux (ver "Formatos de disco, aviso de shaders y datos nuevos del informe" en [publicacion_github.md](publicacion_github.md)): solo `.iso`/`.rvz` (el filtro del diálogo SDL lleva las dos grafías, `iso;rvz;ISO;RVZ`), aviso rojo durante la generación de shaders, líneas nuevas del log y del informe F12. Tras `git pull`, recompilar `WiiCompiled` y comprobar: el aviso con la caché vacía (con el vigilante de memoria), F12 y que un `.wbfs` se rechaza.
 - Caídas a 30-48 FPS durante una compilación sin caché (solo en el primer arranque). Volver a medirlas con la corrección de núcleos: los trabajadores de compilación también estaban en el núcleo del juego.
 - El Turbo Boost del i7-4790 está desactivado en este sistema (`/sys/devices/system/cpu/intel_pstate/no_turbo` = 1): 3,6 GHz fijos frente a hasta 4,0 en Windows. Es un ajuste del sistema o de la BIOS, no del port.
 - Wiimote por Bluetooth.

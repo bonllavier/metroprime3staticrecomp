@@ -108,6 +108,36 @@ bool aurora_get_frame_interpolation_low_latency();
 // lose the next. Only with interpolation on and a regular refresh (it stops itself under variable refresh).
 void aurora_set_frame_interpolation_display_sync(bool enabled);
 bool aurora_get_frame_interpolation_display_sync();
+// The same alignment for the game's own 60 images per second, with frame interpolation off ([video]
+// display_sync, off by default). Without it each image goes out when it is ready, and while that moment
+// sits near a refresh of the monitor one image is shown twice and the next never, although 60 are presented
+// every second. Costs about half a frame of latency; needs a regular refresh, like the option above.
+void aurora_set_display_sync(bool enabled);
+bool aurora_get_display_sync();
+// Test builds only (zeros elsewhere): what the screen showed during the last second, estimated from when
+// each image was presented against the monitor's measured refresh. `seenPerSecond` leaves out the images
+// replaced before any refresh showed them; `unevenPerSecond` counts refreshes where an image stayed longer
+// or shorter than its share.
+typedef struct {
+  bool valid;
+  float refreshHz;
+  float presentedPerSecond;
+  float seenPerSecond;
+  float unevenPerSecond;
+} AuroraDisplayCadence;
+void aurora_get_display_cadence(AuroraDisplayCadence* cadence);
+// The game's frame clock locked to the monitor ([video] refresh_lock, on by default; Windows only). The
+// runtime asks for each frame period with aurora_next_frame_period; while a whole number of the monitor's
+// refreshes is within 0.15 % of the console's frame, the frame lasts exactly those refreshes and ends a
+// fixed time before one, so every image gets its own refresh with nothing held back. See
+// policy::next_frame_period.
+void aurora_set_refresh_lock(bool enabled);
+bool aurora_get_refresh_lock();
+// `boundaryNanos`: the frame boundary just passed (steady_clock). `nominalNanos`: the console's frame period.
+// Returns the period to the next boundary: `nominalNanos` whenever the lock does not apply.
+int64_t aurora_next_frame_period(int64_t boundaryNanos, int64_t nominalNanos);
+// The rate the game's frames run at while locked (frames per second), 0 while they are not.
+float aurora_get_refresh_lock_rate();
 // The refresh rate presents are aligned to, 0 while they are not.
 float aurora_get_display_sync_rate();
 // True while many images miss their refresh and are presented as they come (alignment returns by itself).
@@ -123,6 +153,20 @@ bool aurora_get_ubershader(void);
 uint64_t aurora_get_ubershader_draws(void);
 bool aurora_get_skip_unready_pipelines();
 uint32_t aurora_get_queued_pipeline_count();
+// Boot shader generation (the prewarm of every cached pipeline recipe). `active` from its start until
+// its queue first drains; `total` is what it had to build and `seconds` how long it has run or took.
+typedef struct AuroraShaderPrewarm {
+  bool active;
+  bool finished;
+  uint32_t total;
+  uint32_t remaining;
+  float seconds;
+} AuroraShaderPrewarm;
+void aurora_get_shader_prewarm(AuroraShaderPrewarm* out);
+// Plain-text state of the renderer for bug reports: adapter, driver and backend in use, shader cache
+// state, boot shader generation, and the draw counters (skipped, fallback, ubershader, failed pipelines).
+// Writes at most `capacity` bytes including the terminator; returns the length written.
+size_t aurora_describe_render_state(char* buffer, size_t capacity);
 
 // Controls whether display copies bypass the Wii's vertical copy filter.
 void aurora_set_disable_copy_filter(bool disabled);

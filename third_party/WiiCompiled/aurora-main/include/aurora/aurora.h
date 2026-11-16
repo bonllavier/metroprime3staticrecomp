@@ -200,6 +200,14 @@ void aurora_wait_for_frame_worker_sealed(void);
 // Absolute schedule for the next sealed frame, on steady_clock: baseNanos anchors the group and
 // intervalNanos is the period, so slot k of N+1 fires at base + k*interval/(N+1). Zeros clear it.
 void aurora_set_present_schedule(uint64_t baseNanos, uint64_t intervalNanos);
+// For frames sealed without a schedule: the boundary of the game's frame clock the frame belongs to and
+// its period, on steady_clock. Only used to align such images to the monitor's refresh
+// (aurora_set_display_sync); they are still presented as soon as they are ready otherwise. Zeros clear it.
+// `onTime`: the frame was handed over at its boundary. A frame the game finished after its boundary is
+// presented at once, but says nothing about where frames usually are.
+void aurora_set_present_frame_clock(uint64_t boundaryNanos, uint64_t intervalNanos, bool onTime);
+// Game frames per console frame (2 at native 120): exclusive fullscreen asks for that multiple of 59.94 Hz.
+void aurora_set_game_frame_rate_factor(uint32_t factor);
 // Reports whether the frame about to be sealed met its display boundary. Interpolation sizes its
 // slot group from this, backing off after misses. Only paced presents may report.
 void aurora_report_producer_paced(bool paced);
@@ -252,7 +260,7 @@ void aurora_stream_shutdown(void);
 void aurora_set_parallel_texture_decode(bool enabled);
 // Decode CMPR textures on the GPU (bit-identical to the CPU decoder). Takes effect for new textures.
 void aurora_set_gpu_cmpr_decode(bool enabled);
-// True while the GX producer records a frame requested by aurora_request_draw_dump.
+// True while the GX producer records a single frame requested by aurora_request_draw_dump (not a burst).
 bool aurora_draw_dump_active(void);
 bool aurora_flush_efb_copies_to_ram();
 bool aurora_flush_efb_copy_to_ram(void* dest);
@@ -297,6 +305,9 @@ void aurora_set_background_input(bool value);
 void aurora_set_display_mode(AuroraDisplayMode mode);
 // Refresh rate of the monitor the window is on, in Hz; 0 when unknown.
 float aurora_get_display_refresh_rate();
+// Refresh rate of that monitor's desktop mode, in Hz; 0 when unknown. Differs from the one above while
+// exclusive fullscreen runs its own mode (for example 60 Hz on a 120 Hz monitor).
+float aurora_get_desktop_refresh_rate();
 AuroraDisplayMode aurora_get_display_mode();
 
 typedef enum {

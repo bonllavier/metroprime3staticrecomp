@@ -7,7 +7,10 @@
 #include "system_bridge.h"
 
 #include <aurora/aurora.h>
+#include <aurora/gfx.h>
 
+#include <algorithm>
+#include <cctype>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -332,13 +335,64 @@ bool ConvertBmpToPng(const fs::path& bmp, const fs::path& png) {
     return ok;
 }
 
-// The desktop's file manager on the reports folder (xdg-open).
+// The desktop's file manager on the reports folder (xdg-open). The path is percent-encoded: a folder
+// with spaces or accents ("Corruption_3 PC") is otherwise not a valid file:// URL and nothing opens.
 void OpenInExplorer(const fs::path& file) {
-    const std::string url = "file://" + file.parent_path().string();
+    std::string url = "file://";
+    for (const unsigned char c : file.parent_path().string()) {
+        const bool plain = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/' ||
+                           c == '-' || c == '_' || c == '.' || c == '~';
+        if (plain) {
+            url += static_cast<char>(c);
+        } else {
+            static const char kHex[] = "0123456789ABCDEF";
+            url += '%';
+            url += kHex[c >> 4];
+            url += kHex[c & 15];
+        }
+    }
     if (!SDL_OpenURL(url.c_str()))
         RT_LOG(RT_TAG_RUNTIME) << "[bug-report] could not open " << url << ": " << SDL_GetError() << std::endl;
 }
 #endif
+
+const std::chrono::steady_clock::time_point g_processStart = std::chrono::steady_clock::now();
+
+// Earlier runs still in UserData/Logs ("base_<epoch>_pid<pid>"): how many, and the newest ones. A
+// fault that only shows on the first launches (a cold shader cache) needs to know which launch this is.
+std::string PreviousRuns(const fs::path& runDirectory) {
+    std::vector<std::string> names;
+    std::error_code ec;
+    for (const auto& entry : fs::directory_iterator(runDirectory.parent_path(), fs::directory_options::skip_permission_denied, ec)) {
+        if (ec) break;
+        std::error_code entryEc;
+        if (!entry.is_directory(entryEc) || entryEc || entry.path() == runDirectory) continue;
+        const std::string name = Utf8(entry.path().filename());
+        if (name.rfind("base_", 0) == 0) names.push_back(name);
+    }
+    std::sort(names.begin(), names.end());
+    std::ostringstream text;
+    text << names.size();
+    if (!names.empty()) {
+        text << " (newest:";
+        for (size_t i = names.size() > 3 ? names.size() - 3 : 0; i < names.size(); ++i) text << " " << names[i];
+        text << ")";
+    }
+    return text.str();
+}
+
+std::string DiscImageDetails(const fs::path& image) {
+    if (image.empty()) return "none";
+    std::error_code ec;
+    const auto size = fs::file_size(image, ec);
+    std::string extension = Utf8(image.extension());
+    for (char& c : extension) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    std::ostringstream text;
+    text << (extension.empty() ? "(no extension)" : extension);
+    if (ec) text << ", size unavailable";
+    else text << ", " << size << " bytes (" << std::fixed << std::setprecision(2) << size / (1024.0 * 1024.0 * 1024.0) << " GiB)";
+    return text.str();
+}
 
 bool WaitForStableFile(const fs::path& path, std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
@@ -434,6 +488,23 @@ void Worker(std::string trigger) {
         summary << "display mode: " << RuntimeConfigFile::DisplayMode("windowed") << "\n";
         summary << "keyboard/mouse mode: " << (RuntimeConfigFile::PrimeKeyboardMouseMode() ? "on" : "off") << "\n";
         summary << "disc image: " << Utf8(RuntimeConfigFile::ResolvedPrimeIsoPath()) << "\n";
+        summary << "disc image format: " << DiscImageDetails(RuntimeConfigFile::ResolvedPrimeIsoPath()) << "\n";
+        summary << "session length at report: "
+                << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - g_processStart).count()
+                << " s\n";
+        summary << "earlier runs kept in Logs: " << PreviousRuns(runDirectory) << "\n";
+        {
+            // Renderer state from Aurora: the adapter and backend really in use (the gpu line above
+            // lists every adapter), whether the shader cache was cold, and the draws that were skipped
+            // or drawn with a stand-in shader while shaders compiled.
+            std::array<char, 4096> render{};
+            if (aurora_describe_render_state(render.data(), render.size()) > 0) summary << render.data();
+            AuroraShaderPrewarm prewarm{};
+            aurora_get_shader_prewarm(&prewarm);
+            if (prewarm.active)
+                summary << "NOTE: this report was made while shaders were still being generated ("
+                        << prewarm.remaining << " left)\n";
+        }
         summary << "screenshot: " << (screenshot ? "yes" : "no") << ", transcript: " << (transcript ? "yes" : "no")
                 << ", crash files: " << crashFiles << ", config: " << (config ? "yes" : "no")
                 << ", save files: " << saveFiles << "\n";

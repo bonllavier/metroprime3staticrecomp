@@ -77,6 +77,40 @@ std::atomic<AuroraFrameWorkerWaitCallback> g_frameWorkerWaitCallback{nullptr};
 // deadlines derived from it, so the presenter cannot drift. Zero means present when ready.
 std::atomic<uint64_t> g_presentScheduleBaseNanos{0};
 std::atomic<uint64_t> g_presentScheduleIntervalNanos{0};
+// The game's frame clock while nothing is scheduled (aurora_set_present_frame_clock): the boundary the frame
+// being sealed belongs to and the period. Only used to align unscheduled images to the monitor's refresh.
+std::atomic<uint64_t> g_presentFrameClockBaseNanos{0};
+std::atomic<uint64_t> g_presentFrameClockIntervalNanos{0};
+std::atomic<bool> g_presentFrameClockOnTime{true};
+// Frame clock locked to the monitor (aurora_next_frame_period). The lead is how long before a refresh a frame
+// boundary falls: how long after its boundary a frame is usually ready (measured at encode), plus a margin.
+std::atomic<bool> g_frameLockActive{false};
+std::atomic<int64_t> g_frameLockReadyNanos{3'000'000};
+std::atomic<float> g_frameLockRate{0.0f};
+#if defined(MKW_PRIME_QA_TOOLS)
+// Private QA, for [refresh-lock-est]: the presenter counts, the retrace reports and clears.
+struct FrameLockQa {
+  std::atomic<uint64_t> frames{0}, lateFrames{0}, held{0}, missed{0}, under2{0}, under4{0};
+  std::atomic<int64_t> sampleSum{0}, sampleMax{0}, heldNanos{0};
+  std::array<std::atomic<uint32_t>, 64> histogram{};  // on-time frames by ready time, 0.5 ms each
+};
+FrameLockQa g_frameLockQa;
+#endif
+// The margin of the locked frame clock (policy::frame_lock_margin).
+int64_t frame_lock_margin_nanos(int64_t refreshPeriod) noexcept {
+#if defined(MKW_PRIME_QA_TOOLS)
+  // Private QA: WII_COMPILED_QA_LOCK_MARGIN_MS=4 to compare other choices.
+  static const int64_t s_override = [] {
+    const char* v = std::getenv("WII_COMPILED_QA_LOCK_MARGIN_MS");
+    const double ms = v != nullptr ? std::atof(v) : 0.0;
+    return ms > 0.0 && ms < 16.0 ? static_cast<int64_t>(ms * 1.0e6) : int64_t{0};
+  }();
+  if (s_override != 0) {
+    return s_override;
+  }
+#endif
+  return gx::policy::frame_lock_margin(refreshPeriod);
+}
 std::atomic<bool> g_metalfxRequested{false};
 std::atomic<bool> g_preserveEfbAcrossFrames{false};
 std::atomic<bool> g_metalfxSupported{false};
@@ -1053,6 +1087,14 @@ struct PresentationJob {
   PresentClock::time_point alignAt{};
   // Spacing of the group's images; alignment only applies when it is about a refresh period or longer.
   int64_t alignStepNanos = 0;
+  // The game's own image with frame interpolation off ([video] display_sync): aligned without the rate
+  // controller's headroom gate, and later in its refresh interval (policy::native_rate_align_tuning).
+  bool alignNativeRate = false;
+  // The game's own image with frame interpolation off: the boundary and period of its VI frame, for the
+  // frame clock locked to the monitor (note_frame_lock_present). 0: not such an image.
+  uint64_t frameClockBaseNanos = 0;
+  uint64_t frameClockIntervalNanos = 0;
+  bool frameClockOnTime = true;  // handed over at its boundary, not finished after it
 };
 
 // Where the time between end_frame and Present goes, averaged over 10 s and
@@ -1093,6 +1135,95 @@ std::shared_ptr<PresentationImage> acquire_presentation_image(size_t slot, uint3
   image->bindGroup = webgpu::create_copy_bind_group(image->texture);
   pool.emplace_back(image);
   return image;
+}
+
+// The game's own image, about to be presented, with the frame clock following the monitor. Two things:
+// - How long after its frame boundary this happens is what the clock's lead follows (aurora_next_frame_period
+//   puts the usual frame a margin before a refresh). Measured here, at the Present call, and not when the
+//   frame was sealed: acquiring the surface and the copy pass are part of it.
+// - A frame that is ready before the refresh interval of its own refresh begins waits for it
+//   (policy::frame_lock_not_before): shown at the same refresh, so no latency, and no image is shown a
+//   refresh early. Returns that time, or the epoch for "now".
+PresentClock::time_point note_frame_lock_present(const PresentationJob& job) noexcept {
+#if defined(MKW_PRIME_QA_TOOLS)
+  // Private QA: the spread of this window's frames, for [refresh-lock-est].
+  if (job.frameClockOnTime) {
+    const int64_t at = std::chrono::duration_cast<std::chrono::nanoseconds>(PresentClock::now().time_since_epoch()).count() -
+                       static_cast<int64_t>(job.frameClockBaseNanos);
+    const size_t bucket = static_cast<size_t>(std::clamp<int64_t>(at / 500'000, 0, 63));
+    g_frameLockQa.histogram[bucket].fetch_add(1, std::memory_order_relaxed);
+    static int s_logged = 0;
+    if (at > 8'000'000 && at < 40'000'000 && s_logged < 400) {
+      ++s_logged;
+      const int64_t queued = std::chrono::duration_cast<std::chrono::nanoseconds>(job.enqueuedAt.time_since_epoch()).count() -
+                             static_cast<int64_t>(job.frameClockBaseNanos);
+      Log.info("[refresh-lock-slow] sealed_and_queued_ms={:.2f} present_call_ms={:.2f}", static_cast<double>(queued) / 1e6,
+               static_cast<double>(at) / 1e6);
+    }
+  }
+#endif
+  static gx::policy::ReadyEstimate s_ready;
+  const int64_t now = std::chrono::duration_cast<std::chrono::nanoseconds>(PresentClock::now().time_since_epoch()).count();
+  const double interval = static_cast<double>(job.frameClockIntervalNanos);
+  const double sample = static_cast<double>(now - static_cast<int64_t>(job.frameClockBaseNanos));
+  // Only frames handed over at their boundary: one the game finished late is presented when it is done,
+  // anywhere in the period, and a PC at its limit in a scene has many. Following those would move the
+  // clock away from the frames that are on time (measured 2026-11-15) without helping the late ones.
+  if (job.frameClockOnTime) {
+#if defined(MKW_PRIME_QA_TOOLS)
+    // Private QA: WII_COMPILED_QA_LOCK_QUANTILE=0.95 to compare other choices.
+    static const double s_quantile = [] {
+      const char* v = AURORA_DIAGNOSTIC_ENV("WII_COMPILED_QA_LOCK_QUANTILE");
+      const double q = v != nullptr ? std::atof(v) : 0.0;
+      return q > 0.0 && q <= 1.0 ? q : gx::policy::kFrameLockQuantile;
+    }();
+    const double usual = gx::policy::note_frame_ready(s_ready, sample, interval, s_quantile);
+#else
+    const double usual = gx::policy::note_frame_ready(s_ready, sample, interval);
+#endif
+    if (usual >= 0.0) {
+      g_frameLockReadyNanos.store(static_cast<int64_t>(usual), std::memory_order_release);
+    }
+  }
+  int64_t notBefore = 0;
+  int64_t lead = 0;
+  gx::policy::RefreshGrid grid{};
+  if (g_frameLockActive.load(std::memory_order_acquire)) {
+    grid = display_refresh::observed_grid();
+    lead = gx::policy::frame_lock_lead(g_frameLockReadyNanos.load(std::memory_order_acquire),
+                                       frame_lock_margin_nanos(grid.period),
+                                       static_cast<int64_t>(job.frameClockIntervalNanos));
+    notBefore = gx::policy::frame_lock_not_before(grid, static_cast<int64_t>(job.frameClockBaseNanos), lead, now);
+  }
+#if defined(MKW_PRIME_QA_TOOLS)
+  if (grid.period > 0) {
+    // Against the refresh this frame was aimed at: held, on time, or too late for it (CPU side; the GPU
+    // still has its work to finish).
+    const int64_t refresh = grid.vblank +
+        std::llround(static_cast<double>(static_cast<int64_t>(job.frameClockBaseNanos) + lead - grid.vblank) /
+                     static_cast<double>(grid.period)) * grid.period;
+    auto& q = g_frameLockQa;
+    q.frames.fetch_add(1, std::memory_order_relaxed);
+    q.lateFrames.fetch_add(job.frameClockOnTime ? 0 : 1, std::memory_order_relaxed);
+    q.sampleSum.fetch_add(static_cast<int64_t>(sample), std::memory_order_relaxed);
+    int64_t seen = q.sampleMax.load(std::memory_order_relaxed);
+    while (static_cast<int64_t>(sample) > seen && !q.sampleMax.compare_exchange_weak(seen, static_cast<int64_t>(sample))) {
+    }
+    if (notBefore != 0) {
+      q.held.fetch_add(1, std::memory_order_relaxed);
+      q.heldNanos.fetch_add(notBefore - now, std::memory_order_relaxed);
+    }
+    const int64_t spare = refresh - now;  // time left before the refresh when Present is called
+    if (spare < 0) {
+      q.missed.fetch_add(1, std::memory_order_relaxed);
+    } else if (spare < 2'000'000) {
+      q.under2.fetch_add(1, std::memory_order_relaxed);
+    } else if (spare < 4'000'000) {
+      q.under4.fetch_add(1, std::memory_order_relaxed);
+    }
+  }
+#endif
+  return notBefore != 0 ? PresentClock::time_point{std::chrono::nanoseconds{notBefore}} : PresentClock::time_point{};
 }
 
 bool present_presentation_job(const PresentationJob& job) {
@@ -1223,6 +1354,14 @@ bool present_presentation_job(const PresentationJob& job) {
           wait_until_precise(job.presentAt);
           scheduleWaitDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(
               PresentClock::now() - scheduleWaitStarted);
+        } else if (job.frameClockBaseNanos != 0) {
+          const auto notBefore = note_frame_lock_present(job);
+          if (notBefore != PresentClock::time_point{}) {
+            const auto scheduleWaitStarted = PresentClock::now();
+            wait_until_precise(notBefore);
+            scheduleWaitDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                PresentClock::now() - scheduleWaitStarted);
+          }
         }
         // A native resize can arrive after acquisition, so drop the obsolete image and let the render
         // worker reconfigure at its ordered frame boundary.
@@ -1424,7 +1563,15 @@ void align_to_display(PresentationJob& job) noexcept {
   }
   const int64_t wanted =
       std::chrono::duration_cast<std::chrono::nanoseconds>(job.alignAt.time_since_epoch()).count();
-  int64_t at = gx::policy::align_to_refresh(s_alignment, grid, wanted, refresh_align_tuning());
+  // Changing between the two kinds of image (interpolation switched on or off) starts a new alignment.
+  static bool s_nativeRate = false;
+  if (s_nativeRate != job.alignNativeRate) {
+    s_nativeRate = job.alignNativeRate;
+    s_alignment.valid = false;
+  }
+  const auto tuning = job.alignNativeRate ? gx::policy::native_rate_align_tuning(grid.period, refresh_align_tuning())
+                                          : refresh_align_tuning();
+  int64_t at = gx::policy::align_to_refresh(s_alignment, grid, wanted, tuning);
   // Never hold an image more than a couple of refreshes past its own time, whatever the state says.
   if (at - wanted > 2 * grid.period || wanted - at > 2 * grid.period) {
     s_alignment.valid = false;
@@ -1442,8 +1589,10 @@ void align_to_display(PresentationJob& job) noexcept {
                                       ? "many images late for their refresh: presenting them as they come"
                                       : "images on time again: presents aligned to the refresh");
   }
-  // Headroom: see policy::step_align_gate. Without it the schedule stays as it was.
-  const bool headroom = gx::frame_interpolation_has_headroom();
+  // Headroom: see policy::step_align_gate. Without it the schedule stays as it was. The gate belongs to the
+  // interpolation rate controller: holding one image per frame leaves the GPU queue alone, and late images
+  // are still caught by the check above.
+  const bool headroom = job.alignNativeRate || gx::frame_interpolation_has_headroom();
   if (headroom != !g_displaySyncWaiting.load(std::memory_order_relaxed)) {
     g_displaySyncWaiting.store(!headroom, std::memory_order_release);
   }
@@ -1480,6 +1629,74 @@ void align_to_display(PresentationJob& job) noexcept {
 #endif
 }
 
+#if defined(MKW_PRIME_QA_TOOLS)
+// Private QA: what the screen showed, estimated from each present against the monitor's refresh timeline
+// (policy::note_presented_image). The FPS counter counts presents; this counts the ones that were seen.
+// Windows of one second for the overlay, of ten for the log. Presenter thread writes, anyone reads.
+std::mutex g_cadenceMutex;
+AuroraDisplayCadence g_cadenceSnapshot{};
+
+void note_display_cadence(const PresentationJob& job) noexcept {
+  static gx::policy::CadenceEstimate s_second, s_log;
+  static PresentClock::time_point s_secondStarted{}, s_logStarted{};
+  static double s_phaseSum = 0.0;
+  const auto grid = display_refresh::observed_grid();
+  const auto now = PresentClock::now();
+  if (grid.period <= 0) {
+    s_second = {};
+    s_log = {};
+    s_secondStarted = s_logStarted = now;
+    s_phaseSum = 0.0;
+    std::lock_guard lock(g_cadenceMutex);
+    g_cadenceSnapshot = {};
+    return;
+  }
+  // Refreshes each image should last: the group's spacing when it is known, else one game frame at 60.
+  const int64_t step = job.alignStepNanos > 0 ? job.alignStepNanos
+                       : gx::frame_interpolation_active() ? grid.period : 16'666'667;
+  const int64_t expected = (std::max<int64_t>)(std::llround(static_cast<double>(step) / static_cast<double>(grid.period)), 1);
+  const int64_t at = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+  gx::policy::note_presented_image(s_second, grid, at, expected);
+  gx::policy::note_presented_image(s_log, grid, at, expected);
+  const double position = static_cast<double>(at - grid.vblank) / static_cast<double>(grid.period);
+  s_phaseSum += position - std::floor(position);
+  if (s_secondStarted == PresentClock::time_point{}) {
+    s_secondStarted = s_logStarted = now;
+  }
+  if (now - s_secondStarted >= std::chrono::seconds(1)) {
+    const double seconds = std::chrono::duration<double>(now - s_secondStarted).count();
+    AuroraDisplayCadence snapshot{};
+    snapshot.valid = true;
+    snapshot.refreshHz = static_cast<float>(1.0e9 / static_cast<double>(grid.period));
+    snapshot.presentedPerSecond = static_cast<float>(static_cast<double>(s_second.presents) / seconds);
+    snapshot.seenPerSecond = static_cast<float>(static_cast<double>(s_second.presents - s_second.unseen) / seconds);
+    snapshot.unevenPerSecond = static_cast<float>(static_cast<double>(s_second.held + s_second.early) / seconds);
+    {
+      std::lock_guard lock(g_cadenceMutex);
+      g_cadenceSnapshot = snapshot;
+    }
+    const auto carry = s_second;
+    s_second = {};
+    s_second.lastAt = carry.lastAt;
+    s_second.valid = carry.valid;
+    s_secondStarted = now;
+  }
+  if (now - s_logStarted >= std::chrono::seconds(10)) {
+    const double n = static_cast<double>((std::max<uint64_t>)(s_log.presents, 1));
+    Log.info("[display-cadence-est] refresh_hz={:.3f} presents={} never_seen={} held_refreshes={} early={} "
+             "near_refresh_edge={} mean_phase={:.2f} aligned={}",
+             1.0e9 / static_cast<double>(grid.period), s_log.presents, s_log.unseen, s_log.held, s_log.early,
+             s_log.nearEdge, s_phaseSum / n, job.presentAt != PresentClock::time_point{} ? 1 : 0);
+    const auto carry = s_log;
+    s_log = {};
+    s_log.lastAt = carry.lastAt;
+    s_log.valid = carry.valid;
+    s_logStarted = now;
+    s_phaseSum = 0.0;
+  }
+}
+#endif
+
 void presenter_main() noexcept {
   g_presenterNativeId.store(current_native_thread_id(), std::memory_order_relaxed);
   if (!SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_HIGH)) {
@@ -1500,7 +1717,13 @@ void presenter_main() noexcept {
     g_presenter.cv.notify_all();
 
     align_to_display(job);
+#if defined(MKW_PRIME_QA_TOOLS)
+    if (present_presentation_job(job)) {
+      note_display_cadence(job);
+    }
+#else
     present_presentation_job(job);
+#endif
 
     {
       std::lock_guard lock(g_presenter.mutex);
@@ -1521,6 +1744,10 @@ void ensure_presenter_started() {
   g_presenter.started = true;
   g_presenterStarted.store(true, std::memory_order_release);
   Log.info("Enabled bounded asynchronous presentation worker");
+#if defined(MKW_PRIME_QA_TOOLS)
+  // Private QA: the refresh is measured all the time for the display cadence estimate (note_display_cadence).
+  display_refresh::set_observe_always(true);
+#endif
   display_refresh::start();
 }
 
@@ -1889,6 +2116,9 @@ struct SealedFrameContext {
   webgpu::PresentSource diagnosticTextureSource{};
   uint64_t scheduleBaseNanos = 0;
   uint64_t scheduleIntervalNanos = 0;
+  uint64_t frameClockBaseNanos = 0;
+  uint64_t frameClockIntervalNanos = 0;
+  bool frameClockOnTime = true;
   uint32_t interpolatedFrameCount = 0;
   std::array<float, gx::MaxInterpolatedFrames> slotWeights{};
   double slotBias = 1.0;
@@ -1939,6 +2169,9 @@ void seal_frame_locked(gfx::SealedFrame& sealedFrame, SealedFrameContext& ctx) {
   ctx.presentNative = gx::interpolated_frame_presents_native();
   ctx.scheduleBaseNanos = g_presentScheduleBaseNanos.load(std::memory_order_acquire);
   ctx.scheduleIntervalNanos = g_presentScheduleIntervalNanos.load(std::memory_order_acquire);
+  ctx.frameClockBaseNanos = g_presentFrameClockBaseNanos.load(std::memory_order_acquire);
+  ctx.frameClockIntervalNanos = g_presentFrameClockIntervalNanos.load(std::memory_order_acquire);
+  ctx.frameClockOnTime = g_presentFrameClockOnTime.load(std::memory_order_acquire);
   const auto windowSize = window::get_window_size();
   ctx.snapshotWidth = (std::max)(windowSize.native_fb_width, 1u);
   ctx.snapshotHeight = (std::max)(windowSize.native_fb_height, 1u);
@@ -2450,6 +2683,45 @@ std::vector<PresentationJob> encode_sealed_frame(gfx::SealedFrame& sealedFrame, 
       job.alignStepNanos = alignStep;
     }
   }
+  // The game's own image with frame interpolation off ([video] display_sync). Nothing is scheduled then:
+  // the image goes out when it is ready, at whatever point of the monitor's refresh that happens to be,
+  // and that point wanders (the VI clock against the monitor's, the time each scene takes). Near a refresh
+  // one image is shown twice and the next never, while the counter still reads 60. Its steady time is the
+  // VI boundary of the frame plus how long after it frames become ready, following the late side as above.
+  static double s_nativeAlignOffsetNanos = -1.0;
+  const bool nativeRate = !alignable && !ctx.interpolationActive && gx::frame_interpolation_fps() == 0 &&
+                          ctx.scheduleIntervalNanos == 0 && ctx.frameClockIntervalNanos != 0 &&
+                          ctx.frameClockBaseNanos != 0 && presentationJobs.size() == 1 &&
+                          presentationJobs.front().presentAt == PresentClock::time_point{};
+  if (!nativeRate) {
+    s_nativeAlignOffsetNanos = -1.0;
+  } else {
+    const double interval = static_cast<double>(ctx.frameClockIntervalNanos);
+    const double sample = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(PresentClock::now().time_since_epoch()).count() -
+        static_cast<int64_t>(ctx.frameClockBaseNanos));
+    const double delta = sample - s_nativeAlignOffsetNanos;
+    if (s_nativeAlignOffsetNanos < 0.0 || delta < -interval || delta > 4.0 * interval) {
+      s_nativeAlignOffsetNanos = sample;  // first frame, or after a pause, a load or a mode change
+    } else if (delta > 0.0) {
+      s_nativeAlignOffsetNanos += (std::min)(delta, interval * 0.25) / 4.0;
+    } else {
+      s_nativeAlignOffsetNanos += delta / 64.0;
+    }
+    auto& job = presentationJobs.front();
+    job.alignStepNanos = static_cast<int64_t>(ctx.frameClockIntervalNanos);
+    // The locked frame clock measures and places this image at its Present call (note_frame_lock_present).
+    job.frameClockBaseNanos = ctx.frameClockBaseNanos;
+    job.frameClockIntervalNanos = ctx.frameClockIntervalNanos;
+    job.frameClockOnTime = ctx.frameClockOnTime;
+    // With the clock locked to the monitor the image is already ready a fixed time before its refresh: it
+    // goes out at once. Otherwise the display sync option holds it for its place in the refresh.
+    if (!g_frameLockActive.load(std::memory_order_acquire) && display_refresh::native_enabled()) {
+      job.alignAt = PresentClock::time_point{std::chrono::nanoseconds{
+          static_cast<int64_t>(ctx.frameClockBaseNanos) + static_cast<int64_t>(s_nativeAlignOffsetNanos)}};
+      job.alignNativeRate = true;
+    }
+  }
   if (pendingFrameCapture.has_value()) {
     complete_frame_capture(*pendingFrameCapture);
   }
@@ -2872,6 +3144,15 @@ void aurora_set_present_schedule(uint64_t baseNanos, uint64_t intervalNanos) {
   aurora::g_presentScheduleBaseNanos.store(baseNanos, std::memory_order_release);
   aurora::g_presentScheduleIntervalNanos.store(intervalNanos, std::memory_order_release);
 }
+namespace aurora::window { extern std::atomic<uint32_t> g_gameFrameRateFactor; }
+void aurora_set_game_frame_rate_factor(uint32_t factor) {
+  aurora::window::g_gameFrameRateFactor.store(factor < 1 ? 1 : factor, std::memory_order_release);
+}
+void aurora_set_present_frame_clock(uint64_t boundaryNanos, uint64_t intervalNanos, bool onTime) {
+  aurora::g_presentFrameClockOnTime.store(onTime, std::memory_order_release);
+  aurora::g_presentFrameClockBaseNanos.store(boundaryNanos, std::memory_order_release);
+  aurora::g_presentFrameClockIntervalNanos.store(intervalNanos, std::memory_order_release);
+}
 void aurora_report_producer_paced(bool paced) {
 #ifdef AURORA_ENABLE_GX
   aurora::gx::report_producer_paced(paced);
@@ -2950,10 +3231,130 @@ void aurora_set_frame_interpolation_display_sync(bool enabled) {
   }
 }
 bool aurora_get_frame_interpolation_display_sync() { return aurora::display_refresh::enabled(); }
+void aurora_set_display_sync(bool enabled) {
+  aurora::display_refresh::set_native_enabled(enabled);
+  if (enabled) {
+    aurora::display_refresh::start();
+  }
+}
+bool aurora_get_display_sync() { return aurora::display_refresh::native_enabled(); }
+void aurora_set_refresh_lock(bool enabled) {
+  aurora::display_refresh::set_frame_lock_enabled(enabled);
+  if (enabled) {
+    aurora::display_refresh::start();
+  }
+}
+bool aurora_get_refresh_lock() { return aurora::display_refresh::frame_lock_enabled(); }
+int64_t aurora_next_frame_period(int64_t boundaryNanos, int64_t nominalNanos) {
+#ifdef AURORA_ENABLE_GX
+  // Producer thread only (the runtime's retrace).
+  static aurora::gx::policy::FrameLock s_lock;
+  static bool s_reported = false;
+  const auto grid = aurora::display_refresh::frame_lock_enabled() ? aurora::display_refresh::observed_grid()
+                                                                  : aurora::gx::policy::RefreshGrid{};
+  const int64_t ready = aurora::g_frameLockReadyNanos.load(std::memory_order_acquire);
+  const int64_t lead =
+      aurora::gx::policy::frame_lock_lead(ready, aurora::frame_lock_margin_nanos(grid.period), nominalNanos);
+  const int64_t period = aurora::gx::policy::next_frame_period(s_lock, grid, boundaryNanos, nominalNanos, lead);
+#if defined(MKW_PRIME_QA_TOOLS)
+  // Private QA: is the clock at rest on the monitor, or chasing? Every 10 s.
+  if (s_lock.locked) {
+    static uint64_t s_frames = 0, s_saturated = 0;
+    static double s_errorSum = 0.0, s_readySum = 0.0;
+    static int64_t s_started = boundaryNanos;
+    const double slew = aurora::gx::policy::kFrameLockSlew * static_cast<double>(nominalNanos);
+    ++s_frames;
+    s_saturated += std::abs(s_lock.phaseError) > 3.0 * slew ? 1 : 0;  // more than 0.1 ms from its place
+    s_errorSum += std::abs(s_lock.phaseError);
+    s_readySum += static_cast<double>(ready);
+    if (boundaryNanos - s_started >= 10'000'000'000) {
+      const double n = static_cast<double>(s_frames);
+      auto& q = aurora::g_frameLockQa;
+      const uint64_t presents = q.frames.exchange(0);
+      const double p = static_cast<double>((std::max<uint64_t>)(presents, 1));
+      const uint64_t held = q.held.exchange(0);
+      aurora::Log.info("[refresh-lock-est] frames={} chasing={} mean_abs_error_us={:.1f} usual_ready_ms={:.2f} "
+                       "ready_ms_mean={:.2f} ready_ms_max={:.2f} margin_ms={:.2f} presents={} held={} "
+                       "held_ms_mean={:.2f} missed_refresh={} spare_under_2ms={} spare_under_4ms={} game_late_frames={} "
+                       "lead_ms={:.2f}",
+                       s_frames, s_saturated, s_errorSum / n / 1e3, s_readySum / n / 1e6,
+                       static_cast<double>(q.sampleSum.exchange(0)) / p / 1e6,
+                       static_cast<double>(q.sampleMax.exchange(0)) / 1e6,
+                       static_cast<double>(aurora::frame_lock_margin_nanos(grid.period)) / 1e6, presents, held,
+                       static_cast<double>(q.heldNanos.exchange(0)) / static_cast<double>((std::max<uint64_t>)(held, 1)) / 1e6,
+                       q.missed.exchange(0), q.under2.exchange(0), q.under4.exchange(0), q.lateFrames.exchange(0),
+                       static_cast<double>(lead) / 1e6);
+      {
+        std::array<uint32_t, 64> h{};
+        uint64_t total = 0;
+        for (size_t i = 0; i < h.size(); ++i) {
+          h[i] = q.histogram[i].exchange(0);
+          total += h[i];
+        }
+        const auto at = [&](double share) {
+          uint64_t seen = 0;
+          for (size_t i = 0; i < h.size(); ++i) {
+            seen += h[i];
+            if (static_cast<double>(seen) >= share * static_cast<double>(total)) {
+              return 0.5 * static_cast<double>(i + 1);
+            }
+          }
+          return 32.0;
+        };
+        if (total != 0) {
+          aurora::Log.info("[refresh-lock-ready] on_time_frames={} p50_ms={:.1f} p90_ms={:.1f} p95_ms={:.1f} "
+                           "p98_ms={:.1f} p99_ms={:.1f} p100_ms={:.1f}",
+                           total, at(0.50), at(0.90), at(0.95), at(0.98), at(0.99), at(1.0));
+        }
+      }
+      s_frames = s_saturated = 0;
+      s_errorSum = s_readySum = 0.0;
+      s_started = boundaryNanos;
+    }
+  }
+#endif
+  aurora::g_frameLockActive.store(s_lock.locked, std::memory_order_release);
+  aurora::g_frameLockRate.store(
+      s_lock.locked ? static_cast<float>(1.0e9 / static_cast<double>(s_lock.refreshesPerFrame * grid.period)) : 0.0f,
+      std::memory_order_release);
+  if (s_lock.locked != s_reported) {
+    s_reported = s_lock.locked;
+    if (s_lock.locked) {
+      aurora::Log.info("[refresh-lock] game frames follow the monitor: {} refresh(es) of {:.3f} Hz per frame, {:.3f} "
+                       "frames/s ({:+.3f} % against the console's {:.3f})",
+                       s_lock.refreshesPerFrame, 1.0e9 / static_cast<double>(grid.period),
+                       1.0e9 / static_cast<double>(s_lock.refreshesPerFrame * grid.period),
+                       (static_cast<double>(nominalNanos) / static_cast<double>(s_lock.refreshesPerFrame * grid.period) - 1.0) * 100.0,
+                       1.0e9 / static_cast<double>(nominalNanos));
+    } else {
+      aurora::Log.info("[refresh-lock] game frames on the console's own period ({:.3f} frames/s)",
+                       1.0e9 / static_cast<double>(nominalNanos));
+    }
+  }
+  return period;
+#else
+  (void)boundaryNanos;
+  return nominalNanos;
+#endif
+}
+float aurora_get_refresh_lock_rate() { return aurora::g_frameLockRate.load(std::memory_order_acquire); }
+void aurora_get_display_cadence(AuroraDisplayCadence* cadence) {
+  if (cadence == nullptr) {
+    return;
+  }
+#if defined(MKW_PRIME_QA_TOOLS)
+  std::lock_guard lock(aurora::g_cadenceMutex);
+  *cadence = aurora::g_cadenceSnapshot;
+#else
+  *cadence = {};
+#endif
+}
 float aurora_get_display_sync_rate() { return static_cast<float>(aurora::display_refresh::locked_rate()); }
 bool aurora_get_display_sync_paused() {
-  return aurora::g_displaySyncPaused.load(std::memory_order_acquire) ||
-         aurora::g_displaySyncWaiting.load(std::memory_order_acquire);
+  // The headroom gate belongs to the interpolation rate controller; at the game's own rate only late images pause it.
+  const bool waiting = aurora_get_frame_interpolation_fps() != 0 &&
+                       aurora::g_displaySyncWaiting.load(std::memory_order_acquire);
+  return aurora::g_displaySyncPaused.load(std::memory_order_acquire) || waiting;
 }
 bool aurora_get_frame_interpolation_low_latency() {
 #ifdef AURORA_ENABLE_GX
@@ -2969,7 +3370,13 @@ uint32_t aurora_get_frame_interpolation_fps() {
   return 0;
 #endif
 }
-bool aurora_draw_dump_active() { return aurora::gfx::draw_dump::active() != nullptr; }
+// The runtime's console companion lines (one per draw and copy) only for a single-frame dump (F7). In a
+// burst (F5) they were 3.6 million lines for five bursts: a frame took a third of a second, and the
+// game aborted the frames it took for hung (the captures of 15/11/2026 show stale or black images).
+bool aurora_draw_dump_active() {
+  return aurora::gfx::draw_dump::active() != nullptr &&
+         aurora::gfx::draw_dump::g_saveTextures.load(std::memory_order_acquire);
+}
 void aurora_request_draw_dump(const char* basePath) {
   aurora::gfx::draw_dump::request(basePath != nullptr ? basePath : "draw_dump");
 }
@@ -3297,6 +3704,7 @@ void aurora_set_background_input(bool value) {
 void aurora_set_display_mode(AuroraDisplayMode mode) { aurora::window::set_display_mode(mode); }
 AuroraDisplayMode aurora_get_display_mode() { return aurora::window::get_display_mode(); }
 float aurora_get_display_refresh_rate() { return aurora::window::display_refresh_rate(); }
+float aurora_get_desktop_refresh_rate() { return aurora::window::desktop_refresh_rate(); }
 void aurora_set_metalfx_spatial(bool enabled) { aurora::g_metalfxRequested.store(enabled); }
 bool aurora_get_metalfx_spatial() { return aurora::g_metalfxRequested.load(); }
 bool aurora_is_metalfx_spatial_supported() { return aurora::g_metalfxSupported.load(); }

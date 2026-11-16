@@ -18,6 +18,10 @@ void VI_HLE_WaitForNextRetracePoll();
 // to the VI retrace boundary, pre-warm the next frame). paceToRetrace is true
 // for the GXCopyDisp producer path and false for retrace-context presents.
 void VI_HLE_PresentFrame(bool presentedXfb, bool paceToRetrace);
+// Game time per real time against the console (1 = the console's speed).
+float VI_HLE_GameSpeed();
+// 2 while the game runs at native 120 frames per second (fixed at start), else 1.
+int VI_HLE_NativeRateFactor();
 bool VI_HLE_IsAdvancingRetrace();
 void VI_HLE_SetXfbReady(uint32_t xfbAddr); // Called by GXCopyDisp to signal EFB→XFB copy
 // Prime: a decoded XFB copy may be presented before the next retrace

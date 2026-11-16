@@ -1988,6 +1988,21 @@ void merge_depth(const wgpu::CommandEncoder& encoder, const wgpu::Texture& depth
 static const char* g_lastApplySkip = "";
 const char* last_apply_skip() { return g_lastApplySkip; }
 
+// Draw dump line: the contact shadow lights of the frame being encoded (strength with its fade weight,
+// d = directional, distance from the camera in metres).
+std::string contact_lights_debug() {
+  std::lock_guard<std::mutex> lock(g_projMutex);
+  std::string out = std::to_string(g_sealedEngineCount) + ":";
+  char text[64];
+  for (uint32_t i = 0; i < g_sealedEngineCount && i < 4; ++i) {
+    const float* l = g_sealedEngine[i];
+    std::snprintf(text, sizeof(text), "%s%.3f%s@%.1f", i ? "," : "", l[4], l[5] > 0.5f ? "d" : "",
+                  std::sqrt(l[0] * l[0] + l[1] * l[1] + l[2] * l[2]));
+    out += text;
+  }
+  return out;
+}
+
 // Modern lighting: contact shadows and automatic exposure applied to the world snapshot. Returns the
 // view the rest of the application reads instead of the snapshot (the snapshot itself when neither
 // ran, so the SSAO, reflections and the write-back are then exactly as before). History and

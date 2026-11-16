@@ -41,10 +41,10 @@ DialogOutcome ShowFileDialog(std::filesystem::path& chosen) {
         dialog->GetOptions(&options);
         dialog->SetOptions(options | FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST | FOS_PATHMUSTEXIST | FOS_NOCHANGEDIR);
         const COMDLG_FILTERSPEC filters[] = {
-            {L"Wii disc images (*.iso;*.rvz;*.wbfs;*.gcz;*.wia;*.ciso)", L"*.iso;*.rvz;*.wbfs;*.gcz;*.wia;*.ciso"},
-            {L"All files (*.*)", L"*.*"},
+            // Only the accepted containers, and no "All files" entry: another format is refused anyway.
+            {L"Wii disc images (*.iso;*.rvz)", L"*.iso;*.rvz"},
         };
-        dialog->SetFileTypes(2, filters);
+        dialog->SetFileTypes(1, filters);
         dialog->SetTitle(kDialogTitle);
         const HRESULT shown = dialog->Show(nullptr);
         if (shown == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
@@ -74,7 +74,7 @@ DialogOutcome ShowLegacyDialog(std::filesystem::path& chosen) {
     OPENFILENAMEW dialog{};
     dialog.lStructSize = sizeof(dialog);
     dialog.lpstrTitle = kDialogTitle;
-    dialog.lpstrFilter = L"Wii disc images (*.iso;*.rvz;*.wbfs;*.gcz;*.wia;*.ciso)\0*.iso;*.rvz;*.wbfs;*.gcz;*.wia;*.ciso\0All files (*.*)\0*.*\0";
+    dialog.lpstrFilter = L"Wii disc images (*.iso;*.rvz)\0*.iso;*.rvz\0";
     dialog.lpstrFile = file;
     dialog.nMaxFile = static_cast<DWORD>(sizeof(file) / sizeof(file[0]));
     dialog.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR | OFN_EXPLORER;
@@ -126,13 +126,13 @@ bool ShowFileDialog(std::filesystem::path& chosen) {
         return false;
     }
     static const SDL_DialogFileFilter filters[] = {
-        {"Wii disc images (*.iso, *.rvz, *.wbfs, *.gcz, *.wia, *.ciso)", "iso;rvz;wbfs;gcz;wia;ciso"},
-        {"All files", "*"},
+        // Both cases: the GTK and KDE choosers match the pattern case-sensitively.
+        {"Wii disc images (*.iso, *.rvz)", "iso;rvz;ISO;RVZ"},
     };
     DialogState state;
     SDL_PropertiesID props = SDL_CreateProperties();
     SDL_SetPointerProperty(props, SDL_PROP_FILE_DIALOG_FILTERS_POINTER, const_cast<SDL_DialogFileFilter*>(filters));
-    SDL_SetNumberProperty(props, SDL_PROP_FILE_DIALOG_NFILTERS_NUMBER, 2);
+    SDL_SetNumberProperty(props, SDL_PROP_FILE_DIALOG_NFILTERS_NUMBER, 1);
     SDL_SetStringProperty(props, SDL_PROP_FILE_DIALOG_TITLE_STRING,
                           "Select your Metroid Prime 3: Corruption (USA) or Metroid Prime Trilogy (USA) disc image");
     SDL_SetBooleanProperty(props, SDL_PROP_FILE_DIALOG_MANY_BOOLEAN, false);
@@ -172,7 +172,7 @@ std::filesystem::path Prompt(std::string_view reason) {
 #if defined(_WIN32)
     if (!reason.empty()) {
         std::string text(reason);
-        text += "\n\nClick OK to choose the disc image (.iso, .rvz, .wbfs, .gcz, .wia or .ciso). "
+        text += "\n\nClick OK to choose the disc image (.iso or .rvz). "
                 "The path is saved in UserData/Config.toml once the image opens, so this is only asked once.";
         if (Message(text, MB_OKCANCEL | MB_ICONINFORMATION) != IDOK) {
             return {};
@@ -190,7 +190,9 @@ std::filesystem::path Prompt(std::string_view reason) {
         const PrimeDiscPath::Problem problem = PrimeDiscPath::Check(chosen, utf8);
         if (problem == PrimeDiscPath::Problem::None && chosen.is_absolute()) return chosen;
         RT_LOG(RT_TAG_DVD) << "[prime-iso-pick] refused dialog result=" << utf8 << std::endl;
-        const std::string text = "The dialog returned a location that is not a disc image file:\n  " + utf8 + "\n\n" +
+        const std::string text = std::string(problem == PrimeDiscPath::Problem::UnsupportedFormat
+                                                 ? "This file cannot be used as the disc image:\n  "
+                                                 : "The dialog returned a location that is not a disc image file:\n  ") + utf8 + "\n\n" +
                                  PrimeDiscPath::ProblemText(problem == PrimeDiscPath::Problem::None ? PrimeDiscPath::Problem::ShellLocation : problem) +
                                  "\n\nClick OK to choose again.";
         if (Message(text, MB_OKCANCEL | MB_ICONWARNING) != IDOK) {
@@ -200,7 +202,7 @@ std::filesystem::path Prompt(std::string_view reason) {
 #else
     if (!reason.empty()) {
         std::string text(reason);
-        text += "\n\nClick OK to choose the disc image (.iso, .rvz, .wbfs, .gcz, .wia or .ciso). "
+        text += "\n\nClick OK to choose the disc image (.iso or .rvz). "
                 "The path is saved in UserData/Config.toml once the image opens, so this is only asked once.";
         if (!Confirm(text, false)) return {};
     }
@@ -211,7 +213,9 @@ std::filesystem::path Prompt(std::string_view reason) {
         const PrimeDiscPath::Problem problem = PrimeDiscPath::Check(chosen, utf8);
         if (problem == PrimeDiscPath::Problem::None && chosen.is_absolute()) return chosen;
         RT_LOG(RT_TAG_DVD) << "[prime-iso-pick] refused dialog result=" << utf8 << std::endl;
-        const std::string text = "The dialog returned a location that is not a disc image file:\n  " + utf8 + "\n\n" +
+        const std::string text = std::string(problem == PrimeDiscPath::Problem::UnsupportedFormat
+                                                 ? "This file cannot be used as the disc image:\n  "
+                                                 : "The dialog returned a location that is not a disc image file:\n  ") + utf8 + "\n\n" +
                                  PrimeDiscPath::ProblemText(problem == PrimeDiscPath::Problem::None ? PrimeDiscPath::Problem::ShellLocation : problem) +
                                  "\n\nClick OK to choose again.";
         if (!Confirm(text, true)) return {};

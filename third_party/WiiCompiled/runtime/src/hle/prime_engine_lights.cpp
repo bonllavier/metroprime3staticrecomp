@@ -44,12 +44,16 @@ constexpr uint32_t kLightSize = 0x54;
 constexpr float kEpsilon = 1.1920929e-7f;      // 0x806830FC
 constexpr float kRangeThreshold = 0.05882353f;  // 0x80683104: 1/17 of the light's intensity
 
-// Game thread only from here on. The fades advance in steps of 1/60 s of the host clock, so they always
-// finish even on a path that does not run the world lights hook (photo mode, cinematics).
-uint32_t ClockFrame() {
+// Game thread only from here on. The fades advance with the host clock, so they always finish even on a
+// path that does not run the world lights hook (photo mode, cinematics). Each actor counts the game
+// frames since its own last step, rounded: a global grid of 16.667 ms cells gave 0, 1 or 2 steps per
+// game frame at random whenever the frame boundary sat next to a cell edge, which lasts for minutes
+// once the game follows a 120 Hz monitor (a frame every 16.666 ms).
+constexpr int64_t kStepMicros = 16667;
+int64_t NowMicros() {
     using namespace std::chrono;
     static const auto start = steady_clock::now();
-    return 1u + static_cast<uint32_t>(duration_cast<microseconds>(steady_clock::now() - start).count() / 16667);
+    return duration_cast<microseconds>(steady_clock::now() - start).count();
 }
 
 bool Valid(uint32_t address, size_t length = 4) { return address != 0 && Memory::Contains(address, length); }
@@ -111,13 +115,15 @@ struct FadeLight {
     bool present = false;
 };
 struct FadeState {
-    uint32_t lastFrame = 0;
+    int64_t lastMicros = -1;  // when the fade last stepped; -1 = never
     std::array<FadeLight, 8> lights{};
     uint32_t count = 0;
     float ambient[4]{};
 };
 std::unordered_map<uint32_t, FadeState> g_fadeStates;
-uint32_t g_fadeSweepFrame = 0;
+int64_t g_fadeSweepMicros = 0;
+// How far a light may move in one game frame and still be the same light (metres).
+constexpr float kMovedLightReach = 6.0f;
 
 struct Saved {
     uint32_t actorLights = 0;
@@ -148,7 +154,8 @@ float RecordFloat(const std::array<uint8_t, kLightSize>& record, size_t offset) 
     return value;
 }
 
-// Once per game frame and actor: which area lights are new, which left, how far each has faded.
+// Every call: which area lights are new, which left. `steps` game frames (0 for a further call in the
+// same frame) move each one's weight.
 void Advance(FadeState& state, uint32_t actorLights, uint32_t count, bool fresh, uint32_t steps) {
     const float step = kFadeStep * static_cast<float>(steps);
     const float follow = 1.0f - std::pow(0.85f, static_cast<float>(steps));
@@ -160,22 +167,54 @@ void Advance(FadeState& state, uint32_t actorLights, uint32_t count, bool fresh,
         FadeLight* match = nullptr;
         for (uint32_t k = 0; k < state.count && match == nullptr; ++k) {
             const FadeLight& f = state.lights[k];
-            if (std::abs(f.pos[0] - p[0]) < 1e-3f && std::abs(f.pos[1] - p[1]) < 1e-3f && std::abs(f.pos[2] - p[2]) < 1e-3f)
+            if (!f.present && std::abs(f.pos[0] - p[0]) < 1e-3f && std::abs(f.pos[1] - p[1]) < 1e-3f &&
+                std::abs(f.pos[2] - p[2]) < 1e-3f)
                 match = &state.lights[k];
+        }
+        if (match == nullptr) {
+            // A light that moves (it follows a ship or a platform) is the same light, not one that left
+            // and one that arrived: taken for new every frame, it never got past the first tenth of its
+            // brightness and the actor stayed dark while it moved. The nearest light of the same type
+            // not matched yet, within reach, keeps its weight.
+            const float reach = kMovedLightReach * static_cast<float>(std::max(steps, 1u));
+            float bestD = reach * reach;
+            for (uint32_t k = 0; k < state.count; ++k) {
+                FadeLight& f = state.lights[k];
+                if (f.present || std::memcmp(f.record.data() + 0x20, current[i].data() + 0x20, 4) != 0) continue;
+                const float dx = f.pos[0] - p[0], dy = f.pos[1] - p[1], dz = f.pos[2] - p[2];
+                const float d = dx * dx + dy * dy + dz * dz;
+                if (d < bestD) {
+                    bestD = d;
+                    match = &f;
+                }
+            }
+            if (match != nullptr) std::memcpy(match->pos, p, sizeof(p));
         }
         if (match == nullptr) {
             if (state.count < state.lights.size()) {
                 match = &state.lights[state.count++];
-            } else {  // full: replace the most faded light
-                match = &state.lights[0];
-                for (uint32_t k = 1; k < state.count; ++k)
-                    if (state.lights[k].weight < match->weight) match = &state.lights[k];
+            } else {  // full: replace the most faded light that is not in this frame's list
+                for (uint32_t k = 0; k < state.count; ++k) {
+                    FadeLight& f = state.lights[k];
+                    if (!f.present && (match == nullptr || f.weight < match->weight)) match = &f;
+                }
+                if (match == nullptr) continue;  // cannot happen: 4 lights at most, 8 entries
             }
             match->weight = fresh ? 1.0f : 0.0f;
             std::memcpy(match->pos, p, sizeof(p));
         }
         match->record = current[i];
         match->present = true;
+    }
+    // A light that left fades out in a free GX slot of the actor. With no slot for every one of them
+    // (the engine gave the actor four lights and changed some), a cross-fade is not possible: the new
+    // lights would rise from zero with the old ones already gone, a dip in brightness at every change
+    // (an actor crossing a room changes lights all the time: it flickered darker). The engine's own
+    // behaviour is kept then: the lights switch at once.
+    uint32_t leaving = 0;
+    for (uint32_t k = 0; k < state.count; ++k) leaving += !state.lights[k].present && state.lights[k].weight > 0.0f;
+    if (leaving > 4u - std::min(count, 4u)) {
+        for (uint32_t k = 0; k < state.count; ++k) state.lights[k].weight = state.lights[k].present ? 1.0f : 0.0f;
     }
     // Fade, and drop the lights that have gone.
     uint32_t kept = 0;
@@ -236,19 +275,29 @@ extern "C" uint32_t PrimeActorLightsBegin(uint32_t actorLights) {
         return 0;
     const uint32_t count = Memory::Read32(actorLights);
     if (count > 4) return 0;
-    const uint32_t frame = ClockFrame();
+    // A block this hook has already rewritten (a nested call before its restore) holds faded colours:
+    // it is not a list to compare against.
+    for (uint32_t d = 0; d < g_savedDepth; ++d)
+        if (g_savedStack[d].actorLights == actorLights) return 0;
+    const int64_t now = NowMicros();
     // Forget actors that have not been lit for two seconds (before taking a reference into the map).
-    if (frame - g_fadeSweepFrame > 600) {
-        g_fadeSweepFrame = frame;
+    if (now - g_fadeSweepMicros > 10'000'000) {
+        g_fadeSweepMicros = now;
         for (auto it = g_fadeStates.begin(); it != g_fadeStates.end();)
-            it = frame - it->second.lastFrame > 120 ? g_fadeStates.erase(it) : std::next(it);
+            it = now - it->second.lastMicros > 2'000'000 ? g_fadeStates.erase(it) : std::next(it);
     }
     auto& state = g_fadeStates[actorLights];
-    if (state.lastFrame != frame) {
+    {
+        // Game frames since this actor's last step, rounded to the nearest: 0 for another call in the
+        // same frame (the list is still compared, a light that is new then starts at zero).
+        const bool first = state.lastMicros < 0;
+        const uint32_t steps = first ? 1u : static_cast<uint32_t>(std::min<int64_t>(
+                                                (now - state.lastMicros + kStepMicros / 2) / kStepMicros, 1000));
         // An actor not lit in the last frames starts at full weight (no fade-in when it appears).
-        const bool fresh = state.lastFrame == 0 || frame - state.lastFrame > 3;
-        Advance(state, actorLights, count, fresh, fresh ? 1u : frame - state.lastFrame);
-        state.lastFrame = frame;
+        const bool fresh = first || steps > 3;
+        if (fresh) state.count = 0;  // nothing left to fade out from that long ago
+        Advance(state, actorLights, count, fresh, fresh ? 1u : steps);
+        if (first || steps > 0) state.lastMicros = now;
     }
     bool changes = false;
     for (uint32_t k = 0; k < state.count; ++k) changes = changes || state.lights[k].weight < 1.0f || !state.lights[k].present;
@@ -269,7 +318,7 @@ extern "C" uint32_t PrimeActorLightsBegin(uint32_t actorLights) {
         const FadeLight& f = state.lights[k];
         if (f.present) {
             for (uint32_t i = 0; i < count; ++i) {
-                if (std::memcmp(saved.records[i].data(), f.record.data(), 12) != 0) continue;
+                if (saved.records[i] != f.record) continue;  // the whole record: two lights can share a place
                 if (f.weight < 1.0f) Memory::Write32(actorLights + 4 + i * kLightSize + 0x1C, ScaledColor(f.record, f.weight));
                 break;
             }

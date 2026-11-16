@@ -308,6 +308,166 @@ Descartado por el camino, con pruebas del usuario y capturas F4 (la tabla de int
 
 Verificación: el usuario confirmó a 120 en la nave que el parpadeo desapareció. Replay `hangar_i120_off` de 4 minutos en Linux con el build final: sin errores, 114 de media, y las bajadas a 60 son las sondas del controlador de tasa, que ya aparecían antes.
 
+## A 60 sin interpolación: el contador marca 60 y a ratos se ven menos imágenes (14 de noviembre de 2026)
+
+Informe del usuario: con la interpolación apagada, a veces siente que pasan menos imágenes aunque el contador marque 60, incluso dentro de una misma sala, que unas veces va fluida y otras no.
+
+**Qué mide el contador.** «FPS» cuenta las llamadas a `Present` que terminan bien en el último segundo (`record_successful_present`, `snapshot_present_timing` en `aurora.cpp`). Es lo que el juego entrega, no lo que el monitor enseña. Con la superficie en `Mailbox` (Vulkan) o `Immediate`, `Present` nunca espera al monitor, así que el contador marca 60 aunque el monitor repita una imagen y no llegue a enseñar la siguiente.
+
+**Por qué se pierden imágenes.** Es la misma causa que a 120 (sección «Imágenes sincronizadas con el refresco del monitor»), que solo se había corregido con la interpolación activa:
+
+- Sin interpolación no hay calendario: Prime presenta desde su retrazado con `aurora_set_present_schedule(0, 0)` y cada imagen sale en cuanto termina de codificarse.
+- Ese instante cae en un punto cualquiera del refresco del monitor, y el punto se mueve: el reloj VI va a 60,004 Hz (`[prime-vi-cadence]`) contra los 60,000 del modo exclusivo (`Exclusive fullscreen requested at 1920x1080 60.000 Hz`), y además cada escena tarda distinto en dibujarse.
+- Mientras las entregas caen cerca de un refresco, un milisegundo decide: dos imágenes en el mismo refresco (la primera no se ve nunca) y ninguna en el siguiente (la anterior se ve 33 ms).
+- En un modo de 60 Hz el fallo es más visible que a 120: la imagen se pierde entera. A 60 imágenes sobre 120 Hz solo cambia el reparto (8 y 25 ms en vez de 16 y 16).
+
+Simulación con los relojes medidos (`RenderPolicyRefreshAlignment.SixtyImagesOnASixtyHzMonitorWithoutInterpolation`, 10 minutos, imágenes listas ±2 ms): sin alinear, 1.638 repeticiones y 1.641 imágenes nunca mostradas, concentradas en los tramos en que los dos relojes se cruzan (uno cada ~4 minutos); alineado, 2 (las que obliga la diferencia de relojes).
+
+**Qué se hizo.**
+
+- Opción nueva `[video] display_sync` (F1 > Video, «Sync the 60 images to the monitor's refresh»), apagada por defecto. Solo actúa con la interpolación apagada; la de la interpolación sigue siendo `frame_interpolation_display_sync`.
+- `vi.cpp` pasa a Aurora el reloj de fotogramas del juego (`aurora_set_present_frame_clock`: último retrazado y periodo VI) cuando presenta sin calendario. No cambia cuándo se sella ni se codifica nada.
+- `encode_sealed_frame` da a la imagen un tiempo estable (frontera VI más un desfase que sigue el lado tardío de cuándo están listas) y el presentador la lleva a la rejilla del monitor con el mismo `policy::align_to_refresh`. No pasa por la puerta de margen del control de ritmo, que es de la interpolación; la pausa por imágenes tardías (`note_alignment_lateness`) sí se aplica.
+- Fase propia (`policy::native_rate_align_tuning`): la imagen sale 7 ms antes del refresco siguiente en vez de al 20 % del intervalo. En un modo de 60 Hz es el 58 % del intervalo; a 120 Hz o más queda el 20 % de siempre.
+- El observador del refresco (`display_refresh.cpp`) corre también con la interpolación apagada si la opción está activa. Solo Windows; en Linux no se mide el refresco y la opción no hace nada.
+- Build de prueba: el contador añade una línea «Seen: N uneven: M (Hz)» con lo que el monitor enseñó en el último segundo, y el registro escribe `[display-cadence-est]` cada 10 s (`presents`, `never_seen`, `held_refreshes`, `early`, `near_refresh_edge`, `mean_phase`). Es una estimación: compara el instante de cada `Present` con el refresco medido (`policy::note_presented_image`); una imagen que la GPU termina después de su `Present` cuenta un refresco antes de lo real. La lectura exacta de DXGI (`WII_COMPILED_QA_DISPLAY_CADENCE`) solo existe con Direct3D 12.
+
+**Coste.** La imagen espera a su punto del refresco: en la simulación, 11,7 ms de media desde que está lista, más los 7 ms hasta el refresco. Sin alinear la espera media hasta el refresco es de 8,3 ms, así que la opción añade unos 10 ms de latencia de media a 60 Hz (menos en un monitor de 120 Hz). Por eso queda apagada por defecto.
+
+**Estado (14/11/2026).** Compilado en el build de prueba de Windows (`Corruption_3 PC.exe`; el anterior queda como `Corruption_3 PC.before_display_sync.exe`). Mismas DLL importadas. `render_policy_tests`: 63 de 63. Sin probar en pantalla: no se lanzó ninguna repetición QA porque el usuario estaba en el PC; la prueba es suya, con la línea «Seen» del contador. Trilogy no está regenerado (`make_title_tree.py`). Al añadir a `gx_test_stubs.cpp` los dos símbolos que impedían enlazar `gx_fifo_tests` (`ssao_effects_active`, `g_smoothIndirect`) aparecieron tres fallos anteriores a este cambio y ajenos a él: `ShaderGolden.GeneratorOutputIsStableForEveryShippedRecipe` (21 shaders), `UberShader.GoldenHashesOfEveryUberKey` y `GXFifoTest.CopyTexClearDoesNotOverlapFractionalLeftEdge`. No se regrabaron los golden.
+
+**Alternativas.**
+
+- V-Sync (`[video] vsync`, Fifo): también quita las repeticiones, con una cola de imágenes y más latencia.
+- Atar el reloj VI al refresco del monitor (variar el periodo VI unas décimas por mil para que el retrazado caiga siempre en la misma fase): quitaría las repeticiones sin latencia añadida, pero cambia la velocidad del juego (60,004 → 60,000 Hz, o 59,94 en esos modos) y toca el audio. Va contra la política de fotogramas tal como está escrita; no se hizo y necesita una decisión del usuario.
+- En exclusiva, mantener los 120 Hz del monitor en lugar de pedir el modo de 60 Hz: cada imagen ocuparía dos refrescos y un fallo de fase sería un reparto desigual, no una imagen perdida. No se cambió.
+
+## Velocidad de la consola y reloj del juego enganchado al monitor (14 de noviembre de 2026)
+
+Decisión del usuario: el juego debe ir a la velocidad con la que se fabricó y, además, ajustarse al refresco del monitor de cada jugador, sin imágenes retrasadas ni adelantadas. Sustituye la redacción anterior de la política de 60 Hz (`AGENTS.md`).
+
+**Lo que se comprobó antes de tocar nada.**
+
+- El bucle del juego (`0x802EBAF4`) mide el tiempo con `OSGetTime` (reloj del PC), pero ejecuta siempre al menos un paso de 1/60 s (`lbl_806795F8`) por vuelta y pone el acumulador a cero cuando su cambio en dos fotogramas es menor de 50 µs (`lbl_806825A8`). En la práctica es un paso de lógica por retrazado: la velocidad del juego es la del VI.
+- La consola NTSC genera el retrazado a 60000/1001 Hz (59,94). El port usaba 16.666 µs (60,0024 Hz, medido 60,003-60,004 en `[prime-vi-cadence]`): un 0,1 % más rápido que la consola.
+- El audio no depende del VI: el DMA de audio corre con el temporizador del PC y ya sigue a la tarjeta de sonido hasta ±0,1 % (`AiClockFollower`, `audio.cpp`). El enganche no cambia tono ni procesado; solo la relación entre imagen y sonido, que pasa a ser la de la consola.
+- RetroAchievements cuenta un fotograma por retrazado (`PrimeAchievements::Frame` en `AdvanceRetrace`): nada cambia.
+
+**Qué se hizo.**
+
+- `vi.cpp`: el periodo VI base es 16.683.333 ns (59,94 Hz; PAL 20 ms) y se guarda en nanosegundos. En cada retrazado pide el periodo siguiente a `aurora_next_frame_period(frontera, nominal)`.
+- `policy::next_frame_period` (`render_policy.hpp`): si un número entero de refrescos del monitor está a menos del 0,15 % del fotograma de la consola (`kFrameLockTolerance`), el fotograma dura exactamente esos refrescos y su frontera se lleva, como mucho un 0,2 % por fotograma (`kFrameLockSlew`, 2 ms por segundo), a un punto fijo antes de un refresco. Fuera de la tolerancia (75, 144, 165 Hz), con refresco variable o sin medición, queda el periodo de la consola.
+- El punto fijo: la frontera cae antes del refresco lo que tarda una imagen en llegar a su `Present` tras su frontera más 7 ms. Cómo se mide ese tiempo y qué pasa con las imágenes que llegan antes o después se rehízo el 15 de noviembre: ver «Doble comprobación» más abajo. Mientras el reloj está enganchado, la opción `display_sync` no retiene nada.
+- Con interpolación: el calendario de las imágenes intercaladas ya cuelga del VI, así que 2 imágenes por fotograma sobre 120 Hz encajan exactas y la sincronía de la interpolación deja de tener que saltar un refresco cada cierto tiempo.
+- Pantalla completa exclusiva (`window.cpp`): pide el modo de la familia de la consola (59,94 Hz, o 119,88 con la interpolación a 120). Si el monitor lo ofrece, la velocidad es exacta y cada imagen tiene su refresco; si no, SDL da el más cercano (60 o 120).
+- Opción `[video] refresh_lock` (F1 > Video, «Follow the monitor's refresh»), activada por defecto. F1 dice a cuántos fotogramas por segundo va y la diferencia con la consola. `[refresh-lock]` en el registro al enganchar y al soltar.
+
+**La misma velocidad en cualquier monitor y modo de ventana (paso de lógica proporcional).** Petición del usuario tras ver +0,10 % en ventana (escritorio a 120,003 Hz) y 0 % en exclusiva (59,94 Hz): la velocidad no puede depender del modo de ventana, también por RetroAchievements.
+
+- El motor recibe la duración del paso como parámetro: `fn_802EA018` carga en cada vuelta `lbl_806795F8` desde `lbl_8068258C` (1/60 s) o `lbl_80682588` (0,02 s, PAL), y el bucle se lo pasa a todas las actualizaciones. El código traducido lee esa constante de la memoria del juego, y solo esa función la lee.
+- `ApplyPrimeLogicStep` (`vi.cpp`) escribe en `0x8068258C`, en cada retrazado, `(1/60) × periodo del fotograma / periodo de la consola`. Con el fotograma siguiendo a un monitor de 60,000 Hz son 60 pasos de 0,016650 s por segundo: un segundo de juego tarda 1,001 s reales, como en la consola. Sin enganche el paso vuelve a ser 1/60 exacto.
+- Solo se escribe si el valor que hay es el del juego (entre 0,99 y 1,01 de 1/60) y el periodo está a menos del 0,5 % del de la consola. Solo RM3E01 (Trilogy tiene otra dirección: pendiente).
+- El acumulador del bucle queda igual que en la consola: cada fotograma real dura 16,7 µs más que el paso.
+
+| Monitor (modo en uso) | Enganchado | Imágenes por segundo | Velocidad del juego frente a la consola |
+|---|---|---|---|
+| 59,94 / 119,88 / 239,76 Hz | Sí | 59,94 | Exacta, paso de 1/60 s |
+| 60,000 / 120,000 / 240,000 Hz | Sí | 60,00 | Exacta, paso un 0,1 % más corto |
+| 75, 144, 165 Hz, refresco variable, Linux | No | 59,94 | Exacta, con el reparto desigual propio de esas tasas |
+| Opción apagada | No | 59,94 | Exacta; en un monitor de 60,000 Hz se repite una imagen cada ~17 s |
+
+Lo que no se compensa: el código que cuenta fotogramas en lugar de usar el paso. En los datos del DOL hay 12 constantes 1/60 y 36 constantes 60,0 (más las de los RSO); las que sean contadores por fotograma, y los contadores de fotogramas de RetroAchievements, van al ritmo de las imágenes: un 0,1 % más rápidos en un monitor de 60,000 Hz. La versión PAL del propio juego tiene esa misma diferencia, con un 20 % en lugar de un 0,1 %. Con un paso distinto de 1/60 los resultados en coma flotante no son idénticos bit a bit a los de la consola.
+
+**Pruebas.** `RenderPolicyFrameLock.*`: 10 minutos simulados contra 60,000, 59,940, 120,002 y 239,998 Hz con la medición del refresco a ±30 µs y las imágenes listas ±2 ms: ninguna imagen perdida ni repetida de más tras los primeros 10 s; monitores que no son múltiplo, sin enganche. Sin probar en pantalla.
+
+**Riesgos y pendientes.**
+
+- Toca la generación del retrazado, de la que dependen el ritmo del juego y el vigilante de cuelgues. Si algo va mal, `refresh_lock = false` deja el reloj propio (ya a 59,94).
+- Pasos dobles de lógica: medido el 15 de noviembre, no los hay (un paso por retrazado en 480 s de partida). Ver «Doble comprobación».
+- Linux y Trilogy: el periodo base de 59,94 les llega al recompilar; el enganche solo existe en Windows. Trilogy no está regenerado.
+- Las repeticiones QA van por número de fotograma y no cambian; sus medidas por tiempo de pared son un 0,1 % más largas.
+
+## Doble comprobación de velocidad, reparto y latencia (15 de noviembre de 2026)
+
+Petición del usuario antes de publicar la 0.1.7: confirmar que el juego va a la velocidad real en todos los modos de ventana, de la forma más eficiente y sin latencia, y que la base sirve también para los 120 nativos.
+
+**Velocidad: confirmada.**
+
+- Bucle `0x802EBAF4` (Ghidra) y constantes del DOL original: paso `lbl_8068258C` = 1/60 s, umbral `lbl_806825A8` = 50 µs, valor de reinicio `lbl_80682594` = 0. En la consola el acumulador gana 16,7 µs por fotograma, 33 µs en dos: por debajo del umbral, así que se pone a cero cada fotograma y nunca hay un paso de más. Un segundo de juego tarda 1,001 s.
+- En el port, con la sonda de funciones: las funciones que corren una vez por paso dan 1,00000 llamadas por retrazado en 96 ventanas de 5 s (480 s de partida del usuario, ventana, escritorio a 120,004 Hz). Sin pasos dobles.
+- Recorrido `hangar` reproducido en los tres modos (misma tarde, mismo build):
+
+| Modo | Monitor medido | Fotogramas por segundo | Paso de lógica | Velocidad frente a la consola |
+|---|---|---|---|---|
+| Ventana | 119,997 Hz, 2 refrescos por fotograma | 59,998 | × 0,99903 | Igual |
+| Sin bordes | 120,006 Hz, 2 refrescos por fotograma | 60,003 | × 0,99895 | Igual |
+| Exclusiva | 59,941 Hz, 1 refresco por fotograma | 59,941 | 1/60 s | Igual |
+| 120 nativos, sin bordes | 119,999 Hz, 1 refresco por fotograma | 119,999 | (1/120 s) × 0,9990 | Igual |
+
+La velocidad es el producto de las dos columnas centrales y sale la de la consola en todas las filas: el paso se escribe en cada retrazado en proporción al periodo, también mientras el reloj se mueve.
+
+**Reparto de las imágenes: tenía dos fallos.** En esa partida del usuario, con el contador en 60, el 19 % de las imágenes no ocupaba su sitio en el refresco (44.325 imágenes: 449 nunca vistas, 4.400 refrescos de más, 3.669 mostradas un refresco antes; 2 ventanas limpias de 74). En la reproducción del recorrido, el 12,8 %.
+
+1. *El reloj perseguía a los fotogramas lentos.* El tiempo «imagen lista» subía de golpe con cada fotograma lento y bajaba despacio; la frontera solo puede moverse un 0,2 % por fotograma, así que el reloj iba casi siempre al límite de corrección (108 de 150 muestras del paso en ±0,2 %).
+2. *Las imágenes que estaban listas antes de lo habitual salían un refresco antes.* En un monitor de 120 Hz con 60 fotogramas el margen de 7 ms dejaba 1,3 ms hasta el refresco anterior. La imagen adelantada se veía un refresco antes y la siguiente parecía tardía.
+
+**Qué se cambió** (`render_policy.hpp`, `aurora.cpp`, `vi.cpp`):
+
+- La medida se toma en la llamada a `Present` (`note_frame_lock_present`), no al sellar el fotograma.
+- `policy::frame_lock_not_before`: una imagen no se presenta antes de que empiece el intervalo de su propio refresco. Espera con la copia ya enviada a la GPU. No añade latencia: se ve en el mismo refresco que le tocaba. En un monitor de 60 Hz casi nunca actúa; en uno de 120 retiene más de la mitad de las imágenes entre 0,2 y 6 ms.
+- `policy::note_frame_ready`: el adelanto del reloj sigue el lado tardío de los últimos 512 fotogramas (cuantil 0,99), porque llegar antes ya no cuesta nada y llegar tarde cuesta un refresco. Con media y desviación quedaba un 3-5 % de imágenes tardías.
+- Límites para no pagarlo con respuesta: el adelanto no pasa de medio fotograma más allá de donde está la mayoría (cuantil 0,85), y el total (`policy::frame_lock_lead`) no pasa de un fotograma. La consola muestra cada fotograma durante el periodo siguiente a su retrazado; el port no lo muestra más tarde de lo que eso habría terminado.
+- Los fotogramas que el juego termina después de su frontera (retrazado entregado con más de 1,5 ms de retraso) se presentan en cuanto están, pero no cuentan para el adelanto.
+
+**Por qué varía tanto el tiempo hasta `Present`.** No es el juego: menos del 0,4 % de los fotogramas se terminó tarde. Es el trabajo que le queda al port cuando llega el retrazado: el hilo decodificador de GX aún tiene comandos del fotograma por procesar y el retrazado espera a que acabe (`[prime-present-slow]`: retrazado entregado a 0,1-0,3 ms, entrada a la presentación a 8-16 ms). En el hangar del PC de pruebas (i7-4790, build de prueba con traza de rendimiento): 4-5 ms para la mayoría y 12-20 ms para uno de cada quince; en menús, 2-3 ms. Reducir esa cola es trabajo de rendimiento aparte y bajaría la latencia en escenas pesadas.
+
+**Resultados** (recorrido `hangar`, 24.000 fotogramas por pasada, estimación del lado de la CPU `[display-cadence-est]`; las pasadas de la tarde tuvieron el PC más cargado que las primeras):
+
+| Versión | Ventana | Sin bordes | Exclusiva |
+|---|---|---|---|
+| Antes | 12,8 % fuera de sitio | sin medir | sin medir |
+| Reloj en reposo + retención (media + 2 desviaciones) | 4,7 % | 3,8 % | 2,6 % |
+| Cuantil 0,99 sin límites | 0,9 % | 1,0 % | 0,5 % |
+| Cuantil 0,99, medio fotograma como máximo | 2,7 % | 2,8 % | 1,8 % |
+| Final: además, adelanto total de un fotograma como máximo | 1,7 % | sin medir | 2,1 % |
+
+Las dos últimas filas no son comparables al detalle entre sí ni con las anteriores: entre pasadas cambió la carga del PC (de 2 a 16 ventanas de 5 s por debajo de 59 FPS en el mismo recorrido), y la pasada final en exclusiva perdió el modo de pantalla dos veces a mitad (55,9 FPS de media). Lo que sí se sostiene: del 12,8 % inicial a un 1-3 %, con el adelanto acotado.
+
+Con el PC al límite el adelanto sin límites llegaba a 23,7 ms (16,7 + 7) en las escenas pesadas; de ahí los límites. En las ventanas ligeras (menús, pasillos) todas las versiones dan 0 imágenes fuera de sitio.
+
+**Latencia.** Con el reloj enganchado, desde el retrazado hasta el refresco que muestra la imagen pasan `adelanto` ms: 9,5-10 en escenas ligeras (2,5-3 de preparación + 7 de margen) y hasta 16,7 en las pesadas. Sin enganche la imagen sale cuando está y espera al refresco que toque: de media medio refresco (8,3 ms a 60 Hz, 4,2 a 120) más su preparación, con el reparto desigual. V-Sync no interviene ni hace falta.
+
+**Lo que no se puede medir desde aquí.** Cuánto tarda la GPU en terminar la imagen después de `Present`. Los 7 ms de margen (`kNativeAlignMarginNanos`) lo cubren en una GPU que dibuja el fotograma en menos de eso; con ajustes que le cuesten más, la imagen pasa al refresco siguiente, de forma estable salvo que su tiempo quede justo en el borde. Las consultas de tiempo de WebGPU cambiarían las características del dispositivo y con ellas la caché de shaders; PresentMon necesita permisos de administrador. La línea «Seen/uneven» del build de prueba tiene la misma limitación.
+
+**120 nativos.** El mismo código: un refresco por fotograma en un monitor de 120 Hz, adelanto limitado a 8,3 ms. Comprobado que engancha (119,999 fotogramas/s) y mantiene la velocidad. En el PC de pruebas el juego no llega a 120 en el hangar (89 de media) y el 21 % de las imágenes pierde su refresco: es límite de la máquina, no del reloj. La reproducción no sirve para juzgar más, porque las entradas grabadas van por fotograma.
+
+**Pruebas.** `RenderPolicyFrameLock.*` (69 pruebas en total en `render_policy_tests`, todas pasan): imágenes que llegan pronto esperan a su refresco a 60, 120 y 240 Hz sin ninguna fuera de sitio; el adelanto cubre un fotograma lento de cada quince; el estimador sube con los primeros fotogramas tardíos, baja al salir de la escena y respeta los límites.
+
+**Diagnóstico (solo build de prueba).** Cada 10 s: `[refresh-lock-est]` (reloj en reposo o persiguiendo, adelanto, imágenes retenidas, las que no llegaron a su refresco), `[refresh-lock-ready]` (percentiles del tiempo hasta `Present`) y, las primeras 400 veces, `[prime-present-slow]` y `[refresh-lock-slow]`. Para comparar: `WII_COMPILED_QA_LOCK_QUANTILE`, `WII_COMPILED_QA_LOCK_MARGIN_MS`, `WII_COMPILED_QA_NO_RATE_PROBE=1` (apaga la sonda de funciones, que frena el build de prueba) y `qa_replay.ps1 -Video "display_mode=exclusive"`.
+
+## 120 nativos sin interpolación: evaluación y prueba privada (14 de noviembre de 2026)
+
+Pregunta del usuario: ya que el paso de lógica se puede cambiar (lo hace la versión PAL), ¿conviene desbloquear 120 FPS reales, con la versión PAL como referencia?
+
+Qué dice el código:
+
+- No hace falta el disco PAL: el DOL de RM3E01 ya lleva el camino de 50 Hz. `fn_802EA018` elige el paso 0,02 s o 1/60 s según una bandera (`lbl_8067DF01`), y esa bandera solo se consulta en 11 sitios del DOL. Todo lo demás recibe el paso como parámetro. Es buena señal: el motor es en su mayor parte independiente de la tasa.
+- Lo que no usa el paso (contadores por fotograma; hay 12 constantes 1/60 y 36 constantes 60,0 en los datos del DOL, más las de los 74 RSO) va un 17 % lento en PAL 50 y nadie lo corrigió. A 120 iría al doble: eso sí se nota y habría que encontrarlo y corregirlo caso por caso, sin código fuente.
+- Coste: dos pasos de lógica y dos dibujados por fotograma de consola. En el i7-4790 del usuario el hilo del juego ya está ocupado el 85 % a 60 en las salas pesadas (F8 del 7 de noviembre), así que ahí no puede sostener 120 nativos; el bucle del juego haría entonces dos pasos por imagen (60 imágenes con más carga que hoy).
+- RetroAchievements cuenta fotogramas a 60 por segundo: habría que evaluarlo una vez por fotograma de consola (hecho en la prueba) y aun así los logros que dependan de contadores del juego por fotograma cambiarían.
+
+**Primera prueba del usuario (14/11/2026, 20 min).** Cámara, acciones y animaciones correctas a 120 reales; los menús y los elementos del casco van mucho más rápido. Los seis llamadores de `CGuiFrame::Update` (`0x80435CE0`) le pasan el tiempo que reciben, sin un 1/60 propio, así que lo acelerado está más abajo (animaciones de widgets por fotograma) o en otro origen del tiempo. Sonda privada `[rate-probe]` (`hle/prime_rate_probe.cpp`, lista `config/RM3E01_00/qa_rate_probe.json`: 241 funciones que leen constantes 30/60/1/30/1/60, la cadena de `CGuiFrame::Update` y los métodos con Gui/Hud/Pause/Scan/Visor/Menu en el nombre): llamadas por segundo y por retrazado y el f1 que reciben, cada 5 s. Se compara la misma pantalla a 60 y a 120 nativos. Temporal: se quita al terminar este trabajo.
+
+**Primera ronda de la sonda (14/11/2026, 60: 91 ventanas de 5 s; 120 nativos: 292).** A 120 las imágenes van a 113 por segundo de mediana con los retrazados a 120,00 y el paso a 0,008308 s. Las actualizaciones con tiempo reciben la mitad por llamada y se llaman una vez por paso: `CGuiFrame::Update` (0,01665 → 0,00833), los cuatro llamadores medidos (HUD `0x801C84A4`/`0x801C2E0C`, `0x80021B98`, `0x800D1FDC`), `CGuiCursor::Update`, `CGuiLinkHighlight::Update`, `CWebInterface::UpdateWebInterface`, `CAutoMapper::Update`, `CSamusHud::DisplayHudMemo` y el bucle de subpasos `0x802734D0`/`0x8027351C`. El tiempo de la interfaz es correcto. Lo que se acelera avanza al dibujar: `CGuiFrame::Draw` (`0x80435AE0`, 3 veces por imagen en los dos modos) recorre las listas de widgets y llama a su dibujo por la tabla virtual (`+0x24`), y esos widgets no tienen símbolo. Segunda ronda: todas las funciones del rango de la biblioteca de interfaz (`0x80430000`-`0x80450000`, 491) añadidas a la sonda.
+
+**Reglas del usuario (14/11/2026) para los 120 nativos.**
+
+- La velocidad del juego original en todos los casos, también con bajones de rendimiento, en la medida de lo posible. El bucle del juego ya lo hace (acumula el tiempo real y ejecuta los pasos que caben); lo que vaya por fotograma dibujado hay que corregirlo para que tampoco dependa de las imágenes que dé el PC.
+- RetroAchievements solo con la lógica a la tasa de la consola (59,94 pasos por segundo: 60 normal, con o sin interpolación). Nunca a 120 nativos: `vi.cpp` no evalúa `PrimeAchievements::Frame` con `NativeRateFactor() != 1`. Cuando los 120 nativos sean una opción, F1 debe desactivar los logros mientras esté activa, como hace con el FOV.
+- La interpolación se mantiene. Cuando exista la opción, F1 explicará: 120 nativos para PCs que sostienen 120 imágenes reales (movimiento y respuesta reales a 120, sin logros); interpolados para PCs que no llegan (lógica a 59,94, logros disponibles, algo más de latencia).
+
+Prueba privada, solo build de prueba: `recomp/qa/try_native_120.ps1` (variable `WII_COMPILED_QA_NATIVE_120=1`). El periodo VI pasa a la mitad (119,88 Hz) y el paso a 1/120 s con los mismos mecanismos del enganche; RetroAchievements se evalúa en retrazados alternos. No ajusta nada del juego. Sirve para ver qué va al doble de velocidad y cuánto aguanta el PC. Interpolación apagada y ventana o sin bordes en un escritorio de 120 Hz.
+
 ## Lo que queda por comprobar
 
 El usuario tiene un monitor de 120 Hz desde el 7 de noviembre y ese mismo día quitó el límite de 60 del driver (`[frame-limit] ... off`): ya juega a 120 en pantalla. Sigue pendiente:
@@ -315,6 +475,7 @@ El usuario tiene un monitor de 120 Hz desde el 7 de noviembre y ese mismo día q
 - La fluidez real y el rasgado a 120, 144 o más. La cadencia está probada por tests y por el presentador simulado, no a ojo.
 - La latencia percibida al apuntar.
 - Pantalla completa exclusiva a más de 60 Hz. En ese modo, con interpolación, se quita el V-Sync forzado porque `Mailbox` ya evita el rasgado; está sin ejercitar.
+  - 14 de noviembre de 2026, informe del usuario (v0.1.6, Vulkan, monitor de 120 Hz): en exclusiva se quedaba a 60 y en ventana subía a 120. Causa: el juego arrancó con la interpolación apagada, así que pidió el modo exclusivo a 60 Hz (`Exclusive fullscreen requested at 1920x1080 60.000 Hz` en el log). Al elegir 120 en F1, `MonitorStopsAt60` leía el refresco del modo actual (los 60 Hz del exclusivo), dejaba el objetivo en 0 y el modo exclusivo se volvía a pedir a 60: bloqueo circular. Corregido: en exclusiva, las decisiones (apagar en monitor de 60, «Match monitor», aviso de F1) usan el modo de escritorio del monitor (`aurora_get_desktop_refresh_rate`), y si el objetivo cambia al comprobarse cada segundo se reaplica el modo exclusivo. Compilado; pendiente de prueba del usuario.
 - Que `Present` ya no bloquee sin el limitador (con `Mailbox` no debería esperar al refresco).
 - Sincronía con el refresco (8 de noviembre): la impresión del usuario jugando a 120; con G-Sync/FreeSync activo (debería apagarse sola por irregular, sin probar); en pantalla completa exclusiva y con monitores de 144 Hz o más; el coste de latencia (~4 ms) al apuntar. La puerta de margen podría ser demasiado estricta en un PC con carga de fondo.
 

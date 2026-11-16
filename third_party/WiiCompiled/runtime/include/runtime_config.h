@@ -51,6 +51,16 @@ struct RuntimeUserConfig {
     // refresh rate). Off by default, as before the option existed.
     std::optional<bool> vsync;
     std::optional<bool> frameInterpolationDisplaySync;
+    // [video] display_sync: with frame interpolation off, present each of the game's 60 images a fixed
+    // fraction into its own refresh of the monitor (aurora_set_display_sync). Off by default.
+    std::optional<bool> displaySync;
+    // [video] refresh_lock: the game's frame clock follows the monitor's refresh when a whole number of
+    // refreshes is within 0.15 % of the console's frame (aurora_set_refresh_lock). On by default.
+    std::optional<bool> refreshLock;
+    // [video] native_120fps (experimental, off): the game runs 2 logic steps and draws 2 frames per console
+    // frame, 119.88 real frames per second at the console's speed. Read at start; RetroAchievements and
+    // frame interpolation are off while it runs.
+    std::optional<bool> native120;
     std::optional<bool> metalFxSpatialUpscaling;
     std::optional<bool> skipUnreadyPipelines;
     std::optional<bool> ubershader;  // hybrid ubershader: draw with it while a pipeline compiles (on by default)
@@ -782,6 +792,9 @@ inline RuntimeUserConfig ParseConfigDocument(const toml::value& document) {
     config.vsync = FindConfigValue<bool>(document, "video", "vsync");
     config.frameInterpolationDisplaySync =
         FindConfigValue<bool>(document, "video", "frame_interpolation_display_sync");
+    config.displaySync = FindConfigValue<bool>(document, "video", "display_sync");
+    config.refreshLock = FindConfigValue<bool>(document, "video", "refresh_lock");
+    config.native120 = FindConfigValue<bool>(document, "video", "native_120fps");
     config.metalFxSpatialUpscaling =
         FindConfigValue<bool>(document, "video", "metalfx_spatial_upscaling");
     config.skipUnreadyPipelines = FindConfigValue<bool>(document, "video", "skip_unready_pipelines");
@@ -1084,6 +1097,18 @@ inline bool SetFrameInterpolationLowLatency(bool value) {
     return WriteSetting("video", "frame_interpolation_low_latency", value ? "true" : "false");
 }
 
+inline bool SetNative120(bool value) {
+    Mutable().native120 = value;
+    return WriteSetting("video", "native_120fps", value ? "true" : "false");
+}
+inline bool SetRefreshLock(bool value) {
+    Mutable().refreshLock = value;
+    return WriteSetting("video", "refresh_lock", value ? "true" : "false");
+}
+inline bool SetDisplaySync(bool value) {
+    Mutable().displaySync = value;
+    return WriteSetting("video", "display_sync", value ? "true" : "false");
+}
 inline bool SetFrameInterpolationDisplaySync(bool value) {
     Mutable().frameInterpolationDisplaySync = value;
     return WriteSetting("video", "frame_interpolation_display_sync", value ? "true" : "false");
@@ -1498,6 +1523,9 @@ inline uint32_t FrameInterpolationFps(uint32_t fallback = 0) {
     return Get().frameInterpolationFps.value_or(fallback);
 }
 
+inline bool DisplaySync(bool fallback = false) { return Get().displaySync.value_or(fallback); }
+inline bool RefreshLock(bool fallback = true) { return Get().refreshLock.value_or(fallback); }
+inline bool Native120(bool fallback = false) { return Get().native120.value_or(fallback); }
 inline bool FrameInterpolationDisplaySync(bool fallback = true) {
     return Get().frameInterpolationDisplaySync.value_or(fallback);
 }
@@ -1634,9 +1662,8 @@ inline std::filesystem::path PrimeGameImageDirectory() {
 }
 
 inline bool IsSupportedDiscImageExtension(std::filesystem::path extension) {
-    std::string text = extension.string();
-    for (char& c : text) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    return text == ".iso" || text == ".rvz" || text == ".wbfs" || text == ".gcz" || text == ".wia" || text == ".ciso";
+    // One list for every entry point (PrimeDiscPath::IsSupportedExtension): .iso and .rvz.
+    return PrimeDiscPath::IsSupportedExtension(std::filesystem::path("image") += extension);
 }
 
 // [paths] capture_dir when set (relative to the config file), else UserData/Logs/captures.

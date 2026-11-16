@@ -292,7 +292,11 @@ inline void observe_refresh(RefreshEstimator& e, int64_t at, int64_t nominalPeri
                              static_cast<double>(e.nominal) * 0.005;
     e.nominal = nominalPeriod;
     if (changed) {
+      // Another display mode is a new timeline, not an irregular refresh: it does not count as a loss
+      // (three changes of mode, e.g. exclusive fullscreen following the frame rate option, had switched
+      // alignment off for the rest of the session as if the monitor had variable refresh; 2026-11-14).
       reset_refresh_lock(e, at);
+      e.wasUsable = false;
       return;
     }
   }
@@ -308,6 +312,7 @@ inline void observe_refresh(RefreshEstimator& e, int64_t at, int64_t nominalPeri
   const double since = static_cast<double>(at - e.vblank);
   if (since < -0.5 * e.period || since > 120.0 * e.period) {  // clock jump or a long stall
     reset_refresh_lock(e, at);
+    e.wasUsable = false;  // a pause in the observations (window hidden, mode switch), not an irregular refresh
     return;
   }
   const int64_t count = std::max<int64_t>(std::llround(since / e.period), 0);
@@ -381,6 +386,205 @@ struct AlignTuning {
   double earliest = kAlignEarliest;
   double latest = kAlignLatest;
 };
+
+// At the game's own rate (interpolation off) nothing follows an image for a whole frame, so it can go out
+// later in its refresh interval and reach the screen sooner: the phase leaves a fixed time before the next
+// refresh instead of a share of the interval. 7 ms covers the jitter of when images are ready (~2 ms)
+// plus a GPU that still has a few milliseconds of the frame to draw. On a 60 Hz mode that is 0.58 of the
+// interval (0.2 would hold every image 13 ms for its refresh); at 120 Hz and above it is the usual 0.2.
+inline constexpr double kNativeAlignMarginNanos = 7.0e6;
+inline constexpr double kNativeAlignLatestPhase = 0.6;
+inline AlignTuning native_rate_align_tuning(int64_t refreshPeriod, AlignTuning tuning = {}) noexcept {
+  if (refreshPeriod > 0) {
+    const double phase = 1.0 - kNativeAlignMarginNanos / static_cast<double>(refreshPeriod);
+    tuning.phase = (std::min)((std::max)(phase, tuning.phase), kNativeAlignLatestPhase);
+  }
+  return tuning;
+}
+
+// What the screen showed, estimated from when each image was presented against the refresh timeline: in a
+// mode that shows the newest finished image at each refresh (Mailbox, or a composed window), two presents
+// inside one refresh interval mean the first was never seen, and the refreshes an image stays beyond its
+// share mean it was seen for longer than the others. An estimate: the GPU may finish an image after its
+// Present call, which moves it one refresh later than counted here.
+struct CadenceEstimate {
+  int64_t lastAt = 0;      // when the previous image was presented
+  bool valid = false;
+  uint64_t presents = 0;   // images handed to the screen
+  uint64_t unseen = 0;     // of those, replaced within the same refresh: never shown
+  uint64_t held = 0;       // refreshes an image stayed beyond `expected`
+  uint64_t early = 0;      // images replaced sooner than `expected` refreshes (uneven, but shown)
+  uint64_t nearEdge = 0;   // presents within a tenth of an interval of a refresh: a millisecond decides
+};
+
+// `at`: when the image was presented. `expected`: refreshes each image should last (2 for 60 images on 120 Hz).
+inline void note_presented_image(CadenceEstimate& e, const RefreshGrid& grid, int64_t at, int64_t expected) noexcept {
+  if (grid.period <= 0) {
+    e.valid = false;
+    return;
+  }
+  const double position = static_cast<double>(at - grid.vblank) / static_cast<double>(grid.period);
+  const int64_t interval = static_cast<int64_t>(std::floor(position));
+  const double phase = position - static_cast<double>(interval);
+  ++e.presents;
+  if (phase < 0.1 || phase > 0.9) {
+    ++e.nearEdge;
+  }
+  if (e.valid) {
+    // Both presents are placed on the timeline as it is now: `grid.vblank` moves on with every refresh.
+    const int64_t previous = static_cast<int64_t>(
+        std::floor(static_cast<double>(e.lastAt - grid.vblank) / static_cast<double>(grid.period)));
+    const int64_t step = interval - previous;
+    if (step <= 0) {
+      ++e.unseen;
+    } else if (step > 60) {
+      // A pause or a load, not cadence.
+    } else if (step > expected) {
+      e.held += static_cast<uint64_t>(step - expected);
+    } else if (step < expected) {
+      ++e.early;
+    }
+  }
+  e.lastAt = at;
+  e.valid = true;
+}
+
+// The game's frame clock locked to the monitor (F1 > Video "Follow the monitor's refresh"). The console
+// starts a frame every 1001/60000 s (59.94 Hz); a PC monitor's "60 Hz" is some other 59.94 to 60.00, so
+// frames paced by a clock of their own drift through the refreshes and, each time they cross one, an image
+// is shown twice or never. When a whole number of refreshes is within kFrameLockTolerance of the console's
+// frame, the frame takes exactly that many refreshes instead, and its boundary sits `lead` before a
+// refresh, so the image is finished a fixed time before the refresh that shows it: nothing to hold back,
+// nothing repeated. The game then runs at the monitor's rate: unchanged on a 59.94 / 119.88 Hz mode,
+// 0.1 % faster on a 60.000 Hz one. Outside the tolerance (75, 144, 165 Hz) the console's own period stays.
+inline constexpr double kFrameLockTolerance = 0.0015;
+// Largest step of the boundary towards its place per frame, as a share of the frame: 2 ms per second, so
+// half a refresh of a 60 Hz monitor is crossed in about four seconds without a visible change of speed.
+inline constexpr double kFrameLockSlew = 0.002;
+
+// How long after its frame boundary an image reaches its Present call, for the lead of the locked frame
+// clock: the time nearly every recent frame was presented by. Frames differ by many milliseconds in a busy
+// scene (the GX decoder still has the frame's commands to go through when the retrace comes: 2 ms in a
+// menu; in the hangar on the test PC 4 to 5 ms for most frames and 12 to 20 for one in fifteen, measured
+// 2026-11-15), and an image that is not presented by its refresh is shown a refresh late: on a 60 Hz
+// monitor that is one image lost and another shown twice. Being early costs nothing (the image waits for
+// its refresh, frame_lock_not_before), so the lead follows the late side: the kFrameLockQuantile of the
+// last kReadyWindow frames (about 8 s at 60). With a mean and its deviation, 3 to 5 % of the images missed
+// their refresh in those scenes; with this, under 1 %.
+// The price is response time, since every image waits for the slowest ones. So it is bounded: never more
+// than half a frame beyond where most frames are (kFrameLockUsualQuantile), nor more than a frame. A PC
+// whose slow frames are further off than that shows those late, and keeps its response.
+inline constexpr size_t kReadyWindow = 512;
+inline constexpr double kFrameLockQuantile = 0.99;
+inline constexpr double kFrameLockUsualQuantile = 0.85;
+inline constexpr double kFrameLockCoverLimit = 0.5;  // of a frame, beyond the usual quantile
+struct ReadyEstimate {
+  std::array<float, kReadyWindow> samples{};  // nanoseconds after the boundary
+  size_t count = 0;
+  size_t next = 0;
+  double value = -1.0;  // negative: no sample yet
+  double covered = 0.0;  // the late quantile itself, before the bound (diagnostics)
+};
+
+inline double note_frame_ready(ReadyEstimate& e, double sample, double interval,
+                               double quantile = kFrameLockQuantile) noexcept {
+  // A pause, a load or a mode change is not a frame.
+  if (sample < 0.0 || sample > 4.0 * interval) {
+    return e.value;
+  }
+  e.samples[e.next] = static_cast<float>(sample);
+  e.next = (e.next + 1) % kReadyWindow;
+  e.count = (std::min)(e.count + 1, kReadyWindow);
+  // Later than the estimate: counted at once. Otherwise every eighth frame is often enough.
+  if (e.value >= 0.0 && sample <= e.value && e.next % 8 != 0) {
+    return e.value;
+  }
+  std::array<float, kReadyWindow> sorted = e.samples;
+  const auto at = [&](double q) {
+    const size_t index = (std::min)(static_cast<size_t>(q * static_cast<double>(e.count)), e.count - 1);
+    std::nth_element(sorted.begin(), sorted.begin() + static_cast<std::ptrdiff_t>(index),
+                     sorted.begin() + static_cast<std::ptrdiff_t>(e.count));
+    return static_cast<double>(sorted[index]);
+  };
+  e.covered = at(quantile);
+  const double usual = at((std::min)(kFrameLockUsualQuantile, quantile));
+  e.value = (std::min)({e.covered, usual + kFrameLockCoverLimit * interval, interval});
+  return e.value;
+}
+
+// How long before its refresh nearly every image should be presented: what the GPU still has to do after
+// the present call (not measurable here), and the few frames beyond the quantile. The same on every monitor
+// (a frame ready sooner than its refresh interval is held, frame_lock_not_before).
+inline int64_t frame_lock_margin(int64_t /*refreshPeriod*/) noexcept {
+  return static_cast<int64_t>(kNativeAlignMarginNanos);
+}
+
+// The lead of the locked frame clock: from a frame's boundary to the refresh that shows it. Where nearly
+// every frame is presented by (note_frame_ready) plus the margin, and never more than one frame: the
+// console shows a frame during the period after its retrace, and the port does not show it later than
+// that would have ended. On a PC that cannot keep up in a scene (frames presented 15 to 20 ms after the
+// retrace) the slowest images are shown a refresh late instead of every image waiting for them.
+inline int64_t frame_lock_lead(int64_t ready, int64_t margin, int64_t frame) noexcept {
+  return frame > 0 ? (std::min)(ready + margin, frame) : ready + margin;
+}
+
+// The frame clock is placed so that the usual frame is presented `lead` after its boundary, a margin before
+// the refresh that shows it. Frames differ by milliseconds, though, and on a 120 or 240 Hz monitor a frame
+// that is ready sooner than usual would be shown one refresh early, and the one after it would look late
+// (measured 2026-11-15: 60 frames on a 120 Hz desktop, one image in eight out of place with the clock at
+// rest). So a frame is not presented before the refresh interval of its own refresh begins. This costs no
+// latency: the image is shown at the refresh it was meant for either way. Returns the earliest time to
+// present, or 0 for "now" (no timeline, or that time has passed).
+inline constexpr int64_t kFrameLockGuardNanos = 500'000;
+inline int64_t frame_lock_not_before(const RefreshGrid& grid, int64_t boundary, int64_t lead, int64_t now) noexcept {
+  if (grid.period <= 0 || boundary <= 0) {
+    return 0;
+  }
+  const double period = static_cast<double>(grid.period);
+  // The refresh nearest to where the usual frame is aimed.
+  const int64_t refresh =
+      grid.vblank + std::llround(static_cast<double>(boundary + lead - grid.vblank) / period) * grid.period;
+  const int64_t notBefore = refresh - grid.period + kFrameLockGuardNanos;
+  // Never a wait longer than the lead itself: something other than a frame that came early.
+  return notBefore > now && notBefore - now < lead ? notBefore : 0;
+}
+
+struct FrameLock {
+  bool locked = false;
+  int64_t refreshesPerFrame = 0;
+  double phaseError = 0.0;  // nanoseconds the boundary still has to move
+};
+
+// `boundary`: the frame boundary just passed. `nominal`: the console's frame period. `lead`: how long before
+// a refresh a boundary should fall. Returns the period to the next boundary.
+inline int64_t next_frame_period(FrameLock& lock, const RefreshGrid& grid, int64_t boundary, int64_t nominal,
+                                 int64_t lead) noexcept {
+  lock.locked = false;
+  lock.refreshesPerFrame = 0;
+  lock.phaseError = 0.0;
+  if (grid.period <= 0 || nominal <= 0) {
+    return nominal;
+  }
+  const int64_t refreshes = std::llround(static_cast<double>(nominal) / static_cast<double>(grid.period));
+  if (refreshes < 1) {
+    return nominal;
+  }
+  const int64_t period = refreshes * grid.period;
+  if (std::abs(static_cast<double>(period - nominal)) > kFrameLockTolerance * static_cast<double>(nominal)) {
+    return nominal;
+  }
+  // Where the next boundary lands at the monitor's pace, and the place nearest to it `lead` before a refresh.
+  const int64_t next = boundary + period;
+  const int64_t origin = grid.vblank - lead;
+  const int64_t aligned =
+      origin + std::llround(static_cast<double>(next - origin) / static_cast<double>(grid.period)) * grid.period;
+  const double error = static_cast<double>(aligned - next);
+  const double slew = kFrameLockSlew * static_cast<double>(nominal);
+  lock.locked = true;
+  lock.refreshesPerFrame = refreshes;
+  lock.phaseError = error;
+  return period + static_cast<int64_t>(std::clamp(error, -slew, slew));
+}
 
 struct RefreshAlignment {
   int64_t lastAligned = 0;

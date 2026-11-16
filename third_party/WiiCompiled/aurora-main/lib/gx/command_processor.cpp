@@ -1998,6 +1998,7 @@ static void handle_draw_unmerged(GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount,
                                  gfx::Range vertRange, uint16_t usedPnMtxMask,
                                  HashType matrixTopologySignature,
                                  HashType geometrySignature, bool interpolationIdentityActive);
+static void dump_vertex_attrs(std::FILE* f, GXVtxFmt fmt, u16 vtxCount, const gfx::Range& vertRange);
 
 // The per-draw geometry signature, matrix-usage mask and draw-identity hashes exist purely to feed frame interpolation (build_uniform consumes them only after its `frame_interpolation_fps() == 0` early-out).
 static inline bool frame_interpolation_identity_needed() noexcept {
@@ -2617,13 +2618,33 @@ void frame(const Mat3x4<float>& takenView, uint32_t frame) {
   uint8_t directional[4] = {};
   float shaftPos[4][3] = {}, shaftLuma[4] = {};
   uint32_t count = 0, shafts = 0;
-  const auto prevWeight = [](const ViewLight& vl) -> float {
+  // Which of last frame's contact lights this one is: the one at the same place, or else a light of
+  // the same kind, strength and range that moved (a ship's lights in flight, a shot, a drifting
+  // explosion). Matching by place alone took a moving light for a new one every frame: its weight
+  // started again at 0.1 whenever it moved more than 0.25 m in a frame, and it left a fading copy
+  // behind, so the strength of the shadows it cast changed with its speed (found by reading the code
+  // on 15/11/2026 after a report of flickering shadows on ships in cinematics; not yet seen in a capture).
+  const auto prevIndex = [](const ViewLight& vl) -> int {
+    int best = -1;
+    float bestD = 4.f * 4.f;  // metres a light may travel in one frame and stay the same light
     for (uint32_t p = 0; p < g_contactPrevCount; ++p) {
       const auto& c = g_contactPrev[p];
       const float dx = c.world[0] - vl.world[0], dy = c.world[1] - vl.world[1], dz = c.world[2] - vl.world[2];
-      if (dx * dx + dy * dy + dz * dz < 0.25f * 0.25f) return c.weight;
+      const float d = dx * dx + dy * dy + dz * dz;
+      if (d < 0.25f * 0.25f) return static_cast<int>(p);
+      const bool alike = (c.directional != 0) == (vl.type == 2) &&
+                         std::abs(c.luma - vl.luma) <= 0.3f * std::max(c.luma, vl.luma) &&
+                         std::abs(c.radius - vl.radius) <= 0.3f * std::max(c.radius, vl.radius);
+      if (alike && d < bestD) {
+        bestD = d;
+        best = static_cast<int>(p);
+      }
     }
-    return -1.f;
+    return best;
+  };
+  const auto prevWeight = [&](const ViewLight& vl) -> float {
+    const int p = prevIndex(vl);
+    return p >= 0 ? g_contactPrev[p].weight : -1.f;
   };
   // Contact lights with hysteresis: the candidates (top 16) ranked by score, lights in use last frame
   // counted 1.5 times as strong.
@@ -2635,9 +2656,12 @@ void frame(const Mat3x4<float>& takenView, uint32_t frame) {
     return sa > sb;
   });
   std::array<ContactPick, 4> picks{};
+  std::array<bool, 4> prevKept{};  // last frame's lights that are still in the list (moved or not)
   for (size_t k = 0; k < bestCount && count < 4; ++k) {
     const ViewLight& vl = g_view[contactOrder[k]];
-    const float before = prevWeight(vl);
+    const int prevAt = prevIndex(vl);
+    if (prevAt >= 0) prevKept[static_cast<size_t>(prevAt)] = true;
+    const float before = prevAt >= 0 ? g_contactPrev[static_cast<size_t>(prevAt)].weight : -1.f;
     // About a sixth of a second to fade in.
     const float weight = before >= 0.f ? std::min(before + 0.1f, 1.f) : 0.1f;
     for (int c = 0; c < 3; ++c) positions[count][c] = vl.gx.pos[c];
@@ -2657,7 +2681,7 @@ void frame(const Mat3x4<float>& takenView, uint32_t frame) {
   // a sixth of a second in a free slot, at their last position: before, their shadows vanished at once.
   for (uint32_t p = 0; p < g_contactPrevCount && count < 4; ++p) {
     const ContactPick& old = g_contactPrev[p];
-    bool kept = false;
+    bool kept = prevKept[p];
     for (uint32_t k = 0; k < count && !kept; ++k) {
       const float dx = picks[k].world[0] - old.world[0], dy = picks[k].world[1] - old.world[1], dz = picks[k].world[2] - old.world[2];
       kept = dx * dx + dy * dy + dz * dz < 0.25f * 0.25f;
@@ -3100,6 +3124,12 @@ static bool handle_draw(u8 cmd, const u8* data, u32& pos, u32 size, bool bigEndi
       lastDraw->vtxCount += vtxCount;
       lastDraw->indexCount += numIndices;
       ++gfx::g_mergedDrawCallCount;
+      // Draw dump: geometry merged into the previous draw line (one line per merged primitive).
+      if (auto* dump = gfx::draw_dump::active()) UNLIKELY {
+        std::fprintf(dump, "  merged prim=%u fmt=%u verts=%u", unsigned(prim), unsigned(fmt), unsigned(vtxCount));
+        dump_vertex_attrs(dump, fmt, vtxCount, vertRange);
+        std::fputc('\n', dump);
+      }
       // This primitive now renders through the draw we merged into, so its palette slots belong to that draw's interpolation snapshot as well.
       if (s_lastDrawRecordedInterpolation) UNLIKELY {
         extend_interpolation_draw(pn_mtx_mask(vertices, vtxCount, vtxSize));
@@ -3138,6 +3168,18 @@ static void dump_draw_textures(std::FILE* f, const PipelineConfig* config) {
                  unsigned(s.colorChannelState[1].lightMask.to_ulong()), unsigned(sc.attrs[GX_VA_NRM].attrType),
                  unsigned(sc.tevStageCount));
     for (u32 i = 0; i < sc.numTexGens; ++i) std::fprintf(f, "%s%u", i ? "," : "", unsigned(sc.tcgs[i].src));
+    // The lights of channel 0 as loaded (slot:colour@view position): an unlit-looking character shows
+    // here whether its lights are dark or missing.
+    const unsigned long mask = s.colorChannelState[0].lightMask.to_ulong();
+    if (sc.colorChannels[0].lightingEnabled && mask != 0) {
+      std::fprintf(f, " lightcol=");
+      for (u32 i = 0; i < GX::MaxLights; ++i) {
+        if ((mask & (1ul << i)) == 0) continue;
+        const Light& l = s.lights[i];
+        std::fprintf(f, "%u:%.3f,%.3f,%.3f@%.1f,%.1f,%.1f;", unsigned(i), l.color[0], l.color[1], l.color[2], l.pos[0],
+                     l.pos[1], l.pos[2]);
+      }
+    }
     std::fputc('\n', f);
   }
   std::fprintf(f, "  tex");
@@ -3156,6 +3198,9 @@ static void dump_draw_textures(std::FILE* f, const PipelineConfig* config) {
                    unsigned(bind.ref->gxFormat), unsigned(bind.ref->mipCount), int(bind.ref->isReplacement));
     // GX filters the game asked for (GXTexFilter: 0 near, 1 linear, 2..5 mip modes).
     std::fprintf(f, "/flt%u,%u", unsigned(obj.min_filter()), unsigned(obj.mag_filter()));
+    // Wrap S,T (0 clamp, 1 repeat, 2 mirror) and LOD range/bias, to diagnose seams between textures.
+    std::fprintf(f, "/w%u,%u/lod%g,%g,%g", unsigned(obj.wrap_s()), unsigned(obj.wrap_t()), obj.min_lod(), obj.max_lod(),
+                 obj.lod_bias());
     if (gfx::draw_dump::g_saveTextures.load(std::memory_order_acquire) && obj.data != nullptr) {
       const std::filesystem::path dir = gfx::draw_dump::base_path() + ".textures";
       std::fprintf(f, "/n%s", gfx::texture_replacement::dump_texture_for_inspection(obj, dir).c_str());
@@ -3186,6 +3231,75 @@ static void dump_draw_textures(std::FILE* f, const PipelineConfig* config) {
                    int(s.indTexMtxs[i].scaleExp));
     }
     std::fputc('\n', f);
+  }
+}
+
+// Decoded positions and texcoords 0/1 of up to 8 vertices, direct or indexed (desc 1 direct, 2 index8,
+// 3 index16), to compare UVs across draws that share an edge (seams in skies and backdrops).
+static void dump_vertex_attrs(std::FILE* f, GXVtxFmt fmt, u16 vtxCount, const gfx::Range& vertRange) {
+  const auto& s = g_gxState;
+  if (vtxCount != 0) {
+    const auto* data = gfx::staged_vertex_data(vertRange);
+    const u32 stride = vertRange.size / vtxCount;
+    const auto& vf = s.vtxFmts[fmt];
+    const auto read_comp = [](const u8* p, GXCompType type, u8 frac, u32 c, bool le) -> float {
+      switch (type) {
+      case GX_F32: {
+        const u8* q = p + 4 * c;
+        const u32 bits = le ? (u32(q[3]) << 24) | (u32(q[2]) << 16) | (u32(q[1]) << 8) | q[0]
+                            : (u32(q[0]) << 24) | (u32(q[1]) << 16) | (u32(q[2]) << 8) | q[3];
+        float value;
+        std::memcpy(&value, &bits, 4);
+        return value;
+      }
+      case GX_S16:
+      case GX_U16: {
+        const u8* q = p + 2 * c;
+        const u16 raw = le ? u16(q[0] | (q[1] << 8)) : u16((q[0] << 8) | q[1]);
+        return (type == GX_S16 ? float(s16(raw)) : float(raw)) / float(1u << frac);
+      }
+      case GX_S8: return float(s8(p[c])) / float(1u << frac);
+      case GX_U8: return float(p[c]) / float(1u << frac);
+      default: return 0.f;
+      }
+    };
+    for (const int attr : {int(GX_VA_POS), int(GX_VA_TEX0), int(GX_VA_TEX1)}) {
+      const auto desc = s.vtxDesc[attr];
+      if (desc == GX_NONE || data == nullptr) continue;
+      const auto& af = vf.attrs[attr];
+      if (af.type != GX_F32 && af.type != GX_S16 && af.type != GX_U16 && af.type != GX_S8 && af.type != GX_U8) continue;
+      u32 offset = 0;
+      for (int a = GX_VA_PNMTXIDX; a < attr; ++a) {
+        switch (s.vtxDesc[a]) {
+        case GX_NONE: break;
+        case GX_DIRECT:
+          offset += comp_type_size(static_cast<GXAttr>(a), vf.attrs[a].type) * comp_cnt_count(static_cast<GXAttr>(a), vf.attrs[a].cnt);
+          break;
+        case GX_INDEX8: offset += (a == GX_VA_NRM && vf.attrs[a].cnt == GX_NRM_NBT3) ? 3 : 1; break;
+        case GX_INDEX16: offset += (a == GX_VA_NRM && vf.attrs[a].cnt == GX_NRM_NBT3) ? 6 : 2; break;
+        }
+      }
+      const u32 comps = comp_cnt_count(static_cast<GXAttr>(attr), af.cnt);
+      std::fprintf(f, " %s(d%u,c%u,t%u,f%u)=", attr == GX_VA_POS ? "vpos" : attr == GX_VA_TEX0 ? "uv0" : "uv1",
+                   unsigned(desc), comps, unsigned(af.type), unsigned(af.frac));
+      const auto& array = s.arrays[attr];
+      for (u32 v = 0; v < std::min<u32>(vtxCount, 8); ++v) {
+        const u8* p = data + v * stride + offset;
+        bool le = false;
+        if (desc == GX_INDEX8 || desc == GX_INDEX16) {
+          const u32 idx = desc == GX_INDEX8 ? p[0] : u32((p[0] << 8) | p[1]);
+          const u32 at = idx * array.stride;
+          if (array.data == nullptr || array.stride == 0 || at + comps * comp_type_size(static_cast<GXAttr>(attr), af.type) > array.size) {
+            std::fprintf(f, "i%u?;", idx);
+            continue;
+          }
+          p = static_cast<const u8*>(array.data) + at;
+          le = array.le;
+        }
+        for (u32 c = 0; c < comps; ++c) std::fprintf(f, "%s%g", c ? "," : "", read_comp(p, af.type, af.frac, c, le));
+        std::fputc(';', f);
+      }
+    }
   }
 }
 
@@ -3316,6 +3430,7 @@ static void dump_draw(std::FILE* f, GXPrimitive prim, GXVtxFmt fmt, u16 vtxCount
       }
     }
   }
+  dump_vertex_attrs(f, fmt, vtxCount, vertRange);
   std::fprintf(f, " tex=");
   u32 dumpedMaps = 0;
   for (u32 i = 0; i < s.numTevStages && i < MaxTevStages; ++i) {

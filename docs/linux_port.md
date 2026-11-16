@@ -308,10 +308,10 @@ Dos `.tar.gz` de la misma versión, como en Windows (ver "Dos archivos por versi
 
 | Archivo | Tamaño | SHA-256 |
 |---|---|---|
-| `Corruption_3-PC-v0.1.7-linux-x86_64.tar.gz` | 84 MB | `b319b8ba2f417cc8549e5af6391636d23bfffb6c038f299104105fea821c6fc8` |
-| `Corruption_3-PC-v0.1.7-Trilogy-addon-linux-x86_64.tar.gz` | 111 MB | `50b84c9cc5a3b3b7e8c9d9fa6d327b599ea02ec0193a5f39e28c2f956225463e` |
+| `Corruption_3-PC-v0.1.7-linux-x86_64.tar.gz` | 84 MB | `0ddaa4f39cf37fda9b2d924c7f090b940bdd264e14d667b8c1ef1b2eca5aaada` |
+| `Corruption_3-PC-v0.1.7-Trilogy-addon-linux-x86_64.tar.gz` | 111 MB | `3ddc3b6355cd5f52f1ef66d8810f7aaa4ef992256c10951b4879424b8258fc8b` |
 
-Cómo se generó (a299bb13 + los cambios de este apartado y la medición del refresco, caa9a658; regenerado el mismo día):
+Cómo se generó (a299bb13 + los cambios de este apartado y la medición del refresco, caa9a658, y la fuente e idioma del HUD, 7f63b34a; regenerado el mismo día):
 
 ```bash
 source /mnt/mp3port/env.sh && cd $MP3PORT/src

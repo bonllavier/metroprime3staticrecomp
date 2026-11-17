@@ -315,7 +315,7 @@ foreach ($doc in 'README.md', 'CHANGELOG.md', 'LICENSE', 'THIRD-PARTY-NOTICES.md
     if (-not (Test-Path -LiteralPath $path)) { throw "Missing document: $path" }
     Copy-Item -LiteralPath $path -Destination $stage
 }
-foreach ($doc in 'controls.md', 'development.md', 'troubleshooting.md') {
+foreach ($doc in 'controls.md', 'custom_textures.md', 'development.md', 'troubleshooting.md') {
     $path = Join-Path $publish "docs\$doc"
     if (-not (Test-Path -LiteralPath $path)) { throw "Missing document: $path" }
     Copy-Item -LiteralPath $path -Destination (Join-Path $stage 'docs')

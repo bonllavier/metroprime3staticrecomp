@@ -445,6 +445,17 @@ Con el PC al límite el adelanto sin límites llegaba a 23,7 ms (16,7 + 7) en la
 
 **Diagnóstico (solo build de prueba).** Cada 10 s: `[refresh-lock-est]` (reloj en reposo o persiguiendo, adelanto, imágenes retenidas, las que no llegaron a su refresco), `[refresh-lock-ready]` (percentiles del tiempo hasta `Present`) y, las primeras 400 veces, `[prime-present-slow]` y `[refresh-lock-slow]`. Para comparar: `WII_COMPILED_QA_LOCK_QUANTILE`, `WII_COMPILED_QA_LOCK_MARGIN_MS`, `WII_COMPILED_QA_NO_RATE_PROBE=1` (apaga la sonda de funciones, que frena el build de prueba) y `qa_replay.ps1 -Video "display_mode=exclusive"`.
 
+## Prioridad del usuario (17 de noviembre de 2026)
+
+**El trabajo de FPS altos se centra en los 120 nativos**, no en la interpolación. La interpolación se mantiene tal como está, para los PCs que no sostienen 120, pero no es prioridad. Los 120 nativos ya están en la 0.1.7 publicada como opción experimental: F1 > Video > «Native 120 frames per second (experimental, applies at restart)», clave `[video] native_120fps`. Lo siguiente es buscar y corregir lo que avanza por imagen dibujada en vez de por tiempo, empezando por las animaciones de menús y del casco (iconos y HUD), que van al doble. La sonda `[rate-probe]` de abajo es la herramienta.
+
+README y CHANGELOG públicos distinguen ya los dos modos:
+
+| | Qué hace | Coste principal | Logros |
+|---|---|---|---|
+| 120 nativos | el juego calcula y dibuja 120 imágenes reales a la velocidad de la consola | CPU (el doble de trabajo del juego) y el doble de imágenes que dibujar | apagados |
+| Interpolado | la lógica sigue a 59,94 y se intercalan imágenes al presentar | GPU (cada imagen intercalada), algo más de latencia | disponibles |
+
 ## 120 nativos sin interpolación: evaluación y prueba privada (14 de noviembre de 2026)
 
 Pregunta del usuario: ya que el paso de lógica se puede cambiar (lo hace la versión PAL), ¿conviene desbloquear 120 FPS reales, con la versión PAL como referencia?

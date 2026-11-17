@@ -92,7 +92,7 @@ for doc in README.md CHANGELOG.md LICENSE THIRD-PARTY-NOTICES.md; do
     [[ -f $publish/$doc ]] || die "missing $publish/$doc"
     cp -f "$publish/$doc" "$main_stage/"
 done
-for doc in controls.md development.md troubleshooting.md; do cp -f "$publish/docs/$doc" "$main_stage/docs/"; done
+for doc in controls.md custom_textures.md development.md troubleshooting.md; do cp -f "$publish/docs/$doc" "$main_stage/docs/"; done
 if (( ! layout_test )); then
     grep -q "^## v$version\b" "$main_stage/CHANGELOG.md" || die "CHANGELOG.md has no '## v$version' section"
 fi

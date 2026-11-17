@@ -308,8 +308,10 @@ Dos `.tar.gz` de la misma versión, como en Windows (ver "Dos archivos por versi
 
 | Archivo | Tamaño | SHA-256 |
 |---|---|---|
-| `Corruption_3-PC-v0.1.7-linux-x86_64.tar.gz` | 84 MB | `0ddaa4f39cf37fda9b2d924c7f090b940bdd264e14d667b8c1ef1b2eca5aaada` |
-| `Corruption_3-PC-v0.1.7-Trilogy-addon-linux-x86_64.tar.gz` | 111 MB | `3ddc3b6355cd5f52f1ef66d8810f7aaa4ef992256c10951b4879424b8258fc8b` |
+| `Corruption_3-PC-v0.1.7-linux-x86_64.tar.gz` | 83 MB | `012945aac0a78d55d6d3dc14831a7edac026187a2f5235ceef1e32742310e9df` |
+| `Corruption_3-PC-v0.1.7-Trilogy-addon-linux-x86_64.tar.gz` | 111 MB | `2a5055bb8df72c58c5928ad3641118329d7d4ea64dab00f2b0dbb86c83820445` |
+
+Publicados el 17/11/2026 (los SHA-256 de arriba son los subidos). Los archivos copiados a `dist/` eran de un empaquetado posterior al anotado aquí, del 16/11 hacia las 15:15, y se comprobaron en Windows con `sha256sum -c`: versión 0.1.7 pública, sin QA, con la comprobación de versión del complemento y con la medición del refresco. Al publicar, en el principal se sustituyeron en Windows README.md, CHANGELOG.md y docs/troubleshooting.md por los definitivos de `publish/`; los demás miembros quedaron byte a byte iguales, con los mismos permisos. **Pendiente para el próximo paquete:** los dos binarios de Trilogy de este complemento no contienen la fuente del HUD de `14c37859` (no aparece `[mouse-look-hint] HUD font`), así que en Trilogy el aviso de la vista con ratón sale con la fuente por defecto. Se compilaron antes de ese commit. Rehacer `build_trilogy.py --public` antes de empaquetar.
 
 Cómo se generó (a299bb13 + los cambios de este apartado y la medición del refresco, caa9a658, y la fuente e idioma del HUD, 7f63b34a; regenerado el mismo día):
 

@@ -7,7 +7,7 @@
        * GITHUB_TOKEN and VIRUSTOTAL_API_KEY (process or user environment).
  Secrets are never printed or written anywhere: a hit names the file and the kind of secret only.
  Called by package_release.ps1 (staged folder and zip) and publish_release.ps1 (zip and publish/ repo).
- Usage: check_no_credentials.ps1 -Path <folder or .zip> [-Path ...]
+ Usage: check_no_credentials.ps1 -Path <folder, .zip or .tar.gz> [-Path ...]
 #>
 param([Parameter(Mandatory = $true)][string[]]$Path)
 $ErrorActionPreference = 'Stop'
@@ -96,6 +96,22 @@ foreach ($item in $Path) {
             Test-Content $f.FullName ([System.IO.File]::ReadAllBytes($f.FullName)) $f.Extension
             $scanned++
         }
+    } elseif ($full.EndsWith('.tar.gz', [StringComparison]::OrdinalIgnoreCase) -or $full.EndsWith('.tgz', [StringComparison]::OrdinalIgnoreCase)) {
+        # Linux release archives (package_release_linux.sh): unpacked to a temporary folder and checked
+        # with the same rules, each file labelled archive!path.
+        $unpacked = Join-Path ([System.IO.Path]::GetTempPath()) ('c3_credcheck_' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+        New-Item -ItemType Directory -Force -Path $unpacked | Out-Null
+        try {
+            & (Join-Path $env:SystemRoot 'System32\tar.exe') -xzf $full -C $unpacked  # Windows tar: an MSYS tar on PATH reads "G:" as a host
+            if ($LASTEXITCODE -ne 0) { throw "tar could not unpack $full" }
+            foreach ($f in (Get-ChildItem -LiteralPath $unpacked -Recurse -File -Force)) {
+                $relative = $f.FullName.Substring($unpacked.Length).TrimStart('\', '/').Replace('\', '/')
+                $label = "$full!$relative"
+                Test-Name $label $relative
+                Test-Content $label ([System.IO.File]::ReadAllBytes($f.FullName)) $f.Extension
+                $scanned++
+            }
+        } finally { Remove-Item -LiteralPath $unpacked -Recurse -Force -ErrorAction SilentlyContinue }
     } else {
         $zip = [System.IO.Compression.ZipFile]::OpenRead($full)
         try {

@@ -151,3 +151,34 @@ El usuario recordaba un mensaje con más formatos de los permitidos. Eran las ve
 - **Disco equivocado:** el encabezado es "This disc image is not one the port runs" y debajo va el texto de `WrongDiscText` (lo que encontró y los dos válidos). Los reemplazos de esos textos en `make_title_tree.py` se quitaron porque ya no hacen falta.
 - **Documentación pública:** README (sin el "not accepted yet"), troubleshooting y CHANGELOG 0.1.7.
 - **`FailDvd` termina con `std::_Exit(1)`** en vez de `std::exit`. Con los destructores globales y otros hilos vivos, a veces el proceso no terminaba tras el mensaje: 1 de 5 arranques con un `.wbfs`, y 3 casos de `test_prime_disc_selection.ps1` en dos pasadas. Después del cambio, 18 de 18 casos en dos pasadas seguidas y 25 de 25 arranques con `.wbfs` terminan, con código 1, en 0,1 a 1,2 s. Otras rutas fatales que siguen con `std::exit` (`abi_bridge.cpp`, `os_init.cpp`) no se tocaron.
+
+## v0.1.7 publicada (17/11/2026)
+
+https://github.com/bonllavier/Corruption_3-PC/releases/tag/v0.1.7, completa y "Latest", con 8 archivos:
+
+| Archivo | Tamaño | SHA-256 |
+| --- | --- | --- |
+| `Corruption_3-PC-v0.1.7-win64.zip` | 97,9 MB | `746c80e16d47ecd7d69d3b4079a50222eb5adb27a96c63de8666997847746fe6` |
+| `Corruption_3-PC-v0.1.7-Trilogy-addon-win64.zip` | 91,3 MB | `ff9f474c240c1df38e1df12c13c62916351d48f106f851a627c5f3250eddaf65` |
+| `Corruption_3-PC-v0.1.7-linux-x86_64.tar.gz` | 83,5 MB | `012945aac0a78d55d6d3dc14831a7edac026187a2f5235ceef1e32742310e9df` |
+| `Corruption_3-PC-v0.1.7-Trilogy-addon-linux-x86_64.tar.gz` | 111,0 MB | `2a5055bb8df72c58c5928ad3641118329d7d4ea64dab00f2b0dbb86c83820445` |
+
+Cada uno con su `.sha256`.
+
+- **Windows:** compilado con `make_release.ps1` sobre `1af2d06b`.
+- **Linux:** los archivos que se copiaron desde Linux (ver `linux_port.md`).
+- **Documentación de los principales:** el README, CHANGELOG y troubleshooting definitivos se metieron después en el zip principal de Windows (desde la carpeta preparada) y en el `.tar.gz` principal de Linux (el resto, byte a byte igual). Los ejecutables no cambiaron.
+- **VirusTotal:**
+  - los 4 archivos, 0 detecciones;
+  - los 3 binarios de Linux, 0;
+  - los 3 `.exe` de Windows, 1 de 69-70 cada uno: Trapmine `suspicious.low.ml.score`.
+
+  **Excepción autorizada por el usuario solo para la 0.1.7**, igual que en la 0.1.5. No vale para versiones siguientes.
+- **CHANGELOG reescrito** según las prioridades del usuario: Linux y Trilogy primero; lo experimental (120 FPS interpolados, con errores conocidos; ultrawide y super wide); los informes F12; y el resto. Incluye la sección nueva del README "Lower-end PCs: what to turn off first", basada en la medición de GPU del 1/11: unos 5 ms por fotograma, de los que el post-proceso son ~2,5 ms y hasta 9,5 ms en la pelea con Rundas.
+- **Arreglos de publicación encontrados al publicar:**
+  - `check_no_credentials.ps1` no leía `.tar.gz`. Ahora los descomprime con el `tar.exe` de Windows por ruta completa, porque el `tar` de MSYS en el PATH de Git Bash interpreta `G:` como un servidor.
+  - `publish_release.ps1` sube los archivos de Linux si están en `dist` (`-RequireLinux` los exige), los comprueba con su `.sha256`, analiza sus binarios y los pone en la tabla de descargas de las notas.
+- Después se marcó "Latest" (`prerelease=false`, `make_latest`).
+- **Pendiente:**
+  - binarios de Trilogy para Linux con la fuente del HUD (ver `linux_port.md`);
+  - que `make_release.ps1` copie la documentación en el último momento, para no tener que reempaquetar.

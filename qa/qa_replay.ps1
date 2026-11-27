@@ -4,7 +4,7 @@
 # shader caches shared with your profile through a junction), so your own save is never touched.
 # -PrivateCache leaves the real shader caches out: for settings whose pipelines must not reach the shipped
 # seed (prime_pipeline_seed.py merge reads the real cache and does not filter by MSAA level).
-param([Parameter(Mandatory = $true)][string]$Name, [string]$Label = 'run', [string]$Env = '', [int]$ShotEvery = 30, [int]$TimeoutMinutes = 30, [switch]$PrivateCache, [string]$Video = '')
+param([Parameter(Mandatory = $true)][string]$Name, [string]$Label = 'run', [string]$Env = '', [int]$ShotEvery = 30, [int]$TimeoutMinutes = 30, [switch]$PrivateCache, [string]$Video = '', [string]$Iso = '')
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $build = Join-Path $root 'recomp\build\RM3E01_00_runtime_link_probe'
@@ -23,8 +23,11 @@ if (Test-Path $profile) {
 New-Item -ItemType Directory -Path $profile | Out-Null
 Copy-Item -LiteralPath (Join-Path $rec 'NAND') -Destination (Join-Path $profile 'NAND') -Recurse
 Copy-Item -LiteralPath (Join-Path $rec 'Config.toml') -Destination (Join-Path $profile 'Config.toml')
-# The disc image is wherever the player keeps it now, not where it was when the tour was recorded.
-$realIso = Get-Content (Join-Path $userData 'Config.toml') -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*iso_path\s*=' } | Select-Object -First 1
+# The disc image is wherever the player keeps it now, not where it was when the tour was recorded:
+# -Iso, else CORRUPTION3_ISO, else the player's non-empty iso_path (an empty one would erase the recording's).
+$realIso = Get-Content (Join-Path $userData 'Config.toml') -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*iso_path\s*=\s*"[^"]+"' } | Select-Object -First 1
+if (-not $Iso -and $env:CORRUPTION3_ISO) { $Iso = $env:CORRUPTION3_ISO.Trim('"') }
+if ($Iso) { $realIso = 'iso_path = "' + ((Resolve-Path -LiteralPath $Iso).Path -replace '\\', '\\') + '"' }
 if ($realIso) {
     $cfg = Join-Path $profile 'Config.toml'
     $lines = @(Get-Content $cfg | ForEach-Object { if ($_ -match '^\s*iso_path\s*=') { $realIso } else { $_ } })

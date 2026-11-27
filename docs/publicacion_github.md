@@ -194,3 +194,54 @@ El usuario pidió primero que la captura F8 de Linux (`MKW_PRIME_PERF_CAPTURE`) 
 Si se retoma, las opciones planteadas fueron:
 - un build de captura aparte, para entregar a jugadores concretos;
 - una opción en F1, apagada por defecto, que solo pagarían quienes la activen.
+
+## v0.1.8 de Windows preparada, sin publicar (27/11/2026)
+
+El usuario la probará antes de subirla. **No se ha subido nada a GitHub**: ni la versión, ni el `CHANGELOG.md` de `publish/`. Ese archivo tiene la sección `## v0.1.8` escrita en Linux y queda sin commit a propósito, porque `publish_release.ps1` hace el commit `Release vX` y el push al publicar; subirlo antes anunciaría la versión en el repo público.
+
+- **Contenido:** los commits de Linux `f2939aaf` (C1-C4 de CPU, tamaño de los paneles, ratón ±80°, textos) y `bcfb45b8` (versión 0.1.8), más `68456da3`:
+  - `<aurora/imgui.h>` incluido en todas las plataformas en `settings_overlay.cpp`. Solo se incluía bajo `__linux__` y Windows no compilaba (`aurora_imgui_request_font_rebuild` sin declarar).
+  - La semilla de shaders con las pipelines de esta PC: el paso `merge` de `build_prime_runtime.ps1`, 48,2 → 48,6 MB.
+- **Pasadas de CPU en Windows:** las mismas cifras que en Linux.
+  - Volcados de contexto: 770.806 eliminados de 1.458.556.
+  - Recargas no volátiles: 377.392 de 384.688.
+  - Accesos a RAM demostrados: en 21.712 funciones.
+- **Captura F8:** fuera, por la decisión del apartado anterior.
+- **Generación:** `make_release.ps1 -SkipScan`.
+  - Build sin QA: 227 s.
+  - Trilogy sin QA: 7.516 s, porque recompiló todo.
+  - Empaquetado: 54 s.
+  - Restauración del build de QA: 535 s.
+
+| Archivo | Tamaño | SHA-256 |
+| --- | --- | --- |
+| `Corruption_3-PC-v0.1.8-win64.zip` | 93 MB | `a614cd4730c88233e032790a876b88c59edf1a172aed7e062db09e30d8fd6b45` |
+| `Corruption_3-PC-v0.1.8-Trilogy-addon-win64.zip` | 91 MB | `258509a0ebfcc8a7b981e07e26d3fbaf7cf1a66773552247e09fa1bbe8323c8c` |
+| `Corruption_3-PC-v0.1.8-linux-x86_64.tar.gz` | 79 MB | `b6d84593dd7dfcc71277e31c695c8874fbd245153a5228777c80bcc15f36a701` |
+| `Corruption_3-PC-v0.1.8-Trilogy-addon-linux-x86_64.tar.gz` | 112 MB | `0735e37f61900db85ab2a36e6cbc3b51e393ba72617bd82ad29332b442a2d5cd` |
+
+- **Validación en Windows:**
+  - **Repetición `hangar_1x_window` con el build de QA:** sin errores ni desvíos. Con la cola de shaders vacía (desde el segundo 220), 60 FPS como el 4/11 (media 59,87). Las bajadas a ~46 de la pasada coinciden con los últimos ~3.000 shaders compilándose.
+  - **`test_trilogy_addon.ps1`:** 6 de 6.
+  - **Documentación:** README y CHANGELOG del zip iguales a los de `publish/`.
+- **Pendiente para publicar:**
+  - VirusTotal (`make_release.ps1` sin `-SkipScan` o al publicar);
+  - la prueba del usuario;
+  - la decisión sobre la caché de Dawn (apartado siguiente).
+
+## Caché de Dawn borrada tras 7 días sin jugar (encontrado el 27/11/2026, sin corregir)
+
+`aurora-main/lib/webgpu/gpu_cache.cpp`, `prune_stale_rows`: al abrir `dawn_cache.db` borra las filas con `last_used < hoy - PruneAfterDays` (7; 30 hasta mediados de noviembre). La edad se mide con la fecha del reloj, no con la última partida.
+
+**Efecto:** quien pasa una semana sin abrir el juego pierde toda la caché compilada, y el siguiente arranque recompila todo. En Windows, el 27/11 tras más de 7 días jugando en Linux:
+- se borraron 36.753 blobs (`Pruned ... unused for 7+ days`);
+- se recompilaron unas 17.500 pipelines durante la partida, con ~47 FPS en el hangar varios minutos.
+
+Afecta a Windows y Linux y está en las versiones publicadas; no es nuevo de la 0.1.8.
+
+**Arreglo propuesto, a falta de la decisión del usuario:** medir la edad respecto a la fila usada más recientemente (`last_used < MAX(last_used) - 7`). Así:
+- un descanso no borra nada;
+- lo que dejó de usarse tras un cambio de driver se sigue retirando después de 7 días de juego;
+- el tope de 400 MiB cubre el resto.
+
+No cambia las claves de la caché, pero exige recompilar los ejecutables de las dos plataformas para que sigan iguales.

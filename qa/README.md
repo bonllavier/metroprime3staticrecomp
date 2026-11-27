@@ -41,6 +41,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File recomp\qa\qa_replay.ps1 -Nam
 powershell -NoProfile -ExecutionPolicy Bypass -File recomp\qa\qa_replay.ps1 -Name hangar -Label uber -Env "WII_COMPILED_UBERSHADER=1"
 ```
 
+Imagen de disco, por orden de preferencia:
+1. `-Iso "<ruta>"`;
+2. la variable `CORRUPTION3_ISO`;
+3. el `iso_path` de tu `Config.toml`, si no está vacío;
+4. la ruta guardada en la grabación.
+
+Si no la encuentra, el juego espera en el mensaje de error hasta `-TimeoutMinutes`.
+
 El juego no debe estar abierto (comparten la caché de shaders). Durante la reproducción no uses el teclado: el ratón se ignora, pero el teclado sigue llegando. La ventana del juego se fija "siempre encima" mientras dura la reproducción, para que las capturas la vean aunque el foco esté en otra aplicación. Resultados en `qa/runs/<nombre>/<fecha>_<etiqueta>/`: `report.json`, `console.log` y capturas `shot_NNNNs.png`.
 
 ## Enemigos y desvíos: anclas de posición

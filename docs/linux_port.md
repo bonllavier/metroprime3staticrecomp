@@ -190,7 +190,7 @@ Cada punto describe un comportamiento verificado; cambiarlo exige volver a medir
 | `tools/build_prime_runtime.sh` | copia las 8 pantallas de la correa y genera `Config.default.toml` a partir de la plantilla de `package_release.ps1` | vuelven las pantallas del Wiimote o los botones del Wii en lugar de los iconos de teclado. La configuración por defecto se edita en `package_release.ps1`, nunca en una copia aparte |
 | `runtime/cmake/PublicProducts.cmake` + `ico_to_rgba_source.py` | el icono de Linux sale del mismo `MetroidPrime3PCPort.ico` | la ventana queda sin icono |
 | `UserData/Config.toml` | el juego lo crea una vez a partir de `Config.default.toml` | un `Config.toml` antiguo sin las claves de la versión publicada desactiva funciones; hacer una copia de respaldo antes de cambiarlo |
-| Código común con Windows | las diferencias van bajo `#if defined(__linux__)` / `_WIN32`; los cambios comunes se documentan en esta página | se rompe el build o el comportamiento de Windows, que no se puede compilar desde Linux |
+| Código común con Windows | las diferencias van bajo `#if defined(__linux__)` / `_WIN32`; los cambios comunes se documentan en esta página. Una cabecera que necesita código común va fuera de esos bloques | se rompe el build o el comportamiento de Windows, que no se puede compilar desde Linux. Ejemplo, 0.1.8: `<aurora/imgui.h>` estaba bajo `__linux__` en `settings_overlay.cpp` y el tamaño de los paneles no compilaba en Windows (corregido en `68456da3`) |
 
 Otras reglas del entorno:
 - No instalar `libjack-dev` (desinstala el audio de Ubuntu Studio).

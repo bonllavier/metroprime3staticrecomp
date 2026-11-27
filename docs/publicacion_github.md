@@ -182,3 +182,15 @@ Cada uno con su `.sha256`.
 - **Pendiente:**
   - binarios de Trilogy para Linux con la fuente del HUD (ver `linux_port.md`);
   - que `make_release.ps1` copie la documentación en el último momento, para no tener que reempaquetar.
+
+## Captura de rendimiento F8 en Windows: fuera de la versión pública (27/11/2026)
+
+El usuario pidió primero que la captura F8 de Linux (`MKW_PRIME_PERF_CAPTURE`) estuviera también en la versión pública de Windows, y la descartó al conocer los costes. **Decisión: se omite en la versión pública de Windows**, porque le preocupan las alertas de VirusTotal.
+
+- **CPU:** el muestreador de Windows necesita `SuspendThread`/`GetThreadContext`. `package_release.ps1` los prohíbe desde la 0.1.4, porque con ellos Trapmine marcaba el `.exe` como `malicious.moderate`.
+- **GPU:** medir tiempos de GPU exige `TimestampQuery`, que cambia la clave de la caché de Dawn y obligaría a recompilar todos los shaders.
+- **Estado del código:** en Windows la captura no existe todavía; `perf_capture.cpp` es solo de Linux.
+
+Si se retoma, las opciones planteadas fueron:
+- un build de captura aparte, para entregar a jugadores concretos;
+- una opción en F1, apagada por defecto, que solo pagarían quienes la activen.

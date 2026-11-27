@@ -1,8 +1,8 @@
 #include "hle_stubs.h"
 #include "settings_overlay.h"
+#include <aurora/imgui.h>  // aurora_imgui_request_font_rebuild (panel size, every platform)
 #if defined(__linux__)
 #include "hle/prime_icon_canvas.h"
-#include <aurora/imgui.h>
 #include <SDL3/SDL_locale.h>
 #endif
 #include "audio_backend.h"

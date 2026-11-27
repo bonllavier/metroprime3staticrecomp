@@ -61,3 +61,7 @@ Cambios, activados por los lanzadores (`-SyncRenderer` vuelve al modo anterior):
 - Sondeo DSP sin mutex, memo de estado de vértices, copia DVD en bloque y SHA-1 de la ISO opcional (`WII_COMPILED_PRIME_VALIDATE_ISO_HASHES=1`).
 
 Medición sin intervención en el tramo pesado: síncrono 34–37 FPS; final 57–58 FPS (≈50 durante la carga de zona). El usuario confirmó 52–58 FPS y 3D correcto. Evidencia: `../checkpoints/20261023_gpu_thread_and_cache_fixes.json`. Pendiente: QA de juego prolongado, tirones de carga y exclusión opcional de Bitdefender (~9 % del hilo del juego).
+
+## Lo que falta (18/11/2026)
+
+Lista ordenada por impacto y trabajo en curso sobre el hilo del juego: [rendimiento_cpu_pendiente.md](rendimiento_cpu_pendiente.md).

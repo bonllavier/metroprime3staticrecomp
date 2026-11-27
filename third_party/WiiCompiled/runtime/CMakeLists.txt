@@ -70,6 +70,9 @@ option(MKW_PLATFORM_TESTS_ONLY "Build host-platform tests without graphics depen
 # Local QA only: input recording/replay and a separate data directory. Never for a published build;
 # recomp/tools/package_release.ps1 refuses an executable that carries its marker.
 option(MKW_PRIME_QA_TOOLS "Build the private QA tools (input record/replay) into the runtime" OFF)
+# Linux performance-capture build for a tester: F8 records 60 s of CPU stack samples and per-pass GPU
+# time and saves an F12 report with them. None of the other QA tools; not a regular release.
+option(MKW_PRIME_PERF_CAPTURE "Linux: F8 performance capture (CPU samples + GPU pass times) in a public build" OFF)
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/HostLibraries.cmake")
 if(MKW_PLATFORM_TESTS_ONLY)
     if(MKW_BUILD_PRODUCTS)
@@ -299,6 +302,9 @@ else()
             # Diagnostics (draw dumps, GPU timing, profiling, debug logs) exist only in test builds.
             if(MKW_PRIME_QA_TOOLS)
                 target_compile_definitions(${t} PRIVATE MKW_PRIME_QA_TOOLS=1)
+            endif()
+            if(MKW_PRIME_PERF_CAPTURE)
+                target_compile_definitions(${t} PRIVATE MKW_PRIME_PERF_CAPTURE=1)
             endif()
             if(MKW_PLATFORM_WINDOWS)
                 target_include_directories(${t} PRIVATE ${MKW_DX_STUB_DIR})

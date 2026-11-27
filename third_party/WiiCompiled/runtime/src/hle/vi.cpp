@@ -778,6 +778,9 @@ void VI_HLE_PollRetrace(CpuContext* ctx) {
 namespace { void PresentPrimeCopyEarly(); }
 
 extern "C" void VI_HLE_PollRetraceGuestSpin(CpuContext* interruptedCtx) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    GxGpuThread::FlushPending();  // the guest waits for the retrace: the consumer gets everything
+#endif
     static std::atomic<uint32_t> diagnosticCalls{0};
     static std::atomic<uint32_t> eligibleCalls{0};
     static std::atomic<int64_t> lastPollNanos{0};

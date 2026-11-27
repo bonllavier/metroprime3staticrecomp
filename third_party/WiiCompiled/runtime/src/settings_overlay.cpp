@@ -2,6 +2,7 @@
 #include "settings_overlay.h"
 #if defined(__linux__)
 #include "hle/prime_icon_canvas.h"
+#include <aurora/imgui.h>
 #include <SDL3/SDL_locale.h>
 #endif
 #include "audio_backend.h"
@@ -13,6 +14,10 @@
 #include "music_attenuation.h"
 #include "runtime_config.h"
 #include "runtime_log.h"
+#if defined(__linux__) && defined(MKW_PRIME_PERF_CAPTURE)
+#include "perf_capture.h"
+#include "stack_profiler.h"
+#endif
 #include "wii_remote_input.h"
 
 #include <imgui.h>
@@ -33,6 +38,8 @@
 #include <filesystem>
 #include <cfloat>
 #include <cmath>
+#include <iterator>
+#include <optional>
 #include <cstdint>
 #include <cstdio>
 #include <limits>
@@ -99,6 +106,86 @@ void SetMixWorkerEnabled(bool enabled);
 
 namespace settings_overlay {
 namespace {
+// Panel size ([video] ui_scale, F1 > Video > Panel size). The panels use ImGui's own 13 px font, which
+// looks tiny on a 4K monitor. A change rebuilds that font at the new size (sharp, not a stretched
+// texture) and scales the style's spacing; widths written in pixels below go through Ui(). The rebuild
+// runs in Aurora's ImGui frame start (aurora_imgui_request_font_rebuild -> ImGuiInit), where the atlas
+// may change. g_uiScale is what the atlas and style use now, g_uiScaleWanted what the next rebuild uses.
+constexpr float kPanelFontPixels = 13.0f;  // ImGui's default font
+std::atomic<float> g_uiScale{1.0f};
+std::atomic<float> g_uiScaleWanted{0.0f};
+std::atomic<uint32_t> g_uiScaleGeneration{0};
+
+// Automatic: 100 % up to 1080 lines, then in 25 % steps with the window height (200 % at 2160).
+float ResolveUiScale(uint32_t percent, float displayHeight) {
+    if (percent != 0) return static_cast<float>(percent) / 100.0f;
+    if (displayHeight <= 0.0f) return 1.0f;
+    return std::clamp(std::floor(displayHeight / 1080.0f * 4.0f) / 4.0f, 1.0f, 3.0f);
+}
+
+float Ui(float pixels) { return pixels * g_uiScale.load(std::memory_order_relaxed); }
+
+// Builds the panel font and the style for `scale`. Runs where ImGui frames start (ImGuiInit).
+void ApplyUiScaleToImGui(float scale) {
+    static std::optional<ImGuiStyle> baseStyle;
+    if (!baseStyle) baseStyle = ImGui::GetStyle();
+    ImGuiStyle& style = ImGui::GetStyle();
+    style = *baseStyle;
+    if (scale != 1.0f) style.ScaleAllSizes(scale);
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.Fonts->Fonts.empty()) {
+        ImFontConfig config;  // as AddFontDefault() without a template: pixel snapped, no oversampling
+        config.OversampleH = config.OversampleV = 1;
+        config.PixelSnapH = true;
+        config.SizePixels = std::round(kPanelFontPixels * scale);
+        io.Fonts->AddFontDefault(&config);
+    }
+    g_uiScale.store(scale);
+    g_uiScaleGeneration.fetch_add(1);
+}
+
+// Every presented frame, from Draw: follows the setting and, in automatic, the window height.
+void UpdateUiScale() {
+    const float wanted = ResolveUiScale(RuntimeConfigFile::UiScalePercent(0), ImGui::GetIO().DisplaySize.y);
+    if (wanted == g_uiScaleWanted.load()) return;
+    g_uiScaleWanted.store(wanted);
+    if (wanted != g_uiScale.load()) aurora_imgui_request_font_rebuild();
+}
+
+void DrawUiScaleCombo() {
+    static constexpr const char* kLabels[] = {"Automatic (window height)", "100%", "125%", "150%", "175%",
+                                              "200% (4K)", "250%", "300%", "400%"};
+    static_assert(std::size(kLabels) == RuntimeConfigFile::kUiScaleChoices.size());
+    const auto& choices = RuntimeConfigFile::kUiScaleChoices;
+    const auto found = std::find(choices.begin(), choices.end(), RuntimeConfigFile::UiScalePercent(0));
+    int index = found == choices.end() ? 0 : static_cast<int>(found - choices.begin());
+    ImGui::SetNextItemWidth(Ui(220.0f));
+    if (ImGui::Combo("Panel size (F1, F2, ...)", &index, kLabels, static_cast<int>(std::size(kLabels))))
+        RuntimeConfigFile::SetUiScale(choices[static_cast<size_t>(index)]);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Size of the text and controls in the port's panels. Automatic uses 100%% up to 1080p\n"
+                          "and grows with the window height (200%% at 4K). Ctrl + mouse wheel over a panel also\n"
+                          "changes it. The game's own image and HUD do not change.");
+    if (found != choices.end() && *found == 0)
+        ImGui::TextDisabled("Now %.0f%%.", g_uiScale.load() * 100.0f);
+}
+
+// Ctrl + wheel over a panel steps through the fixed sizes.
+void HandleUiScaleWheel() {
+    const ImGuiIO& io = ImGui::GetIO();
+    if (!io.KeyCtrl || io.MouseWheel == 0.0f || !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) return;
+    const auto& choices = RuntimeConfigFile::kUiScaleChoices;
+    const uint32_t now = static_cast<uint32_t>(std::lround(g_uiScale.load() * 100.0f));
+    uint32_t next = now;
+    if (io.MouseWheel > 0.0f) {
+        for (size_t i = 1; i < choices.size(); ++i)
+            if (choices[i] > now) { next = choices[i]; break; }
+    } else {
+        for (size_t i = choices.size(); i-- > 1;)
+            if (choices[i] < now) { next = choices[i]; break; }
+    }
+    if (next != now) RuntimeConfigFile::SetUiScale(next);
+}
 
 const char* GraphicsApiDisplayName() {
     switch (aurora_get_backend()) {
@@ -466,7 +553,7 @@ void DrawWiiRemoteAccelerometer(uint32_t port) {
     // Residual per-axis bias left after SDL's factory-calibrated decode, measured
     // here with the remote at rest.
     if (WiiRemoteInput::IsAccelCalibrating(port)) {
-        ImGui::ProgressBar(WiiRemoteInput::AccelCalibrationProgress(), ImVec2(220.0f, 0.0f), "Hold still...");
+        ImGui::ProgressBar(WiiRemoteInput::AccelCalibrationProgress(), ImVec2(Ui(220.0f), 0.0f), "Hold still...");
     } else if (ImGui::Button("Calibrate (remote lying flat, buttons up)")) {
         WiiRemoteInput::StartAccelCalibration(port);
     }
@@ -790,7 +877,7 @@ bool DrawKeyboardSettings(uint32_t port) {
     for (uint32_t i = 0; i < count; ++i) {
         int key = buttons[i].scancode;
         ImGui::PushID(static_cast<int>(i));
-        ImGui::SetNextItemWidth(220.0f);
+        ImGui::SetNextItemWidth(Ui(220.0f));
         DrawKeyBinding(PADGetButtonName(buttons[i].padButton), key, RebindKind::KeyboardButton, buttons[i].padButton);
         ImGui::PopID();
     }
@@ -803,7 +890,7 @@ bool DrawKeyboardSettings(uint32_t port) {
         const char* direction = PADGetAxisDirectionLabel(axes[i].padAxis);
         const std::string label = std::string(PADGetAxisName(axes[i].padAxis)) + " " +
                                   (direction != nullptr ? direction : "");
-        ImGui::SetNextItemWidth(220.0f);
+        ImGui::SetNextItemWidth(Ui(220.0f));
         DrawKeyBinding(label.c_str(), key, RebindKind::KeyboardAxis, axes[i].padAxis);
         ImGui::PopID();
     }
@@ -868,7 +955,7 @@ void DrawExpressionSettings() {
     for (size_t i = 0; i < InputBindings::kControls.size(); ++i) {
         ImGui::PushID(static_cast<int>(i) + 2000);
         std::string& text = buffers[i];
-        ImGui::SetNextItemWidth(300.0f);
+        ImGui::SetNextItemWidth(Ui(300.0f));
         if (ImGui::InputText(InputBindings::kControls[i].label, text.data(), text.capacity() + 1,
                              ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackResize,
                              ExpressionResizeCallback, &text)) {
@@ -1121,7 +1208,7 @@ void DrawControllerSettings() {
 }
 
 void DrawAudioSettings() {
-    ImGui::SetNextItemWidth(220.0f);
+    ImGui::SetNextItemWidth(Ui(220.0f));
     if (ImGui::SliderInt("Master", &g_audioVolumePercent, 0, 100, "%d%%")) {
         const float volume = static_cast<float>(g_audioVolumePercent) / 100.0f;
         AudioBackend::Instance().SetMasterVolume(volume);
@@ -1451,7 +1538,7 @@ void DrawPerformanceDiagnostics() {
             for(size_t i=0;i<std::min(size_t(4),host.threads.size());++i) {
                 const auto& thread=host.threads[i];
                 char label[80];std::snprintf(label,sizeof(label),"TID %u: %.1f%%",thread.id,thread.percent);
-                ImGui::ProgressBar(float(std::clamp(thread.percent/100,0.0,1.0)),ImVec2(360,0),label);
+                ImGui::ProgressBar(float(std::clamp(thread.percent/100,0.0,1.0)),ImVec2(Ui(360.0f),0),label);
             }
         } else ImGui::TextDisabled("CPU: waiting for the first sample...");
         if(host.gpuReady)ImGui::Text("Game GPU: %.1f%% | engine: %s",host.gpuPercent,host.gpuEngine.c_str());
@@ -1775,8 +1862,10 @@ void DrawShaderGenerationAlert() {
     ImDrawList* draw = ImGui::GetForegroundDrawList();
     ImFont* font = ImGui::GetFont();
     const float scale = std::clamp(viewport->Size.y / 720.0f, 0.95f, 2.5f);
-    const float titleSize = ImGui::GetFontSize() * 1.35f * scale;
-    const float bodySize = ImGui::GetFontSize() * 1.0f * scale;
+    // Sized by the screen alone: the panel font already grows with the panel size.
+    const float fontSize = ImGui::GetFontSize() / g_uiScale.load();
+    const float titleSize = fontSize * 1.35f * scale;
+    const float bodySize = fontSize * 1.0f * scale;
 
     char title[96];
     std::snprintf(title, sizeof(title), "GENERATING SHADERS - %u LEFT", prewarm.remaining);
@@ -1920,9 +2009,9 @@ void DrawExitPrompt() {
     if (g_exitPromptOpen && !ImGui::IsPopupOpen(kTitle)) ImGui::OpenPopup(kTitle);
     if (!ImGui::BeginPopupModal(kTitle, &g_exitPromptOpen, ImGuiWindowFlags_AlwaysAutoResize)) return;
     ImGui::TextUnformatted("Quit the game?");
-    if (ImGui::Button("Exit", ImVec2(120.0f, 0.0f))) ExitForAuroraWindowClose();
+    if (ImGui::Button("Exit", ImVec2(Ui(120.0f), 0.0f))) ExitForAuroraWindowClose();
     ImGui::SameLine();
-    if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f))) g_exitPromptOpen = false;
+    if (ImGui::Button("Cancel", ImVec2(Ui(120.0f), 0.0f))) g_exitPromptOpen = false;
     if (!g_exitPromptOpen) ImGui::CloseCurrentPopup();
     ImGui::EndPopup();
 }
@@ -2088,7 +2177,7 @@ void DiscImageSection() {
         if (const auto chosen = PrimeDiscPicker::Prompt({}); !chosen.empty()) TryDiscImage(chosen);
     }
     RestartNote();
-    ImGui::SetNextItemWidth(-160.0f);
+    ImGui::SetNextItemWidth(Ui(-160.0f));
     const bool entered = ImGui::InputTextWithHint("##disc_path", "or paste the path to the .iso or .rvz file",
                                                   g_discImageTyped.data(), g_discImageTyped.size(),
                                                   ImGuiInputTextFlags_EnterReturnsTrue);
@@ -2126,6 +2215,8 @@ void PrimeOptionCheckbox(const char* label, std::optional<bool> RuntimeUserConfi
 }
 
 void DrawPrimeVideoOptions() {
+    DrawUiScaleCombo();
+    ImGui::Separator();
     bool widescreen = RuntimeConfigFile::WidescreenEnabled(true);
     // 16:9 and 4:3 are the game's own modes; the ultrawide entries widen the
     // 16:9 view (Hor+, hle/prime_widescreen.h, GitHub issue #7).
@@ -2535,7 +2626,7 @@ void DrawPrimeVideoOptions() {
         ImGui::TextDisabled("Off while RetroAchievements is on (F2): achievements are played with the game as shipped.");
     if (fovEnabled && !fovBlocked) {
         float fov = PrimeFov::Fov();
-        ImGui::SetNextItemWidth(260.0f);
+        ImGui::SetNextItemWidth(Ui(260.0f));
         if (ImGui::SliderFloat("Field of view", &fov, PrimeFov::kMinFov, PrimeFov::kMaxFov, "%.0f degrees")) {
             PrimeFov::SetFov(fov);
             RuntimeConfigFile::SetPrimeFloatOption(&RuntimeUserConfig::primeFov, "fov", PrimeFov::Fov());
@@ -2769,7 +2860,7 @@ void DrawPrimeGamepadOptions() {
                         "and moves the pointer in menus, visor select, lock-on and scanning.");
     auto settings = PrimeGamepadRuntime::CurrentSettings();
     bool changed = false;
-    ImGui::SetNextItemWidth(220.0f);
+    ImGui::SetNextItemWidth(Ui(220.0f));
     if (ImGui::SliderFloat("Camera speed", &settings.lookDegPerSecond, 30.0f, 720.0f, "%.0f degrees/s")) {
         changed = true;
         RuntimeConfigFile::SetPrimeFloatOption(&RuntimeUserConfig::primePadLookSpeed, "pad_look_speed", settings.lookDegPerSecond);
@@ -2777,18 +2868,18 @@ void DrawPrimeGamepadOptions() {
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("At full deflection. The game's own maximum turn rate still applies\n"
                           "(game menu > Options > Controls > Sensitivity).");
-    ImGui::SetNextItemWidth(220.0f);
+    ImGui::SetNextItemWidth(Ui(220.0f));
     if (ImGui::SliderFloat("Camera response curve", &settings.lookCurve, 1.0f, 3.0f, "%.1f")) {
         changed = true;
         RuntimeConfigFile::SetPrimeFloatOption(&RuntimeUserConfig::primePadLookCurve, "pad_look_curve", settings.lookCurve);
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("1 = linear. Higher values give finer aim near the centre of the stick.");
-    ImGui::SetNextItemWidth(220.0f);
+    ImGui::SetNextItemWidth(Ui(220.0f));
     if (ImGui::SliderFloat("Pointer speed", &settings.pointerSpeed, 0.3f, 5.0f, "%.1f screens/s")) {
         changed = true;
         RuntimeConfigFile::SetPrimeFloatOption(&RuntimeUserConfig::primePadPointerSpeed, "pad_pointer_speed", settings.pointerSpeed);
     }
-    ImGui::SetNextItemWidth(220.0f);
+    ImGui::SetNextItemWidth(Ui(220.0f));
     if (ImGui::SliderFloat("Stick dead zone", &settings.deadzone, 0.0f, 0.5f, "%.2f")) {
         changed = true;
         RuntimeConfigFile::SetPrimeFloatOption(&RuntimeUserConfig::primePadDeadzone, "pad_deadzone", settings.deadzone);
@@ -2915,15 +3006,15 @@ void DrawPrimeControlOptions() {
             float hintScale = config.primeMouseLookHintScale.value_or(kHintDefaultScale);
             float hintX = config.primeMouseLookHintX.value_or(kHintDefaultX) * 100.0f;
             float hintY = config.primeMouseLookHintY.value_or(kHintDefaultY) * 100.0f;
-            ImGui::SetNextItemWidth(220.0f);
+            ImGui::SetNextItemWidth(Ui(220.0f));
             if (ImGui::SliderFloat("Hint size", &hintScale, 0.4f, 2.0f, "%.2fx"))
                 RuntimeConfigFile::SetPrimeFloatOption(&RuntimeUserConfig::primeMouseLookHintScale, "mouse_look_hint_scale", hintScale);
             const bool a1 = ImGui::IsItemActive() || ImGui::IsItemHovered();
-            ImGui::SetNextItemWidth(220.0f);
+            ImGui::SetNextItemWidth(Ui(220.0f));
             if (ImGui::SliderFloat("Hint position X", &hintX, 0.0f, 100.0f, "%.1f %%"))
                 RuntimeConfigFile::SetPrimeFloatOption(&RuntimeUserConfig::primeMouseLookHintX, "mouse_look_hint_x", hintX / 100.0f);
             const bool a2 = ImGui::IsItemActive() || ImGui::IsItemHovered();
-            ImGui::SetNextItemWidth(220.0f);
+            ImGui::SetNextItemWidth(Ui(220.0f));
             if (ImGui::SliderFloat("Hint position Y", &hintY, 0.0f, 95.0f, "%.1f %%"))
                 RuntimeConfigFile::SetPrimeFloatOption(&RuntimeUserConfig::primeMouseLookHintY, "mouse_look_hint_y", hintY / 100.0f);
             const bool a3 = ImGui::IsItemActive() || ImGui::IsItemHovered();
@@ -2944,14 +3035,14 @@ void DrawPrimeControlOptions() {
                               "Only while aiming in first person without a lock-on: in menus, the map, Morph Ball and\n"
                               "cutscenes the cursor is absolute again. F1 releases the mouse.");
         float sensitivity = RuntimeConfigFile::Get().primeMouseLookSensitivity.value_or(PrimeMouseLook::kDefaultSensitivityDegPerPixel);
-        ImGui::SetNextItemWidth(220.0f);
+        ImGui::SetNextItemWidth(Ui(220.0f));
         if (ImGui::SliderFloat("Mouse sensitivity", &sensitivity, PrimeMouseLook::kMinSensitivityDegPerPixel,
                                PrimeMouseLook::kMaxSensitivityDegPerPixel, "%.2f degrees per pixel")) {
             RuntimeConfigFile::SetPrimeFloatOption(&RuntimeUserConfig::primeMouseLookSensitivity, "mouse_look_sensitivity", sensitivity);
             PrimeMouseLook::SetSensitivityDegPerPixel(sensitivity);
         }
         float smoothing = RuntimeConfigFile::Get().primeMouseLookSmoothing.value_or(0.0f);
-        ImGui::SetNextItemWidth(220.0f);
+        ImGui::SetNextItemWidth(Ui(220.0f));
         if (ImGui::SliderFloat("Mouse smoothing", &smoothing, 0.0f, PrimeMouseLook::kMaxSmoothing, "%.2f")) {
             RuntimeConfigFile::SetPrimeFloatOption(&RuntimeUserConfig::primeMouseLookSmoothing, "mouse_look_smoothing", smoothing);
             PrimeMouseLook::SetSmoothing(smoothing);
@@ -2992,7 +3083,7 @@ void DrawPrimeLanguageOptions() {
     static const int startupIndex = languageIndex;
     ImGui::TextWrapped("Language of the game's text: menus, messages, the HUD, scans and the logbook.");
     ImGui::Spacing();
-    ImGui::SetNextItemWidth(220.0f);
+    ImGui::SetNextItemWidth(Ui(220.0f));
     if (ImGui::Combo("Game language", &languageIndex, kLanguages, 5))
         RuntimeConfigFile::SetPrimeLanguage(kLanguageNames[languageIndex]);
     ImGui::Spacing();
@@ -3009,7 +3100,7 @@ void DrawPrimeLanguageOptions() {
 }
 
 void DrawPrimeAudioOptions() {
-    ImGui::SetNextItemWidth(220.0f);
+    ImGui::SetNextItemWidth(Ui(220.0f));
     if (ImGui::SliderInt("Master volume", &g_audioVolumePercent, 0, 100, "%d%%")) {
         const float volume = static_cast<float>(g_audioVolumePercent) / 100.0f;
         AudioBackend::Instance().SetMasterVolume(volume);
@@ -3367,8 +3458,12 @@ void DrawPrimeOptionsPanel() {
     }();
     if (openTab >= 0) g_primeOptionsOpen = true;
     if (!g_primeOptionsOpen) return;
-    ImGui::SetNextWindowSize(ImVec2(620, 0), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+    // A panel size change lays the panel out again at the new width, centred.
+    static uint32_t laidOutFor = 0;
+    const ImGuiCond layout = laidOutFor != UiScaleGeneration() ? ImGuiCond_Always : ImGuiCond_FirstUseEver;
+    laidOutFor = UiScaleGeneration();
+    ImGui::SetNextWindowSize(ImVec2(Ui(620.0f), 0), layout);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), layout, ImVec2(0.5f, 0.5f));
     static const std::string kPanelTitle = std::string(PRIME_PORT_NAME) + " - Options [F1]";
     if (ImGui::Begin(kPanelTitle.c_str(), &g_primeOptionsOpen, ImGuiWindowFlags_NoSavedSettings)) {
         if (ImGui::BeginTabBar("PrimeOptionsTabs")) {
@@ -3532,7 +3627,8 @@ void InitializeRuntimeSettings() noexcept {
     InputBindings::SetInputBlocked(false);
 }
 
-#if (defined(_WIN32) || defined(__linux__)) && defined(MKW_PRIME_QA_TOOLS)
+#if ((defined(_WIN32) || defined(__linux__)) && defined(MKW_PRIME_QA_TOOLS)) || \
+    (defined(__linux__) && defined(MKW_PRIME_PERF_CAPTURE))
 // The guest thread plus, when enabled, the GX consumer thread.
 std::vector<uint32_t> ProfiledThreads() {
 #if defined(_WIN32)
@@ -3551,6 +3647,9 @@ std::vector<uint32_t> ProfiledThreads() {
 #endif
 
 void HandleEvents(const AuroraEvent* events) noexcept {
+#if defined(__linux__) && defined(MKW_PRIME_PERF_CAPTURE) && !defined(MKW_PRIME_QA_TOOLS)
+    PerfCapture::Tick();
+#endif
 #if (defined(_WIN32) || defined(__linux__)) && defined(MKW_PRIME_QA_TOOLS)
     // WII_COMPILED_STACK_PROFILE_AT=<seconds>: one unattended capture, for
     // validating the profiler without input.
@@ -3565,12 +3664,19 @@ void HandleEvents(const AuroraEvent* events) noexcept {
         const char* value = std::getenv("WII_COMPILED_STACK_PROFILE_BELOW_FPS");
         return value ? std::atof(value) : 0.0;
     }();
+    // WII_COMPILED_STACK_PROFILE_SECONDS=<seconds>: capture length (default 10), e.g. most of a QA
+    // replay for an A/B whose short windows would land on different moments of the scene.
+    static const double profileSeconds = [] {
+        const char* value = std::getenv("WII_COMPILED_STACK_PROFILE_SECONDS");
+        const double seconds = value ? std::atof(value) : 10.0;
+        return seconds > 0.0 && seconds <= 600.0 ? seconds : 10.0;
+    }();
     static bool profileStarted = false;
     if (!profileStarted && std::chrono::steady_clock::now() >= profileAt) {
         AuroraPresentTiming timing{};
         aurora_get_present_timing(&timing);
         if (profileBelowFps <= 0.0 || (timing.sampleCount > 30 && timing.framesPerSecond < profileBelowFps)) {
-            profileStarted = StackProfiler::Start(ProfiledThreads(), 10.0,
+            profileStarted = StackProfiler::Start(ProfiledThreads(), profileSeconds,
                                                   RuntimeConfigFile::ApplicationDataDirectory() / "Logs" / "profiles");
         }
     }
@@ -3651,6 +3757,12 @@ void HandleEvents(const AuroraEvent* events) noexcept {
         if (!g_rebind.active && IsToggleKey(ev->sdl, SDL_SCANCODE_F8)) {
             StackProfiler::Start(ProfiledThreads(), kF8ProfileSeconds,
                                  RuntimeConfigFile::ApplicationDataDirectory() / "Logs" / "profiles");
+        }
+#endif
+#if defined(__linux__) && defined(MKW_PRIME_PERF_CAPTURE) && !defined(MKW_PRIME_QA_TOOLS)
+        // F8: 60 s performance capture, then a report with it (perf_capture.h).
+        if (!g_rebind.active && IsToggleKey(ev->sdl, SDL_SCANCODE_F8)) {
+            PerfCapture::Start(ProfiledThreads());
         }
 #endif
         if (!g_rebind.active && IsToggleKey(ev->sdl, SDL_SCANCODE_F12)) {
@@ -3922,10 +4034,21 @@ void DrawPhotoModeIndicator() {
 }  // namespace
 #endif
 
-void ImGuiInit(const AuroraWindowSize*) noexcept {
+void ImGuiInit(const AuroraWindowSize* size) noexcept {
+    // Also runs again on each panel size change (aurora_imgui_request_font_rebuild, atlas cleared).
+    {
+        float scale = g_uiScaleWanted.load();
+        if (scale <= 0.0f) {
+            scale = ResolveUiScale(RuntimeConfigFile::UiScalePercent(0), size ? static_cast<float>(size->height) : 0.0f);
+            g_uiScaleWanted.store(scale);
+        }
+        ApplyUiScaleToImGui(scale);  // the panel font first: it stays the default font
+    }
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    g_hudFont = nullptr;
+#endif
 #if defined(MKW_GAME_PROFILE_RM3E01_00) && defined(_WIN32)
     ImGuiIO& io = ImGui::GetIO();
-    if (io.Fonts->Fonts.empty()) io.Fonts->AddFontDefault();  // keep the panel's font as the default
     char windows[MAX_PATH] = {};
     if (GetWindowsDirectoryA(windows, MAX_PATH) == 0) return;
     for (const char* file : {"bahnschrift.ttf", "segoeuib.ttf", "arialbd.ttf"}) {
@@ -3945,7 +4068,6 @@ void ImGuiInit(const AuroraWindowSize*) noexcept {
     // The same 34 px bold sans for the mouse-look hint and the achievement pop-ups, from the system fonts
     // the prompt icons use (without one they keep ImGui's small default font, as before).
     ImGuiIO& io = ImGui::GetIO();
-    if (io.Fonts->Fonts.empty()) io.Fonts->AddFontDefault();  // keep the panel's font as the default
     const char* path = PrimeIconCanvas::FontPath();
     if (path[0] != '\0') {
         ImFontConfig config;
@@ -4007,6 +4129,8 @@ void Draw() noexcept {
     // and started the next ImGui frame, so all overlay callers can now safely issue ImGui commands.
     aurora_wait_for_frame_worker();
     ApplyDeferredImeData();
+    UpdateUiScale();
+    HandleUiScaleWheel();
     FollowMonitorForFrameInterpolation();
     // Also drive the Wii Remote rescan from here: PADRead runs it too, but this
     // runs once per presented frame whatever the game is doing (e.g. sitting in
@@ -4054,6 +4178,9 @@ void Draw() noexcept {
     DrawProfileRecordingNotice();
 #endif
     DrawScreenshotNotice();
+#if defined(__linux__) && defined(MKW_PRIME_PERF_CAPTURE) && !defined(MKW_PRIME_QA_TOOLS)
+    PerfCapture::DrawNotice();
+#endif
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
     DrawRemoteMotionPanel();
     if (!photoMode) {
@@ -4073,6 +4200,9 @@ void Draw() noexcept {
     DrawStartupScreen();
     DrawShaderGenerationAlert();
 }
+
+float UiScale() noexcept { return g_uiScale.load(std::memory_order_relaxed); }
+uint32_t UiScaleGeneration() noexcept { return g_uiScaleGeneration.load(std::memory_order_relaxed); }
 
 bool StartupScreenVisible() noexcept {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)

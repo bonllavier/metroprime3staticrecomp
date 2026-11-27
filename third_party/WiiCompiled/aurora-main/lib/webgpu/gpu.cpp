@@ -701,7 +701,9 @@ bool initialize(AuroraBackend auroraBackend) {
     // Diagnostic GPU timing (gfx/gpu_timing.hpp): only when asked for, so the normal device and its
     // pipeline caches are not affected.
     const bool gpuTimingRequested = [] {
-#if defined(MKW_PRIME_QA_TOOLS)
+#if defined(MKW_PRIME_PERF_CAPTURE)
+      return true;  // performance-capture build: F8 turns the timing on for its 60 s
+#elif defined(MKW_PRIME_QA_TOOLS)
       const char* v = std::getenv("WII_COMPILED_GPU_TIMING");
       return v != nullptr && v[0] != '\0' && v[0] != '0';
 #else

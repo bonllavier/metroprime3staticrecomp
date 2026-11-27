@@ -371,7 +371,13 @@ Debug Snapshot() {
 }  // namespace PrimeMouseLook
 
 std::atomic<uint32_t> g_lastPlayer{0};
-namespace PrimeMouseLook { uint32_t LastPlayer() { return g_lastPlayer.load(std::memory_order_relaxed); } }
+namespace PrimeMouseLook {
+uint32_t LastPlayer() { return g_lastPlayer.load(std::memory_order_relaxed); }
+void SetPitch(float pitch) {
+    std::lock_guard lock(g_pitchMutex);
+    g_pitch = std::clamp(pitch, kMouseLookPitchLimits.min, kMouseLookPitchLimits.max);
+}
+}
 extern "C" void PrimeMouseLookAfterTurn(CpuContext* ctx, uint32_t player, uint32_t input, uint32_t stateManager) {
     g_lastPlayer.store(player, std::memory_order_relaxed);
     using namespace PrimeMouseLook;
@@ -442,7 +448,7 @@ extern "C" void PrimeMouseLookAfterPitch(CpuContext*, uint32_t player, uint32_t,
         // Follow the game's own pitch so a later activation continues from it.
         if (havePitch) {
             std::lock_guard lock(g_pitchMutex);
-            g_pitch = std::clamp(gamePitch, kPitchMin, kPitchMax);
+            g_pitch = std::clamp(gamePitch, kMouseLookPitchLimits.min, kMouseLookPitchLimits.max);
         }
         DropMotion();
         return;
@@ -526,6 +532,7 @@ void NoteFocus(bool) {}
 void AddMotion(float, float) {}
 void TakeFrameMotion(float& dx, float& dy) { dx = dy = 0; }
 uint32_t LastPlayer() { return 0; }
+void SetPitch(float) {}
 void InjectMotion(float, float) {}
 bool Capturing() { return false; }
 void ServiceHost() {}

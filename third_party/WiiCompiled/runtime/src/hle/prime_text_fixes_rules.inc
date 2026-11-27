@@ -385,499 +385,500 @@
     {3, "Necesitas mejor equipamiento para llegar a él.", "Un rayo de alta frecuencia podría atravesarlo."},  // 382
     {3, "La bese", "La base"},  // 383
     {3, "Un señal", "Una señal"},  // 384
-    {3, "cernanas", "cercanas"},  // 385
-    {3, "La sistema", "El sistema"},  // 386
-    {1, "voll auslastet", "voll ausgelastet"},  // 387
-    {3, "bordes &push;&main-color=#4E9761;verde&pop;", "bordes &push;&main-color=#4E9761;verdes&pop;"},  // 388
-    {3, "enegía", "energía"},  // 389
-    {3, "laviatán", "leviatán"},  // 390
-    {3, "Cuebas", "Cuevas"},  // 391
-    {3, "Una arma", "Un arma"},  // 392
-    {3, "Barrra", "Barra"},  // 393
-    {3, "ultraresistente", "ultrarresistente"},  // 394
-    {3, "estás estatuas", "estas estatuas"},  // 395
-    {3, "Golem", "Gólem"},  // 396
-    {3, "con al configuración", "con la configuración"},  // 397
-    {2, "retractée", "rétractée"},  // 398
-    {3, "Para que intenta", "Parece que intenta"},  // 399
-    {3, "de la acantilado", "del acantilado"},  // 400
-    {3, "en este posición", "en esta posición"},  // 401
-    {3, "Puertas defensivas", "Patio antiguo"},  // 402
-    {3, "suministra energía el escudo", "suministra energía al escudo"},  // 403
-    {3, "estás armas", "estas armas"},  // 404
-    {3, "Pasaje de la torreta norte", "Patio de la torreta norte"},  // 405
-    {3, "Torreta norte", "Pasaje de la torreta norte"},  // 406
-    {3, "son\nvulnerable a las explosiones", "son\nvulnerables a las explosiones"},  // 407
-    {3, "mientas", "mientras"},  // 408
-    {1, "Waffenystem", "Waffensystem"},  // 409
-    {3, "las arms de", "las armas de"},  // 410
-    {3, "Golems", "Gólems"},  // 411
-    {1, "erneut aktiveren", "erneut aktivieren"},  // 412
-    {1, "Fließgeschwindgkeit", "Fließgeschwindigkeit"},  // 413
-    {3, "Torreta sur", "Patio de la torreta sur"},  // 414
-    {3, "para seguir saltando hacia la superficie", "para seguir saltando pared arriba"},  // 415
-    {1, "Errrichtung", "Errichtung"},  // 416
-    {3, "Estación Zipline", "Estación de tirolina"},  // 417
-    {3, "red principal e Cielolab", "red principal de Cielolab"},  // 418
-    {3, "Se detecta signos", "Se detectan signos"},  // 419
-    {3, "conctada", "conectada"},  // 420
-    {3, "Se la interrumpido", "Se ha interrumpido"},  // 421
-    {3, "componentes necesario", "componentes necesarios"},  // 422
-    {3, "isla espolón. Rápido, no queda mucho tiempo.", "isla espolón y vuelve aquí."},  // 423
-    {3, "Esta tarea debe hacerse en modo manual. Samus.", "Esta tarea debe hacerse manualmente, Samus."},  // 424
-    {4, "sono statti", "sono stati"},  // 425
-    {3, "Puente Heras", "Puente Hera"},  // 426
-    {3, "&image=0xF76434386E7D8B5C;Verduga", "Verduga"},  // 427
-    {3, "Verduga con estilo.", "Muerte con estilo."},  // 428
-    {3, "puerte", "puerta"},  // 429
-    {3, "a las sala de máquinas", "a la sala de máquinas"},  // 430
-    {2, "Puit de", "Puits de"},  // 431
-    {3, "mantenimiendo", "mantenimiento"},  // 432
-    {3, "En interruptor", "El interruptor"},  // 433
-    {3, "rampla", "rampa"},  // 434
-    {3, "Requiere un flujo de descargas\ncinéticas para su activación.", "Ya se ha activado y está\ndesconectada de forma permanente."},  // 435
-    {3, "se ha caido", "se ha caído"},  // 436
-    {3, "todos lo blancos", "todos los blancos"},  // 437
-    {4, "retrattitili", "retrattili"},  // 438
-    {3, "de la la isla", "de la isla"},  // 439
-    {3, "lanzarla la cápsula", "lanzar la cápsula"},  // 440
-    {1, "Stillegung", "Stilllegung"},  // 441
-    {3, "posición. parece que", "posición. Parece que"},  // 442
-    {2, "sécuríté", "sécurité"},  // 443
-    {3, "Haz blanco en todo simultáneamente", "Haz blanco en todos simultáneamente"},  // 444
-    {3, "macanismo", "mecanismo"},  // 445
-    {3, "El parece haber", "El sujeto parece haber"},  // 446
-    {3, "sindica", "indica"},  // 447
-    {3, "la victima", "la víctima"},  // 448
-    {3, "La forma de vida ha sufrido amputaciones durante el combate.", "La forma de vida quedó malherida en combate y no pudo ponerse a salvo."},  // 449
-    {3, "extraido", "extraído"},  // 450
-    {3, "especimen", "espécimen"},  // 451
-    {3, nullptr, "Organismo desconocido.\nSus tejidos han empezado a disolverse\ndebido a varios experimentos."},  // 452
-    {3, "frágil. un impacto", "frágil. Un impacto"},  // 453
-    {3, "concta", "conecta"},  // 454
-    {3, "Puente Atenes", "Puente Atenea"},  // 455
-    {3, "Cuidado..", "Cuidado."},  // 456
-    {3, "La torre fresadora", "La torre de distribución"},  // 457
-    {3, "Mejora del traje:\nCampo de energía.", "Mejora del traje:\nCampo Aislante."},  // 458
-    {3, "El disco fresador", "El disco de distribución"},  // 459
-    {3, "al Stick de Control", "la Palanca de Control"},  // 460
-    {3, "Pastor del tanque metroide activo.", "Barrera del tanque metroide activa."},  // 461
-    {1, "Aktualisierte Statusbericht", "Aktualisierter Statusbericht"},  // 462
-    {1, "Metroid-Project", "Metroid-Projekt"},  // 463
-    {3, "El proyecto metroide \"Terror\"", "El proyecto metroide \"Dread\""},  // 464
-    {4, "sufficiente pe distruggerlo", "sufficiente per distruggerlo"},  // 465
-    {3, "¡Hasta los piratas usan trajes especiales!", "He visto a los piratas usar un escudo especial en el traje que los protege de la lluvia."},  // 466
-    {3, "tránsito 4-A.\nDestino: Minas.", "tránsito 1-B.\nConecta las zonas del centro de investigación."},  // 467
-    {2, "ingénieurie", "ingénierie"},  // 468
-    {3, "Organismo: gusano de arena.", "Organismo desconocido sin vida."},  // 469
-    {3, "No se pude", "No se puede"},  // 470
-    {3, "tránsito 2-B.\nDestino: Centro de mando.", "tránsito 3-A.\nDestino: Centro de mando."},  // 471
-    {4, "&image=0x5FC17B1F30BAA7AE;", "&image=0xF4DCD3D318C1156C;"},  // 472
-    {3, "acceder el Visor", "acceder al Visor"},  // 473
-    {1, "angrenzendas", "angrenzenden"},  // 474
-    {1, "Verteidgungssystems", "Verteidigungssystems"},  // 475
-    {1, "Expresss", "Expresses"},  // 476
-    {3, "esta puerta. mantendremos", "esta puerta. Mantendremos"},  // 477
-    {3, "aleación talonina", "aleación talloniana"},  // 478
-    {3, "electricos", "eléctricos"},  // 479
-    {3, "semilla. te ayudaremos", "semilla. Te ayudaremos"},  // 480
-    {3, "Estamos tras de ti, ¡Samus! ¡Dales duro!", "¡Estamos contigo, Samus! ¡Dales duro!"},  // 481
-    {4, nullptr, "Il terminale è stato privato dell'energia.\nLo scudo vicino è stato disattivato.\nL'unità non può più essere usata."},  // 482
-    {4, "parete rocciose", "parete rocciosa"},  // 483
-    {1, "ziwschen", "zwischen"},  // 484
-    {3, "La reparación se ha debilitado", "El soporte se ha debilitado"},  // 485
-    {3, "con bombas. la verdad", "con bombas. La verdad"},  // 486
-    {3, "de de detrás", "de detrás"},  // 487
-    {3, "están blindado con", "están blindados con"},  // 488
-    {1, "Pilzssporen", "Pilzsporen"},  // 489
-    {3, "regista", "registra"},  // 490
-    {4, "Cavern Metroid", "Grotta Metroid"},  // 491
-    {3, "Está cáscara", "Esta cáscara"},  // 492
-    {3, "El bebé de Leviathan", "El bebé de leviatán"},  // 493
-    {3, "Un explosión", "Una explosión"},  // 494
-    {3, "matriz del Leviathan", "matriz del leviatán"},  // 495
-    {3, "ha huído", "ha huido"},  // 496
-    {3, "energénicas", "energéticas"},  // 497
-    {3, "generador de gusanos", "generador de agujeros de gusano"},  // 498
-    {3, "Núcleo del leviatán de Elysian", "Núcleo del leviatán de Elysia"},  // 499
-    {3, "esto aun no ha terminado", "esto aún no ha terminado"},  // 500
-    {1, "übermittlen", "übermitteln"},  // 501
-    {3, "por método convencionales", "por métodos convencionales"},  // 502
-    {3, "tele transporte", "teletransporte"},  // 503
-    {3, "abjetivos", "objetivos"},  // 504
-    {3, "Visor de rayos X", "Visor de Rayos X"},  // 505
-    {3, "El Misil de Hielo pueden", "El Misil de Hielo puede"},  // 506
-    {1, "Rundass", "Rundas'"},  // 507
-    {3, "del robot de asalto parecen frágiles", "del robot de defensa parecen frágiles"},  // 508
-    {3, "de helios", "de Helios"},  // 509
-    {3, "El Rayo Enganche debe usarse con objetos que brillen.", "El Rayo Enganche puede usarse con objetos que brillen."},  // 510
-    {1, "Magnetischiene", "Magnetschiene"},  // 511
-    {1, "ausgerichtetet", "ausgerichtet"},  // 512
-    {3, "Explora tu entorno y con qué objetos", "Explora tu entorno y descubre con qué objetos"},  // 513
-    {3, "Sobredosis de Phazon", "Sobrecarga de Phazon"},  // 514
-    {4, "Press&image=", "Premi &image="},  // 515
-    {4, "Tieni premuto Hold &image", "Tieni premuto &image"},  // 516
-    {3, "Volver a la pantalla de gestión de datos", "Volver al menú de Wii"},  // 517
-    {4, nullptr, "Questo file appartiene a una versione precedente del gioco. Se non lo elimini, il gioco potrebbe non funzionare correttamente."},  // 518
-    {4, nullptr, "Se salvi ora, questa partita di\nMetroid Prime 3: Corruption terminerà.\nQuando selezionerai di nuovo lo slot,\ninizierai una nuova partita.\n\nVuoi salvare?"},  // 519
-    {3, "¿me recibe alguien", "¿Me recibe alguien"},  // 520
-    {3, "atravesar al Lluvia ácida", "atravesar la lluvia ácida"},  // 521
-    {3, "cuénto", "cuánto"},  // 522
-    {3, "miles de agujeros de gusano", "cientos de agujeros de gusano"},  // 523
-    {3, "si Phaaze es lo que", "Si Phaaze es lo que"},  // 524
-    {1, "Seite zu kampfen", "Seite zu kämpfen"},  // 525
-    {3, "Espero que esta no sea a la última vez que combato", "Espero volver a combatir"},  // 526
-    {2, "jusqu'á", "jusqu'à"},  // 527
-    {2, "les cables", "les câbles"},  // 528
-    {3, "a a todos", "a todos"},  // 529
-    {3, "Todas provienen de la misma isla.", "Una de las islas emite lecturas de energía misteriosas."},  // 530
-    {3, "Por fin establecemos contacto!", "¡Por fin establecemos contacto!"},  // 531
-    {3, "Me encanta que los planes salgan bien.", "El plan ha funcionado."},  // 532
-    {3, "produce un choque anafiláctico", "reacciona de forma descontrolada"},  // 533
-    {3, "no te será posible enfrentarte", "no podrás enfrentarte"},  // 534
-    {3, "Samus Oscura con la Pila de de Phazon", "Samus Oscura sin la Pila de Phazon"},  // 535
-    {3, "Continua explorando", "Continúa explorando"},  // 536
-    {4, "chiuoa", "chiuso"},  // 537
-    {3, "Defiendela", "Defiéndela"},  // 538
-    {3, "Informa de estado", "Informe de estado"},  // 539
-    {1, "Use the Nunchuk stick to scroll list", "Bewege den Stick des Nunchuks, um durch die Liste zu blättern."},  // 540
-    {2, "Use the Nunchuk stick to scroll list", "Utilisez le Stick du Nunchuk pour faire défiler la liste."},  // 541
-    {3, "Use the Nunchuk stick to scroll list", "Usa la palanca del Nunchuk para desplazarte por la lista."},  // 542
-    {4, "Use the Nunchuk stick to scroll list", "Usa la levetta del Nunchuk per scorrere la lista."},  // 543
-    {3, "Como siempre, su plan es sorprendentemente sencillo.", "Como siempre, su plan era único y excelente."},  // 544
-    {1, "SPECIAL ACCESS CODES:", "SPEZIELLE ZUGANGSCODES:"},  // 545
-    {2, "SPECIAL ACCESS CODES:", "CODES D'ACCES SPECIAUX:"},  // 546
-    {3, "SPECIAL ACCESS CODES:", "CÓDIGOS DE ACCESO ESPECIALES:"},  // 547
-    {4, "SPECIAL ACCESS CODES:", "CODICI DI ACCESSO SPECIALI:"},  // 548
-    {1, nullptr, "Schiffsbefehl empfangen.\nFracht wird an ihren Ursprungsort\nzurückgebracht, neuer\nSchiffsbefehl wird ausgeführt."},  // 549
-    {2, nullptr, "Commande du vaisseau reçue.\nRetour de la cargaison à son\nemplacement d'origine et exécution\nde la nouvelle commande."},  // 550
-    {3, nullptr, "Orden para la nave recibida.\nDevolviendo la carga a su\nubicación original y ejecutando\nla nueva orden."},  // 551
-    {4, nullptr, "Comando della nave ricevuto.\nIl carico torna alla posizione\noriginale e viene eseguito il\nnuovo comando."},  // 552
-    {1, nullptr, "Türsystem mit dem Hauptverteiler\ndieses Raums verbunden.\nVerteiler derzeit außer Betrieb."},  // 553
-    {2, nullptr, "Système de porte relié au\ndistributeur principal de cette salle.\nDistributeur actuellement hors service."},  // 554
-    {3, nullptr, "Sistema de la puerta conectado al\ndistribuidor principal de esta sala.\nDistribuidor desactivado."},  // 555
-    {4, nullptr, "Sistema della porta collegato al\ndistributore principale di questa sala.\nDistributore al momento disattivato."},  // 556
-    {1, nullptr, "Türschild wegen Energieverlust\naktiviert. Verteiler mit Energie\nversorgen, um die Sperre zu öffnen."},  // 557
-    {2, nullptr, "Bouclier de porte activé suite à\nune perte d'énergie. Alimentez le\ndistributeur pour le déverrouiller."},  // 558
-    {3, nullptr, "Escudo de la puerta activado por\npérdida de energía. Restablece la energía\ndel distribuidor para abrirlo."},  // 559
-    {4, nullptr, "Scudo della porta attivato per\nperdita di energia. Ripristina l'energia\ndel distributore per sbloccarlo."},  // 560
-    {1, nullptr, "Schaltkreis im Projektor repariert.\nProjektor über die Steuereinheit\naktivieren."},  // 561
-    {2, nullptr, "Circuit du projecteur réparé.\nUtilisez l'unité de contrôle\npour activer le projecteur."},  // 562
-    {3, nullptr, "Circuito del proyector reparado.\nUsa la unidad de control\npara activar el proyector."},  // 563
-    {4, nullptr, "Circuito del proiettore riparato.\nUsa l'unità di controllo\nper attivare il proiettore."},  // 564
-    {1, nullptr, "Hauptaufzugssystem aktiv.\nZugang zum Lastenaufzug gestattet.\nHologramm betreten, um den Aufzug zu starten."},  // 565
-    {2, nullptr, "Système d'ascenseur principal opérationnel.\nAccès au monte-charge autorisé.\nEntrez dans l'hologramme pour l'activer."},  // 566
-    {3, nullptr, "Sistema de elevación principal activo.\nAcceso al montacargas permitido.\nEntra en el holograma para activarlo."},  // 567
-    {4, nullptr, "Sistema di sollevamento primario attivo.\nAccesso al montacarichi consentito.\nEntra nell'ologramma per attivarlo."},  // 568
-    {1, nullptr, "Terminal abgeschaltet.\nZugang zum nahen Aufzug\nist jetzt gestattet."},  // 569
-    {2, nullptr, "Terminal hors tension.\nAccès à l'ascenseur voisin\nautorisé."},  // 570
-    {3, nullptr, "Terminal apagado.\nYa se puede acceder al\nascensor cercano."},  // 571
-    {4, nullptr, "Terminale spento.\nOra è possibile accedere\nall'ascensore vicino."},  // 572
-    {1, nullptr, "Aufzug aktiviert.\nSteuerkonsole des Aufzugs\nist jetzt außer Betrieb."},  // 573
-    {2, nullptr, "Ascenseur activé.\nLa console de contrôle de\nl'ascenseur est hors service."},  // 574
-    {3, nullptr, "Ascensor activado.\nLa consola de control del\nascensor ya no funciona."},  // 575
-    {4, nullptr, "Ascensore attivato.\nLa console di controllo\ndell'ascensore è disattivata."},  // 576
-    {1, nullptr, "Steuerkonsole hat die\nZugangstüren geöffnet. Konsole\nkann nicht mehr benutzt werden."},  // 577
-    {2, nullptr, "La console de contrôle a ouvert\nles portes d'accès. Elle ne peut\nplus être utilisée."},  // 578
-    {3, nullptr, "La consola de control ha abierto\nlas puertas de acceso. Ya no\nse puede volver a usar."},  // 579
-    {4, nullptr, "La console di controllo ha aperto\nle porte di accesso. Non può\npiù essere usata."},  // 580
-    {1, nullptr, "Umleitung des Förderbands abgeschlossen.\nSteuerterminal kann nicht\nmehr benutzt werden."},  // 581
-    {2, nullptr, "Redirection du convoyeur terminée.\nLe terminal de contrôle ne peut\nplus être utilisé."},  // 582
-    {3, nullptr, "Desvío de la cinta transportadora completado.\nEl terminal de control ya no\nse puede usar."},  // 583
-    {4, nullptr, "Deviazione del nastro trasportatore completata.\nIl terminale di controllo non può\npiù essere usato."},  // 584
-    {1, nullptr, "Terminal hat die Schilde des\nEnergiekerns deaktiviert und kann\nnicht mehr benutzt werden."},  // 585
-    {2, nullptr, "Le terminal a abaissé les boucliers\ndu noyau d'énergie et ne peut\nplus être utilisé."},  // 586
-    {3, nullptr, "El terminal ha desactivado los\nescudos del núcleo de energía y\nya no se puede usar."},  // 587
-    {4, nullptr, "Il terminale ha disattivato gli\nscudi del Nucleo Energia e non\npuò più essere usato."},  // 588
-    {1, nullptr, "Terminal hat den nahen\nEnergieschild deaktiviert. Terminal\nkann nicht mehr benutzt werden."},  // 589
-    {2, nullptr, "Le terminal a désactivé le bouclier\nd'énergie voisin. Il ne peut\nplus être utilisé."},  // 590
-    {3, nullptr, "El terminal ha desactivado el\nescudo de energía cercano. Ya no\nse puede usar."},  // 591
-    {4, nullptr, "Il terminale ha disattivato lo\nscudo di energia vicino. Non può\npiù essere usato."},  // 592
-    {1, nullptr, "Steuerterminal hat die nahe\nTür geöffnet. Steuerterminal kann\nnicht mehr benutzt werden."},  // 593
-    {2, nullptr, "Le terminal de contrôle a ouvert\nla porte voisine. Il ne peut\nplus être utilisé."},  // 594
-    {3, nullptr, "El terminal de control ha abierto\nla puerta cercana. Ya no\nse puede usar."},  // 595
-    {4, nullptr, "Il terminale di controllo ha aperto\nla porta vicina. Non può\npiù essere usato."},  // 596
-    {1, nullptr, "Steuerterminal hat die nahe\nTür geöffnet. Terminal kann\nnicht mehr benutzt werden."},  // 597
-    {2, nullptr, "Le terminal de contrôle a ouvert\nla porte voisine. Le terminal\nne peut plus être utilisé."},  // 598
-    {3, nullptr, "El terminal de control ha abierto\nla puerta cercana. El terminal\nya no se puede usar."},  // 599
-    {4, nullptr, "Il terminale di controllo ha aperto\nla porta vicina. Il terminale\nnon può più essere usato."},  // 600
-    {1, nullptr, "&just=center;Damit die Wii-Pinnwand nicht zu schnell voll wird, mache nicht zu viele Bildschirmfotos."},  // 601
-    {2, nullptr, "&just=center;Pour que le bureau Wii ne se remplisse pas trop vite, évitez de prendre trop de captures d'écran."},  // 602
-    {3, nullptr, "&just=center;Para que el tablón de Wii no se llene demasiado rápido, evita hacer demasiadas capturas de pantalla."},  // 603
-    {4, nullptr, "&just=center;Per evitare che la bacheca Wii si riempia troppo in fretta, non catturare troppe immagini."},  // 604
-    {1, nullptr, "&just=center;Damit die Wii-Pinnwand nicht zu schnell voll wird, veröffentliche nicht zu viele Bildschirmfotos.\n"},  // 605
-    {2, nullptr, "&just=center;Pour que le bureau Wii ne se remplisse pas trop vite, évitez de publier trop de captures d'écran.\n"},  // 606
-    {3, nullptr, "&just=center;Para que el tablón de Wii no se llene demasiado rápido, evita publicar demasiadas capturas de pantalla.\n"},  // 607
-    {4, nullptr, "Sei sicuro?"},  // 608
-    {4, nullptr, "&just=center;Per evitare che la bacheca Wii si riempia troppo in fretta, non pubblicare troppe immagini.\n"},  // 609
-    {1, nullptr, "&just=center;Die Nutzung der Netzwerkfunktionen ist eingeschränkt. Bitte überprüfe die Einstellungen der Altersbeschränkungen in den Wii-Optionen."},  // 610
-    {2, nullptr, "&just=center;L'utilisation des fonctions réseau est restreinte. Veuillez vérifier les paramètres du contrôle parental dans les Paramètres Wii."},  // 611
-    {3, nullptr, "&just=center;El uso de las funciones de red está restringido. Revisa la configuración del control parental en las Opciones de Wii."},  // 612
-    {4, nullptr, "&just=center;L'uso delle funzioni di rete è limitato. Controlla le impostazioni del Filtro famiglia nelle Opzioni Wii."},  // 613
-    {3, "Espero que esta no sea la última vez que combato", "Espero volver a combatir"},  // 614
-    {3, "se produce un choque anafiláctico", "reacciona de forma descontrolada"},  // 615
-    {1, "[ Play Game ]", "[ Spielen ]"},  // 616
-    {1, "[ Start Game ]", "[ Spiel beginnen ]"},  // 617
-    {1, "[ Play Single Player ]", "[ Einzelspieler ]"},  // 618
-    {1, "[ Start Single Player ]", "[ Einzelspieler beginnen ]"},  // 619
-    {1, "[ Play MP2: Echoes Multiplayer ]", "[ MP2: Echoes - Mehrspieler ]"},  // 620
-    {1, "Select game to be erased…", "Welche Datei soll gelöscht werden?"},  // 621
-    {1, "Single Player Games", "Einzelspieler-Spielstände"},  // 622
-    {1, "[ Back ]", "[ Zurück ]"},  // 623
-    {1, "[ Erase ]", "[ Löschen ]"},  // 624
-    {1, "Select Level", "Level wählen"},  // 625
-    {1, "[ GF Ship ]", "[ Schiff der GF ]"},  // 626
-    {1, "[ Skytown ]", "[ Himmelsstadt ]"},  // 627
-    {1, "&space;Locked&pop;", "&space;Gesperrt&pop;"},  // 628
-    {1, "MP2 - Promo Art Package", "MP2 - Werbegrafiken"},  // 629
-    {1, "MP2 - Character Package", "MP2 - Charaktere"},  // 630
-    {1, "MP2 - Creature Package", "MP2 - Kreaturen"},  // 631
-    {1, "MP2 - Boss Package", "MP2 - Bosse"},  // 632
-    {1, "MP2 - Sketch Package", "MP2 - Skizzen"},  // 633
-    {1, "MP2 - Storyboard Package", "MP2 - Storyboards"},  // 634
-    {1, "Music from", "Musik aus"},  // 635
-    {1, "Flaaghra", "Flaahgra"},  // 636
-    {1, "Use the Nunchuk Control Stick to scroll list", "Bewege den Control Stick des Nunchuks, um durch die Liste zu blättern."},  // 637
-    {1, "&space;Unlocked&endif;", "&space;Freigeschaltet&endif;"},  // 638
-    {1, "MP1 - World Gallery", "MP1 - Welten"},  // 639
-    {1, "MP1 - Biology Gallery", "MP1 - Lebensformen"},  // 640
-    {1, "MP1 - Samus Gallery", "MP1 - Samus"},  // 641
-    {1, "MP1 - Extra Gallery", "MP1 - Extras"},  // 642
-    {1, "MP1 Fusion Suit", "MP1 - Fusion Suit"},  // 643
-    {1, "Metroid Prime Theme", "Metroid Prime - Thema"},  // 644
-    {1, "Parasite Queen", "Mutterparasit"},  // 645
-    {1, "Tallon Overworld", "Tallon-Oberwelt"},  // 646
-    {1, "Chozo Shrine", "Chozo-Tempel"},  // 647
-    {1, "Chozo Ruins", "Chozo-Ruinen"},  // 648
-    {1, "Magmoor Caverns", "Höhlen von Magmoor"},  // 649
-    {1, "Phendrana Drifts", "Eiswüste von Phendrana"},  // 650
-    {1, "Phendrana Battle", "Kampf in Phendrana"},  // 651
-    {1, "Crashed Ship", "Havarierte Fregatte"},  // 652
-    {1, "Phazon Mines", "Phazon-Minen"},  // 653
-    {1, "Space Pirates", "Weltraumpiraten"},  // 654
-    {1, "Omega Pirate", "Omegapirat"},  // 655
-    {1, "Meta Ridley", "Meta-Ridley"},  // 656
-    {1, "Metroid Prime Battle", "Kampf gegen Metroid Prime"},  // 657
-    {1, "Metroid Prime Credits", "Metroid Prime - Abspann"},  // 658
-    {1, "Metroid Prime 2: Echoes Theme", "Metroid Prime 2: Echoes - Thema"},  // 659
-    {1, "Splinter Hive", "Splinter-Bau"},  // 660
-    {1, "Dark Trooper", "Dunkler Soldat"},  // 661
-    {1, "Luminoth Temple", "Tempel der Luminoth"},  // 662
-    {1, "The Luminoth", "Die Luminoth"},  // 663
-    {1, "Dark Temple", "Dunkler Tempel"},  // 664
-    {1, "Agon Wastes", "Ödland von Agon"},  // 665
-    {1, "Dark Agon Wastes", "Ödland vom dunklen Agon"},  // 666
-    {1, "Torvus Catacombs", "Torvus-Katakomben"},  // 667
-    {1, "Ing Battle", "Kampf gegen die Ing"},  // 668
-    {1, "Sanctuary Fortress", "Geheiligte Festung"},  // 669
-    {1, "Dark Samus", "Dunkle Samus"},  // 670
-    {1, "MP3: Corruption Theme", "MP3: Corruption - Thema"},  // 671
-    {1, "Aurora Unit 313", "Aurora-Einheit 313"},  // 672
-    {1, "MP1 Track", "MP1 - Stück"},  // 673
-    {1, "MP2 Track", "MP2 - Stück"},  // 674
-    {1, "MP3 Track", "MP3 - Stück"},  // 675
-    {1, "File 1&endif;", "Datei 1&endif;"},  // 676
-    {1, "&else;Slot 1&endif;", "&else;Speicherplatz 1&endif;"},  // 677
-    {1, "File 2&endif;", "Datei 2&endif;"},  // 678
-    {1, "&else;Slot 2&endif;", "&else;Speicherplatz 2&endif;"},  // 679
-    {1, "File 3&endif;", "Datei 3&endif;"},  // 680
-    {1, "&else;Slot 3&endif;", "&else;Speicherplatz 3&endif;"},  // 681
-    {2, "[ Play Game ]", "[ Jouer ]"},  // 682
-    {2, "[ Start Game ]", "[ Commencer ]"},  // 683
-    {2, "[ Play Single Player ]", "[ Un joueur ]"},  // 684
-    {2, "[ Start Single Player ]", "[ Commencer en solo ]"},  // 685
-    {2, "[ Play MP2: Echoes Multiplayer ]", "[ MP2: Echoes - Multijoueur ]"},  // 686
-    {2, "Select game to be erased…", "Choisissez la sauvegarde à effacer."},  // 687
-    {2, "Single Player Games", "Parties en solo"},  // 688
-    {2, "[ Back ]", "[ Retour ]"},  // 689
-    {2, "[ Erase ]", "[ Effacer ]"},  // 690
-    {2, "Select Level", "Sélectionnez un niveau"},  // 691
-    {2, "[ GF Ship ]", "[ Vaisseau de la FG ]"},  // 692
-    {2, "[ Skytown ]", "[ Célestius ]"},  // 693
-    {2, "&space;Locked&pop;", "&space;Bloqué&pop;"},  // 694
-    {2, "MP2 - Promo Art Package", "MP2 - Art promotionnel"},  // 695
-    {2, "MP2 - Character Package", "MP2 - Personnages"},  // 696
-    {2, "MP2 - Creature Package", "MP2 - Créatures"},  // 697
-    {2, "MP2 - Boss Package", "MP2 - Boss"},  // 698
-    {2, "MP2 - Sketch Package", "MP2 - Croquis"},  // 699
-    {2, "MP2 - Storyboard Package", "MP2 - Storyboards"},  // 700
-    {2, "Music from", "Musique de"},  // 701
-    {2, "Flaaghra", "Flaahgra"},  // 702
-    {2, "Use the Nunchuk Control Stick to scroll list", "Utilisez le Stick du Nunchuk pour faire défiler la liste."},  // 703
-    {2, "MP1 - World Gallery", "MP1 - Galerie des mondes"},  // 704
-    {2, "MP1 - Biology Gallery", "MP1 - Galerie biologique"},  // 705
-    {2, "MP1 - Samus Gallery", "MP1 - Galerie de Samus"},  // 706
-    {2, "MP1 - Extra Gallery", "MP1 - Galerie bonus"},  // 707
-    {2, "MP1 Fusion Suit", "MP1 - Costume Fusion"},  // 708
-    {2, "Metroid Prime Theme", "Thème de Metroid Prime"},  // 709
-    {2, "Parasite Queen", "Reine parasite"},  // 710
-    {2, "Tallon Overworld", "Surface de Tallon"},  // 711
-    {2, "Chozo Shrine", "Temple Chozo"},  // 712
-    {2, "Chozo Ruins", "Ruines Chozo"},  // 713
-    {2, "Magmoor Caverns", "Cavernes du Magmoor"},  // 714
-    {2, "Phendrana Drifts", "Monts de Phendrana"},  // 715
-    {2, "Phendrana Battle", "Combat dans Phendrana"},  // 716
-    {2, "Crashed Ship", "Frégate échouée"},  // 717
-    {2, "Phazon Mines", "Mines de Phazon"},  // 718
-    {2, "Space Pirates", "Pirates de l'espace"},  // 719
-    {2, "Omega Pirate", "Pirate oméga"},  // 720
-    {2, "Meta Ridley", "Méta Ridley"},  // 721
-    {2, "Metroid Prime Battle", "Combat contre Metroid Prime"},  // 722
-    {2, "Metroid Prime Credits", "Générique de Metroid Prime"},  // 723
-    {2, "Metroid Prime 2: Echoes Theme", "Thème de Metroid Prime 2: Echoes"},  // 724
-    {2, "Splinter Hive", "Ruche de Splinters"},  // 725
-    {2, "Dark Trooper", "Soldat Sombre"},  // 726
-    {2, "Luminoth Temple", "Temple Luminoth"},  // 727
-    {2, "The Luminoth", "Les Luminoth"},  // 728
-    {2, "Dark Temple", "Temple Sombre"},  // 729
-    {2, "Agon Wastes", "Désert d'Agon"},  // 730
-    {2, "Dark Agon Wastes", "Désert d'Agon Sombre"},  // 731
-    {2, "Torvus Catacombs", "Catacombes de Torvus"},  // 732
-    {2, "Ing Battle", "Combat contre les Ing"},  // 733
-    {2, "Sanctuary Fortress", "Forteresse du Sanctuaire"},  // 734
-    {2, "Dark Samus", "Samus Sombre"},  // 735
-    {2, "MP3: Corruption Theme", "Thème de MP3: Corruption"},  // 736
-    {2, "Aurora Unit 313", "Unité Aurora 313"},  // 737
-    {2, "MP1 Track", "MP1 - Piste"},  // 738
-    {2, "MP2 Track", "MP2 - Piste"},  // 739
-    {2, "MP3 Track", "MP3 - Piste"},  // 740
-    {2, "File 1&endif;", "Fichier 1&endif;"},  // 741
-    {2, "&else;Slot 1&endif;", "&else;Emplacement 1&endif;"},  // 742
-    {2, "File 2&endif;", "Fichier 2&endif;"},  // 743
-    {2, "&else;Slot 2&endif;", "&else;Emplacement 2&endif;"},  // 744
-    {2, "File 3&endif;", "Fichier 3&endif;"},  // 745
-    {2, "&else;Slot 3&endif;", "&else;Emplacement 3&endif;"},  // 746
-    {3, "[ Play Game ]", "[ Continuar partida ]"},  // 747
-    {3, "[ Start Game ]", "[ Empezar partida ]"},  // 748
-    {3, "[ Play Single Player ]", "[ Un jugador ]"},  // 749
-    {3, "[ Start Single Player ]", "[ Empezar Un jugador ]"},  // 750
-    {3, "[ Play MP2: Echoes Multiplayer ]", "[ MP2: Echoes - Multijugador ]"},  // 751
-    {3, "Select game to be erased…", "¿Qué partida quieres borrar?"},  // 752
-    {3, "Single Player Games", "Partidas de Un jugador"},  // 753
-    {3, "[ Back ]", "[ Atrás ]"},  // 754
-    {3, "[ Erase ]", "[ Borrar ]"},  // 755
-    {3, "Select Level", "Selecciona un nivel"},  // 756
-    {3, "[ GF Ship ]", "[ Nave de la FG ]"},  // 757
-    {3, "[ Skytown ]", "[ Cielolab ]"},  // 758
-    {3, "MP2 - Promo Art Package", "MP2 - Arte promocional"},  // 759
-    {3, "MP2 - Character Package", "MP2 - Personajes"},  // 760
-    {3, "MP2 - Creature Package", "MP2 - Criaturas"},  // 761
-    {3, "MP2 - Boss Package", "MP2 - Jefes"},  // 762
-    {3, "MP2 - Sketch Package", "MP2 - Bocetos"},  // 763
-    {3, "MP2 - Storyboard Package", "MP2 - Guiones gráficos"},  // 764
-    {3, "Music from", "Música de"},  // 765
-    {3, "Flaaghra", "Flaahgra"},  // 766
-    {3, "Use the Nunchuk Control Stick to scroll list", "Usa la palanca de control del Nunchuk para desplazarte por la lista."},  // 767
-    {3, "MP1 - World Gallery", "MP1 - Galería de mundos"},  // 768
-    {3, "MP1 - Biology Gallery", "MP1 - Galería de biología"},  // 769
-    {3, "MP1 - Samus Gallery", "MP1 - Galería de Samus"},  // 770
-    {3, "MP1 - Extra Gallery", "MP1 - Galería de extras"},  // 771
-    {3, "MP1 Fusion Suit", "MP1 - Traje Fusión"},  // 772
-    {3, "Metroid Prime Theme", "Tema de Metroid Prime"},  // 773
-    {3, "Parasite Queen", "Parásito Reina"},  // 774
-    {3, "Tallon Overworld", "Superficie de Tallon"},  // 775
-    {3, "Chozo Shrine", "Templo Chozo"},  // 776
-    {3, "Chozo Ruins", "Ruinas Chozo"},  // 777
-    {3, "Magmoor Caverns", "Cavernas Magmoor"},  // 778
-    {3, "Phendrana Drifts", "Phendrana"},  // 779
-    {3, "Phendrana Battle", "Combate en Phendrana"},  // 780
-    {3, "Crashed Ship", "Nave estrellada"},  // 781
-    {3, "Phazon Mines", "Minas de Phazon"},  // 782
-    {3, "Space Pirates", "Piratas espaciales"},  // 783
-    {3, "Omega Pirate", "Pirata Omega"},  // 784
-    {3, "Metroid Prime Battle", "Combate contra Metroid Prime"},  // 785
-    {3, "Metroid Prime Credits", "Créditos de Metroid Prime"},  // 786
-    {3, "Metroid Prime 2: Echoes Theme", "Tema de Metroid Prime 2: Echoes"},  // 787
-    {3, "Splinter Hive", "Colmena de esquirlas"},  // 788
-    {3, "Dark Trooper", "Soldado oscuro"},  // 789
-    {3, "Luminoth Temple", "Templo luminario"},  // 790
-    {3, "The Luminoth", "Los Luminarios"},  // 791
-    {3, "Dark Temple", "Templo Oscuro"},  // 792
-    {3, "Agon Wastes", "Yermos de Agón"},  // 793
-    {3, "Dark Agon Wastes", "Yermos de Agón Oscuro"},  // 794
-    {3, "Torvus Catacombs", "Catacumbas de Torvus"},  // 795
-    {3, "Ing Battle", "Combate contra los Oscuros"},  // 796
-    {3, "Sanctuary Fortress", "Fortaleza del Santuario"},  // 797
-    {3, "Dark Samus", "Samus Oscura"},  // 798
-    {3, "MP3: Corruption Theme", "Tema de MP3: Corruption"},  // 799
-    {3, "Aurora Unit 313", "Unidad Aurora 313"},  // 800
-    {3, "MP1 Track", "MP1 - Pista"},  // 801
-    {3, "MP2 Track", "MP2 - Pista"},  // 802
-    {3, "MP3 Track", "MP3 - Pista"},  // 803
-    {3, "File 1&endif;", "Archivo 1&endif;"},  // 804
-    {3, "&else;Slot 1&endif;", "&else;Partida 1&endif;"},  // 805
-    {3, "File 2&endif;", "Archivo 2&endif;"},  // 806
-    {3, "&else;Slot 2&endif;", "&else;Partida 2&endif;"},  // 807
-    {3, "File 3&endif;", "Archivo 3&endif;"},  // 808
-    {3, "&else;Slot 3&endif;", "&else;Partida 3&endif;"},  // 809
-    {4, "[ Play Game ]", "[ Gioca ]"},  // 810
-    {4, "[ Start Game ]", "[ Inizia a giocare ]"},  // 811
-    {4, "[ Play Single Player ]", "[ Giocatore singolo ]"},  // 812
-    {4, "[ Start Single Player ]", "[ Inizia giocatore singolo ]"},  // 813
-    {4, "[ Play MP2: Echoes Multiplayer ]", "[ MP2: Echoes - Multigiocatore ]"},  // 814
-    {4, "Select game to be erased…", "Scegli la partita da cancellare."},  // 815
-    {4, "Single Player Games", "Partite giocatore singolo"},  // 816
-    {4, "[ Back ]", "[ Indietro ]"},  // 817
-    {4, "[ Erase ]", "[ Cancella ]"},  // 818
-    {4, "Select Level", "Seleziona livello"},  // 819
-    {4, "[ GF Ship ]", "[ Nave della FG ]"},  // 820
-    {4, "[ Skytown ]", "[ Etra ]"},  // 821
-    {4, "&space;Locked&pop;", "&space;Bloccato&pop;"},  // 822
-    {4, "MP2 - Promo Art Package", "MP2 - Arte promozionale"},  // 823
-    {4, "MP2 - Character Package", "MP2 - Personaggi"},  // 824
-    {4, "MP2 - Creature Package", "MP2 - Creature"},  // 825
-    {4, "MP2 - Boss Package", "MP2 - Boss"},  // 826
-    {4, "MP2 - Sketch Package", "MP2 - Bozzetti"},  // 827
-    {4, "MP2 - Storyboard Package", "MP2 - Storyboard"},  // 828
-    {4, "Music from", "Musiche di"},  // 829
-    {4, "Flaaghra", "Flaahgra"},  // 830
-    {4, "Use the Nunchuk Control Stick to scroll list", "Usa il Control Stick del Nunchuk per scorrere la lista."},  // 831
-    {4, "&space;Unlocked&endif;", "&space;Sbloccato&endif;"},  // 832
-    {4, "MP1 - World Gallery", "MP1 - Galleria dei mondi"},  // 833
-    {4, "MP1 - Biology Gallery", "MP1 - Galleria biologica"},  // 834
-    {4, "MP1 - Samus Gallery", "MP1 - Galleria di Samus"},  // 835
-    {4, "MP1 - Extra Gallery", "MP1 - Galleria extra"},  // 836
-    {4, "MP1 Fusion Suit", "MP1 - Tuta Fusione"},  // 837
-    {4, "Metroid Prime Theme", "Tema di Metroid Prime"},  // 838
-    {4, "Parasite Queen", "Parassita Regina"},  // 839
-    {4, "Tallon Overworld", "Superficie di Tallon"},  // 840
-    {4, "Chozo Shrine", "Santuario Chozo"},  // 841
-    {4, "Chozo Ruins", "Rovine Chozo"},  // 842
-    {4, "Magmoor Caverns", "Grotte Magmoor"},  // 843
-    {4, "Phendrana Drifts", "Phendrana"},  // 844
-    {4, "Phendrana Battle", "Battaglia a Phendrana"},  // 845
-    {4, "Crashed Ship", "Fregata precipitata"},  // 846
-    {4, "Phazon Mines", "Miniere di Phazon"},  // 847
-    {4, "Space Pirates", "Pirati Spaziali"},  // 848
-    {4, "Omega Pirate", "Pirata Omega"},  // 849
-    {4, "Metroid Prime Battle", "Battaglia contro Metroid Prime"},  // 850
-    {4, "Metroid Prime Credits", "Titoli di coda di Metroid Prime"},  // 851
-    {4, "Metroid Prime 2: Echoes Theme", "Tema di Metroid Prime 2: Echoes"},  // 852
-    {4, "Splinter Hive", "Nido degli Splinter"},  // 853
-    {4, "Dark Trooper", "Soldato Oscuro"},  // 854
-    {4, "Luminoth Temple", "Tempio Luminoth"},  // 855
-    {4, "The Luminoth", "I Luminoth"},  // 856
-    {4, "Dark Temple", "Tempio Oscuro"},  // 857
-    {4, "Agon Wastes", "Deserto di Agon"},  // 858
-    {4, "Dark Agon Wastes", "Deserto di Agon Oscuro"},  // 859
-    {4, "Torvus Catacombs", "Catacombe di Torvus"},  // 860
-    {4, "Ing Battle", "Battaglia contro gli Ing"},  // 861
-    {4, "Sanctuary Fortress", "Fortezza del Santuario"},  // 862
-    {4, "Dark Samus", "Samus Oscura"},  // 863
-    {4, "MP3: Corruption Theme", "Tema di MP3: Corruption"},  // 864
-    {4, "Aurora Unit 313", "Unità Aurora 313"},  // 865
-    {4, "MP1 Track", "MP1 - Brano"},  // 866
-    {4, "MP2 Track", "MP2 - Brano"},  // 867
-    {4, "MP3 Track", "MP3 - Brano"},  // 868
-    {1, nullptr, "Fusion Suit aktivieren? Samus trägt dann in MP1 den Fusion Suit."},  // 869
-    {1, nullptr, "Fusion Suit erwerben? Samus trägt dann in MP1 den Fusion Suit."},  // 870
-    {1, nullptr, "Die Nutzung der Netzwerkfunktionen ist eingeschränkt. Bitte überprüfe die Einstellungen der Altersbeschränkungen in den Wii-Optionen."},  // 871
-    {2, nullptr, "Activer le costume Fusion? Samus portera le costume Fusion dans MP1."},  // 872
-    {2, nullptr, "Acheter le costume Fusion? Samus portera le costume Fusion dans MP1."},  // 873
-    {2, nullptr, "L'utilisation des fonctions réseau est restreinte. Veuillez vérifier les paramètres du contrôle parental dans les Paramètres Wii."},  // 874
-    {3, nullptr, "¿Quieres activar el Traje Fusión? Samus lo llevará puesto en MP1."},  // 875
-    {3, nullptr, "¿Quieres comprar el Traje Fusión? Samus lo llevará puesto en MP1."},  // 876
-    {3, nullptr, "El uso de las funciones de red está restringido. Revisa la configuración del control parental en las Opciones de Wii."},  // 877
-    {4, nullptr, "Vuoi attivare la Tuta Fusione? Samus la indosserà in MP1."},  // 878
-    {4, nullptr, "Vuoi acquistare la Tuta Fusione? Samus la indosserà in MP1."},  // 879
-    {4, nullptr, "L'uso delle funzioni di rete è limitato. Controlla le impostazioni del Filtro famiglia nelle Opzioni Wii."},  // 880
+    {3, nullptr, "&just=center;Tira del mando hacia atrás y luego empújalo hacia delante para bombear."},  // 385
+    {3, "cernanas", "cercanas"},  // 386
+    {3, "La sistema", "El sistema"},  // 387
+    {1, "voll auslastet", "voll ausgelastet"},  // 388
+    {3, "bordes &push;&main-color=#4E9761;verde&pop;", "bordes &push;&main-color=#4E9761;verdes&pop;"},  // 389
+    {3, "enegía", "energía"},  // 390
+    {3, "laviatán", "leviatán"},  // 391
+    {3, "Cuebas", "Cuevas"},  // 392
+    {3, "Una arma", "Un arma"},  // 393
+    {3, "Barrra", "Barra"},  // 394
+    {3, "ultraresistente", "ultrarresistente"},  // 395
+    {3, "estás estatuas", "estas estatuas"},  // 396
+    {3, "Golem", "Gólem"},  // 397
+    {3, "con al configuración", "con la configuración"},  // 398
+    {2, "retractée", "rétractée"},  // 399
+    {3, "Para que intenta", "Parece que intenta"},  // 400
+    {3, "de la acantilado", "del acantilado"},  // 401
+    {3, "en este posición", "en esta posición"},  // 402
+    {3, "Puertas defensivas", "Patio antiguo"},  // 403
+    {3, "suministra energía el escudo", "suministra energía al escudo"},  // 404
+    {3, "estás armas", "estas armas"},  // 405
+    {3, "Pasaje de la torreta norte", "Patio de la torreta norte"},  // 406
+    {3, "Torreta norte", "Pasaje de la torreta norte"},  // 407
+    {3, "son\nvulnerable a las explosiones", "son\nvulnerables a las explosiones"},  // 408
+    {3, "mientas", "mientras"},  // 409
+    {1, "Waffenystem", "Waffensystem"},  // 410
+    {3, "las arms de", "las armas de"},  // 411
+    {3, "Golems", "Gólems"},  // 412
+    {1, "erneut aktiveren", "erneut aktivieren"},  // 413
+    {1, "Fließgeschwindgkeit", "Fließgeschwindigkeit"},  // 414
+    {3, "Torreta sur", "Patio de la torreta sur"},  // 415
+    {3, "para seguir saltando hacia la superficie", "para seguir saltando pared arriba"},  // 416
+    {1, "Errrichtung", "Errichtung"},  // 417
+    {3, "Estación Zipline", "Estación de tirolina"},  // 418
+    {3, "red principal e Cielolab", "red principal de Cielolab"},  // 419
+    {3, "Se detecta signos", "Se detectan signos"},  // 420
+    {3, "conctada", "conectada"},  // 421
+    {3, "Se la interrumpido", "Se ha interrumpido"},  // 422
+    {3, "componentes necesario", "componentes necesarios"},  // 423
+    {3, "isla espolón. Rápido, no queda mucho tiempo.", "isla espolón y vuelve aquí."},  // 424
+    {3, "Esta tarea debe hacerse en modo manual. Samus.", "Esta tarea debe hacerse manualmente, Samus."},  // 425
+    {4, "sono statti", "sono stati"},  // 426
+    {3, "Puente Heras", "Puente Hera"},  // 427
+    {3, "&image=0xF76434386E7D8B5C;Verduga", "Verduga"},  // 428
+    {3, "Verduga con estilo.", "Muerte con estilo."},  // 429
+    {3, "puerte", "puerta"},  // 430
+    {3, "a las sala de máquinas", "a la sala de máquinas"},  // 431
+    {2, "Puit de", "Puits de"},  // 432
+    {3, "mantenimiendo", "mantenimiento"},  // 433
+    {3, "En interruptor", "El interruptor"},  // 434
+    {3, "rampla", "rampa"},  // 435
+    {3, "Requiere un flujo de descargas\ncinéticas para su activación.", "Ya se ha activado y está\ndesconectada de forma permanente."},  // 436
+    {3, "se ha caido", "se ha caído"},  // 437
+    {3, "todos lo blancos", "todos los blancos"},  // 438
+    {4, "retrattitili", "retrattili"},  // 439
+    {3, "de la la isla", "de la isla"},  // 440
+    {3, "lanzarla la cápsula", "lanzar la cápsula"},  // 441
+    {1, "Stillegung", "Stilllegung"},  // 442
+    {3, "posición. parece que", "posición. Parece que"},  // 443
+    {2, "sécuríté", "sécurité"},  // 444
+    {3, "Haz blanco en todo simultáneamente", "Haz blanco en todos simultáneamente"},  // 445
+    {3, "macanismo", "mecanismo"},  // 446
+    {3, "El parece haber", "El sujeto parece haber"},  // 447
+    {3, "sindica", "indica"},  // 448
+    {3, "la victima", "la víctima"},  // 449
+    {3, "La forma de vida ha sufrido amputaciones durante el combate.", "La forma de vida quedó malherida en combate y no pudo ponerse a salvo."},  // 450
+    {3, "extraido", "extraído"},  // 451
+    {3, "especimen", "espécimen"},  // 452
+    {3, nullptr, "Organismo desconocido.\nSus tejidos han empezado a disolverse\ndebido a varios experimentos."},  // 453
+    {3, "frágil. un impacto", "frágil. Un impacto"},  // 454
+    {3, "concta", "conecta"},  // 455
+    {3, "Puente Atenes", "Puente Atenea"},  // 456
+    {3, "Cuidado..", "Cuidado."},  // 457
+    {3, "La torre fresadora", "La torre de distribución"},  // 458
+    {3, "Mejora del traje:\nCampo de energía.", "Mejora del traje:\nCampo Aislante."},  // 459
+    {3, "El disco fresador", "El disco de distribución"},  // 460
+    {3, "al Stick de Control", "la Palanca de Control"},  // 461
+    {3, "Pastor del tanque metroide activo.", "Barrera del tanque metroide activa."},  // 462
+    {1, "Aktualisierte Statusbericht", "Aktualisierter Statusbericht"},  // 463
+    {1, "Metroid-Project", "Metroid-Projekt"},  // 464
+    {3, "El proyecto metroide \"Terror\"", "El proyecto metroide \"Dread\""},  // 465
+    {4, "sufficiente pe distruggerlo", "sufficiente per distruggerlo"},  // 466
+    {3, "¡Hasta los piratas usan trajes especiales!", "He visto a los piratas usar un escudo especial en el traje que los protege de la lluvia."},  // 467
+    {3, "tránsito 4-A.\nDestino: Minas.", "tránsito 1-B.\nConecta las zonas del centro de investigación."},  // 468
+    {2, "ingénieurie", "ingénierie"},  // 469
+    {3, "Organismo: gusano de arena.", "Organismo desconocido sin vida."},  // 470
+    {3, "No se pude", "No se puede"},  // 471
+    {3, "tránsito 2-B.\nDestino: Centro de mando.", "tránsito 3-A.\nDestino: Centro de mando."},  // 472
+    {4, "&image=0x5FC17B1F30BAA7AE;", "&image=0xF4DCD3D318C1156C;"},  // 473
+    {3, "acceder el Visor", "acceder al Visor"},  // 474
+    {1, "angrenzendas", "angrenzenden"},  // 475
+    {1, "Verteidgungssystems", "Verteidigungssystems"},  // 476
+    {1, "Expresss", "Expresses"},  // 477
+    {3, "esta puerta. mantendremos", "esta puerta. Mantendremos"},  // 478
+    {3, "aleación talonina", "aleación talloniana"},  // 479
+    {3, "electricos", "eléctricos"},  // 480
+    {3, "semilla. te ayudaremos", "semilla. Te ayudaremos"},  // 481
+    {3, "Estamos tras de ti, ¡Samus! ¡Dales duro!", "¡Estamos contigo, Samus! ¡Dales duro!"},  // 482
+    {4, nullptr, "Il terminale è stato privato dell'energia.\nLo scudo vicino è stato disattivato.\nL'unità non può più essere usata."},  // 483
+    {4, "parete rocciose", "parete rocciosa"},  // 484
+    {1, "ziwschen", "zwischen"},  // 485
+    {3, "La reparación se ha debilitado", "El soporte se ha debilitado"},  // 486
+    {3, "con bombas. la verdad", "con bombas. La verdad"},  // 487
+    {3, "de de detrás", "de detrás"},  // 488
+    {3, "están blindado con", "están blindados con"},  // 489
+    {1, "Pilzssporen", "Pilzsporen"},  // 490
+    {3, "regista", "registra"},  // 491
+    {4, "Cavern Metroid", "Grotta Metroid"},  // 492
+    {3, "Está cáscara", "Esta cáscara"},  // 493
+    {3, "El bebé de Leviathan", "El bebé de leviatán"},  // 494
+    {3, "Un explosión", "Una explosión"},  // 495
+    {3, "matriz del Leviathan", "matriz del leviatán"},  // 496
+    {3, "ha huído", "ha huido"},  // 497
+    {3, "energénicas", "energéticas"},  // 498
+    {3, "generador de gusanos", "generador de agujeros de gusano"},  // 499
+    {3, "Núcleo del leviatán de Elysian", "Núcleo del leviatán de Elysia"},  // 500
+    {3, "esto aun no ha terminado", "esto aún no ha terminado"},  // 501
+    {1, "übermittlen", "übermitteln"},  // 502
+    {3, "por método convencionales", "por métodos convencionales"},  // 503
+    {3, "tele transporte", "teletransporte"},  // 504
+    {3, "abjetivos", "objetivos"},  // 505
+    {3, "Visor de rayos X", "Visor de Rayos X"},  // 506
+    {3, "El Misil de Hielo pueden", "El Misil de Hielo puede"},  // 507
+    {1, "Rundass", "Rundas'"},  // 508
+    {3, "del robot de asalto parecen frágiles", "del robot de defensa parecen frágiles"},  // 509
+    {3, "de helios", "de Helios"},  // 510
+    {3, "El Rayo Enganche debe usarse con objetos que brillen.", "El Rayo Enganche puede usarse con objetos que brillen."},  // 511
+    {1, "Magnetischiene", "Magnetschiene"},  // 512
+    {1, "ausgerichtetet", "ausgerichtet"},  // 513
+    {3, "Explora tu entorno y con qué objetos", "Explora tu entorno y descubre con qué objetos"},  // 514
+    {3, "Sobredosis de Phazon", "Sobrecarga de Phazon"},  // 515
+    {4, "Press&image=", "Premi &image="},  // 516
+    {4, "Tieni premuto Hold &image", "Tieni premuto &image"},  // 517
+    {3, "Volver a la pantalla de gestión de datos", "Volver al menú de Wii"},  // 518
+    {4, nullptr, "Questo file appartiene a una versione precedente del gioco. Se non lo elimini, il gioco potrebbe non funzionare correttamente."},  // 519
+    {4, nullptr, "Se salvi ora, questa partita di\nMetroid Prime 3: Corruption terminerà.\nQuando selezionerai di nuovo lo slot,\ninizierai una nuova partita.\n\nVuoi salvare?"},  // 520
+    {3, "¿me recibe alguien", "¿Me recibe alguien"},  // 521
+    {3, "atravesar al Lluvia ácida", "atravesar la lluvia ácida"},  // 522
+    {3, "cuénto", "cuánto"},  // 523
+    {3, "miles de agujeros de gusano", "cientos de agujeros de gusano"},  // 524
+    {3, "si Phaaze es lo que", "Si Phaaze es lo que"},  // 525
+    {1, "Seite zu kampfen", "Seite zu kämpfen"},  // 526
+    {3, "Espero que esta no sea a la última vez que combato", "Espero volver a combatir"},  // 527
+    {2, "jusqu'á", "jusqu'à"},  // 528
+    {2, "les cables", "les câbles"},  // 529
+    {3, "a a todos", "a todos"},  // 530
+    {3, "Todas provienen de la misma isla.", "Una de las islas emite lecturas de energía misteriosas."},  // 531
+    {3, "Por fin establecemos contacto!", "¡Por fin establecemos contacto!"},  // 532
+    {3, "Me encanta que los planes salgan bien.", "El plan ha funcionado."},  // 533
+    {3, "produce un choque anafiláctico", "reacciona de forma descontrolada"},  // 534
+    {3, "no te será posible enfrentarte", "no podrás enfrentarte"},  // 535
+    {3, "Samus Oscura con la Pila de de Phazon", "Samus Oscura sin la Pila de Phazon"},  // 536
+    {3, "Continua explorando", "Continúa explorando"},  // 537
+    {4, "chiuoa", "chiuso"},  // 538
+    {3, "Defiendela", "Defiéndela"},  // 539
+    {3, "Informa de estado", "Informe de estado"},  // 540
+    {1, "Use the Nunchuk stick to scroll list", "Bewege den Stick des Nunchuks, um durch die Liste zu blättern."},  // 541
+    {2, "Use the Nunchuk stick to scroll list", "Utilisez le Stick du Nunchuk pour faire défiler la liste."},  // 542
+    {3, "Use the Nunchuk stick to scroll list", "Usa la palanca del Nunchuk para desplazarte por la lista."},  // 543
+    {4, "Use the Nunchuk stick to scroll list", "Usa la levetta del Nunchuk per scorrere la lista."},  // 544
+    {3, "Como siempre, su plan es sorprendentemente sencillo.", "Como siempre, su plan era único y excelente."},  // 545
+    {1, "SPECIAL ACCESS CODES:", "SPEZIELLE ZUGANGSCODES:"},  // 546
+    {2, "SPECIAL ACCESS CODES:", "CODES D'ACCES SPECIAUX:"},  // 547
+    {3, "SPECIAL ACCESS CODES:", "CÓDIGOS DE ACCESO ESPECIALES:"},  // 548
+    {4, "SPECIAL ACCESS CODES:", "CODICI DI ACCESSO SPECIALI:"},  // 549
+    {1, nullptr, "Schiffsbefehl empfangen.\nFracht wird an ihren Ursprungsort\nzurückgebracht, neuer\nSchiffsbefehl wird ausgeführt."},  // 550
+    {2, nullptr, "Commande du vaisseau reçue.\nRetour de la cargaison à son\nemplacement d'origine et exécution\nde la nouvelle commande."},  // 551
+    {3, nullptr, "Orden para la nave recibida.\nDevolviendo la carga a su\nubicación original y ejecutando\nla nueva orden."},  // 552
+    {4, nullptr, "Comando della nave ricevuto.\nIl carico torna alla posizione\noriginale e viene eseguito il\nnuovo comando."},  // 553
+    {1, nullptr, "Türsystem mit dem Hauptverteiler\ndieses Raums verbunden.\nVerteiler derzeit außer Betrieb."},  // 554
+    {2, nullptr, "Système de porte relié au\ndistributeur principal de cette salle.\nDistributeur actuellement hors service."},  // 555
+    {3, nullptr, "Sistema de la puerta conectado al\ndistribuidor principal de esta sala.\nDistribuidor desactivado."},  // 556
+    {4, nullptr, "Sistema della porta collegato al\ndistributore principale di questa sala.\nDistributore al momento disattivato."},  // 557
+    {1, nullptr, "Türschild wegen Energieverlust\naktiviert. Verteiler mit Energie\nversorgen, um die Sperre zu öffnen."},  // 558
+    {2, nullptr, "Bouclier de porte activé suite à\nune perte d'énergie. Alimentez le\ndistributeur pour le déverrouiller."},  // 559
+    {3, nullptr, "Escudo de la puerta activado por\npérdida de energía. Restablece la energía\ndel distribuidor para abrirlo."},  // 560
+    {4, nullptr, "Scudo della porta attivato per\nperdita di energia. Ripristina l'energia\ndel distributore per sbloccarlo."},  // 561
+    {1, nullptr, "Schaltkreis im Projektor repariert.\nProjektor über die Steuereinheit\naktivieren."},  // 562
+    {2, nullptr, "Circuit du projecteur réparé.\nUtilisez l'unité de contrôle\npour activer le projecteur."},  // 563
+    {3, nullptr, "Circuito del proyector reparado.\nUsa la unidad de control\npara activar el proyector."},  // 564
+    {4, nullptr, "Circuito del proiettore riparato.\nUsa l'unità di controllo\nper attivare il proiettore."},  // 565
+    {1, nullptr, "Hauptaufzugssystem aktiv.\nZugang zum Lastenaufzug gestattet.\nHologramm betreten, um den Aufzug zu starten."},  // 566
+    {2, nullptr, "Système d'ascenseur principal opérationnel.\nAccès au monte-charge autorisé.\nEntrez dans l'hologramme pour l'activer."},  // 567
+    {3, nullptr, "Sistema de elevación principal activo.\nAcceso al montacargas permitido.\nEntra en el holograma para activarlo."},  // 568
+    {4, nullptr, "Sistema di sollevamento primario attivo.\nAccesso al montacarichi consentito.\nEntra nell'ologramma per attivarlo."},  // 569
+    {1, nullptr, "Terminal abgeschaltet.\nZugang zum nahen Aufzug\nist jetzt gestattet."},  // 570
+    {2, nullptr, "Terminal hors tension.\nAccès à l'ascenseur voisin\nautorisé."},  // 571
+    {3, nullptr, "Terminal apagado.\nYa se puede acceder al\nascensor cercano."},  // 572
+    {4, nullptr, "Terminale spento.\nOra è possibile accedere\nall'ascensore vicino."},  // 573
+    {1, nullptr, "Aufzug aktiviert.\nSteuerkonsole des Aufzugs\nist jetzt außer Betrieb."},  // 574
+    {2, nullptr, "Ascenseur activé.\nLa console de contrôle de\nl'ascenseur est hors service."},  // 575
+    {3, nullptr, "Ascensor activado.\nLa consola de control del\nascensor ya no funciona."},  // 576
+    {4, nullptr, "Ascensore attivato.\nLa console di controllo\ndell'ascensore è disattivata."},  // 577
+    {1, nullptr, "Steuerkonsole hat die\nZugangstüren geöffnet. Konsole\nkann nicht mehr benutzt werden."},  // 578
+    {2, nullptr, "La console de contrôle a ouvert\nles portes d'accès. Elle ne peut\nplus être utilisée."},  // 579
+    {3, nullptr, "La consola de control ha abierto\nlas puertas de acceso. Ya no\nse puede volver a usar."},  // 580
+    {4, nullptr, "La console di controllo ha aperto\nle porte di accesso. Non può\npiù essere usata."},  // 581
+    {1, nullptr, "Umleitung des Förderbands abgeschlossen.\nSteuerterminal kann nicht\nmehr benutzt werden."},  // 582
+    {2, nullptr, "Redirection du convoyeur terminée.\nLe terminal de contrôle ne peut\nplus être utilisé."},  // 583
+    {3, nullptr, "Desvío de la cinta transportadora completado.\nEl terminal de control ya no\nse puede usar."},  // 584
+    {4, nullptr, "Deviazione del nastro trasportatore completata.\nIl terminale di controllo non può\npiù essere usato."},  // 585
+    {1, nullptr, "Terminal hat die Schilde des\nEnergiekerns deaktiviert und kann\nnicht mehr benutzt werden."},  // 586
+    {2, nullptr, "Le terminal a abaissé les boucliers\ndu noyau d'énergie et ne peut\nplus être utilisé."},  // 587
+    {3, nullptr, "El terminal ha desactivado los\nescudos del núcleo de energía y\nya no se puede usar."},  // 588
+    {4, nullptr, "Il terminale ha disattivato gli\nscudi del Nucleo Energia e non\npuò più essere usato."},  // 589
+    {1, nullptr, "Terminal hat den nahen\nEnergieschild deaktiviert. Terminal\nkann nicht mehr benutzt werden."},  // 590
+    {2, nullptr, "Le terminal a désactivé le bouclier\nd'énergie voisin. Il ne peut\nplus être utilisé."},  // 591
+    {3, nullptr, "El terminal ha desactivado el\nescudo de energía cercano. Ya no\nse puede usar."},  // 592
+    {4, nullptr, "Il terminale ha disattivato lo\nscudo di energia vicino. Non può\npiù essere usato."},  // 593
+    {1, nullptr, "Steuerterminal hat die nahe\nTür geöffnet. Steuerterminal kann\nnicht mehr benutzt werden."},  // 594
+    {2, nullptr, "Le terminal de contrôle a ouvert\nla porte voisine. Il ne peut\nplus être utilisé."},  // 595
+    {3, nullptr, "El terminal de control ha abierto\nla puerta cercana. Ya no\nse puede usar."},  // 596
+    {4, nullptr, "Il terminale di controllo ha aperto\nla porta vicina. Non può\npiù essere usato."},  // 597
+    {1, nullptr, "Steuerterminal hat die nahe\nTür geöffnet. Terminal kann\nnicht mehr benutzt werden."},  // 598
+    {2, nullptr, "Le terminal de contrôle a ouvert\nla porte voisine. Le terminal\nne peut plus être utilisé."},  // 599
+    {3, nullptr, "El terminal de control ha abierto\nla puerta cercana. El terminal\nya no se puede usar."},  // 600
+    {4, nullptr, "Il terminale di controllo ha aperto\nla porta vicina. Il terminale\nnon può più essere usato."},  // 601
+    {1, nullptr, "&just=center;Damit die Wii-Pinnwand nicht zu schnell voll wird, mache nicht zu viele Bildschirmfotos."},  // 602
+    {2, nullptr, "&just=center;Pour que le bureau Wii ne se remplisse pas trop vite, évitez de prendre trop de captures d'écran."},  // 603
+    {3, nullptr, "&just=center;Para que el tablón de Wii no se llene demasiado rápido, evita hacer demasiadas capturas de pantalla."},  // 604
+    {4, nullptr, "&just=center;Per evitare che la bacheca Wii si riempia troppo in fretta, non catturare troppe immagini."},  // 605
+    {1, nullptr, "&just=center;Damit die Wii-Pinnwand nicht zu schnell voll wird, veröffentliche nicht zu viele Bildschirmfotos.\n"},  // 606
+    {2, nullptr, "&just=center;Pour que le bureau Wii ne se remplisse pas trop vite, évitez de publier trop de captures d'écran.\n"},  // 607
+    {3, nullptr, "&just=center;Para que el tablón de Wii no se llene demasiado rápido, evita publicar demasiadas capturas de pantalla.\n"},  // 608
+    {4, nullptr, "Sei sicuro?"},  // 609
+    {4, nullptr, "&just=center;Per evitare che la bacheca Wii si riempia troppo in fretta, non pubblicare troppe immagini.\n"},  // 610
+    {1, nullptr, "&just=center;Die Nutzung der Netzwerkfunktionen ist eingeschränkt. Bitte überprüfe die Einstellungen der Altersbeschränkungen in den Wii-Optionen."},  // 611
+    {2, nullptr, "&just=center;L'utilisation des fonctions réseau est restreinte. Veuillez vérifier les paramètres du contrôle parental dans les Paramètres Wii."},  // 612
+    {3, nullptr, "&just=center;El uso de las funciones de red está restringido. Revisa la configuración del control parental en las Opciones de Wii."},  // 613
+    {4, nullptr, "&just=center;L'uso delle funzioni di rete è limitato. Controlla le impostazioni del Filtro famiglia nelle Opzioni Wii."},  // 614
+    {3, "Espero que esta no sea la última vez que combato", "Espero volver a combatir"},  // 615
+    {3, "se produce un choque anafiláctico", "reacciona de forma descontrolada"},  // 616
+    {1, "[ Play Game ]", "[ Spielen ]"},  // 617
+    {1, "[ Start Game ]", "[ Spiel beginnen ]"},  // 618
+    {1, "[ Play Single Player ]", "[ Einzelspieler ]"},  // 619
+    {1, "[ Start Single Player ]", "[ Einzelspieler beginnen ]"},  // 620
+    {1, "[ Play MP2: Echoes Multiplayer ]", "[ MP2: Echoes - Mehrspieler ]"},  // 621
+    {1, "Select game to be erased…", "Welche Datei soll gelöscht werden?"},  // 622
+    {1, "Single Player Games", "Einzelspieler-Spielstände"},  // 623
+    {1, "[ Back ]", "[ Zurück ]"},  // 624
+    {1, "[ Erase ]", "[ Löschen ]"},  // 625
+    {1, "Select Level", "Level wählen"},  // 626
+    {1, "[ GF Ship ]", "[ Schiff der GF ]"},  // 627
+    {1, "[ Skytown ]", "[ Himmelsstadt ]"},  // 628
+    {1, "&space;Locked&pop;", "&space;Gesperrt&pop;"},  // 629
+    {1, "MP2 - Promo Art Package", "MP2 - Werbegrafiken"},  // 630
+    {1, "MP2 - Character Package", "MP2 - Charaktere"},  // 631
+    {1, "MP2 - Creature Package", "MP2 - Kreaturen"},  // 632
+    {1, "MP2 - Boss Package", "MP2 - Bosse"},  // 633
+    {1, "MP2 - Sketch Package", "MP2 - Skizzen"},  // 634
+    {1, "MP2 - Storyboard Package", "MP2 - Storyboards"},  // 635
+    {1, "Music from", "Musik aus"},  // 636
+    {1, "Flaaghra", "Flaahgra"},  // 637
+    {1, "Use the Nunchuk Control Stick to scroll list", "Bewege den Control Stick des Nunchuks, um durch die Liste zu blättern."},  // 638
+    {1, "&space;Unlocked&endif;", "&space;Freigeschaltet&endif;"},  // 639
+    {1, "MP1 - World Gallery", "MP1 - Welten"},  // 640
+    {1, "MP1 - Biology Gallery", "MP1 - Lebensformen"},  // 641
+    {1, "MP1 - Samus Gallery", "MP1 - Samus"},  // 642
+    {1, "MP1 - Extra Gallery", "MP1 - Extras"},  // 643
+    {1, "MP1 Fusion Suit", "MP1 - Fusion Suit"},  // 644
+    {1, "Metroid Prime Theme", "Metroid Prime - Thema"},  // 645
+    {1, "Parasite Queen", "Mutterparasit"},  // 646
+    {1, "Tallon Overworld", "Tallon-Oberwelt"},  // 647
+    {1, "Chozo Shrine", "Chozo-Tempel"},  // 648
+    {1, "Chozo Ruins", "Chozo-Ruinen"},  // 649
+    {1, "Magmoor Caverns", "Höhlen von Magmoor"},  // 650
+    {1, "Phendrana Drifts", "Eiswüste von Phendrana"},  // 651
+    {1, "Phendrana Battle", "Kampf in Phendrana"},  // 652
+    {1, "Crashed Ship", "Havarierte Fregatte"},  // 653
+    {1, "Phazon Mines", "Phazon-Minen"},  // 654
+    {1, "Space Pirates", "Weltraumpiraten"},  // 655
+    {1, "Omega Pirate", "Omegapirat"},  // 656
+    {1, "Meta Ridley", "Meta-Ridley"},  // 657
+    {1, "Metroid Prime Battle", "Kampf gegen Metroid Prime"},  // 658
+    {1, "Metroid Prime Credits", "Metroid Prime - Abspann"},  // 659
+    {1, "Metroid Prime 2: Echoes Theme", "Metroid Prime 2: Echoes - Thema"},  // 660
+    {1, "Splinter Hive", "Splinter-Bau"},  // 661
+    {1, "Dark Trooper", "Dunkler Soldat"},  // 662
+    {1, "Luminoth Temple", "Tempel der Luminoth"},  // 663
+    {1, "The Luminoth", "Die Luminoth"},  // 664
+    {1, "Dark Temple", "Dunkler Tempel"},  // 665
+    {1, "Agon Wastes", "Ödland von Agon"},  // 666
+    {1, "Dark Agon Wastes", "Ödland vom dunklen Agon"},  // 667
+    {1, "Torvus Catacombs", "Torvus-Katakomben"},  // 668
+    {1, "Ing Battle", "Kampf gegen die Ing"},  // 669
+    {1, "Sanctuary Fortress", "Geheiligte Festung"},  // 670
+    {1, "Dark Samus", "Dunkle Samus"},  // 671
+    {1, "MP3: Corruption Theme", "MP3: Corruption - Thema"},  // 672
+    {1, "Aurora Unit 313", "Aurora-Einheit 313"},  // 673
+    {1, "MP1 Track", "MP1 - Stück"},  // 674
+    {1, "MP2 Track", "MP2 - Stück"},  // 675
+    {1, "MP3 Track", "MP3 - Stück"},  // 676
+    {1, "File 1&endif;", "Datei 1&endif;"},  // 677
+    {1, "&else;Slot 1&endif;", "&else;Speicherplatz 1&endif;"},  // 678
+    {1, "File 2&endif;", "Datei 2&endif;"},  // 679
+    {1, "&else;Slot 2&endif;", "&else;Speicherplatz 2&endif;"},  // 680
+    {1, "File 3&endif;", "Datei 3&endif;"},  // 681
+    {1, "&else;Slot 3&endif;", "&else;Speicherplatz 3&endif;"},  // 682
+    {2, "[ Play Game ]", "[ Jouer ]"},  // 683
+    {2, "[ Start Game ]", "[ Commencer ]"},  // 684
+    {2, "[ Play Single Player ]", "[ Un joueur ]"},  // 685
+    {2, "[ Start Single Player ]", "[ Commencer en solo ]"},  // 686
+    {2, "[ Play MP2: Echoes Multiplayer ]", "[ MP2: Echoes - Multijoueur ]"},  // 687
+    {2, "Select game to be erased…", "Choisissez la sauvegarde à effacer."},  // 688
+    {2, "Single Player Games", "Parties en solo"},  // 689
+    {2, "[ Back ]", "[ Retour ]"},  // 690
+    {2, "[ Erase ]", "[ Effacer ]"},  // 691
+    {2, "Select Level", "Sélectionnez un niveau"},  // 692
+    {2, "[ GF Ship ]", "[ Vaisseau de la FG ]"},  // 693
+    {2, "[ Skytown ]", "[ Célestius ]"},  // 694
+    {2, "&space;Locked&pop;", "&space;Bloqué&pop;"},  // 695
+    {2, "MP2 - Promo Art Package", "MP2 - Art promotionnel"},  // 696
+    {2, "MP2 - Character Package", "MP2 - Personnages"},  // 697
+    {2, "MP2 - Creature Package", "MP2 - Créatures"},  // 698
+    {2, "MP2 - Boss Package", "MP2 - Boss"},  // 699
+    {2, "MP2 - Sketch Package", "MP2 - Croquis"},  // 700
+    {2, "MP2 - Storyboard Package", "MP2 - Storyboards"},  // 701
+    {2, "Music from", "Musique de"},  // 702
+    {2, "Flaaghra", "Flaahgra"},  // 703
+    {2, "Use the Nunchuk Control Stick to scroll list", "Utilisez le Stick du Nunchuk pour faire défiler la liste."},  // 704
+    {2, "MP1 - World Gallery", "MP1 - Galerie des mondes"},  // 705
+    {2, "MP1 - Biology Gallery", "MP1 - Galerie biologique"},  // 706
+    {2, "MP1 - Samus Gallery", "MP1 - Galerie de Samus"},  // 707
+    {2, "MP1 - Extra Gallery", "MP1 - Galerie bonus"},  // 708
+    {2, "MP1 Fusion Suit", "MP1 - Costume Fusion"},  // 709
+    {2, "Metroid Prime Theme", "Thème de Metroid Prime"},  // 710
+    {2, "Parasite Queen", "Reine parasite"},  // 711
+    {2, "Tallon Overworld", "Surface de Tallon"},  // 712
+    {2, "Chozo Shrine", "Temple Chozo"},  // 713
+    {2, "Chozo Ruins", "Ruines Chozo"},  // 714
+    {2, "Magmoor Caverns", "Cavernes du Magmoor"},  // 715
+    {2, "Phendrana Drifts", "Monts de Phendrana"},  // 716
+    {2, "Phendrana Battle", "Combat dans Phendrana"},  // 717
+    {2, "Crashed Ship", "Frégate échouée"},  // 718
+    {2, "Phazon Mines", "Mines de Phazon"},  // 719
+    {2, "Space Pirates", "Pirates de l'espace"},  // 720
+    {2, "Omega Pirate", "Pirate oméga"},  // 721
+    {2, "Meta Ridley", "Méta Ridley"},  // 722
+    {2, "Metroid Prime Battle", "Combat contre Metroid Prime"},  // 723
+    {2, "Metroid Prime Credits", "Générique de Metroid Prime"},  // 724
+    {2, "Metroid Prime 2: Echoes Theme", "Thème de Metroid Prime 2: Echoes"},  // 725
+    {2, "Splinter Hive", "Ruche de Splinters"},  // 726
+    {2, "Dark Trooper", "Soldat Sombre"},  // 727
+    {2, "Luminoth Temple", "Temple Luminoth"},  // 728
+    {2, "The Luminoth", "Les Luminoth"},  // 729
+    {2, "Dark Temple", "Temple Sombre"},  // 730
+    {2, "Agon Wastes", "Désert d'Agon"},  // 731
+    {2, "Dark Agon Wastes", "Désert d'Agon Sombre"},  // 732
+    {2, "Torvus Catacombs", "Catacombes de Torvus"},  // 733
+    {2, "Ing Battle", "Combat contre les Ing"},  // 734
+    {2, "Sanctuary Fortress", "Forteresse du Sanctuaire"},  // 735
+    {2, "Dark Samus", "Samus Sombre"},  // 736
+    {2, "MP3: Corruption Theme", "Thème de MP3: Corruption"},  // 737
+    {2, "Aurora Unit 313", "Unité Aurora 313"},  // 738
+    {2, "MP1 Track", "MP1 - Piste"},  // 739
+    {2, "MP2 Track", "MP2 - Piste"},  // 740
+    {2, "MP3 Track", "MP3 - Piste"},  // 741
+    {2, "File 1&endif;", "Fichier 1&endif;"},  // 742
+    {2, "&else;Slot 1&endif;", "&else;Emplacement 1&endif;"},  // 743
+    {2, "File 2&endif;", "Fichier 2&endif;"},  // 744
+    {2, "&else;Slot 2&endif;", "&else;Emplacement 2&endif;"},  // 745
+    {2, "File 3&endif;", "Fichier 3&endif;"},  // 746
+    {2, "&else;Slot 3&endif;", "&else;Emplacement 3&endif;"},  // 747
+    {3, "[ Play Game ]", "[ Continuar partida ]"},  // 748
+    {3, "[ Start Game ]", "[ Empezar partida ]"},  // 749
+    {3, "[ Play Single Player ]", "[ Un jugador ]"},  // 750
+    {3, "[ Start Single Player ]", "[ Empezar Un jugador ]"},  // 751
+    {3, "[ Play MP2: Echoes Multiplayer ]", "[ MP2: Echoes - Multijugador ]"},  // 752
+    {3, "Select game to be erased…", "¿Qué partida quieres borrar?"},  // 753
+    {3, "Single Player Games", "Partidas de Un jugador"},  // 754
+    {3, "[ Back ]", "[ Atrás ]"},  // 755
+    {3, "[ Erase ]", "[ Borrar ]"},  // 756
+    {3, "Select Level", "Selecciona un nivel"},  // 757
+    {3, "[ GF Ship ]", "[ Nave de la FG ]"},  // 758
+    {3, "[ Skytown ]", "[ Cielolab ]"},  // 759
+    {3, "MP2 - Promo Art Package", "MP2 - Arte promocional"},  // 760
+    {3, "MP2 - Character Package", "MP2 - Personajes"},  // 761
+    {3, "MP2 - Creature Package", "MP2 - Criaturas"},  // 762
+    {3, "MP2 - Boss Package", "MP2 - Jefes"},  // 763
+    {3, "MP2 - Sketch Package", "MP2 - Bocetos"},  // 764
+    {3, "MP2 - Storyboard Package", "MP2 - Guiones gráficos"},  // 765
+    {3, "Music from", "Música de"},  // 766
+    {3, "Flaaghra", "Flaahgra"},  // 767
+    {3, "Use the Nunchuk Control Stick to scroll list", "Usa la palanca de control del Nunchuk para desplazarte por la lista."},  // 768
+    {3, "MP1 - World Gallery", "MP1 - Galería de mundos"},  // 769
+    {3, "MP1 - Biology Gallery", "MP1 - Galería de biología"},  // 770
+    {3, "MP1 - Samus Gallery", "MP1 - Galería de Samus"},  // 771
+    {3, "MP1 - Extra Gallery", "MP1 - Galería de extras"},  // 772
+    {3, "MP1 Fusion Suit", "MP1 - Traje Fusión"},  // 773
+    {3, "Metroid Prime Theme", "Tema de Metroid Prime"},  // 774
+    {3, "Parasite Queen", "Parásito Reina"},  // 775
+    {3, "Tallon Overworld", "Superficie de Tallon"},  // 776
+    {3, "Chozo Shrine", "Templo Chozo"},  // 777
+    {3, "Chozo Ruins", "Ruinas Chozo"},  // 778
+    {3, "Magmoor Caverns", "Cavernas Magmoor"},  // 779
+    {3, "Phendrana Drifts", "Phendrana"},  // 780
+    {3, "Phendrana Battle", "Combate en Phendrana"},  // 781
+    {3, "Crashed Ship", "Nave estrellada"},  // 782
+    {3, "Phazon Mines", "Minas de Phazon"},  // 783
+    {3, "Space Pirates", "Piratas espaciales"},  // 784
+    {3, "Omega Pirate", "Pirata Omega"},  // 785
+    {3, "Metroid Prime Battle", "Combate contra Metroid Prime"},  // 786
+    {3, "Metroid Prime Credits", "Créditos de Metroid Prime"},  // 787
+    {3, "Metroid Prime 2: Echoes Theme", "Tema de Metroid Prime 2: Echoes"},  // 788
+    {3, "Splinter Hive", "Colmena de esquirlas"},  // 789
+    {3, "Dark Trooper", "Soldado oscuro"},  // 790
+    {3, "Luminoth Temple", "Templo luminario"},  // 791
+    {3, "The Luminoth", "Los Luminarios"},  // 792
+    {3, "Dark Temple", "Templo Oscuro"},  // 793
+    {3, "Agon Wastes", "Yermos de Agón"},  // 794
+    {3, "Dark Agon Wastes", "Yermos de Agón Oscuro"},  // 795
+    {3, "Torvus Catacombs", "Catacumbas de Torvus"},  // 796
+    {3, "Ing Battle", "Combate contra los Oscuros"},  // 797
+    {3, "Sanctuary Fortress", "Fortaleza del Santuario"},  // 798
+    {3, "Dark Samus", "Samus Oscura"},  // 799
+    {3, "MP3: Corruption Theme", "Tema de MP3: Corruption"},  // 800
+    {3, "Aurora Unit 313", "Unidad Aurora 313"},  // 801
+    {3, "MP1 Track", "MP1 - Pista"},  // 802
+    {3, "MP2 Track", "MP2 - Pista"},  // 803
+    {3, "MP3 Track", "MP3 - Pista"},  // 804
+    {3, "File 1&endif;", "Archivo 1&endif;"},  // 805
+    {3, "&else;Slot 1&endif;", "&else;Partida 1&endif;"},  // 806
+    {3, "File 2&endif;", "Archivo 2&endif;"},  // 807
+    {3, "&else;Slot 2&endif;", "&else;Partida 2&endif;"},  // 808
+    {3, "File 3&endif;", "Archivo 3&endif;"},  // 809
+    {3, "&else;Slot 3&endif;", "&else;Partida 3&endif;"},  // 810
+    {4, "[ Play Game ]", "[ Gioca ]"},  // 811
+    {4, "[ Start Game ]", "[ Inizia a giocare ]"},  // 812
+    {4, "[ Play Single Player ]", "[ Giocatore singolo ]"},  // 813
+    {4, "[ Start Single Player ]", "[ Inizia giocatore singolo ]"},  // 814
+    {4, "[ Play MP2: Echoes Multiplayer ]", "[ MP2: Echoes - Multigiocatore ]"},  // 815
+    {4, "Select game to be erased…", "Scegli la partita da cancellare."},  // 816
+    {4, "Single Player Games", "Partite giocatore singolo"},  // 817
+    {4, "[ Back ]", "[ Indietro ]"},  // 818
+    {4, "[ Erase ]", "[ Cancella ]"},  // 819
+    {4, "Select Level", "Seleziona livello"},  // 820
+    {4, "[ GF Ship ]", "[ Nave della FG ]"},  // 821
+    {4, "[ Skytown ]", "[ Etra ]"},  // 822
+    {4, "&space;Locked&pop;", "&space;Bloccato&pop;"},  // 823
+    {4, "MP2 - Promo Art Package", "MP2 - Arte promozionale"},  // 824
+    {4, "MP2 - Character Package", "MP2 - Personaggi"},  // 825
+    {4, "MP2 - Creature Package", "MP2 - Creature"},  // 826
+    {4, "MP2 - Boss Package", "MP2 - Boss"},  // 827
+    {4, "MP2 - Sketch Package", "MP2 - Bozzetti"},  // 828
+    {4, "MP2 - Storyboard Package", "MP2 - Storyboard"},  // 829
+    {4, "Music from", "Musiche di"},  // 830
+    {4, "Flaaghra", "Flaahgra"},  // 831
+    {4, "Use the Nunchuk Control Stick to scroll list", "Usa il Control Stick del Nunchuk per scorrere la lista."},  // 832
+    {4, "&space;Unlocked&endif;", "&space;Sbloccato&endif;"},  // 833
+    {4, "MP1 - World Gallery", "MP1 - Galleria dei mondi"},  // 834
+    {4, "MP1 - Biology Gallery", "MP1 - Galleria biologica"},  // 835
+    {4, "MP1 - Samus Gallery", "MP1 - Galleria di Samus"},  // 836
+    {4, "MP1 - Extra Gallery", "MP1 - Galleria extra"},  // 837
+    {4, "MP1 Fusion Suit", "MP1 - Tuta Fusione"},  // 838
+    {4, "Metroid Prime Theme", "Tema di Metroid Prime"},  // 839
+    {4, "Parasite Queen", "Parassita Regina"},  // 840
+    {4, "Tallon Overworld", "Superficie di Tallon"},  // 841
+    {4, "Chozo Shrine", "Santuario Chozo"},  // 842
+    {4, "Chozo Ruins", "Rovine Chozo"},  // 843
+    {4, "Magmoor Caverns", "Grotte Magmoor"},  // 844
+    {4, "Phendrana Drifts", "Phendrana"},  // 845
+    {4, "Phendrana Battle", "Battaglia a Phendrana"},  // 846
+    {4, "Crashed Ship", "Fregata precipitata"},  // 847
+    {4, "Phazon Mines", "Miniere di Phazon"},  // 848
+    {4, "Space Pirates", "Pirati Spaziali"},  // 849
+    {4, "Omega Pirate", "Pirata Omega"},  // 850
+    {4, "Metroid Prime Battle", "Battaglia contro Metroid Prime"},  // 851
+    {4, "Metroid Prime Credits", "Titoli di coda di Metroid Prime"},  // 852
+    {4, "Metroid Prime 2: Echoes Theme", "Tema di Metroid Prime 2: Echoes"},  // 853
+    {4, "Splinter Hive", "Nido degli Splinter"},  // 854
+    {4, "Dark Trooper", "Soldato Oscuro"},  // 855
+    {4, "Luminoth Temple", "Tempio Luminoth"},  // 856
+    {4, "The Luminoth", "I Luminoth"},  // 857
+    {4, "Dark Temple", "Tempio Oscuro"},  // 858
+    {4, "Agon Wastes", "Deserto di Agon"},  // 859
+    {4, "Dark Agon Wastes", "Deserto di Agon Oscuro"},  // 860
+    {4, "Torvus Catacombs", "Catacombe di Torvus"},  // 861
+    {4, "Ing Battle", "Battaglia contro gli Ing"},  // 862
+    {4, "Sanctuary Fortress", "Fortezza del Santuario"},  // 863
+    {4, "Dark Samus", "Samus Oscura"},  // 864
+    {4, "MP3: Corruption Theme", "Tema di MP3: Corruption"},  // 865
+    {4, "Aurora Unit 313", "Unità Aurora 313"},  // 866
+    {4, "MP1 Track", "MP1 - Brano"},  // 867
+    {4, "MP2 Track", "MP2 - Brano"},  // 868
+    {4, "MP3 Track", "MP3 - Brano"},  // 869
+    {1, nullptr, "Fusion Suit aktivieren? Samus trägt dann in MP1 den Fusion Suit."},  // 870
+    {1, nullptr, "Fusion Suit erwerben? Samus trägt dann in MP1 den Fusion Suit."},  // 871
+    {1, nullptr, "Die Nutzung der Netzwerkfunktionen ist eingeschränkt. Bitte überprüfe die Einstellungen der Altersbeschränkungen in den Wii-Optionen."},  // 872
+    {2, nullptr, "Activer le costume Fusion? Samus portera le costume Fusion dans MP1."},  // 873
+    {2, nullptr, "Acheter le costume Fusion? Samus portera le costume Fusion dans MP1."},  // 874
+    {2, nullptr, "L'utilisation des fonctions réseau est restreinte. Veuillez vérifier les paramètres du contrôle parental dans les Paramètres Wii."},  // 875
+    {3, nullptr, "¿Quieres activar el Traje Fusión? Samus lo llevará puesto en MP1."},  // 876
+    {3, nullptr, "¿Quieres comprar el Traje Fusión? Samus lo llevará puesto en MP1."},  // 877
+    {3, nullptr, "El uso de las funciones de red está restringido. Revisa la configuración del control parental en las Opciones de Wii."},  // 878
+    {4, nullptr, "Vuoi attivare la Tuta Fusione? Samus la indosserà in MP1."},  // 879
+    {4, nullptr, "Vuoi acquistare la Tuta Fusione? Samus la indosserà in MP1."},  // 880
+    {4, nullptr, "L'uso delle funzioni di rete è limitato. Controlla le impostazioni del Filtro famiglia nelle Opzioni Wii."},  // 881

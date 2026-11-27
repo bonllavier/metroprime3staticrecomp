@@ -1,4 +1,7 @@
 #include "bug_report.h"
+#if defined(__linux__) && defined(MKW_PRIME_PERF_CAPTURE)
+#include "perf_capture.h"
+#endif
 
 #include "prime_port_version.h"
 #include "nand_path.h"
@@ -442,6 +445,17 @@ void Worker(std::string trigger) {
         if (name.rfind("crash_", 0) == 0 && entry.path().extension() == ".txt" && CopyInto(entry.path(), folder)) ++crashFiles;
     }
 
+#if defined(__linux__) && defined(MKW_PRIME_PERF_CAPTURE)
+    // 2b. The newest F8 performance capture of this run (gzipped CPU stack samples).
+    unsigned profileFiles = 0;
+    for (const auto& profile : PerfCapture::ProfilesOfThisRun()) {
+        if (profileFiles == 1) break;  // the capture that made this report (earlier ones had their own)
+        std::error_code dirEc;
+        fs::create_directories(folder / "performance", dirEc);
+        if (CopyInto(profile, folder / "performance")) ++profileFiles;
+    }
+#endif
+
     // 3. Player settings.
     const bool config = CopyInto(RuntimeConfigFile::ResolveConfigPath(), folder, "Config.toml");
 
@@ -513,6 +527,10 @@ void Worker(std::string trigger) {
                 summary << "NOTE: this report was made while shaders were still being generated ("
                         << prewarm.remaining << " left)\n";
         }
+#if defined(__linux__) && defined(MKW_PRIME_PERF_CAPTURE)
+        summary << "performance build: yes, captures in report: " << profileFiles << "\n";
+        summary << PerfCapture::PowerSummary();
+#endif
         summary << "screenshot: " << (screenshot ? "yes" : "no") << ", transcript: " << (transcript ? "yes" : "no")
                 << ", crash files: " << crashFiles << ", config: " << (config ? "yes" : "no")
                 << ", save files: " << saveFiles << "\n";

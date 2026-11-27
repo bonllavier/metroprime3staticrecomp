@@ -95,8 +95,13 @@ constexpr Texts kPrompts[] = {
     // 9 shake (the key shakes while held)
     {"Hold {shake} to break free!", "{shake} gedrückt halten, um die Umhüllung aufzubrechen.",
      "Maintenez {shake} pour vous libérer!", "¡Mantén {shake} para liberarte!", "Tieni premuto {shake} per liberarti!"},
-    // 10 point at the screen
-    {"Aim with {point}.", "Mit {point} zielen.", "Visez avec {point}.", "Apunta con {point}.", "Mira con {point}."},
+    // 10 point at the screen. Only the pump handle (Metroid3.pak, both discs) asks for it, at the step
+    // where the remote is pulled back: the pump reads the pointer's distance, which {pull}/{push} move.
+    {"Aim at the screen with {point} and hold {pull} to pull the handle back.",
+     "Mit {point} auf den Bildschirm zielen und {pull} gedrückt halten, um den Griff zurückzuziehen.",
+     "Visez l'écran avec {point} et maintenez {pull} pour tirer la poignée vers vous.",
+     "Apunta a la pantalla con {point} y mantén {pull} para tirar de la palanca hacia ti.",
+     "Mira lo schermo con {point} e tieni premuto {pull} per tirare indietro la leva."},
     // 11 twist (either way)
     {"Press {twist_left} or {twist_right} to twist.", "{twist_left} oder {twist_right} drücken, um zu drehen.",
      "Appuyez sur {twist_left} ou {twist_right} pour tourner.", "Pulsa {twist_left} o {twist_right} para girar.",
@@ -115,6 +120,12 @@ constexpr Texts kPrompts[] = {
      "Utilisez le Grappin et verrouillez\nle générateur avec &image=SI,1.0,0.68,0xE5A8DFED24B2F64B; puis appuyez\nsur {lasso_throw}.",
      "Engánchate a la toma de energía fijando el objetivo con &image=SI,1.0,0.68,0xE5A8DFED24B2F64B;\ny pulsando {lasso_throw}.",
      "Aggancia il Trasmettitore di Energia mirando con &image=SI,1.0,0.68,0xE5A8DFED24B2F64B;\ne premendo {lasso_throw}."},
+    // 15 pump handle: pull back, then push forward, again and again
+    {"Hold {pull} to pull back, then {push} to push forward. Repeat to pump.",
+     "{pull} gedrückt halten zum Zurückziehen, dann {push} zum Vorschieben. Wiederholen, um zu pumpen.",
+     "Maintenez {pull} pour tirer vers vous, puis {push} pour pousser. Recommencez pour pomper.",
+     "Mantén {pull} para tirar hacia ti y luego {push} para empujar hacia delante. Repite para bombear.",
+     "Tieni premuto {pull} per tirare indietro, poi {push} per spingere in avanti. Ripeti per pompare."},
 };
 constexpr Texts kPointMouse = {"the mouse", "der Maus", "la souris", "el ratón", "il mouse"};
 constexpr Texts kPointStick = {"the right stick", "dem rechten Stick", "le stick droit", "el stick derecho", "la levetta destra"};

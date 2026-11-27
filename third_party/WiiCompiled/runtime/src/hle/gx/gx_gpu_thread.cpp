@@ -70,7 +70,7 @@ struct State {
     std::once_flag started;
     // Diagnostics, reported every 10 s. The first line is written by the producer on every push.
     alignas(64) std::atomic<uint64_t> bursts{0}, maxDepth{0}, inlineDecoded{0}, fullStalls{0};
-    alignas(64) std::atomic<uint64_t> syncs{0}, locks{0}, lockWaitNs{0};
+    alignas(64) std::atomic<uint64_t> syncs{0}, locks{0}, lockWaitNs{0}, batches{0};
     std::atomic<uint64_t> idleNs{0}, consumerLockWaitNs{0}, breakpointLatencyNs{0}, breakpoints{0};
     std::atomic<int64_t> idleSinceNs{0};  // 0 while work is pending or being decoded
 };
@@ -148,7 +148,8 @@ void Report() {
         << " consumer_idle_ms=" << s.idleNs.exchange(0) / 1000000
         << " consumer_lock_wait_ms=" << s.consumerLockWaitNs.exchange(0) / 1000000
         << " breakpoints=" << breakpoints
-        << " breakpoint_notify_avg_us=" << (breakpoints ? breakpointNs / breakpoints / 1000 : 0) << std::endl;
+        << " breakpoint_notify_avg_us=" << (breakpoints ? breakpointNs / breakpoints / 1000 : 0)
+        << " batches=" << s.batches.exchange(0) << std::endl;
 }
 std::atomic<uint32_t> g_nativeThreadId{0};
 
@@ -243,8 +244,11 @@ void EnsureStarted() {
     });
 }
 
-void Push(const Entry& entry) {
+void FlushStaged();
+
+void Push(const Entry& entry, bool flushStaged = true) {
     auto& s = S();
+    if (flushStaged) FlushStaged();  // bursts staged before this entry go first
     RethrowIfFailed();
     EnsureStarted();
     for (;;) {
@@ -286,7 +290,76 @@ void Push(const Entry& entry) {
         s.wakeCv.notify_one();
     }
 }
+// Bursts the game thread has committed but not yet published to the consumer (26/11/2026). In
+// scenes full of particles the game commits ~650 thousand bursts a second, and publishing each one
+// (lock, tail store, wake check) was ~3 % of the game thread. They are published kBatch at a time,
+// and always before anything can observe or wait on the consumer: every other entry pushed,
+// Lock/HostLock/Sync, Idle (CP status), the CP read stall, MMIO reads, the call-boundary poll and
+// the VI and idle waits (FlushPending). Only the game thread submits bursts: thread-local.
+constexpr uint32_t kBatch = 16;
+struct Staged {
+    Entry entries[kBatch];
+    uint32_t count = 0;
+};
+thread_local Staged t_staged;
+
+bool BatchEnabled() {
+    static const bool enabled = [] {
+        const char* value = std::getenv("WII_COMPILED_PRIME_GX_BATCH");
+        return !(value && std::strcmp(value, "0") == 0);
+    }();
+    return enabled;
+}
+
+void PublishBatch(const Entry* entries, uint32_t count) {
+    auto& s = S();
+    RethrowIfFailed();
+    EnsureStarted();
+    while (s.pushLock.test_and_set(std::memory_order_acquire)) _mm_pause();
+    const uint64_t tail = s.tail.load(std::memory_order_relaxed);
+    uint64_t depth = tail - s.cachedHead;
+    if (depth + count > kCapacity) {
+        s.cachedHead = s.head.load(std::memory_order_acquire);
+        depth = tail - s.cachedHead;
+    }
+    if (depth + count > kCapacity) {
+        // Nearly full: the one-entry path stalls (or decodes inline) as it always did.
+        s.pushLock.clear(std::memory_order_release);
+        for (uint32_t i = 0; i < count; ++i) Push(entries[i], false);
+        return;
+    }
+    for (uint32_t i = 0; i < count; ++i) s.ring[(tail + i) % kCapacity] = entries[i];
+    s.tail.store(tail + count, std::memory_order_release);
+    s.pushLock.clear(std::memory_order_release);
+#if defined(MKW_PRIME_QA_TOOLS)
+    s.batches.fetch_add(1, std::memory_order_relaxed);
+    if (((tail + count) >> 8) != (tail >> 8)) {
+        const uint64_t real = tail + count - s.head.load(std::memory_order_relaxed);
+        if (real > s.maxDepth.load(std::memory_order_relaxed)) s.maxDepth.store(real);
+    }
+#endif
+    if (s.sleeping.load(std::memory_order_seq_cst)) {
+        std::lock_guard lock(s.wakeMutex);
+        s.wakeCv.notify_one();
+    }
+}
+
+void FlushStaged() {
+    auto& staged = t_staged;
+    if (staged.count == 0) [[likely]] return;
+    // Published from a copy: when the ring is nearly full PublishBatch decodes inline, which can
+    // re-enter SubmitBurst and stage new bursts into the same slots.
+    Entry entries[kBatch];
+    const uint32_t count = staged.count;
+    std::memcpy(static_cast<void*>(entries), static_cast<const void*>(staged.entries), sizeof(Entry) * count);
+    staged.count = 0;
+    PublishBatch(entries, count);
+}
 }  // namespace
+
+void FlushPending() {
+    if (t_staged.count != 0) FlushStaged();
+}
 
 bool Enabled() {
     static const bool enabled = [] {
@@ -309,6 +382,7 @@ void SubmitBurst(const uint8_t* bytes32) {
     // test it here, at the same point, so the consumer never reads CP state
     // that the guest has changed since.
     if (PrimeGpuCpReadBlocked()) {
+        FlushStaged();  // committed before the stall: the consumer decodes them as before
         if (g_retained.size() > (64u << 20)) throw std::length_error("Stopped GP FIFO exceeded bounded storage");
         g_retained.insert(g_retained.end(), bytes32, bytes32 + 32);
         return;
@@ -322,12 +396,23 @@ void SubmitBurst(const uint8_t* bytes32) {
     static thread_local uint32_t sinceStamp = 0;
     if (submitted == 0 || (++sinceStamp & 15u) == 0 || S().sleeping.load(std::memory_order_relaxed))
         submitted = uint64_t(PrimeInputLatency::NowNanos());
-    Entry entry{Kind::Burst, uint32_t(submitted), uint32_t(submitted >> 32), {}};
+    const Entry entry{Kind::Burst, uint32_t(submitted), uint32_t(submitted >> 32), {}};
 #else
-    Entry entry{Kind::Burst, 0, 0, {}};
+    const Entry entry{Kind::Burst, 0, 0, {}};
 #endif
-    std::memcpy(entry.data, bytes32, sizeof(entry.data));
-    Push(entry);
+    if (BatchEnabled()) {
+        auto& staged = t_staged;
+        Entry& slot = staged.entries[staged.count];
+        slot.kind = entry.kind;
+        slot.a = entry.a;
+        slot.b = entry.b;
+        std::memcpy(slot.data, bytes32, sizeof(slot.data));
+        if (++staged.count == kBatch) FlushStaged();
+    } else {
+        Entry single = entry;
+        std::memcpy(single.data, bytes32, sizeof(single.data));
+        Push(single);
+    }
     // Only this (guest) thread submits bursts: a plain load and store, not a locked add.
     auto& bursts = S().bursts;
     const uint64_t count = bursts.load(std::memory_order_relaxed);
@@ -373,11 +458,13 @@ void NoteBreakpointReported() {
 
 bool Idle() {
     if (!Enabled()) return true;
+    FlushStaged();
     return QueueEmpty() && !S().busy.load(std::memory_order_acquire);
 }
 
 void Shutdown() {
     if (!Enabled()) return;
+    FlushStaged();
     auto& s = S();
     s.stop.store(true, std::memory_order_release);
     {
@@ -403,6 +490,7 @@ Lock::Lock() {
         return;
     }
     held_ = true;
+    FlushStaged();
     if (t_lockDepth > 0 && t_holdUndrained) {
         // Inside a HostLock: the consumer is already excluded, but the decoder
         // was not drained. Do what the outermost Lock would have done.
@@ -454,6 +542,7 @@ Lock::~Lock() {
 }
 
 HostLock::HostLock() {
+    if (Enabled() && !t_onGpuThread) FlushStaged();
     if (!Enabled() || t_onGpuThread || t_lockDepth > 0) {
         // No consumer thread, the consumer itself, or already inside a Lock or
         // HostLock: nothing lighter to do than a nested Lock.
@@ -505,6 +594,7 @@ HostLock::~HostLock() {
 Sync::Sync() {
     if (!Enabled() || t_onGpuThread) return;
     auto& s = S();
+    FlushStaged();  // Lock flushed already; a burst committed since cannot exist, but be explicit
     s.syncs.fetch_add(1, std::memory_order_relaxed);
     while (!QueueEmpty()) {
         DecodeOne();

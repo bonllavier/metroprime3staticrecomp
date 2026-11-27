@@ -39,11 +39,15 @@ int main() {
     require(std::isfinite(YawRate(1e7f, rad, dt)) && std::isfinite(YawRate(-1e7f, rad, dt)));
     require(std::fabs(2.0f * std::atan(YawRate(1e7f, rad, dt) * dt * 0.5f) + kMaxYawPerFrame) < 1e-4f);
 
-    // Mouse up (negative dy) looks up; invert flips; clamped to the game's limits.
+    // Mouse up (negative dy) looks up; invert flips; clamped to the mouse look range.
     require(PitchStep(0.0f, -10.0f, rad, false) > 0 && PitchStep(0.0f, -10.0f, rad, true) < 0);
-    require(PitchStep(0.0f, -100000.0f, rad, false) == kPitchMax);
-    require(PitchStep(0.0f, 100000.0f, rad, false) == kPitchMin);
+    require(PitchStep(0.0f, -100000.0f, rad, false) == kMouseLookPitchLimit);
+    require(PitchStep(0.0f, 100000.0f, rad, false) == -kMouseLookPitchLimit);
     require(PitchStep(0.1f, 0.0f, rad, false) == 0.1f);
+    // Wider than the game's own pitch (35 up / 55 down from the splines, 40/30 clamped) and
+    // short of the first-person camera's +-89.5 deg clamp.
+    require(kMouseLookPitchLimit > 55.0f * kDegToRad && kMouseLookPitchLimit < 1.5620696f);
+    require(PitchStep(0.0f, -100000.0f, rad, false, PitchLimits{}) == kPitchMax);
 
     // Surface multiplier table layout of 0x802E7058.
     require(SurfaceMultiplierOffset(0, 0) == 0xDC && SurfaceMultiplierOffset(1, 0) == 0xFC && SurfaceMultiplierOffset(2, 0) == 0x11C);

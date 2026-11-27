@@ -33,6 +33,14 @@ constexpr uint32_t kPlayerPosX = 0x48, kPlayerPosY = 0x58, kPlayerPosZ = 0x68, k
 constexpr uint32_t kPlayerStatePtr = 0x35A0, kStateHealth = 0xC, kStateCapacity = 0x8;
 constexpr uint32_t kAnchorEveryFrames = 30;
 constexpr float kDriftMetres = 0.5f;
+// The 3x3 rotation of the same transform, row by row (+0x3C/+0x40/+0x44, +0x4C..., +0x5C...), and the
+// free-look pitch target the mouse-look hook writes (+0x780, current pitch +0x77C). The mouse look turns
+// Samus through an angular rate over the frame's measured time, so a replay's heading drifts a little
+// every frame and then every later step goes elsewhere; the anchors restore it (21/11/2026).
+constexpr uint32_t kPlayerRotation[9] = {0x3C, 0x40, 0x44, 0x4C, 0x50, 0x54, 0x5C, 0x60, 0x64};
+constexpr uint32_t kPlayerFreeLookPitch = 0x780, kPlayerFreeLookCurrentPitch = 0x77C;
+constexpr float kHeadingDriftRadians = 0.0087f;  // half a degree
+constexpr float kPitchDriftRadians = 0.0087f;
 
 static bool GuestAddressOk(uint32_t a) { return a >= 0x80000000u && a < 0x81800000u - 0x4000u && (a & 3u) == 0; }
 static float GuestFloat(uint32_t a) { const uint32_t bits = Memory::Read32(a); float f; std::memcpy(&f, &bits, 4); return f; }
@@ -77,7 +85,16 @@ struct Recorder {
         if (dx != 0.0f || dy != 0.0f) out << FormatMotion(frame, dx, dy);
         if ((frame % kAnchorEveryFrames) == 0) {
             const uint32_t player = PrimeMouseLook::LastPlayer();
-            if (GuestAddressOk(player)) out << FormatAnchor(frame, GuestFloat(player + kPlayerPosX), GuestFloat(player + kPlayerPosY), GuestFloat(player + kPlayerPosZ));
+            if (GuestAddressOk(player)) {
+                Anchor a;
+                a.frame = frame;
+                a.x = GuestFloat(player + kPlayerPosX); a.y = GuestFloat(player + kPlayerPosY); a.z = GuestFloat(player + kPlayerPosZ);
+                a.hasRotation = true;
+                for (int i = 0; i < 9; ++i) a.rotation[i] = GuestFloat(player + kPlayerRotation[i]);
+                a.pitch = GuestFloat(player + kPlayerFreeLookPitch);
+                a.hasPitch = std::isfinite(a.pitch);
+                out << FormatAnchor(a);
+            }
         }
         if ((frame % 600) == 0) out.flush();  // every 10 s, so a crash keeps most of it
         lastFrame = frame;
@@ -101,6 +118,8 @@ struct State {
     bool correct = true, god = true;
     size_t anchorsChecked = 0, driftEvents = 0, corrections = 0;
     float maxDrift = 0;
+    size_t headingDrifts = 0, headingCorrections = 0, pitchCorrections = 0;
+    float maxHeadingDrift = 0;
     fs::path controlDir;
     uint32_t pollCounter = 0;
 };
@@ -236,6 +255,36 @@ void Apply(PrimeKeyboardMouse::Sample& input, float& lookDx, float& lookDy) {
                         ++g_state.corrections;
                     }
                 }
+                // Heading: the angle between the recorded and current forward axes (the transform's Y
+                // column) in the horizontal plane; past half a degree the whole rotation is written back.
+                // WII_COMPILED_QA_TRACE_ANCHORS=1 logs every anchor (position and heading error, before any
+                // correction), to compare two replays of one recording and find where they part.
+                static const bool traceAnchors = std::getenv("WII_COMPILED_QA_TRACE_ANCHORS") != nullptr;
+                if (anchor.hasRotation) {
+                    const float fx = GuestFloat(player + kPlayerRotation[1]), fy = GuestFloat(player + kPlayerRotation[4]);
+                    const float rx = anchor.rotation[1], ry = anchor.rotation[4];
+                    const float heading = std::atan2(fx * ry - fy * rx, fx * rx + fy * ry);
+                    if (traceAnchors)
+                        RT_LOG(RT_TAG_RUNTIME) << "[qa-anchor] frame=" << g_state.player->Frame() << " pos=" << x << ',' << y << ',' << z
+                                               << " drift_m=" << d << " heading_deg=" << heading * 57.29578f << std::endl;
+                    if (std::isfinite(heading) && std::fabs(heading) > kHeadingDriftRadians) {
+                        ++g_state.headingDrifts;
+                        g_state.maxHeadingDrift = std::max(g_state.maxHeadingDrift, std::fabs(heading));
+                        if (g_state.correct) {
+                            for (int i = 0; i < 9; ++i) Memory::WriteFloat32(player + kPlayerRotation[i], anchor.rotation[i]);
+                            ++g_state.headingCorrections;
+                        }
+                    }
+                }
+                if (anchor.hasPitch) {
+                    const float pitch = GuestFloat(player + kPlayerFreeLookPitch);
+                    if (std::isfinite(pitch) && std::fabs(pitch - anchor.pitch) > kPitchDriftRadians && g_state.correct) {
+                        Memory::WriteFloat32(player + kPlayerFreeLookPitch, anchor.pitch);
+                        Memory::WriteFloat32(player + kPlayerFreeLookCurrentPitch, anchor.pitch);
+                        PrimeMouseLook::SetPitch(anchor.pitch);
+                        ++g_state.pitchCorrections;
+                    }
+                }
             }
             if (g_state.god) {
                 const uint32_t state = Memory::Read32(player + kPlayerStatePtr);
@@ -313,7 +362,9 @@ void Apply(PrimeKeyboardMouse::Sample& input, float& lookDx, float& lookDy) {
             g_state.replayFinished = true;
             RT_LOG(RT_TAG_RUNTIME) << "[qa-replay] finished at frame " << g_state.player->Frame() << std::endl;
             RT_LOG(RT_TAG_RUNTIME) << "[qa-replay] anchors_checked=" << g_state.anchorsChecked << " drift_events=" << g_state.driftEvents
-                                   << " max_drift_m=" << g_state.maxDrift << " corrections=" << g_state.corrections << std::endl;
+                                   << " max_drift_m=" << g_state.maxDrift << " corrections=" << g_state.corrections
+                                   << " heading_drifts=" << g_state.headingDrifts << " max_heading_drift_deg=" << g_state.maxHeadingDrift * 57.29578f
+                                   << " heading_corrections=" << g_state.headingCorrections << " pitch_corrections=" << g_state.pitchCorrections << std::endl;
         }
     } else if (g_state.player) {
         input = {};

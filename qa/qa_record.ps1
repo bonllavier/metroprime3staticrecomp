@@ -21,6 +21,9 @@ function Launch-Game {
     Remove-Item (Join-Path $control '*.txt') -ErrorAction SilentlyContinue
     $env:WII_COMPILED_QA_CONTROL_DIR = $control
     $env:WII_COMPILED_PRIME_KEYBOARD_MOUSE = '1'
+    # The same A taps through the strap screen and the intro videos as qa_replay.ps1, so the front end
+    # is reached on the same frame in both.
+    $env:WII_COMPILED_QA_TAP_INTRO = '1'
     $p = Start-Process -FilePath $exe -WorkingDirectory $build -PassThru
     Write-Host "Game started (pid $($p.Id)), ready to record. Wait for the title screen."
     return $p
@@ -56,7 +59,7 @@ if (-not $game) {
 New-Item -ItemType Directory -Path $rec | Out-Null
 Copy-Item -LiteralPath (Join-Path $userData 'NAND') -Destination (Join-Path $rec 'NAND') -Recurse
 Copy-Item -LiteralPath (Join-Path $userData 'Config.toml') -Destination (Join-Path $rec 'Config.toml')
-[ordered]@{ name = $Name; recorded_utc = [DateTime]::UtcNow.ToString('o'); notes = $Notes
+[ordered]@{ name = $Name; recorded_utc = [DateTime]::UtcNow.ToString('o'); notes = $Notes; tap_intro = $true
     exe_sha256 = (Get-FileHash -LiteralPath (Join-Path $build 'Corruption_3 PC.exe') -Algorithm SHA256).Hash.ToLowerInvariant() } |
     ConvertTo-Json | Set-Content -LiteralPath (Join-Path $rec 'meta.json') -Encoding UTF8
 Set-Content -LiteralPath (Join-Path $control 'start.txt') -Value (Join-Path $rec 'inputs.txt') -Encoding ASCII

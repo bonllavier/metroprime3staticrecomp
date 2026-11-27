@@ -26,7 +26,14 @@ ln -s "$build/UserData/Cache" "$profile/Cache"
 run_dir=$qa_root/runs/$name/$(date +%Y%m%d_%H%M%S)_$label
 mkdir -p "$run_dir"
 export WII_COMPILED_QA_USER_DATA=$profile WII_COMPILED_QA_REPLAY=$rec/inputs.txt WII_COMPILED_QA_REPLAY_EXIT=10 \
-       WII_COMPILED_QA_TAP_INTRO=1 WII_COMPILED_PRIME_KEYBOARD_MOUSE=1 WII_COMPILED_PRIME_PERFORMANCE_TRACE=1
+       WII_COMPILED_PRIME_KEYBOARD_MOUSE=1 WII_COMPILED_PRIME_PERFORMANCE_TRACE=1
+# Intro taps (A through the strap screen and the intro videos) as the recording had them. Recordings
+# made without them say "tap_intro": false in meta.json; older ones were all made with them.
+if grep -Eq '"tap_intro"[[:space:]]*:[[:space:]]*false' "$rec/meta.json" 2>/dev/null; then
+    unset WII_COMPILED_QA_TAP_INTRO
+else
+    export WII_COMPILED_QA_TAP_INTRO=1
+fi
 for pair in "$@"; do
     if [[ $pair == cfg:* ]]; then python3 -I "$script_dir/set_config.py" "$profile/Config.toml" "${pair#cfg:}"
     else export "$pair"; fi

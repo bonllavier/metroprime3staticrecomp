@@ -71,11 +71,21 @@ try {
     # (portable recipes only; see recomp/docs/tirones_shaders_referencias.md).
     python -B recomp/tools/prime_pipeline_seed.py merge
     if ($LASTEXITCODE -ne 0) { throw 'Pipeline seed merge failed' }
+    # Post-passes over the frozen base translation (recomp/docs/rendimiento_cpu_pendiente.md, punto 1,
+    # validated in play 19-21/11/2026). MP3_CTX_FLUSH_ELISION=off|elide|verify and
+    # MP3_PROVEN_RAM_ACCESSES=on|off override them, as in build_prime_runtime.sh.
+    $ctxFlushElision = if ($env:MP3_CTX_FLUSH_ELISION) { $env:MP3_CTX_FLUSH_ELISION } else { 'elide' }
+    $provenRamAccesses = if ($env:MP3_PROVEN_RAM_ACCESSES) { $env:MP3_PROVEN_RAM_ACCESSES } else { 'on' }
+    # C4 (reloads of r1/r2/r13-r31 after direct calls): elide since the verify build played 26/11/2026 with no mismatches.
+    $nonvolatileReloads = if ($env:MP3_NONVOLATILE_RELOAD_ELISION) { $env:MP3_NONVOLATILE_RELOAD_ELISION } else { 'elide' }
     & recomp/.tools/dotnet/dotnet.exe recomp/third_party/WiiCompiled/translator/src/Translator.Cli/bin/Release/net8.0/Translator.Cli.dll emit-build-shards `
         --project recomp/config/RM3E01_00/project_full_conservative.yml `
         --base-metadata recomp/generated/RM3E01_00_conservative/runtime_hooks/base_translation_output.json `
         --base-functions-dir recomp/generated/RM3E01_00_conservative `
         --native-source-dir recomp/third_party/WiiCompiled/runtime/src `
+        --ctx-flush-elision $ctxFlushElision `
+        --proven-ram-accesses $provenRamAccesses `
+        --nonvolatile-reload-elision $nonvolatileReloads `
         --out recomp/generated/RM3E01_00_conservative/build_shards
     if ($LASTEXITCODE -ne 0) { throw 'Runtime shard emission failed' }
     # Reconfigure explicitly: a backwards host-clock adjustment can make changed

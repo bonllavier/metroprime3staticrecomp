@@ -1504,7 +1504,7 @@ void run(const wgpu::CommandEncoder& encoder, const Pass& pass, const Params& pa
       .view = target, .loadOp = load ? wgpu::LoadOp::Load : wgpu::LoadOp::Clear, .storeOp = wgpu::StoreOp::Store}};
   const wgpu::RenderPassDescriptor descriptor{
       .label = label, .colorAttachmentCount = attachments.size(), .colorAttachments = attachments.data(),
-      .timestampWrites = gpu_timing::pass_writes(gpu_timing::Category::Post)};
+      .timestampWrites = gpu_timing::pass_writes(gpu_timing::Category::Post, label)};
   const auto rp = encoder.BeginRenderPass(&descriptor);
   rp.SetPipeline(pass.pipeline);
   rp.SetBindGroup(0, bindGroup, 0, nullptr);

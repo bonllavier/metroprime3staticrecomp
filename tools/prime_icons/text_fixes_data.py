@@ -266,6 +266,9 @@ for lang in _LANGS:
 WHOLE['SPAN'].append(('1E249B9A4943F8BE#0', 'The blast doors are down',
                       'Gracias por tu ayuda, Samus. Las compuertas blindadas se han cerrado, así que tendrás que buscar '
                       'otro camino para volver a tu nave.'))
+# Pump handle (Metroid3.pak, both discs): "Pull back then push forward" had become "push back and forth".
+WHOLE['SPAN'].append(('F852491E7CDF4ECB#0', 'para bombear',
+                      'Tira del mando hacia atrás y luego empújalo hacia delante para bombear.'))
 # Style, chosen by the user (14/11/2026): "Justice will prevail" had become "El crimen nunca paga".
 WHOLE['SPAN'].append(('524735BD013D9268#3', 'El crimen nunca paga',
                       '¡Tranquila, que somos los buenos! La justicia siempre triunfa y todo eso... ¿verdad, Samus?'))

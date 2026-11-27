@@ -1330,10 +1330,38 @@ void map_staging_buffer() {
       });
 }
 
+// Diagnostics for frames that wait on the GPU inside the frame (25/11/2026, the cinematic before Rundas
+// on Linux: ~10 FPS while the GPU works 8-10 ms per frame). Every 5 s with any wait of 2 ms or more, or any
+// capacity split: frames begun, splits, time spent waiting for the staging map and the staging high water.
+namespace {
+struct StagingWaitStats {
+  std::chrono::steady_clock::time_point since = std::chrono::steady_clock::now();
+  uint64_t frames = 0, resumes = 0, waits = 0, slowWaits = 0, splitsAtStart = 0;
+  double waitMs = 0, maxWaitMs = 0, resumeWaitMs = 0;
+};
+StagingWaitStats g_stagingWaitStats;
+// SSAO effect runs (post::face_before/face_after with a graduated mask) encoded since the last report.
+struct EffectRunStats {  // written while encoding (frame worker), read in the report
+  std::atomic<uint64_t> before{0}, after{0}, cappedPasses{0};
+};
+EffectRunStats g_effectRunStats;
+}  // namespace
+
+static void note_staging_wait(double ms, bool capacityResume);
+
 static bool begin_frame_impl(bool clearEfb, bool capacityResume = false) {
   ZoneScoped;
   {
     ZoneScopedN("Wait for buffer map");
+    const auto waitStart = std::chrono::steady_clock::now();
+    struct NoteWait {
+      std::chrono::steady_clock::time_point start;
+      bool resume;
+      ~NoteWait() {
+        note_staging_wait(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count(),
+                          resume);
+      }
+    } noteWait{waitStart, capacityResume};
     map_staging_buffer();
     while (true) {
       const auto mappingState = s_mappingState.state();
@@ -1403,6 +1431,40 @@ static bool begin_frame_impl(bool clearEfb, bool capacityResume = false) {
   push_command(CommandType::SetScissor, Command::Data{.setScissor = g_cachedScissor});
   begin_pipeline_frame();
   return true;
+}
+
+static void note_staging_wait(double ms, bool capacityResume) {
+  auto& st = g_stagingWaitStats;
+  if (capacityResume) {
+    ++st.resumes;
+    st.resumeWaitMs += ms;
+  } else {
+    ++st.frames;
+  }
+  ++st.waits;
+  st.waitMs += ms;
+  st.maxWaitMs = std::max(st.maxWaitMs, ms);
+  if (ms >= 2.0) ++st.slowWaits;
+  const auto now = std::chrono::steady_clock::now();
+  if (now - st.since < std::chrono::seconds(5)) return;
+  const uint64_t splits = g_stagingSplitCount - st.splitsAtStart;
+  const uint64_t effectBefore = g_effectRunStats.before.exchange(0, std::memory_order_relaxed);
+  const uint64_t effectAfter = g_effectRunStats.after.exchange(0, std::memory_order_relaxed);
+  const uint64_t effectCapped = g_effectRunStats.cappedPasses.exchange(0, std::memory_order_relaxed);
+  if (effectCapped != 0)
+    Log.info("[ssao-effect-runs] frames={} runs={} after_joining={} passes_joined={}", st.frames, effectBefore,
+             effectAfter, effectCapped);
+  if (splits != 0 || st.slowWaits != 0) {
+    const auto hw = g_stagingHighWater;
+    Log.info("[staging-wait] frames={} capacity_splits={} map_waits={} slow_waits={} wait_ms total={:.1f} max={:.1f} "
+             "in_splits={:.1f} | high_water KiB verts={}/{} uniforms={}/{} indices={}/{} storage={}/{}",
+             st.frames, splits, st.waits, st.slowWaits, st.waitMs, st.maxWaitMs, st.resumeWaitMs, hw[0] >> 10,
+             g_stagingCapacity[0] >> 10, hw[1] >> 10, g_stagingCapacity[1] >> 10, hw[2] >> 10,
+             g_stagingCapacity[2] >> 10, hw[3] >> 10, g_stagingCapacity[3] >> 10);
+  }
+  st = StagingWaitStats{};
+  st.since = now;
+  st.splitsAtStart = g_stagingSplitCount;
 }
 
 bool begin_frame(bool clearEfb) {
@@ -2162,6 +2224,34 @@ static void render_impl(std::vector<RenderPass>& renderPasses, wgpu::CommandEnco
         else if (kind != 0) excludeRuns.push_back({j, j + 1, kind >= 2, kind == 3});
         open = kind;
       }
+      // Every run costs a full EFB copy, a full-screen comparison and a pass split. Scenes full of
+      // particles interleaved with geometry made hundreds per frame (26/11/2026, the cinematic before
+      // Rundas: GPU at 100 %, ~10 FPS). Above kMaxEffectRuns, neighbouring effect runs are joined across
+      // the smallest gaps; the draws inside a gap are then measured with the effect (their occlusion
+      // fades where they change the image), which only happens in scenes already crowded with effects.
+      constexpr size_t kMaxEffectRuns = 8;
+      size_t effectRuns = 0;
+      for (const auto& run : excludeRuns) effectRuns += run.graduated ? 1 : 0;
+      g_effectRunStats.before.fetch_add(effectRuns, std::memory_order_relaxed);
+      if (effectRuns > kMaxEffectRuns) {
+        std::vector<std::pair<size_t, size_t>> gaps;  // (draws skipped, index of the first run of the pair)
+        for (size_t k = 0; k + 1 < excludeRuns.size(); ++k)
+          if (excludeRuns[k].graduated && excludeRuns[k + 1].graduated)
+            gaps.emplace_back(excludeRuns[k + 1].begin - excludeRuns[k].end, k);
+        const size_t joins = std::min(gaps.size(), effectRuns - kMaxEffectRuns);
+        std::partial_sort(gaps.begin(), gaps.begin() + static_cast<std::ptrdiff_t>(joins), gaps.end());
+        std::vector<uint8_t> joinNext(excludeRuns.size(), 0);
+        for (size_t g = 0; g < joins; ++g) joinNext[gaps[g].second] = 1;
+        size_t out = 0;
+        for (size_t k = 0; k < excludeRuns.size(); ++k) {
+          if (k > 0 && joinNext[k - 1]) excludeRuns[out - 1].end = excludeRuns[k].end;
+          else excludeRuns[out++] = excludeRuns[k];
+        }
+        excludeRuns.resize(out);
+        effectRuns -= joins;
+        g_effectRunStats.cappedPasses.fetch_add(1, std::memory_order_relaxed);
+      }
+      g_effectRunStats.after.fetch_add(effectRuns, std::memory_order_relaxed);
     }
     if (excludeRuns.empty()) {
       wgpu::RenderPassDescriptor timedDescriptor = renderPassDescriptor;

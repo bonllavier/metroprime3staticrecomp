@@ -45,6 +45,8 @@ struct RuntimeUserConfig {
     std::optional<std::string> graphicsApi;
     std::optional<std::string> displayMode;
     std::optional<uint32_t> frameInterpolationFps;
+    // [video] ui_scale: size of the port's panels (F1, F2, ...) in percent; 0 follows the window height.
+    std::optional<uint32_t> uiScalePercent;
     // [video] frame_interpolation_low_latency: show each real frame at once, inserted images predicted past it.
     std::optional<bool> frameInterpolationLowLatency;
     // [video] vsync: present in step with the display's refresh (no tearing, presentation capped at the
@@ -305,6 +307,14 @@ inline bool IsSupportedDisplayMode(std::string_view value) {
 constexpr uint32_t kFrameInterpolationMatchMonitor = 1;
 constexpr uint32_t kFrameInterpolationUncapped = 2;
 constexpr std::array<uint32_t, 9> kFrameInterpolationChoices{0, 1, 120, 144, 165, 180, 240, 360, 2};
+
+// [video] ui_scale: 0 automatic (100 % up to 1080 lines, 200 % at 2160), otherwise the percent offered in
+// F1 > Video.
+constexpr std::array<uint32_t, 9> kUiScaleChoices{0, 100, 125, 150, 175, 200, 250, 300, 400};
+
+inline bool IsSupportedUiScale(uint32_t value) {
+    return std::find(kUiScaleChoices.begin(), kUiScaleChoices.end(), value) != kUiScaleChoices.end();
+}
 
 inline bool IsSupportedFrameInterpolationFps(uint32_t value) {
     return std::find(kFrameInterpolationChoices.begin(), kFrameInterpolationChoices.end(), value) !=
@@ -782,6 +792,11 @@ inline RuntimeUserConfig ParseConfigDocument(const toml::value& document) {
         value && IsSupportedDisplayMode(*value)) {
         config.displayMode = *value;
     }
+    if (auto value = FindConfigUint(document, "video", "ui_scale")) {
+        if (IsSupportedUiScale(*value)) {
+            config.uiScalePercent = *value;
+        }
+    }
     if (auto value = FindConfigUint(document, "video", "frame_interpolation_fps")) {
         if (IsSupportedFrameInterpolationFps(*value)) {
             config.frameInterpolationFps = *value;
@@ -1078,6 +1093,14 @@ inline bool SetWindowPosition(int32_t x, int32_t y) {
     const bool wroteX = WriteSetting("video", "window_x", std::to_string(x));
     const bool wroteY = WriteSetting("video", "window_y", std::to_string(y));
     return wroteX && wroteY;
+}
+
+inline bool SetUiScale(uint32_t percent) {
+    if (!IsSupportedUiScale(percent)) {
+        return false;
+    }
+    Mutable().uiScalePercent = percent;
+    return WriteSetting("video", "ui_scale", std::to_string(percent));
 }
 
 inline bool SetFrameInterpolationFps(uint32_t value) {
@@ -1519,6 +1542,10 @@ inline bool SetWiiAccelOffsetFor(const std::string& remoteKey, const std::array<
 }
 
 // Target frame rate for frame interpolation, or 0 to disable it.
+inline uint32_t UiScalePercent(uint32_t fallback = 0) {
+    return Get().uiScalePercent.value_or(fallback);
+}
+
 inline uint32_t FrameInterpolationFps(uint32_t fallback = 0) {
     return Get().frameInterpolationFps.value_or(fallback);
 }

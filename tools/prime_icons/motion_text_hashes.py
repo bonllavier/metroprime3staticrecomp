@@ -18,7 +18,7 @@ PROMPTS = [
     'and cast Nunchuk forward to fire.', 'quickly tilt the Wii Remote upward to perform a Spring Ball Jump.',
     'Quickly pull Nunchuk backward', 'Cast Nunchuk forward', 'Shake the Nunchuk up and down to break free!',
     'Point the Wii Remote at the screen.', 'Twist the Wii Remote.', 'Tilt the Wii Remote down.', 'Tilt the Wii Remote up.',
-    'Grapple the power coupling',
+    'Grapple the power coupling', 'Pull back then push forward to pump.',
 ]
 LANGS = {'ENGL': 0, 'JAPN': 0, 'GERM': 1, 'FREN': 2, 'SPAN': 3, 'ITAL': 4}
 

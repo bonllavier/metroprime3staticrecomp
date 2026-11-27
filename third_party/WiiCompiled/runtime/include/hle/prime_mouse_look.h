@@ -70,11 +70,27 @@ inline float YawRate(float dxPixels, float radPerPixel, float dt) {
     return 2.0f * std::tan(angle * 0.5f) / dt;
 }
 
-// Mouse up (negative dy) looks up unless inverted; the game's own clamp applies.
-inline float PitchStep(float pitch, float dyPixels, float radPerPixel, bool invertY) {
+// Free-look pitch range of mouse look (radians, up positive). The game's own
+// range is narrower: 0x801522E0 sets pitch = spline(pointer, [0, 1]) * deg2rad
+// with the splines of CTweakPlayerControl +0x398C (up, 35 deg) and +0x39CC
+// (down, -55 deg), or, with CTweakPlayer +0x258, accumulates and clamps it to
+// [-FLOAT_80682524, FLOAT_80682528] (kPitchMin/kPitchMax). On the Wii the
+// reticle then moves to the screen edge, which adds about half the vertical
+// field of view to the aim; with mouse look the reticle stays centred, so the
+// camera has to cover that range itself. The first-person camera (0x8007F904)
+// maps +0x77C linearly to its pitch and clamps it to +-89.5 deg
+// (lbl_8067F500/lbl_8067F504), so it supports the wider range.
+struct PitchLimits {
+    float min = kPitchMin, max = kPitchMax;
+};
+constexpr float kMouseLookPitchLimit = 1.3962634f;  // 80 degrees, short of the camera's 89.5
+constexpr PitchLimits kMouseLookPitchLimits{-kMouseLookPitchLimit, kMouseLookPitchLimit};
+
+// Mouse up (negative dy) looks up unless inverted, within the mouse look range.
+inline float PitchStep(float pitch, float dyPixels, float radPerPixel, bool invertY, PitchLimits limits = kMouseLookPitchLimits) {
     if (!std::isfinite(dyPixels)) return pitch;
     const float delta = (invertY ? dyPixels : -dyPixels) * radPerPixel;
-    return std::clamp(pitch + delta, kPitchMin, kPitchMax);
+    return std::clamp(pitch + delta, limits.min, limits.max);
 }
 
 // Byte offset of the turn-speed surface multiplier in CTweakPlayer for the
@@ -129,6 +145,9 @@ void AddMotion(float dxPixels, float dyPixels);  // relative motion while captur
 void TakeFrameMotion(float& dx, float& dy);
 // Guest address of CPlayer as last seen by the turn/pitch hooks (0 before the first one): QA anchors.
 uint32_t LastPlayer();
+// QA replays: sets the free-look pitch the hook keeps across frames (clamped to the mouse look range), so an
+// anchor's pitch correction is not undone by the next frame's mouse motion.
+void SetPitch(float pitch);
 void InjectMotion(float dxPixels, float dyPixels);
 bool Capturing();                               // the OS cursor is parked at the window centre
 void ServiceHost();                             // once per host frame: start/stop parking the cursor

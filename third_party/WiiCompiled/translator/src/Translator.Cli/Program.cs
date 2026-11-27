@@ -226,6 +226,31 @@ int RunEmitBuildShards(string[] argsTail)
     var nativeIndexOption = OptionValue(argsTail, "--native-index");
     var resolvedProfile = OptionValue(argsTail, "--resolved-profile");
     var retroCpp = OptionValue(argsTail, "--retro-cpp-dir");
+    var elisionOption = OptionValue(argsTail, "--ctx-flush-elision") ?? "off";
+    var reloadOption = OptionValue(argsTail, "--nonvolatile-reload-elision") ?? "off";
+    var provenRamOption = (OptionValue(argsTail, "--proven-ram-accesses") ?? "off").ToLowerInvariant();
+    if (provenRamOption is not ("on" or "off"))
+    {
+        Console.Error.WriteLine($"[translator] --proven-ram-accesses must be on or off (got '{provenRamOption}').");
+        return 2;
+    }
+    static ContextFlushElisionMode? ParseElisionMode(string value) => value.ToLowerInvariant() switch
+    {
+        "off" => ContextFlushElisionMode.Off,
+        "elide" => ContextFlushElisionMode.Elide,
+        "verify" => ContextFlushElisionMode.Verify,
+        _ => null,
+    };
+    if (ParseElisionMode(elisionOption) is not { } elisionMode)
+    {
+        Console.Error.WriteLine($"[translator] --ctx-flush-elision must be off, elide or verify (got '{elisionOption}').");
+        return 2;
+    }
+    if (ParseElisionMode(reloadOption) is not { } reloadMode)
+    {
+        Console.Error.WriteLine($"[translator] --nonvolatile-reload-elision must be off, elide or verify (got '{reloadOption}').");
+        return 2;
+    }
 
     try
     {
@@ -256,8 +281,32 @@ int RunEmitBuildShards(string[] argsTail)
             nativeSourcePath,
             string.IsNullOrWhiteSpace(resolvedProfile) ? null : Path.GetFullPath(resolvedProfile),
             string.IsNullOrWhiteSpace(retroCpp) ? null : Path.GetFullPath(retroCpp),
-            NativeIndex: nativeIndex));
+            NativeIndex: nativeIndex,
+            ContextFlushElision: elisionMode,
+            ProvenRamAccesses: provenRamOption == "on",
+            NonvolatileReloadElision: reloadMode));
         Console.WriteLine("[translator] emitted stable translated build graph");
+        if (result.ProvenRamAccesses is { } proven)
+        {
+            Console.WriteLine($"  proven RAM accesses (no MMIO check) in {proven.Functions:N0} functions:");
+            for (var b = 0; b < ContextFlushElision.ProvenRamBases.Length; b++)
+                Console.WriteLine(
+                    $"    {ContextFlushElision.ProvenRamBases[b]}: {proven.Eligible(b):N0} functions, " +
+                    $"{proven.Reads(b):N0} reads, {proven.Writes(b):N0} writes");
+        }
+        if (result.ContextFlushElision is { } elision)
+        {
+            Console.WriteLine(
+                $"  ctx flush elision ({elisionMode}): {elision.Elided:N0} of {elision.Flushes:N0} flushes in " +
+                $"{elision.AnalyzedFunctions:N0} of {elision.Functions:N0} functions; " +
+                $"{elision.UntrustedCallTargets:N0} call targets write register slots outside their contract");
+            if (reloadMode != ContextFlushElisionMode.Off)
+                Console.WriteLine(
+                    $"  nonvolatile reload elision ({reloadMode}): {elision.ReloadsElided:N0} of " +
+                    $"{elision.NonvolatileReloads:N0} r1/r2/r13-r31 reloads after direct calls");
+            foreach (var (reason, count) in elision.SkipReasons.OrderByDescending(static pair => pair.Value))
+                Console.WriteLine($"    skipped {reason}: {count:N0}");
+        }
         Console.WriteLine($"  base functions: {result.BaseFunctionCount:N0}");
         Console.WriteLine($"  shared base functions: {result.SharedBaseFunctionCount:N0}");
         Console.WriteLine($"  profile-sensitive targets/callers: {result.ProfileSensitiveTargetCount:N0}/{result.ProfileSensitiveCallerCount:N0}");
@@ -3686,6 +3735,9 @@ static (string? Positional, CommandOption[] Options)? CommandSpec(string command
         new("--native-index", "path"),
         new("--resolved-profile", "path"),
         new("--retro-cpp-dir", "path"),
+        new("--ctx-flush-elision", "off|elide|verify"),
+        new("--proven-ram-accesses", "off|on"),
+        new("--nonvolatile-reload-elision", "off|elide|verify"),
         new("--out", "generated/build_shards")
     }),
     "emit-native-index" => (null, new CommandOption[]

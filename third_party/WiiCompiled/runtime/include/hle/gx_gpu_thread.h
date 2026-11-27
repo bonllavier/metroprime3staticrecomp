@@ -24,8 +24,12 @@ bool Enabled();
 bool OnGpuThread();
 // OS thread id of the consumer, 0 until it has started (diagnostics).
 uint32_t NativeThreadId();
-// Queue one committed gather burst (guest order). Decodes inline if disabled.
+// Queue one committed gather burst (guest order). Decodes inline if disabled. Bursts are published
+// to the consumer in batches (WII_COMPILED_PRIME_GX_BATCH=0 publishes each one, as before 26/11/2026).
 void SubmitBurst(const uint8_t* bytes32);
+// Publishes the bursts this thread has staged. Called wherever the guest may wait on the consumer
+// (MMIO reads, call-boundary poll, VI and idle waits); every other entry point does it itself.
+void FlushPending();
 // The CP breakpoint read stall is decided when a burst is submitted (as the
 // synchronous decoder did); stalled bursts wait here until the guest resumes
 // GP reads. True while the calling thread decodes a queued entry, which must

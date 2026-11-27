@@ -20,7 +20,11 @@ enum class Category : uint8_t {
 bool requested() noexcept;
 // Timestamp writes for a render pass about to begin, or nullptr (off, or this frame is full).
 // The pointer stays valid until the next call.
-const wgpu::PassTimestampWrites* pass_writes(Category category) noexcept;
+// `label` (a string literal, or nullptr) also gets its own average in the "[gpu-pass]" line.
+const wgpu::PassTimestampWrites* pass_writes(Category category, const char* label = nullptr) noexcept;
+// Performance-capture build (MKW_PRIME_PERF_CAPTURE): timing runs only while a capture is active,
+// reported every second. Elsewhere it does nothing.
+void set_capture_active(bool active) noexcept;
 // At the end of a frame's encoding: resolves this frame's queries into a readback buffer.
 void encode_resolve(const wgpu::CommandEncoder& encoder) noexcept;
 // After the submit: maps resolved frames; their times are added from the map callback.

@@ -32,6 +32,12 @@ struct Motion {
 struct Anchor {
     uint32_t frame = 0;
     float x = 0, y = 0, z = 0;
+    // Optional (recordings from 21/11/2026 on): the 3x3 rotation of the player transform, row by row,
+    // and the free-look pitch target. Older recordings carry the position only.
+    bool hasRotation = false;
+    float rotation[9]{};
+    bool hasPitch = false;
+    float pitch = 0;
 };
 struct Recording {
     std::vector<Keyframe> keyframes;
@@ -82,6 +88,20 @@ inline std::string FormatAnchor(uint32_t frame, float x, float y, float z) {
     return out.str();
 }
 
+// "a <frame> x,y,z o r00,r01,r02,r10,r11,r12,r20,r21,r22 p <pitch>"; `o` and `p` are optional.
+inline std::string FormatAnchor(const Anchor& anchor) {
+    std::ostringstream out;
+    out.precision(9);
+    out << "a " << anchor.frame << ' ' << anchor.x << ',' << anchor.y << ',' << anchor.z;
+    if (anchor.hasRotation) {
+        out << " o ";
+        for (int i = 0; i < 9; ++i) out << (i ? "," : "") << anchor.rotation[i];
+    }
+    if (anchor.hasPitch) out << " p " << anchor.pitch;
+    out << '\n';
+    return out.str();
+}
+
 inline std::string FormatEnd(uint32_t frame) { return "end " + std::to_string(frame) + "\n"; }
 
 namespace detail {
@@ -116,8 +136,17 @@ inline void ParseLine(const std::string& line, Recording& rec) {
     if (kind == "a") {
         std::string v;
         float xyz[3]{};
-        if (ss >> v && detail::ParseFloats(v, xyz, 3)) rec.anchors.push_back({frame, xyz[0], xyz[1], xyz[2]});
-        else ++rec.badLines;
+        if (!(ss >> v && detail::ParseFloats(v, xyz, 3))) { ++rec.badLines; return; }
+        Anchor a;
+        a.frame = frame;
+        a.x = xyz[0]; a.y = xyz[1]; a.z = xyz[2];
+        std::string tag;
+        while (ss >> tag >> v) {
+            if (tag == "o" && detail::ParseFloats(v, a.rotation, 9)) a.hasRotation = true;
+            else if (tag == "p" && detail::ParseFloats(v, &a.pitch, 1)) a.hasPitch = true;
+            else { ++rec.badLines; return; }
+        }
+        rec.anchors.push_back(a);
         return;
     }
     if (kind != "f") { ++rec.badLines; return; }

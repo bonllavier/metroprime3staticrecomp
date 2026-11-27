@@ -6,6 +6,7 @@
 #include "hle_stubs.h"
 
 #include <aurora/imgui.h>
+#include "settings_overlay.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -298,6 +299,7 @@ void OpenUrl(const char* url) {
 }
 
 void Image(const std::string& url, float size, bool dim = false) {
+    size *= settings_overlay::UiScale();  // panel badges follow the panel size
     const ImTextureID texture = TextureFor(url);
     const ImVec2 pos = ImGui::GetCursorScreenPos();
     ImGui::Dummy({size, size});
@@ -333,9 +335,9 @@ void DrawAccount() {
     }
     static char username[64] = {};
     static char password[128] = {};
-    ImGui::SetNextItemWidth(260);
+    ImGui::SetNextItemWidth(260.0f * settings_overlay::UiScale());
     ImGui::InputText("User", username, sizeof(username), ImGuiInputTextFlags_NoUndoRedo);
-    ImGui::SetNextItemWidth(260);
+    ImGui::SetNextItemWidth(260.0f * settings_overlay::UiScale());
     const bool enter = ImGui::InputText("Password", password, sizeof(password),
                                         ImGuiInputTextFlags_Password | ImGuiInputTextFlags_NoUndoRedo |
                                             ImGuiInputTextFlags_EnterReturnsTrue);
@@ -399,7 +401,7 @@ void DrawGame(const PrimeAchievements::Game& game) {
     ImGui::Text("%s", game.title.c_str());
     ImGui::Text("%u of %u achievements    %u / %u points (casual)",
                 game.unlocked, game.total, game.pointsUnlocked, game.pointsTotal);
-    ImGui::SetNextItemWidth(320);
+    ImGui::SetNextItemWidth(320.0f * settings_overlay::UiScale());
     ImGui::ProgressBar(game.total ? float(game.unlocked) / float(game.total) : 0.0f, {320, 0});
     if (!game.richPresence.empty()) ImGui::TextDisabled("%s", game.richPresence.c_str());
     ImGui::EndGroup();
@@ -454,8 +456,14 @@ void DrawList() {
 void DrawPanel(bool* open) {
     PumpImages();
     if (!*open) return;
-    ImGui::SetNextWindowSize({640, 760}, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, {0.5f, 0.5f});
+    // Panel size (F1 > Video): a new size lays the window out again, centred and within the screen.
+    static uint32_t laidOutFor = 0;
+    const ImGuiCond layout = laidOutFor != settings_overlay::UiScaleGeneration() ? ImGuiCond_Always : ImGuiCond_FirstUseEver;
+    laidOutFor = settings_overlay::UiScaleGeneration();
+    const float scale = settings_overlay::UiScale();
+    const ImVec2 screen = ImGui::GetMainViewport()->Size;
+    ImGui::SetNextWindowSize({std::min(640.0f * scale, screen.x * 0.95f), std::min(760.0f * scale, screen.y * 0.9f)}, layout);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), layout, {0.5f, 0.5f});
     if (ImGui::Begin("RetroAchievements [F2]", open, ImGuiWindowFlags_NoSavedSettings)) {
         if (!PrimeAchievements::Available()) {
             ImGui::TextWrapped("%s", "This build does not include the RetroAchievements client.");

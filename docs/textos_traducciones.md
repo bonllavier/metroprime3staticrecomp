@@ -115,6 +115,8 @@ fuera del repositorio (`analysis/textos_es/revision_espanol_corruption.md`). Reg
   inventario en segunda persona.
 - **Erratas:** unas 150.
 
+El 26/11 se añadió la bomba de palanca de Metroid3.pak: "Empuja repetidamente hacia atrás y hacia delante para bombear." pasa a "Tira del mando hacia atrás y luego empújalo hacia delante para bombear." (con Wiimote real; en teclado o mando se ve el aviso de gesto con la tecla). 1.116 cadenas, 882 reglas.
+
 No se pudieron corregir cinco frases, porque su texto español es idéntico al de otra frase correcta y el
 port las reconoce por el texto: el terminal de la bodega "Está desactivado" (uno está activo), los
 datos del satélite "sobre Éter" (uno es de Tallon IV), el proyector "Se ve la imagen de Ghor" (uno no

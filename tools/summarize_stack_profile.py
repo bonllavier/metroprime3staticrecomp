@@ -62,7 +62,12 @@ def main():
     modules, samples, header, tids, times = [], [], '', [], []
     exe_path = None
     now = 0.0
-    for line in a.profile.read_text(encoding='utf-8', errors='replace').splitlines():
+    # Performance-capture builds write the profile gzipped (stack_profile_*.txt.gz).
+    raw = a.profile.read_bytes()
+    if raw[:2] == b'\x1f\x8b':
+        import gzip
+        raw = gzip.decompress(raw)
+    for line in raw.decode('utf-8', errors='replace').splitlines():
         if line.startswith('module '):
             _, base, size, path = line.split(' ', 3)
             modules.append((int(base, 16), int(size, 16), path))

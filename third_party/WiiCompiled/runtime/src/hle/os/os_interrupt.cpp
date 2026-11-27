@@ -1,5 +1,6 @@
 // Interrupt masking/dispatch plus the EXI/IPC hardware stubs that hang off it.
 
+#include "hle/gx_gpu_thread.h"
 #include <atomic>
 #include <cstdint>
 #include <cstdio>
@@ -342,6 +343,8 @@ namespace {
 extern "C" [[gnu::noinline]] void OS_HLE_PollPendingPrimeIpcInterruptFull(CpuContext* ctx, uint32_t guestTarget)
 {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
+    // Every 8th call return: staged GX bursts never wait longer than a few guest calls.
+    GxGpuThread::FlushPending();
 #endif
     PollBoundaryDevices(ctx, guestTarget);
 }
@@ -366,6 +369,9 @@ extern "C" bool OS_HLE_ShouldDeferPrimeScheduler()
 
 extern "C" void OS_HLE_ServicePrimeIdle(CpuContext* ctx, uint32_t stack, uint32_t sda)
 {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+    GxGpuThread::FlushPending();
+#endif
     if (ctx == nullptr || (ctx->msr & 0x8000u) == 0) return;
     static uint32_t traceCount = 0;
     if (traceCount++ < 20u) {

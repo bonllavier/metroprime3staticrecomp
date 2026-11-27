@@ -47,6 +47,9 @@ typedef struct {
 const AuroraStats* aurora_get_stats();
 // Cumulative counters for timelines (callable from any thread).
 uint64_t aurora_get_present_count();
+// Monotonic nanoseconds the frame worker spent encoding frames and preparing the next one (the prepare
+// waits for the GPU to free the previous frame's buffers: high values mean the GPU is the limit).
+void aurora_get_frame_worker_totals(uint64_t* encodeNs, uint64_t* prepareNs);
 // Native thread ids of the frame worker and presenter (Windows); returns how many were written.
 uint32_t aurora_get_render_thread_ids(uint32_t* ids, uint32_t capacity);
 uint64_t aurora_get_texture_upload_bytes_total();
@@ -148,6 +151,9 @@ bool aurora_get_display_sync_paused();
 void aurora_set_skip_unready_pipelines(bool enabled);
 // Hybrid ubershader: a draw whose specialised pipeline is still compiling uses the ubershader instead of waiting.
 void aurora_set_ubershader(bool enabled);
+// Performance-capture builds (MKW_PRIME_PERF_CAPTURE): GPU time per frame and per post-process pass
+// ("[gpu-time]"/"[gpu-pass]" every second) while active. No-op in other builds.
+void aurora_set_gpu_timing_capture(bool active);
 bool aurora_get_ubershader(void);
 // Total draws encoded with an ubershader since start (the F1 overlay shows its rate).
 uint64_t aurora_get_ubershader_draws(void);

@@ -25,6 +25,7 @@
 #include "hle/prime_cpu_fifo_capture.h"
 #include "hle/prime_dsp_boot_registers.h"
 #include "hle/gx_gpu_thread.h"
+#include "guest_abi/gather_state.h"
 #include <aurora/aurora.h>
 #include "hle_stubs.h"
 #include "hle/audio/ax_dsp.h"
@@ -1995,6 +1996,11 @@ static bool PrimeGpuCaptureCpuFifoFull(uint32_t value, unsigned width);
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
 extern bool g_primeFifoReplaying;  // gx_fifo.cpp: HleFifoWrite skips the capture while it is set
 
+// For the inline append in translated code (guest_abi/gather_inline.h): same state as below.
+MkwGatherState g_mkwGatherState{
+    g_primeCpuFifoCapture.pending.data(), &g_primeCpuFifoCapture.count,
+    &PrimePiFifoRegister(0xCC00300Cu), &g_primeFifoReplaying};
+
 // Called for every word the game writes to the GPU. A store that does not complete the 32-byte
 // burst only appends to it: same checks as Capture::Push (valid aligned pointer inside
 // [base, end]), no stack frame for the commit path, and the PI write pointer does not move.
@@ -2145,6 +2151,9 @@ extern "C" bool PrimeGpuCpInterruptPending() {
 
 uint8_t MemoryInline::Read8Slow(uint32_t addr) {
     if (IsMmioAddress(addr)) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        GxGpuThread::FlushPending();  // the guest may be polling the consumer (CP/PE status, tokens)
+#endif
         ThrowMmioReadBlocked(addr, sizeof(uint8_t));
     }
     ResolveDeferredReads(addr, sizeof(uint8_t));
@@ -2153,6 +2162,9 @@ uint8_t MemoryInline::Read8Slow(uint32_t addr) {
 
 uint16_t MemoryInline::Read16Slow(uint32_t addr) {
     if (IsMmioAddress(addr)) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        GxGpuThread::FlushPending();  // the guest may be polling the consumer (CP/PE status, tokens)
+#endif
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
         uint16_t value = 0;
         if (ReadPrimeMmio16(addr, value)) return value;
@@ -2166,6 +2178,9 @@ uint16_t MemoryInline::Read16Slow(uint32_t addr) {
 uint32_t MemoryInline::Read32Slow(uint32_t addr) {
     if (IsMmioAddress(addr)) {
 #if defined(MKW_GAME_PROFILE_RM3E01_00)
+        GxGpuThread::FlushPending();  // the guest may be polling the consumer (CP/PE status, tokens)
+#endif
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
         uint32_t value = 0;
         if (ReadPrimePiMmio32(addr, value)) return value;
 #endif
@@ -2178,6 +2193,9 @@ uint32_t MemoryInline::Read32Slow(uint32_t addr) {
 
 uint64_t MemoryInline::Read64Slow(uint32_t addr) {
     if (IsMmioAddress(addr)) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        GxGpuThread::FlushPending();  // the guest may be polling the consumer (CP/PE status, tokens)
+#endif
         ThrowMmioReadBlocked(addr, sizeof(uint64_t));
     }
     ResolveDeferredReads(addr, sizeof(uint64_t));
@@ -2186,6 +2204,9 @@ uint64_t MemoryInline::Read64Slow(uint32_t addr) {
 
 float MemoryInline::ReadFloat32Slow(uint32_t addr) {
     if (IsMmioAddress(addr)) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        GxGpuThread::FlushPending();  // the guest may be polling the consumer (CP/PE status, tokens)
+#endif
         ThrowMmioReadBlocked(addr, sizeof(float));
     }
     ResolveDeferredReads(addr, sizeof(uint32_t));
@@ -2197,6 +2218,9 @@ float MemoryInline::ReadFloat32Slow(uint32_t addr) {
 
 double MemoryInline::ReadFloat64Slow(uint32_t addr) {
     if (IsMmioAddress(addr)) {
+#if defined(MKW_GAME_PROFILE_RM3E01_00)
+        GxGpuThread::FlushPending();  // the guest may be polling the consumer (CP/PE status, tokens)
+#endif
         ThrowMmioReadBlocked(addr, sizeof(double));
     }
     ResolveDeferredReads(addr, sizeof(uint64_t));
@@ -2338,3 +2362,15 @@ std::vector<Memory::RegionConfig> Memory::DescribeRegions() {
     }
     return info;
 }
+
+#if !defined(MKW_GAME_PROFILE_RM3E01_00)
+// Without the Prime capture the inline gather append of the shards (guest_abi/gather_inline.h) must
+// always fall back to GX_HLE_FIFO_Write*: "replaying" stays set.
+namespace {
+uint8_t g_noGatherPending[32];
+unsigned g_noGatherCount = 0;
+std::atomic<uint32_t> g_noGatherPi[3];
+const bool g_noGatherReplaying = true;
+}  // namespace
+MkwGatherState g_mkwGatherState{g_noGatherPending, &g_noGatherCount, g_noGatherPi, &g_noGatherReplaying};
+#endif

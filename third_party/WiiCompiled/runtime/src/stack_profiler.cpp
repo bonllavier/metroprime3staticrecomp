@@ -19,12 +19,17 @@ uint64_t PrimeDvdBytesReadTotal();  // hle/storage/dvd.cpp
 // The sampler suspends threads and reads their context and stack: diagnostic-build only
 // (MKW_PRIME_QA_TOOLS). Public builds leave it out, since that API set is what antivirus
 // machine-learning models associate with malware (VirusTotal Trapmine flag, 28/10/2026).
+// Linux performance-capture builds (MKW_PRIME_PERF_CAPTURE) carry the Linux sampler too: it uses
+// tgkill and backtrace() on the process's own threads, nothing an antivirus looks at.
+#if defined(__linux__) && (defined(MKW_PRIME_QA_TOOLS) || defined(MKW_PRIME_PERF_CAPTURE))
+#define MKW_STACK_PROFILER_LINUX 1
+#endif
 #if defined(_WIN32) && defined(MKW_PRIME_QA_TOOLS)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <psapi.h>
 #include <dbghelp.h>
-#elif defined(__linux__) && defined(MKW_PRIME_QA_TOOLS)
+#elif defined(MKW_STACK_PROFILER_LINUX)
 #include <cerrno>
 #include <csignal>
 #include <cstring>
@@ -33,6 +38,10 @@ uint64_t PrimeDvdBytesReadTotal();  // hle/storage/dvd.cpp
 #include <sys/syscall.h>
 #include <ucontext.h>
 #include <unistd.h>
+#if defined(MKW_PRIME_PERF_CAPTURE)
+#include <sstream>
+#include <zlib.h>
+#endif
 #endif
 
 namespace StackProfiler {
@@ -320,7 +329,7 @@ void Run(std::vector<uint32_t> threadIds, double seconds, std::filesystem::path 
     }
     SetStatus(std::to_string(samples) + " muestras -> " + path.string());
 }
-#elif defined(__linux__) && defined(MKW_PRIME_QA_TOOLS)
+#elif defined(MKW_STACK_PROFILER_LINUX)
 // Linux has no SuspendThread/GetThreadContext for another thread of the process: each sample sends
 // a real-time signal to the target thread (tgkill), whose handler records the interrupted
 // instruction pointer and unwinds its own stack with the unwinder behind backtrace(). Same output
@@ -467,7 +476,12 @@ void Run(std::vector<uint32_t> threadIds, double seconds, std::filesystem::path 
             }
             g_sampleState.store(0, std::memory_order_release);
         }
+#if defined(MKW_PRIME_PERF_CAPTURE)
+        // ~500 sweeps/s: 60 s of every thread fit a GitHub attachment once gzipped.
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+#else
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+#endif
     }
     g_sampleTarget.store(0, std::memory_order_release);
     sigaction(signal, &previous, nullptr);
@@ -480,6 +494,11 @@ void Run(std::vector<uint32_t> threadIds, double seconds, std::filesystem::path 
     const std::time_t now = std::time(nullptr);
     std::tm local{};
     localtime_r(&now, &local);
+#if defined(MKW_PRIME_PERF_CAPTURE)
+    std::strftime(name, sizeof(name), "stack_profile_%Y%m%d_%H%M%S.txt.gz", &local);
+    const auto path = outputDirectory / name;
+    std::ostringstream out;  // gzipped to `path` at the end
+#else
     std::strftime(name, sizeof(name), "stack_profile_%Y%m%d_%H%M%S.txt", &local);
     const auto path = outputDirectory / name;
     std::ofstream out(path);
@@ -487,6 +506,7 @@ void Run(std::vector<uint32_t> threadIds, double seconds, std::filesystem::path 
         SetStatus("no se pudo escribir " + path.string());
         return;
     }
+#endif
     out << "# stack_profile v3\n";
     out << "tid " << threadId << " seconds " << elapsed << " thread_cpu_ms " << cpuMs
         << " samples " << samples << " failures " << failures << "\n";
@@ -524,13 +544,26 @@ void Run(std::vector<uint32_t> threadIds, double seconds, std::filesystem::path 
         out << "\n";
         i += depth;
     }
+#if defined(MKW_PRIME_PERF_CAPTURE)
+    {
+        const std::string text = out.str();
+        gzFile gz = gzopen(path.c_str(), "wb6");
+        const bool written = gz != nullptr &&
+            gzwrite(gz, text.data(), static_cast<unsigned>(text.size())) == static_cast<int>(text.size());
+        if (gz != nullptr) gzclose(gz);
+        if (!written) {
+            SetStatus("could not write " + path.string());
+            return;
+        }
+    }
+#endif
     SetStatus(std::to_string(samples) + " muestras -> " + path.string());
 }
 #endif
 }  // namespace
 
 bool Start(std::vector<uint32_t> threadIds, double seconds, const std::filesystem::path& outputDirectory) {
-#if (defined(_WIN32) || defined(__linux__)) && defined(MKW_PRIME_QA_TOOLS)
+#if (defined(_WIN32) && defined(MKW_PRIME_QA_TOOLS)) || defined(MKW_STACK_PROFILER_LINUX)
     bool expected = false;
     if (threadIds.empty() || !g_running.compare_exchange_strong(expected, true)) return false;
     std::thread(Run, std::move(threadIds), seconds, outputDirectory).detach();

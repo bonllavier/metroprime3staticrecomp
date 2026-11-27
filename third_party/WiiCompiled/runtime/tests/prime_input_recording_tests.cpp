@@ -69,6 +69,22 @@ int main() {
         }
         if (!Require(seen == 2, "anchors not all consumed")) return 1;
     }
-    std::cout << "PASS input recording: round trip, playback hold/motion semantics, tolerant parsing" << std::endl;
+    {
+        // Anchors with heading and pitch (21/11/2026) round-trip; a position-only line still parses.
+        Anchor full;
+        full.frame = 30; full.x = 1.0f; full.y = 2.0f; full.z = 3.0f;
+        full.hasRotation = true;
+        for (int i = 0; i < 9; ++i) full.rotation[i] = 0.125f * static_cast<float>(i) - 0.5f;
+        full.hasPitch = true; full.pitch = -0.25f;
+        std::istringstream in4(FormatAnchor(full) + FormatAnchor(60, 4.0f, 5.0f, 6.0f) + "a 90 1,2,3 o 1,2 p 0\n" + FormatEnd(120));
+        Recording r4 = Parse(in4);
+        if (!Require(r4.anchors.size() == 2 && r4.badLines == 1, "oriented anchors: counts / malformed rotation")) return 1;
+        const Anchor& got = r4.anchors[0];
+        bool same = got.hasRotation && got.hasPitch && got.pitch == -0.25f && got.x == 1.0f && got.z == 3.0f;
+        for (int i = 0; i < 9; ++i) same = same && got.rotation[i] == full.rotation[i];
+        if (!Require(same, "oriented anchor did not round-trip")) return 1;
+        if (!Require(!r4.anchors[1].hasRotation && !r4.anchors[1].hasPitch && r4.anchors[1].y == 5.0f, "position-only anchor")) return 1;
+    }
+    std::cout << "PASS input recording: round trip, playback hold/motion semantics, tolerant parsing, oriented anchors" << std::endl;
     return 0;
 }

@@ -1,5 +1,6 @@
 #include "controller_mapping_wizard.h"
 #include "runtime_config.h"
+#include "settings_overlay.h"
 #include "runtime_log.h"
 
 #include <imgui.h>
@@ -403,7 +404,7 @@ void Draw() {
     ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x + viewport->Size.x * 0.5f,
                                    viewport->Pos.y + viewport->Size.y * 0.5f),
                             ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(420.0f, 0.0f), ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize(ImVec2(420.0f * settings_overlay::UiScale(), 0.0f), ImGuiCond_Appearing);
     bool open = true;
     if (ImGui::Begin("Controller setup", &open,
                      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings)) {

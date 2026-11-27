@@ -120,11 +120,20 @@ step 'data section blobs'
 dotnet recomp/third_party/WiiCompiled/translator/src/Translator.Cli/bin/Release/net8.0/Translator.Cli.dll generate-data-init \
     --project recomp/config/RM3E01_00/project_full_conservative.yml >/dev/null || die 'Data section blob generation failed'
 step 'build shards'
+# Post-passes over the frozen base translation (recomp/docs/rendimiento_cpu_pendiente.md, punto 1,
+# validated in play 19-21/11/2026): redundant register flushes to ctx are elided and stack/SDA
+# accesses skip the MMIO check. MP3_CTX_FLUSH_ELISION=off|elide|verify and
+# MP3_PROVEN_RAM_ACCESSES=on|off override them (verify: logs [ctx-flush-check] mismatches).
+# MP3_NONVOLATILE_RELOAD_ELISION=off|elide|verify: reloads of r1/r2/r13-r31 after direct calls (C4,
+# elide since the verify build played 26/11/2026 with no mismatches).
 dotnet recomp/third_party/WiiCompiled/translator/src/Translator.Cli/bin/Release/net8.0/Translator.Cli.dll emit-build-shards \
     --project recomp/config/RM3E01_00/project_full_conservative.yml \
     --base-metadata recomp/generated/RM3E01_00_conservative/runtime_hooks/base_translation_output.json \
     --base-functions-dir recomp/generated/RM3E01_00_conservative \
     --native-source-dir recomp/third_party/WiiCompiled/runtime/src \
+    --ctx-flush-elision "${MP3_CTX_FLUSH_ELISION:-elide}" \
+    --proven-ram-accesses "${MP3_PROVEN_RAM_ACCESSES:-on}" \
+    --nonvolatile-reload-elision "${MP3_NONVOLATILE_RELOAD_ELISION:-elide}" \
     --out recomp/generated/RM3E01_00_conservative/build_shards || die 'Runtime shard emission failed'
 
 # --- native build ---------------------------------------------------------------

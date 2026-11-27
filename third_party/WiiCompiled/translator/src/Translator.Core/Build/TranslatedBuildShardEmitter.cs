@@ -18,7 +18,10 @@ public sealed record TranslatedBuildShardOptions(
     int BaseShardCount = 72,
     int ModShardCount = 48,
     int RegistrationShardCount = 16,
-    RuntimeNativeIndex? NativeIndex = null);
+    RuntimeNativeIndex? NativeIndex = null,
+    ContextFlushElisionMode ContextFlushElision = ContextFlushElisionMode.Off,
+    bool ProvenRamAccesses = false,
+    ContextFlushElisionMode NonvolatileReloadElision = ContextFlushElisionMode.Off);
 
 /// <summary>
 /// Per-shard compile-cost spread for one partition. Frozen membership does not
@@ -48,7 +51,9 @@ public sealed record TranslatedBuildShardResult(
     string CMakeManifestPath,
     string? BaseCommonShardMapPath = null,
     bool BaseCommonBoundariesReused = false,
-    TranslatedShardBalance? BaseCommonBalance = null);
+    TranslatedShardBalance? BaseCommonBalance = null,
+    ContextFlushElisionCounters? ContextFlushElision = null,
+    ProvenRamAccessCounters? ProvenRamAccesses = null);
 
 /// <summary>
 /// Emits the only generated-C++ membership consumed by CMake. The small
@@ -217,22 +222,53 @@ public static partial class TranslatedBuildShardEmitter
         // table keeps shard identity independent of other functions' compile cost.
         var baseCommonBoundaries = ResolveBaseCommonBoundaries(
             outputRoot, portableCommonBase, options.BaseShardCount);
+        var elisionCounters = new ContextFlushElisionCounters();
+        var provenRamCounters = options.ProvenRamAccesses ? new ProvenRamAccessCounters() : null;
+        IReadOnlySet<uint>? untrustedCallTargets = null;
+        IReadOnlySet<uint>? abiUntrustedCallTargets = null;
+        if (options.ContextFlushElision != ContextFlushElisionMode.Off ||
+            options.NonvolatileReloadElision != ContextFlushElisionMode.Off)
+        {
+            var sources = activeBase.Select(static record => (
+                    record.Address,
+                    record.SourceText ?? File.ReadAllText(record.SourcePath),
+                    (IEnumerable<uint>)record.DirectCalls)).ToList();
+            var winners = nativeOverrides.Winners.Concat(nativeOverrides.RawTranslatedOverrides.Keys).ToList();
+            untrustedCallTargets = ContextFlushElision.FindUntrustedCallTargets(sources, winners);
+            elisionCounters.UntrustedCallTargets = untrustedCallTargets.Count;
+            // Only with the reload pass: without it the flush pass keeps the analysis validated in play.
+            if (options.NonvolatileReloadElision != ContextFlushElisionMode.Off)
+                abiUntrustedCallTargets = ContextFlushElision.FindUntrustedCallTargets(
+                    sources, winners, includeIndirectCallers: false);
+        }
         var baseCommonShards = WriteFunctionShards(
             outputRoot, "base_common", portableCommonBase, options.BaseShardCount, baseTraits,
             "profile-neutral shared base", weightedSequential: true,
-            frozenBoundaries: baseCommonBoundaries?.Table);
+            frozenBoundaries: baseCommonBoundaries?.Table,
+            elision: options.ContextFlushElision, elisionCounters: elisionCounters,
+            untrustedCallTargets: untrustedCallTargets, provenRamCounters: provenRamCounters,
+            reloadElision: options.NonvolatileReloadElision, abiUntrustedCallTargets: abiUntrustedCallTargets);
         shards.AddRange(baseCommonShards);
         shards.AddRange(WriteFunctionShards(
             outputRoot, "base_portable_sensitive", portableSensitiveBase,
             Math.Min(24, Math.Max(1, portableSensitiveBase.Length)), baseTraits,
-            "base profile", weightedSequential: false));
+            "base profile", weightedSequential: false,
+            elision: options.ContextFlushElision, elisionCounters: elisionCounters,
+            untrustedCallTargets: untrustedCallTargets, provenRamCounters: provenRamCounters,
+            reloadElision: options.NonvolatileReloadElision, abiUntrustedCallTargets: abiUntrustedCallTargets));
         shards.AddRange(WriteFunctionShards(
             outputRoot, "retro_portable_sensitive", portableSensitiveBase,
             Math.Min(24, Math.Max(1, portableSensitiveBase.Length)), rrTraits,
-            "Retro Rewind profile", weightedSequential: false));
+            "Retro Rewind profile", weightedSequential: false,
+            elision: options.ContextFlushElision, elisionCounters: elisionCounters,
+            untrustedCallTargets: untrustedCallTargets, provenRamCounters: provenRamCounters,
+            reloadElision: options.NonvolatileReloadElision, abiUntrustedCallTargets: abiUntrustedCallTargets));
         shards.AddRange(WriteFunctionShards(
             outputRoot, "retro_mod", modRecords, options.ModShardCount, rrTraits,
-            "Retro Rewind mod", weightedSequential: false));
+            "Retro Rewind mod", weightedSequential: false,
+            elision: options.ContextFlushElision, elisionCounters: elisionCounters,
+            untrustedCallTargets: untrustedCallTargets, provenRamCounters: provenRamCounters,
+            reloadElision: options.NonvolatileReloadElision, abiUntrustedCallTargets: abiUntrustedCallTargets));
 
         var baseRegistration = WriteRegistrationShards(
             outputRoot, "base", activeBase, baseTraits, options.RegistrationShardCount).ToList();
@@ -270,7 +306,10 @@ public static partial class TranslatedBuildShardEmitter
             cmakeManifestPath,
             baseCommonBoundaries?.Path,
             baseCommonBoundaries?.Reused ?? false,
-            MeasureBalance(baseCommonShards));
+            MeasureBalance(baseCommonShards),
+            options.ContextFlushElision == ContextFlushElisionMode.Off &&
+            options.NonvolatileReloadElision == ContextFlushElisionMode.Off ? null : elisionCounters,
+            provenRamCounters);
     }
 
     private static TranslatedShardBalance? MeasureBalance(IReadOnlyList<ShardInfo> shards) =>
@@ -588,7 +627,13 @@ public static partial class TranslatedBuildShardEmitter
         IReadOnlyDictionary<uint, Trait> traits,
         string traitsLabel,
         bool weightedSequential,
-        ShardBoundaryTable? frozenBoundaries = null)
+        ShardBoundaryTable? frozenBoundaries = null,
+        ContextFlushElisionMode elision = ContextFlushElisionMode.Off,
+        ContextFlushElisionCounters? elisionCounters = null,
+        IReadOnlySet<uint>? untrustedCallTargets = null,
+        ProvenRamAccessCounters? provenRamCounters = null,
+        ContextFlushElisionMode reloadElision = ContextFlushElisionMode.Off,
+        IReadOnlySet<uint>? abiUntrustedCallTargets = null)
     {
         if (functions.Count == 0) return Array.Empty<ShardInfo>();
         var shardCount = Math.Min(requestedShardCount, functions.Count);
@@ -621,6 +666,13 @@ public static partial class TranslatedBuildShardEmitter
             var traitIdentity = string.Join("\n", dependencyTraits.OrderBy(static pair => pair.Key).Select(pair =>
                 $"{pair.Key:X8}:{pair.Value.Available}:{pair.Value.PreservesNonvolatileFprs}:{pair.Value.NonvolatileFprWriteMask:X8}:{pair.Value.WinnerSymbol}"));
             var identity = string.Join("\n", group.Select(function => $"{function.Address:X8}:{function.SourceFingerprint}")) + "\n" + traitIdentity;
+            // A transformed body is a different object: give it its own content address.
+            if (elision != ContextFlushElisionMode.Off)
+                identity += $"\nctx-flush-elision:v2:{elision}";
+            if (provenRamCounters is not null)
+                identity += "\nproven-ram-accesses:v1";
+            if (reloadElision != ContextFlushElisionMode.Off)
+                identity += $"\nnonvolatile-reload-elision:v2:{reloadElision}";
             var hash = ChecksumUtilities.Sha256Hex(Encoding.UTF8.GetBytes($"{partition}\n{identity}"));
             // Membership, not the transient scheduling position, is the shard
             // identity.  This lets an unchanged shard retain its source/object
@@ -630,9 +682,13 @@ public static partial class TranslatedBuildShardEmitter
             var source = new StringBuilder();
             source.AppendLine("// Translator-owned content-addressed aggregate shard; do not edit.");
             source.AppendLine("#include \"guest_abi/guest_abi.h\"");
+            // Inline gather-pipe appends (RM3E01 only; the header is empty for other profiles).
+            source.AppendLine("#include \"guest_abi/gather_inline.h\"");
             // Quoted include resolves the sibling traits header on every toolchain and keeps
             // the shard text free of the emitting machine's absolute paths.
             source.AppendLine($"#include \"{Path.GetFileName(traitsPath)}\"");
+            if (elision == ContextFlushElisionMode.Verify || reloadElision == ContextFlushElisionMode.Verify)
+                source.AppendLine("#include \"guest_abi/ctx_flush_check.h\"");
             source.AppendLine("#define MKW_STATIC_TRANSLATED_CALL(Target, Entry, Context) do { ApplyRuntimeCallOptions(Target, Context); Entry(Context); PollTranslatedCallBoundary(Context, Target); } while (false)");
             foreach (var function in group
                          .OrderBy(static function => function.Address)
@@ -641,6 +697,11 @@ public static partial class TranslatedBuildShardEmitter
                 var functionSource = function.SourceText ?? File.ReadAllText(function.SourcePath);
                 functionSource = RegistrationMarkerRegex().Replace(functionSource, string.Empty);
                 functionSource = LowerStableDirectCalls(functionSource, traits);
+                // Before the flush pass: verify-mode checks name r1 as an argument, which this pass would read as a write.
+                if (provenRamCounters is not null)
+                    functionSource = ContextFlushElision.LowerProvenRamAccesses(functionSource, provenRamCounters);
+                functionSource = ContextFlushElision.Apply(
+                    functionSource, elision, elisionCounters, untrustedCallTargets, reloadElision, abiUntrustedCallTargets);
                 // Diagnostics only; the named file no longer exists on disk (sources live in the
                 // bundle), so only the bare file name is kept, not the emitting machine's path.
                 source.Append($"#line 1 \"{Escape(Path.GetFileName(function.SourcePath))}\"{Environment.NewLine}");

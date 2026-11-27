@@ -3,6 +3,7 @@
 #include "hle/prime_materials.h"
 
 #include "runtime_config.h"
+#include "settings_overlay.h"
 
 #include <aurora/aurora.h>
 #include <aurora/gfx.h>
@@ -450,7 +451,7 @@ void DrawEntry(Entry& entry) {
         ImGui::SeparatorText(GroupTitle(static_cast<Group>(group)));
         for (const auto& param : kParams) {
             if (param.group != group) continue;
-            ImGui::SetNextItemWidth(300.0f);
+            ImGui::SetNextItemWidth(300.0f * settings_overlay::UiScale());
             if (param.field == kTintR) {
                 if (ImGui::ColorEdit3(param.label, &entry.values[kTintR], ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR)) {
                     changed = true;

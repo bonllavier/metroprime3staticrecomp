@@ -528,6 +528,9 @@ void InitializeProcessTranscript(int argc, char** argv) {
 #if defined(MKW_PRIME_QA_TOOLS)
                    << " (test build)"
 #endif
+#if defined(MKW_PRIME_PERF_CAPTURE)
+                   << " (performance capture build)"
+#endif
 #if defined(_WIN32)
                    << " windows"
 #elif defined(__linux__)

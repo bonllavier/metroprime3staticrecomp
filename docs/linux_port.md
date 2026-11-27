@@ -238,6 +238,14 @@ En modo X-input, el receptor del 8BitDo Ultimate 2C (`2dc8:310a`) expone el mand
   - Imprime los FPS por ventana. Necesita un build `--qa`.
   - Para A/B de rendimiento: `hangar_1x_window`, unos 6,5 minutos.
   - Resultados en `/mnt/mp3port/builds/qa/runs`.
+- **`qa_record.sh --launch | NOMBRE [NOTAS] | --stop | --status`**: equivalente de `qa/qa_record.ps1`. Graba una sesión para `qa_replay.sh` (misma carpeta de grabaciones). Con `MP3_BUILD_DIR` se elige el build cuya partida guardada sirve de punto de partida.
+- **`thread_cpu.sh [PID]`**: tiempo de CPU por hilo cada 5 s. No mide el trabajo del hilo del juego, porque su bucle ocioso da vueltas esperando el retrazado.
+- **`play_variant.sh ETIQUETA [sección.clave=valor | VAR=valor ...]`**: partida a mano con una configuración distinta en un perfil desechable. Guarda `console.log`, perfiles F8 y `gpu.csv` en `/mnt/mp3port/builds/qa/manual/`. `PROFILE_BELOW_FPS=0` evita el F8 automático; el F8 manual dura 120 s.
+- **Interruptores de las mejoras de CPU del 26/11/2026** (ver `rendimiento_cpu_pendiente.md`):
+  - `WII_COMPILED_PRIME_GX_BATCH=0`: bloques del FIFO uno a uno.
+  - `-DMKW_NO_INLINE_GATHER=1`: sin escritura en línea en la tubería de GX.
+  - `MP3_CTX_FLUSH_ELISION` y `MP3_PROVEN_RAM_ACCESSES` en `build_prime_runtime.sh`.
+  - Opción del traductor `--nonvolatile-reload-elision off|elide|verify`.
 - **Hilos y núcleos en vivo**: `grep Cpus_allowed_list /proc/PID/task/*/status` y `voluntary_ctxt_switches` por hilo. Así se encontró el núcleo compartido.
 - **Análisis de F8 con libc**: `nm -D` no tiene las funciones internas de libc. Para un desplazamiento concreto, `gdb -batch -ex "info symbol 0x…" /lib/x86_64-linux-gnu/libc.so.6`: por ejemplo, el retorno del `syscall` futex dentro de `pthread_cond_signal`.
 
@@ -301,6 +309,34 @@ Por tanto, en el PC del usuario con los dos monitores no hay medición (igual qu
 Pendiente: **Wayland nativo** (sesiones GNOME/KDE en Wayland, donde SDL3 usa Wayland). La fuente correcta es `wp_presentation` (hora exacta de cada imagen mostrada y periodo del monitor), sobre la superficie de SDL con una cola de eventos propia; hace falta generar el protocolo con `wayland-scanner`.
 
 `window.cpp` guarda en el hilo principal la ventana X11, el monitor de la ventana, su periodo (numerador/denominador de SDL) y el número de monitores, para que el observador los lea sin llamar a SDL desde otro hilo.
+
+## Build de captura de rendimiento (2026-11-17, issue #17)
+
+Para medir en la PC de un jugador (Ryzen 7 8845HS + Radeon 780M, 40 FPS en Olympus/Norion con la 0.1.7 de Linux) sin darle el build de QA. Opción de CMake `MKW_PRIME_PERF_CAPTURE` (solo Linux, desactivada por defecto), independiente de `MKW_PRIME_QA_TOOLS`:
+
+- **F8** graba 60 s y al terminar guarda solo un reporte F12 (`UserData/Reports/report_*.zip`) que incluye `performance/stack_profile_*.txt.gz`.
+- CPU: el muestreador de Linux de `stack_profiler.cpp` (tgkill + `backtrace`) sobre los hilos del juego, GX, decodificador, fotograma y presentador, a ~500 barridos/s y en gzip (zlib del sistema). 60 s en la pantalla de título: 0,6 MB.
+- GPU: `gpu_timing.cpp` mide solo mientras dura la captura. Escribe `[gpu-time]` (juego/copias/postproceso) cada segundo y `[gpu-pass]` con cada pasada de postproceso por su etiqueta (SSAO, reflejos, sombras de contacto...). En este build el dispositivo siempre pide `TimestampQuery`, lo que puede invalidar la caché de Dawn de otra instalación: instalarlo en una carpeta aparte.
+- Sistema: `[perf-sys]` cada segundo (FPS, `gpu_busy_percent`, `pp_dpm_sclk/mclk`, potencia y temperatura de la GPU por hwmon, frecuencia media y máxima de la CPU, carga total). En `system.txt` y al empezar: gobernador, EPP, `platform_profile`, corriente/batería, nivel DPM y perfil de energía de amdgpu, memoria VRAM/GTT. La carga de GPU solo existe en amdgpu: en NVIDIA sale `gpu_busy=n/a`.
+- El log se identifica con `(performance capture build)`. `package_release_linux.sh` lo rechaza en una versión normal; con `--perf-capture` lo exige, solo empaqueta el archivo principal (`...-perf-capture-linux-x86_64.tar.gz`, sin Trilogy) y añade `README - PERFORMANCE CAPTURE.txt`. Sigue rechazando la marca de QA y los demás diagnósticos.
+- `summarize_stack_profile.py` lee el `.txt.gz` directamente. Los símbolos salen del binario del paquete (`--strip-debug` conserva `.symtab`).
+
+Cómo se generó (sin un build completo: solo se recompilan Aurora y el runtime, 92 pasos):
+
+```bash
+source /mnt/mp3port/env.sh; B=$MP3PORT/builds/RM3E01_00_runtime_linux_public
+cd $B && cmake -DMKW_PRIME_PERF_CAPTURE=ON . && cmake --build $B --target WiiCompiled --parallel 6
+cd $MP3PORT/src && recomp/tools/package_release_linux.sh --perf-capture --build-dir $B --out <dir> --publish <copia de Windows>/publish
+cd $B && cmake -DMKW_PRIME_PERF_CAPTURE=OFF . && cmake --build $B --target WiiCompiled --parallel 6   # volver al público
+```
+
+Probado con el paquete descomprimido en una carpeta nueva (RTX 3050, X11): precarga en 65 s con caché vacía, F8 en la pantalla de título, 122.903 muestras en 60 s, líneas `[gpu-time]`/`[gpu-pass]`/`[perf-sys]` cada segundo, reporte de 1,1 MB creado y abierto solo, resumen del perfil correcto. Paquete: `dist_test/Corruption_3-PC-v0.1.7-perf-capture-linux-x86_64.tar.gz` (85 MB) en el árbol de Windows. Primera prueba del usuario (dos capturas en partida, RTX 3050, 1080p) y correcciones:
+- `[gpu-pass]` acumulaba las sumas de cada segundo (al reiniciar solo se ponía a cero el número de etiquetas): medias de 28 → 60 → 93 ms, mayores que el peor fotograma. Corregido.
+- `[perf-sys]` arrastraba el contador de fotogramas de la captura anterior (`presents=9600`) y contaba por intervalos de duración variable (56-57 frente a 60). Ahora da `fps` por segundo real y, además, `worker_encode_ms_per_s` y `worker_wait_gpu_ms_per_s` (tiempo de `begin_frame_impl`, que espera a que la GPU libere los búferes): la prueba directa de un límite de GPU.
+- El reporte solo incluye la captura que lo generó (antes copiaba también las anteriores de la sesión).
+- Datos útiles de esa prueba: GPU 8,4-9,1 ms por fotograma (juego ~3,4, postproceso ~4,9, copias 0,2). Los efectos cuestan más que el juego. La captura baja un ~1,5 % los fotogramas (587-593 frente a 600 cada 10 s). En el perfil de CPU, las esperas aparecen como `libc.so.6` en la vista propia; quién espera se ve en la vista inclusiva (`--tid`). Orden de la línea `threads`: juego, GX, decodificador, fotograma, presentador.
+
+Pendiente: la captura del reportero.
 
 ## Paquete de Linux v0.1.7 (2026-11-16)
 

@@ -63,7 +63,7 @@ Evidencia: checkpoints 20261021_prime_keyboard_mouse_windows_input.json,
 
 ## Textos de gestos con la tecla o el botón asignado (11 de noviembre de 2026)
 
-En los modos de teclado/ratón y de mando, las indicaciones que piden mover el Wii Remote o el Nunchuk nombran la entrada asignada. Por ejemplo, "Push the Wii Remote toward the screen to activate thrusters." pasa a "Press E to activate thrusters." o a "RB + R stick up" con mando. Se cubren 15 indicaciones en sus cinco idiomas (75 cadenas):
+En los modos de teclado/ratón y de mando, las indicaciones que piden mover el Wii Remote o el Nunchuk nombran la entrada asignada. Por ejemplo, "Push the Wii Remote toward the screen to activate thrusters." pasa a "Press E to activate thrusters." o a "RB + R stick up" con mando. Se cubren 16 indicaciones en sus cinco idiomas (80 cadenas de RM3E01, 106 con las variantes de Trilogy):
 - empujar, tirar y propulsores;
 - girar a cada lado y girar sin más;
 - inclinar arriba y abajo;
@@ -71,7 +71,8 @@ En los modos de teclado/ratón y de mando, las indicaciones que piden mover el W
 - Rotosalto de la Morfosfera;
 - lanzar y tirar del lazo;
 - punto de enganche y toma de energía;
-- sacudir el Nunchuk.
+- sacudir el Nunchuk;
+- la bomba de palanca (Metroid3.pak): "Pull back then push forward to pump." pasa a "Mantén {pull} para tirar hacia ti y luego {push} para empujar hacia delante. Repite para bombear.", y su "Point the Wii Remote at the screen.", que solo aparece en esa bomba y se muestra en el paso de tirar, a "Apunta a la pantalla con el ratón y mantén {pull} para tirar de la palanca hacia ti." (26 de noviembre de 2026; antes decía solo "Apunta con el ratón.", que no explicaba qué hacer, y el de bombear no se cambiaba).
 
 Con el Wii Remote real (modo teclado/ratón desactivado) no se cambia nada.
 
@@ -111,3 +112,12 @@ Con el Wii Remote real (modo teclado/ratón desactivado) no se cambia nada.
 - **Opción.** `[prime] wiimote_battery_full` (por defecto `true`, variable `WII_COMPILED_PRIME_WIIMOTE_BATTERY_FULL`), casilla en F1 > Controles. Se lee en cada llamada, sin reiniciar.
 - **Validación.** Ejecución pid 16704: cuatro respuestas del hook en 85 s, sin errores, indicador de batería con cuatro segmentos confirmado por el usuario. Evidencia: `checkpoints/20261025_prime_wiimote_battery_full.json`.
 
+
+## Alcance vertical de la vista con ratón (26 de noviembre de 2026)
+
+- **Síntoma.** Con la vista con ratón activada no se podía mirar ni apuntar tan arriba ni tan abajo como con el apuntado original del Wiimote.
+- **Pitch del juego (0x801522E0, CPlayer +0x780).** En el modo normal es `spline(puntero en [0, 1]) × lbl_80680570 (grados a radianes)`. La spline de subir está en `CTweakPlayerControl +0x398C` (comando 55, 0x802E8760) y la de bajar en +0x39CC (comando 56, 0x802E876C). Con `CTweakPlayer +0x258` (0x802E6BE0) el pitch se acumula y se limita a −30°/+40° (`FLOAT_80682524`/`FLOAT_80682528`). Medido en juego (log del 26/11, leyendo las splines): **55° abajo y 35° arriba**.
+- **Causa.** Con el Wiimote, además del giro de la cámara, la mira llega al borde de la pantalla, lo que suma cerca de medio campo de visión vertical al apuntado. Con la vista con ratón la mira queda centrada: el alcance era solo el de la cámara. Antes era incluso menor, porque `PitchStep` aplicaba −30°/+40° (los límites del otro modo).
+- **Cámara (0x8007F904).** Convierte +0x77C linealmente en su pitch (`c + (±40° − c) × p / 40°`, c = cámara +0x20C) y lo limita a ±89,5° (`lbl_8067F500`/`lbl_8067F504`). Por eso admite más rango que el de las splines. La suavización de 0x80151F64 solo limita la velocidad.
+- **Solución.** La vista con ratón usa ±80° (`kMouseLookPitchLimit`, `prime_mouse_look.h`), con margen antes de los 89,5° de la cámara. Se aplica en `PitchStep`, al seguir el pitch del juego con la vista desactivada y en `SetPitch` de QA. Un primer intento que copiaba el rango de las splines dejaba la vista igual de corta y se descartó.
+- **Validación.** Pasa `mkw_prime_mouse_look_tests`. Probado en juego por el usuario el 26/11/2026 con el build de Linux: el alcance vertical ya no se queda corto respecto al Wiimote. Cambio aplicado también en la copia de Windows (sin compilar allí).

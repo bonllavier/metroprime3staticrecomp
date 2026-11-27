@@ -45,6 +45,9 @@ New-Item -ItemType Directory -Path $runDir | Out-Null
 $saved = @{}
 $vars = @{ WII_COMPILED_QA_USER_DATA = $profile; WII_COMPILED_QA_REPLAY = (Join-Path $rec 'inputs.txt'); WII_COMPILED_QA_REPLAY_EXIT = '10'; WII_COMPILED_QA_TAP_INTRO = '1'
            WII_COMPILED_PRIME_KEYBOARD_MOUSE = '1'; WII_COMPILED_PRIME_PERFORMANCE_TRACE = '1' }
+# Intro taps as the recording had them: recordings made without them say "tap_intro": false in meta.json.
+$metaPath = Join-Path $rec 'meta.json'
+if ((Test-Path $metaPath) -and ((Get-Content -Raw $metaPath | ConvertFrom-Json).tap_intro -eq $false)) { $vars.Remove('WII_COMPILED_QA_TAP_INTRO') }
 foreach ($pair in ($Env -split ';' | Where-Object { $_ })) { $k, $v = $pair -split '=', 2; $vars[$k] = $v }
 foreach ($k in $vars.Keys) { $saved[$k] = [Environment]::GetEnvironmentVariable($k, 'Process'); [Environment]::SetEnvironmentVariable($k, $vars[$k], 'Process') }
 Add-Type -AssemblyName System.Drawing

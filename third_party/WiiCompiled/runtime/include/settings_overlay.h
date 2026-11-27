@@ -11,6 +11,10 @@ void HandleEvents(const AuroraEvent* events) noexcept;
 void Draw() noexcept;
 // Aurora's ImGui init callback: adds the HUD font (Latin-1, for the hint).
 void ImGuiInit(const AuroraWindowSize* size) noexcept;
+// Panel size ([video] ui_scale): multiply widths written in pixels by UiScale(). The generation
+// changes with each new size, so a panel can lay itself out again.
+float UiScale() noexcept;
+uint32_t UiScaleGeneration() noexcept;
 bool StartupScreenVisible() noexcept;
 void NotifyStrapInputAccepted() noexcept;
 void AdvancePresentedFrame() noexcept;

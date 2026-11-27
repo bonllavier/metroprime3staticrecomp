@@ -1099,6 +1099,11 @@ struct PresentationJob {
 
 // Where the time between end_frame and Present goes, averaged over 10 s and
 // logged by the presenter. Observation only.
+// Monotonic totals of the frame worker's two phases (encode/seal and next-frame prepare, which waits for
+// the GPU to release the staging buffers), read by the performance capture.
+std::atomic<uint64_t> g_frameWorkerEncodeNsTotal{0};
+std::atomic<uint64_t> g_frameWorkerPrepareNsTotal{0};
+
 struct PresentLatencyStats {
   std::atomic<int64_t> frames{0}, workerNs{0}, queueNs{0}, acquireNs{0}, encodeNs{0}, submitNs{0},
       presentNs{0};
@@ -2850,6 +2855,7 @@ bool run_frame_worker_cycle(gfx::SealedFrame& sealedFrame) noexcept {
   const auto noteWorker = [&] {
     const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(PresentClock::now() - cycleStarted);
     g_presentLatency.workerNs.fetch_add(elapsed.count(), std::memory_order_relaxed);
+    g_frameWorkerEncodeNsTotal.fetch_add(uint64_t(elapsed.count()), std::memory_order_relaxed);
     logSlow("seal_encode", elapsed);
   };
   SealedFrameContext ctx;
@@ -2891,7 +2897,9 @@ bool run_frame_worker_cycle(gfx::SealedFrame& sealedFrame) noexcept {
   const bool prepared = begin_frame_impl(
       false, overlapEncode ? ImGuiFramePolicy::Deferred : ImGuiFramePolicy::Immediate,
       &imguiNewFrameOwed);
-  logSlow("prepare_next", std::chrono::duration_cast<std::chrono::nanoseconds>(PresentClock::now() - prepareStarted));
+  const auto prepareElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(PresentClock::now() - prepareStarted);
+  g_frameWorkerPrepareNsTotal.fetch_add(uint64_t(prepareElapsed.count()), std::memory_order_relaxed);
+  logSlow("prepare_next", prepareElapsed);
 
   {
     std::lock_guard lock(g_frameWorker.mutex);
@@ -3173,6 +3181,10 @@ uint32_t aurora_get_render_thread_ids(uint32_t* ids, uint32_t capacity) {
   for (const uint32_t id : found)
     if (id != 0 && count < capacity) ids[count++] = id;
   return count;
+}
+void aurora_get_frame_worker_totals(uint64_t* encodeNs, uint64_t* prepareNs) {
+  if (encodeNs) *encodeNs = aurora::g_frameWorkerEncodeNsTotal.load(std::memory_order_relaxed);
+  if (prepareNs) *prepareNs = aurora::g_frameWorkerPrepareNsTotal.load(std::memory_order_relaxed);
 }
 uint64_t aurora_get_present_count() {
   std::lock_guard lock(aurora::g_presentTimingMutex);

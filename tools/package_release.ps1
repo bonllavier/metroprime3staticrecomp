@@ -143,6 +143,9 @@ hdr_bloom = false
 volumetric_fog = false
 texture_upscale = 0
 frame_interpolation_fps = 0
+# Size of the F1/F2 panels in percent (F1 > Video > Panel size): 0 grows with the window height
+# (100 at 1080p, 200 at 4K); 100, 125, 150, 175, 200, 250, 300 or 400 fixes it.
+ui_scale = 0
 # V-Sync: wait for the monitor refresh (no tearing, a little more latency). F1 > Video.
 vsync = false
 disable_copy_filter = true

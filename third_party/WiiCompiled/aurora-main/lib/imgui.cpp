@@ -1,5 +1,6 @@
 #include "imgui.hpp"
 
+#include <atomic>
 #include <cstddef>
 #include <cmath>
 #include <filesystem>
@@ -28,6 +29,8 @@ static bool g_useSdlRenderer = false;
 // Set once ImGui::Render() has produced this frame's draw data. Interpolation encodes up to four
 // ImGui passes per frame, and every one of them used to rebuild the draw lists from scratch.
 static bool g_frameDataBuilt = false;
+// Set by aurora_imgui_request_font_rebuild; consumed at the start of the next ImGui frame.
+static std::atomic_bool g_fontRebuildRequested{false};
 
 static std::vector<SDL_Texture*> g_sdlTextures;
 static std::vector<wgpu::Texture> g_wgpuTextures;
@@ -138,6 +141,18 @@ bool wants_capture_event(const SDL_Event& event) noexcept {
 
 void new_frame(const AuroraWindowSize& size) noexcept {
   ZoneScoped;
+  // Between frames is the only point where the atlas may change: the previous frame's draw data has
+  // been replayed and the next frame has not started. The backends below rebuild the font texture
+  // because the atlas is no longer built.
+  if (g_fontRebuildRequested.exchange(false)) {
+    ImGui::GetIO().Fonts->Clear();
+    if (g_config.imGuiInitCallback != nullptr) {
+      g_config.imGuiInitCallback(&size);
+    }
+    if (g_useSdlRenderer) {
+      ImGui_ImplSDLRenderer3_DestroyFontsTexture();
+    }
+  }
   ImVec2 framebufferScale{
       size.width > 0 ? static_cast<float>(size.native_fb_width) / static_cast<float>(size.width) : 1.0f,
       size.height > 0 ? static_cast<float>(size.native_fb_height) / static_cast<float>(size.height) : 1.0f,
@@ -263,4 +278,5 @@ extern "C" {
 ImTextureID aurora_imgui_add_texture(uint32_t width, uint32_t height, const void* rgba8) {
   return aurora::imgui::add_texture(width, height, static_cast<const uint8_t*>(rgba8));
 }
+void aurora_imgui_request_font_rebuild(void) { aurora::imgui::g_fontRebuildRequested.store(true); }
 }

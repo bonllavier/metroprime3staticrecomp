@@ -340,7 +340,7 @@ Pendiente: la captura del reportero.
 
 ## Paquete de Linux v0.1.8 (2026-11-26)
 
-Generados en `$MP3PORT/dist` y copiados a `dist/` del árbol de Windows (sin publicar todavía):
+Generados en `$MP3PORT/dist` y copiados a `dist/` del árbol de Windows. **Publicados el 27/11/2026** (ver `publicacion_github.md`). Al publicar se cambiaron en Windows el README y el CHANGELOG del principal, que pasó a `51a73d27959ceeba27a226c8b605f87cfc0a75d5eb7e4978c8db0c42c744d89a`. Los demás miembros quedaron byte a byte iguales y con los mismos permisos. El complemento se subió tal cual. VirusTotal: 0 detecciones en los dos archivos y en los tres binarios (63 motores).
 
 | Archivo | Tamaño | SHA-256 |
 |---|---|---|

@@ -195,39 +195,63 @@ Si se retoma, las opciones planteadas fueron:
 - un build de captura aparte, para entregar a jugadores concretos;
 - una opción en F1, apagada por defecto, que solo pagarían quienes la activen.
 
-## v0.1.8 de Windows preparada, sin publicar (27/11/2026)
+## v0.1.8 publicada (27/11/2026)
 
-El usuario la probará antes de subirla. **No se ha subido nada a GitHub**: ni la versión, ni el `CHANGELOG.md` de `publish/`. Ese archivo tiene la sección `## v0.1.8` escrita en Linux y queda sin commit a propósito, porque `publish_release.ps1` hace el commit `Release vX` y el push al publicar; subirlo antes anunciaría la versión en el repo público.
+https://github.com/bonllavier/Corruption_3-PC/releases/tag/v0.1.8, "Latest", con 8 archivos. El usuario probó la 0.1.8 de Windows y pidió publicarla con la de Linux.
 
-- **Contenido:** los commits de Linux `f2939aaf` (C1-C4 de CPU, tamaño de los paneles, ratón ±80°, textos) y `bcfb45b8` (versión 0.1.8), más `68456da3`:
-  - `<aurora/imgui.h>` incluido en todas las plataformas en `settings_overlay.cpp`. Solo se incluía bajo `__linux__` y Windows no compilaba (`aurora_imgui_request_font_rebuild` sin declarar).
-  - La semilla de shaders con las pipelines de esta PC: el paso `merge` de `build_prime_runtime.ps1`, 48,2 → 48,6 MB.
+| Archivo | Tamaño | SHA-256 |
+| --- | --- | --- |
+| `Corruption_3-PC-v0.1.8-win64.zip` | 97,5 MB | `bf42abfe11b3949249ba07c8ec9f95b3a47ea48e430635c89801928a8f510839` |
+| `Corruption_3-PC-v0.1.8-Trilogy-addon-win64.zip` | 95,9 MB | `258509a0ebfcc8a7b981e07e26d3fbaf7cf1a66773552247e09fa1bbe8323c8c` |
+| `Corruption_3-PC-v0.1.8-linux-x86_64.tar.gz` | 81,3 MB | `51a73d27959ceeba27a226c8b605f87cfc0a75d5eb7e4978c8db0c42c744d89a` |
+| `Corruption_3-PC-v0.1.8-Trilogy-addon-linux-x86_64.tar.gz` | 116,5 MB | `0735e37f61900db85ab2a36e6cbc3b51e393ba72617bd82ad29332b442a2d5cd` |
+
+Cada uno con su `.sha256`.
+
+- **Contenido:**
+  - commits de Linux `f2939aaf` (C1-C4 de CPU, tamaño de los paneles, ratón ±80°, textos) y `bcfb45b8` (versión 0.1.8);
+  - `68456da3`: `<aurora/imgui.h>` incluido en todas las plataformas en `settings_overlay.cpp`. Solo se incluía bajo `__linux__` y Windows no compilaba (`aurora_imgui_request_font_rebuild` sin declarar). Además, la semilla de shaders con las pipelines de esta PC (paso `merge` de `build_prime_runtime.ps1`): 48,2 → 48,6 MB.
 - **Pasadas de CPU en Windows:** las mismas cifras que en Linux.
   - Volcados de contexto: 770.806 eliminados de 1.458.556.
   - Recargas no volátiles: 377.392 de 384.688.
   - Accesos a RAM demostrados: en 21.712 funciones.
-- **Captura F8:** fuera, por la decisión del apartado anterior.
-- **Generación:** `make_release.ps1 -SkipScan`.
+- **Captura F8:** fuera de la versión pública de Windows (apartado anterior).
+- **Generación en Windows:** `make_release.ps1 -SkipScan`.
   - Build sin QA: 227 s.
   - Trilogy sin QA: 7.516 s, porque recompiló todo.
   - Empaquetado: 54 s.
   - Restauración del build de QA: 535 s.
-
-| Archivo | Tamaño | SHA-256 |
-| --- | --- | --- |
-| `Corruption_3-PC-v0.1.8-win64.zip` | 93 MB | `a614cd4730c88233e032790a876b88c59edf1a172aed7e062db09e30d8fd6b45` |
-| `Corruption_3-PC-v0.1.8-Trilogy-addon-win64.zip` | 91 MB | `258509a0ebfcc8a7b981e07e26d3fbaf7cf1a66773552247e09fa1bbe8323c8c` |
-| `Corruption_3-PC-v0.1.8-linux-x86_64.tar.gz` | 79 MB | `b6d84593dd7dfcc71277e31c695c8874fbd245153a5228777c80bcc15f36a701` |
-| `Corruption_3-PC-v0.1.8-Trilogy-addon-linux-x86_64.tar.gz` | 112 MB | `0735e37f61900db85ab2a36e6cbc3b51e393ba72617bd82ad29332b442a2d5cd` |
-
+- **Linux:** los `.tar.gz` de `linux_port.md` ("Paquete de Linux v0.1.8").
+- **Documentación de los principales:** el README y el CHANGELOG definitivos se metieron después en el zip principal de Windows y en el `.tar.gz` principal de Linux. Script: `repack_docs.py` del scratchpad de la sesión, que parte del archivo `.prev`. Todo lo demás quedó byte a byte igual, con los mismos permisos.
+  - Hashes antes de los textos: `a614cd47…` y `b6d84593…`.
+  - Hashes de una primera versión de los textos: `bd48282e…` y `37b82346…`.
+- **CHANGELOG, por petición del usuario:**
+  - Las mejoras de CPU van primero y en detalle.
+  - Dice que las mejoras 1-3 (pasadas del traductor) solo valen para el disco original de Corruption (RM3E01). El complemento de Trilogy solo tiene la 4 (envío por tandas) y recibe las otras en la v0.1.9 (`trilogy_r3me01.md`, Pendiente 7).
+- **README:**
+  - tamaño de los paneles y ratón ±80° en "Options worth knowing";
+  - nota de CPU en "Lower-end PCs";
+  - línea v0.1.8 en "Antivirus warnings". Esta línea solo está en el repo, no en el zip: se escribió después del análisis.
 - **Validación en Windows:**
-  - **Repetición `hangar_1x_window` con el build de QA:** sin errores ni desvíos. Con la cola de shaders vacía (desde el segundo 220), 60 FPS como el 4/11 (media 59,87). Las bajadas a ~46 de la pasada coinciden con los últimos ~3.000 shaders compilándose.
+  - **Repetición `hangar_1x_window` con el build de QA:** sin errores ni desvíos. Con la cola de shaders vacía (desde el segundo 220), 60 FPS como el 4/11 (media 59,87). Las bajadas a ~46 coinciden con los últimos ~3.000 shaders compilándose.
   - **`test_trilogy_addon.ps1`:** 6 de 6.
-  - **Documentación:** README y CHANGELOG del zip iguales a los de `publish/`.
-- **Pendiente para publicar:**
-  - VirusTotal (`make_release.ps1` sin `-SkipScan` o al publicar);
-  - la prueba del usuario;
-  - la decisión sobre la caché de Dawn (apartado siguiente).
+  - **Credenciales:** `check_no_credentials.ps1`, 183 archivos limpios.
+- **VirusTotal: 0 detecciones en todo**, sin excepción que autorizar.
+  - Archivos: 57-65 motores.
+  - `.exe` de Windows: 66-67 motores, Trapmine incluido.
+  - Binarios de Linux: 63 motores.
+- **Arreglos de publicación encontrados al publicar:**
+  - `scan_release_virustotal.ps1` daba "0 de 0 motores" (fecha 1970) para un archivo que VirusTotal conoce sin análisis: los `.exe` que extrae de los zips. `last_analysis_results` llega `$null` y la comprobación de vacío no lo detectaba. Ahora sube el archivo para analizarlo. Pedir el reanálisis (`POST /files/{id}/analyse`) estuvo más de 20 minutos en cola.
+  - Pasar la lista de archivos a ese script con `powershell -File` separa la lista. Llamarlo en el mismo proceso (`&`), como hace `publish_release.ps1`.
+  - El `GITHUB_TOKEN` había caducado: 401 al crear el release, aunque el commit y la etiqueta ya se habían subido con las credenciales de git. El usuario creó uno nuevo con `setx`. Una sesión abierta antes conserva el valor viejo en el proceso: tomar el de `User`.
+  - **Codificación en Windows PowerShell 5.1:**
+    - Un cuerpo JSON en texto se envía en la página de códigos local, y GitHub respondió "Problems parsing JSON". Ahora se envía en bytes UTF-8.
+    - `Get-Content` lee como ANSI los archivos sin BOM, y las notas salieron con `â†’` en lugar de `→`. Ahora `-Encoding UTF8` para el CHANGELOG y el informe de VirusTotal.
+    - Las notas publicadas se corrigieron deshaciendo la conversión (cp1252 → UTF-8). Las de 0.1.5-0.1.7 no tenían caracteres afectados.
+  - Después se marcó "Latest" (`prerelease=false`, `make_latest`).
+- **Pendiente:**
+  - decidir la caché de Dawn (apartado siguiente);
+  - mejoras de CPU en Trilogy para la v0.1.9.
 
 ## Caché de Dawn borrada tras 7 días sin jugar (encontrado el 27/11/2026, sin corregir)
 

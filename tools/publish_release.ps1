@@ -68,7 +68,7 @@ if ($withLinux) { $credentialPaths += @($linuxArchive, $linuxAddonArchive) }
 if ($LASTEXITCODE -ne 0) { throw 'Refusing to publish: credentials or private files found (see above). Nothing was pushed or uploaded.' }
 
 # Release notes: the CHANGELOG section of this version.
-$changelog = Get-Content -LiteralPath (Join-Path $publish 'CHANGELOG.md') -Raw
+$changelog = Get-Content -LiteralPath (Join-Path $publish 'CHANGELOG.md') -Raw -Encoding UTF8  # PS 5.1 reads BOM-less files as ANSI: v0.1.8 notes got mojibake
 $section = [regex]::Match($changelog, "(?s)## $([regex]::Escape($tag))[^\n]*\n(.*?)(?=\n## |\z)")
 if (-not $section.Success) { throw "CHANGELOG.md has no '## $tag' section; add one before releasing." }
 $notes = $section.Groups[1].Value.Trim()
@@ -110,10 +110,12 @@ if (-not $SkipScan) {
     }
     & (Join-Path $PSScriptRoot 'scan_release_virustotal.ps1') -Path $scanned -ReportPath $scanReport | Out-Null
     if (-not (Test-Path -LiteralPath $scanReport)) { throw 'VirusTotal scan produced no report; fix it or pass -SkipScan' }
-    $notes += "`n`n" + (Get-Content -LiteralPath $scanReport -Raw).Trim()
+    $notes += "`n`n" + (Get-Content -LiteralPath $scanReport -Raw -Encoding UTF8).Trim()
 }
 
 # Git: commit publish/, tag, push.
+# JSON bodies go as UTF-8 bytes: Windows PowerShell 5.1 sends a string body in the local code page, and GitHub
+# rejected the v0.1.8 notes (with ± and →) with "Problems parsing JSON" (27/11/2026).
 Push-Location $publish
 # git writes progress to stderr; under Windows PowerShell 5.1 with Stop that counts as an error.
 # Only the exit codes decide here.
@@ -143,12 +145,12 @@ $release = $null
 try { $release = @(Invoke-RestMethod -Headers $headers -Uri "$api/releases?per_page=50") | ForEach-Object { $_ } | Where-Object { $_.tag_name -eq $tag } | Select-Object -First 1 } catch { $release = $null }
 if (-not $release) {
     $body = @{ tag_name = $tag; name = "Corruption_3 PC $tag"; body = $notes; draft = [bool]$Draft; prerelease = ($version -like '0.*') } | ConvertTo-Json
-    $release = Invoke-RestMethod -Method Post -Headers $headers -Uri "$api/releases" -Body $body -ContentType 'application/json'
+    $release = Invoke-RestMethod -Method Post -Headers $headers -Uri "$api/releases" -Body ([Text.Encoding]::UTF8.GetBytes($body)) -ContentType 'application/json; charset=utf-8'
     Write-Output "release created: $($release.html_url)"
 } else {
     # Re-runs refresh the notes too, so a scan added later reaches the page.
     $body = @{ body = $notes } | ConvertTo-Json
-    Invoke-RestMethod -Method Patch -Headers $headers -Uri "$api/releases/$($release.id)" -Body $body -ContentType 'application/json' | Out-Null
+    Invoke-RestMethod -Method Patch -Headers $headers -Uri "$api/releases/$($release.id)" -Body ([Text.Encoding]::UTF8.GetBytes($body)) -ContentType 'application/json; charset=utf-8' | Out-Null
     Write-Output "release exists, notes updated: $($release.html_url)"
 }
 foreach ($asset in @($release.assets)) {

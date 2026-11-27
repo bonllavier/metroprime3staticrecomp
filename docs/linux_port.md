@@ -338,6 +338,26 @@ Probado con el paquete descomprimido en una carpeta nueva (RTX 3050, X11): preca
 
 Pendiente: la captura del reportero.
 
+## Paquete de Linux v0.1.8 (2026-11-26)
+
+Generados en `$MP3PORT/dist` y copiados a `dist/` del árbol de Windows (sin publicar todavía):
+
+| Archivo | Tamaño | SHA-256 |
+|---|---|---|
+| `Corruption_3-PC-v0.1.8-linux-x86_64.tar.gz` | 79 MB | `b6d84593dd7dfcc71277e31c695c8874fbd245153a5228777c80bcc15f36a701` |
+| `Corruption_3-PC-v0.1.8-Trilogy-addon-linux-x86_64.tar.gz` | 112 MB | `0735e37f61900db85ab2a36e6cbc3b51e393ba72617bd82ad29332b442a2d5cd` |
+
+- Contenido: `f2939aaf` (C1-C4 de CPU, tamaño de los paneles, ratón ±80°, textos) con `PRIME_PORT_VERSION` 0.1.8. CHANGELOG de `publish/` con su sección `## v0.1.8`.
+- Mismos comandos que la 0.1.7 (abajo). Los dos de Trilogy se recompilaron y ya llevan la fuente del HUD.
+- **`--out` siempre en ext4** (`$MP3PORT/dist`), nunca directamente en `dist/` del árbol de Windows. En NTFS los permisos no se guardan, y el `.tar.gz` sale con todo en 777. Copiar después el `.tar.gz` y el `.sha256`.
+- `build_trilogy.py --public` volvió a fallar dos veces con `ref/Translator.Core.dll` no encontrado (`--no-incremental` de `RsoRuntimeTranslator`). Ejecutar ese `dotnet build` a mano desde `titles/R3ME01_MP3/work` funcionó, y el tercer intento del script también.
+- Comprobado:
+  - `sha256sum -c` en `dist/`;
+  - permisos 644/755;
+  - `ldd` de los tres binarios desde la carpeta del jugador (principal + complemento): solo glibc, libstdc++, libgcc_s, libm, zlib y la libpng incluida (RUNPATH `$ORIGIN`);
+  - arranque de 60 s con el RVZ USA: `Corruption_3 PC 0.1.8 linux` sin "(test build)", `readonly=1`, presentando, sin errores.
+- Sin probar: partida completa con el paquete, y el complemento con un disco de Trilogy.
+
 ## Paquete de Linux v0.1.7 (2026-11-16)
 
 Dos `.tar.gz` de la misma versión, como en Windows (ver "Dos archivos por versión" en [publicacion_github.md](publicacion_github.md)), copiados a `dist/` del árbol de Windows junto a los zips:

@@ -80,8 +80,15 @@ foreach ($file in $Path) {
         if (-not (Wait-Analysis $analysisId)) { throw "VirusTotal analysis of $name did not finish within $TimeoutMinutes minutes" }
         $report = Invoke-Vt 'Get' "$api/files/$sha"
         if (-not $report) { throw "VirusTotal has no report for $name after the analysis" }
-    } elseif ($report.data.attributes.last_analysis_results.PSObject.Properties.Count -eq 0) {
-        throw "VirusTotal knows $name but holds no analysis; re-run later"
+    } elseif (-not $report.data.attributes.last_analysis_results -or @($report.data.attributes.last_analysis_results.PSObject.Properties).Count -eq 0) {
+        # Known but never analysed (e.g. extracted by VirusTotal from an uploaded zip): its results come back $null,
+        # which once printed "0 of 0 engines" as if it were clean. Upload it to get an analysis: a re-analysis
+        # request (POST /files/{id}/analyse) for such a file sat queued for over 20 minutes on 27/11/2026.
+        Write-Host '   known to VirusTotal without an analysis: uploading it for one'
+        $analysisId = Upload-File $file
+        if (-not $analysisId -or -not (Wait-Analysis $analysisId)) { throw "VirusTotal analysis of $name did not finish within $TimeoutMinutes minutes" }
+        $report = Invoke-Vt 'Get' "$api/files/$sha"
+        if (-not $report.data.attributes.last_analysis_results) { throw "VirusTotal holds no analysis for $name; re-run later" }
     }
     $a = $report.data.attributes
     $stats = $a.last_analysis_stats

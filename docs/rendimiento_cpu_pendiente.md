@@ -435,7 +435,7 @@ Lista de lo que falta para este caso, por impacto estimado:
 
 Cada mejora tiene su interruptor, para apagarla por separado si algo falla.
 
-- **C1, builds normales.** `tools/build_prime_runtime.sh` y `.ps1` pasan `--ctx-flush-elision elide --proven-ram-accesses on` al emitir los shards. `MP3_CTX_FLUSH_ELISION=off|elide|verify` y `MP3_PROVEN_RAM_ACCESSES=on|off` los cambian. Los builds de Trilogy (`tools/trilogy/`, `PublicProducts.cmake`) no cambian: no se han validado allí.
+- **C1, builds normales.** `tools/build_prime_runtime.sh` y `.ps1` pasan `--ctx-flush-elision elide --proven-ram-accesses on` al emitir los shards. `MP3_CTX_FLUSH_ELISION=off|elide|verify` y `MP3_PROVEN_RAM_ACCESSES=on|off` los cambian. Los builds de Trilogy (`tools/trilogy/`, `PublicProducts.cmake`) no cambian: no se han validado allí. Decisión del usuario del 27/11/2026: llevarlos a Trilogy en la v0.1.9, con su build de verificación (plan en `trilogy_r3me01.md`, Pendiente 7).
 - **C4, recargas no volátiles** (`ContextFlushElision.ElideNonvolatileReloads`, opción del traductor `--nonvolatile-reload-elision off|elide|verify`).
   - Qué se quita: la recarga de r1, r2 o r13-r31 justo después de una llamada directa traducida (`MKW_STATIC_TRANSLATED_CALL` o `InvokeDirectCpu<>`), cuando el análisis ya demuestra que el local y su hueco en `ctx` eran iguales antes de la llamada.
   - Por qué es correcto: por la EABI, el llamado guarda y restaura esos registros. El generador los recarga porque su máscara de posibles escrituras es una unión que incluye los que el llamado restaura.

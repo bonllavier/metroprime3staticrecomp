@@ -193,6 +193,20 @@ Si cambian los hooks, hay que pasar por la cadena completa (`make_address_map.py
    - Comprobar en juego con un build de QA (`unknown prompt`).
 6. Empaquetado público (16/11/2026): `package_release.ps1` incluye y comprueba `Corruption_3 Trilogy Menu.exe` y `Corruption_3 Trilogy MP3.exe` con las mismas reglas que `Corruption_3 PC.exe` (sin herramientas de QA ni diagnósticos, versión, sin símbolos de depuración). `make_release.ps1` los compila sin QA con `tools/trilogy/build_trilogy.py --public`, los verifica en el zip y después los devuelve al build de QA (`--configure-only`). `publish_release.ps1` y VirusTotal analizan también los dos ejecutables. `[update-check]` también corre en ellos.
 
+7. **Mejoras de CPU C1 y C4 en Trilogy, para la v0.1.9** (decisión del usuario, 27/11/2026). La 0.1.8 sale con el complemento como estaba.
+   - **Situación en la 0.1.8:** Trilogy tiene las tandas del FIFO de GX (C2) y la recogida en línea (C3), que están en el runtime. No tiene las pasadas del traductor:
+     - `--ctx-flush-elision elide`;
+     - `--proven-ram-accesses on`;
+     - `--nonvolatile-reload-elision elide`.
+
+     `build_title.py` y `PublicProducts.cmake` emiten los shards sin ellas, y solo se validaron con RM3E01.
+   - **Plan:**
+     1. Activarlas en la cadena de `tools/trilogy/`, para MP3 y para el menú.
+     2. Compilar primero con `--nonvolatile-reload-elision verify` (`MKW_CTX_RELOAD_CHECK`).
+     3. Jugar en MP3 de Trilogy, incluida la cinemática de Rundas, y pasar la repetición del hangar sin líneas `[ctx-flush-check]`.
+     4. Pasar a `elide`.
+   - **A vigilar:** el código de arranque que carga constantes en r1/r2/r13 se trata como ruptura de ABI; comprobarlo en los dos DOL de Trilogy. Ver `rendimiento_cpu_pendiente.md`, C1-C4.
+
 ## Auditoría RM3E01 → Trilogy (16/11/2026)
 
 Petición del usuario: dejar el MP3 de Trilogy equiparado con RM3E01 (textos, reloj de 59,94 Hz, menús, juego, iluminación), con las adaptaciones que Trilogy necesite. Herramientas nuevas, de solo lectura:
